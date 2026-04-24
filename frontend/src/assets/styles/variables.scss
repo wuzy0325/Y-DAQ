@@ -1,0 +1,164 @@
+// ==================== 未来感霓虹配色系统 ====================
+// Future Neon Color System - 五孔探针校准系统
+// 特点：深色背景、强烈霓虹色彩、发光效果、全息玻璃感
+
+// ==================== 背景色 ====================
+// 深空渐变背景，营造未来科技氛围
+$bg-primary: #0a0a1a;           // 主背景 - 深空黑
+$bg-secondary: rgba(255, 255, 255, 0.06);  // 次级背景 - 全息玻璃
+$bg-tertiary: rgba(255, 255, 255, 0.03);   // 三级背景
+$bg-gradient-start: #0a0a1a;    // 渐变起始 - 深空黑
+$bg-gradient-mid: #1a1a3a;      // 渐变中间 - 深紫蓝
+$bg-gradient-end: #0f0f2f;      // 渐变结束 - 深靛蓝
+
+// 全息玻璃背景色（带透明度和光效）
+$glass-bg: rgba(255, 255, 255, 0.06);           // 玻璃背景
+$glass-bg-hover: rgba(255, 255, 255, 0.10);     // 悬停玻璃背景
+$glass-bg-active: rgba(255, 255, 255, 0.14);    // 激活玻璃背景
+$glass-bg-elevated: rgba(255, 255, 255, 0.08);   // elevated玻璃背景
+
+// ==================== 玻璃边框色 ====================
+$glass-border: rgba(255, 255, 255, 0.12);       // 玻璃边框
+$glass-border-light: rgba(255, 255, 255, 0.06);  // 浅色玻璃边框
+$glass-border-focus: rgba(168, 85, 247, 0.6);   // 聚焦边框
+$glass-border-glow: rgba(168, 85, 247, 0.3);    // 发光边框
+
+// 兼容旧代码的边框变量
+$border-color: $glass-border;                   // 主边框（兼容旧代码）
+$border-color-light: $glass-border-light;       // 浅色边框（兼容旧代码）
+$border-color-dark: rgba(255, 255, 255, 0.18);  // 深色边框（兼容旧代码）
+
+// ==================== 主色调（霓虹紫） ====================
+// 紫色为主，代表科技、未来感、霓虹效果
+$color-primary: #b829ff;        // 霓虹紫 - 主品牌色
+$color-primary-dark: #a820f0;   // 深色 - 悬停/按下
+$color-primary-light: #d966ff;  // 浅色 - 高亮
+$color-primary-glow: rgba(184, 41, 255, 0.6);   // 发光效果
+
+// ==================== 强调色（霓虹青） ====================
+$color-accent: #00f5ff;         // 霓虹青 - 强调色
+$color-accent-dark: #00d4e0;    // 深色
+$color-accent-light: #66faff;   // 浅色
+$color-accent-glow: rgba(0, 245, 255, 0.6);
+
+// ==================== 功能色 ====================
+$color-success: #00ff88;        // 霓虹绿 - 成功/运行中
+$color-success-dark: #00e07a;   // 深色
+$color-success-glow: rgba(0, 255, 136, 0.6);
+
+$color-warning: #ffaa00;        // 霓虹橙 - 警告/注意
+$color-warning-dark: #e69900;   // 深色
+$color-warning-glow: rgba(255, 170, 0, 0.6);
+
+$color-danger: #ff3366;         // 霓虹红 - 危险/急停
+$color-danger-dark: #e62e5c;    // 深色
+$color-danger-glow: rgba(255, 51, 102, 0.6);
+
+$color-info: #00aaff;           // 霓虹蓝 - 信息/提示
+$color-info-dark: #0099e6;      // 深色
+$color-info-glow: rgba(0, 170, 255, 0.6);
+
+// ==================== 渐变色 ====================
+$gradient-primary: linear-gradient(135deg, $color-primary 0%, $color-accent 100%);
+$gradient-success: linear-gradient(135deg, $color-success 0%, #66ffaa 100%);
+$gradient-warning: linear-gradient(135deg, $color-warning 0%, #ffcc33 100%);
+$gradient-danger: linear-gradient(135deg, $color-danger 0%, #ff6699 100%);
+$gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
+
+// 霓虹渐变效果
+$gradient-neon-purple: linear-gradient(135deg, #b829ff 0%, #00f5ff 100%);
+$gradient-neon-blue: linear-gradient(135deg, #00aaff 0%, #00ff88 100%);
+$gradient-neon-red: linear-gradient(135deg, #ff3366 0%, #ffaa00 100%);
+
+// ==================== 文字色 ====================
+$text-primary: #ffffff;                         // 主文字 - 纯白
+$text-secondary: rgba(255, 255, 255, 0.8);      // 次级文字 - 80%白
+$text-tertiary: rgba(255, 255, 255, 0.6);       // 三级文字 - 60%白
+$text-muted: rgba(255, 255, 255, 0.4);          // 禁用/占位文字 - 40%白
+
+// ==================== 图表颜色 ====================
+$chart-kalpha: #b829ff;         // 霓虹紫 - Kα
+$chart-kbeta: #00f5ff;          // 霓虹青 - Kβ
+$chart-cpt: #ffaa00;            // 霓虹橙 - Cpt
+$chart-cps: #00ff88;            // 霓虹绿 - Cps
+$chart-line-1: #b829ff;         // 系列1
+$chart-line-2: #00f5ff;         // 系列2
+$chart-line-3: #00ff88;         // 系列3
+$chart-line-4: #ffaa00;         // 系列4
+
+// ==================== 尺寸系统 ====================
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 12px;
+$spacing-lg: 16px;
+$spacing-xl: 24px;
+$spacing-2xl: 32px;
+$spacing-3xl: 48px;
+
+$border-radius-sm: 8px;
+$border-radius-md: 12px;
+$border-radius-lg: 16px;
+$border-radius-xl: 20px;
+$border-radius-2xl: 24px;
+
+// ==================== 字体系统 ====================
+$font-family-base: "Microsoft YaHei", -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+$font-family-mono: "Microsoft YaHei", 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+
+$font-size-xs: 11px;
+$font-size-sm: 13px;
+$font-size-md: 14px;
+$font-size-base: 14px;  // 基础字体大小（兼容旧代码）
+$font-size-lg: 16px;
+$font-size-xl: 18px;
+$font-size-2xl: 20px;
+$font-size-3xl: 24px;
+
+// ==================== 阴影系统 ====================
+// 柔和的发光阴影 - 增强霓虹效果
+$shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+$shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+$shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+
+// 霓虹发光效果
+$shadow-glow-primary: 0 0 20px rgba(184, 41, 255, 0.5), 0 0 40px rgba(184, 41, 255, 0.3), 0 0 60px rgba(184, 41, 255, 0.1);
+$shadow-glow-accent: 0 0 20px rgba(0, 245, 255, 0.5), 0 0 40px rgba(0, 245, 255, 0.3), 0 0 60px rgba(0, 245, 255, 0.1);
+$shadow-glow-success: 0 0 20px rgba(0, 255, 136, 0.5), 0 0 40px rgba(0, 255, 136, 0.3);
+$shadow-glow-warning: 0 0 20px rgba(255, 170, 0, 0.5), 0 0 40px rgba(255, 170, 0, 0.3);
+$shadow-glow-danger: 0 0 20px rgba(255, 51, 102, 0.5), 0 0 40px rgba(255, 51, 102, 0.3);
+
+// 玻璃卡片阴影
+$shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+$shadow-glass-hover: 0 12px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+
+// ==================== 模糊效果 ====================
+$blur-sm: blur(8px);
+$blur-md: blur(16px);
+$blur-lg: blur(24px);
+
+// ==================== 过渡动画 ====================
+$transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+$transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+$transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+
+// ==================== 未来感特效 ====================
+// 边框发光效果
+$border-glow-primary: 0 0 10px rgba(184, 41, 255, 0.6), 0 0 20px rgba(184, 41, 255, 0.3);
+$border-glow-accent: 0 0 10px rgba(0, 245, 255, 0.6), 0 0 20px rgba(0, 245, 255, 0.3);
+$border-glow-success: 0 0 10px rgba(0, 255, 136, 0.6), 0 0 20px rgba(0, 255, 136, 0.3);
+
+// 动画效果
+$animation-pulse: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+$animation-glow: glow 2s ease-in-out infinite alternate;
+$animation-float: float 3s ease-in-out infinite;
+
+// 网格背景
+$grid-color: rgba(255, 255, 255, 0.03);
+$grid-size: 40px;
+
+// 全息效果
+$holographic-gradient: linear-gradient(135deg, 
+  rgba(184, 41, 255, 0.1) 0%, 
+  rgba(0, 245, 255, 0.1) 50%, 
+  rgba(0, 255, 136, 0.1) 100%
+);
