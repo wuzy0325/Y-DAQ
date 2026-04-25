@@ -154,6 +154,10 @@ export function PauseThreeHoleTraversal() {
   return window['go']['main']['App']['PauseThreeHoleTraversal']();
 }
 
+export function ReadRecordingFile(arg1) {
+  return window['go']['main']['App']['ReadRecordingFile'](arg1);
+}
+
 export function RemoveDeviceProfile(arg1) {
   return window['go']['main']['App']['RemoveDeviceProfile'](arg1);
 }

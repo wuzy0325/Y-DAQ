@@ -179,11 +179,12 @@ onMounted(() => {
   if (deviceStore.statuses.length > 0 && !selectedDeviceId.value) {
     selectedDeviceId.value = deviceStore.statuses[0].id
   }
-  // 初始化通道选择
+  // 初始化通道选择（排除大气压力和大气温度）
   if (selectedDeviceId.value) {
     const profile = deviceStore.profiles.find(p => p.id === selectedDeviceId.value)
     if (profile) {
-      visibleChannels.value = new Set(profile.channels.filter(ch => ch.enabled).map(ch => ch.index))
+      const total = profile.channels.length
+      visibleChannels.value = new Set(profile.channels.filter(ch => ch.enabled && !isAtmosphericChannel(ch, total)).map(ch => ch.index))
     }
   }
 })
@@ -249,6 +250,11 @@ const MAX_POINTS = 100
 const historyData = shallowRef<Record<string, number[]>>({})
 const historyLabels = ref<string[]>([])
 
+// 判断通道是否为大气压力/大气温度（不显示在波形图上）
+function isAtmosphericChannel(ch: { name: string; index: number }, total: number): boolean {
+  return ch.index >= total - 2
+}
+
 // 通道选择：记录哪些通道在波形图中显示
 const visibleChannels = ref<Set<number>>(new Set())
 
@@ -289,10 +295,12 @@ function toggleChannel(index: number) {
   scheduleChartUpdate()
 }
 
-// 追加数据 - 只处理选中设备
+// 追加数据 - 只处理选中设备，且仅在采集中追加
 let lastSnapTime = 0
 watch(() => deviceStore.snapshots, (snaps) => {
   if (!selectedDeviceId.value) return
+  // 未采集时不追加数据
+  if (!deviceStore.isAcquiring) return
   const snap = snaps.find(s => s.deviceId === selectedDeviceId.value)
   if (!snap) return
 
@@ -351,6 +359,7 @@ const chartOption = shallowRef<Record<string, any>>({
   },
   yAxis: {
     type: 'value',
+    scale: true,
     axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
     axisLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 10 },
     splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } },
@@ -437,6 +446,7 @@ function clearHistory() {
     },
     yAxis: {
       type: 'value',
+      scale: true,
       axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
       axisLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 10 },
       splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } },
@@ -445,17 +455,35 @@ function clearHistory() {
   }
 }
 
+// 当通道配置加载完成但 visibleChannels 尚未初始化时，自动选中所有通道（排除大气压力和大气温度）
+watch(selectedChannelConfigs, (configs) => {
+  if (configs.length > 0 && visibleChannels.value.size === 0) {
+    const profile = deviceStore.profiles.find(p => p.id === selectedDeviceId.value)
+    const total = profile ? profile.channels.length : 0
+    visibleChannels.value = new Set(configs.filter(ch => !isAtmosphericChannel(ch, total)).map(ch => ch.index))
+    scheduleChartUpdate()
+  }
+})
+
 // 切换设备时清空历史并重置通道选择
 watch(selectedDeviceId, (newId, oldId) => {
   // 只在用户主动切换设备时清空（oldId 有值说明是切换而非初始化）
   if (!oldId) return
   clearHistory()
-  // 默认选中所有通道
+  // 默认选中所有通道（排除大气压力和大气温度）
   const profile = deviceStore.profiles.find(p => p.id === newId)
   if (profile) {
-    visibleChannels.value = new Set(profile.channels.filter(ch => ch.enabled).map(ch => ch.index))
+    const total = profile.channels.length
+    visibleChannels.value = new Set(profile.channels.filter(ch => ch.enabled && !isAtmosphericChannel(ch, total)).map(ch => ch.index))
   } else {
     visibleChannels.value = new Set()
+  }
+})
+
+// 停止采集时清空波形图历史数据
+watch(() => deviceStore.isAcquiring, (acquiring) => {
+  if (!acquiring) {
+    clearHistory()
   }
 })
 </script>
@@ -648,9 +676,10 @@ watch(selectedDeviceId, (newId, oldId) => {
 .device-channels { display: flex; flex-wrap: wrap; gap: 8px; }
 .channel-item {
   background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 8px; padding: 8px 12px; min-width: 110px; text-align: center;
+  border-radius: 8px; padding: 8px 12px; width: 120px; text-align: center;
+  flex-shrink: 0;
 }
-.ch-name { font-size: 11px; color: rgba(255,255,255,0.5); margin-bottom: 4px; }
+.ch-name { font-size: 11px; color: rgba(255,255,255,0.5); margin-bottom: 4px; height: 16px; line-height: 16px; }
 
 .channel-selector {
   .selector-header {

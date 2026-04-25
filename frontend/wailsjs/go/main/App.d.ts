@@ -78,6 +78,8 @@ export function PauseCalibration():Promise<void>;
 
 export function PauseThreeHoleTraversal():Promise<void>;
 
+export function ReadRecordingFile(arg1:string):Promise<string>;
+
 export function RemoveDeviceProfile(arg1:string):Promise<void>;
 
 export function RemoveMotionProfile(arg1:string):Promise<void>;

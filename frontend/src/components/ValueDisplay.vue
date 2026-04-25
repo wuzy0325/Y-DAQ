@@ -36,6 +36,9 @@ const formattedValue = computed(() => {
   font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
   font-weight: 600;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
+  min-width: 5ch;
+  text-align: right;
 }
 
 .unit {

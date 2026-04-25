@@ -91,6 +91,13 @@ func (h *AcquisitionHub) SetOnSnapshot(cb func(snapshots []types.DataPayload)) {
 	h.onSnapshot = cb
 }
 
+// ClearDevice 清除指定设备的最新数据（停止采集时调用，避免继续发布旧数据）
+func (h *AcquisitionHub) ClearDevice(deviceID string) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	delete(h.latestData, deviceID)
+}
+
 // StartPublishing 启动定时发布
 func (h *AcquisitionHub) StartPublishing(cancel <-chan struct{}) {
 	ticker := time.NewTicker(time.Duration(1000/h.GetPublishHz()) * time.Millisecond)

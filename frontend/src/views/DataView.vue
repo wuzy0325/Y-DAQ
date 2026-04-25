@@ -29,11 +29,17 @@
           <el-button type="primary" size="small" @click="loadExternalCSV">加载CSV</el-button>
           <el-button size="small" @click="refreshFiles">刷新</el-button>
         </template>
-        <el-table v-if="recordingFiles.length > 0" :data="recordingFiles" size="small" dark max-height="200">
+        <el-table v-if="recordingFiles.length > 0" :data="recordingFiles" size="small" max-height="200">
           <el-table-column prop="name" label="文件名" />
           <el-table-column label="操作" width="100">
             <template #default="{ row }">
-              <el-button type="primary" size="small" link @click="loadFileForPlayback(row.name)">回放</el-button>
+              <el-button
+                type="primary"
+                size="small"
+                :disabled="loadingFile === row.name"
+                :loading="loadingFile === row.name"
+                @click="loadFileForPlayback(row.name)"
+              >回放</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -73,6 +79,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onUnmounted } from 'vue'
+import { ElMessage } from 'element-plus'
 import { useDeviceStore } from '../stores/device'
 import GlassCard from '../components/GlassCard.vue'
 import ChartPanel from '../components/ChartPanel.vue'
@@ -83,6 +90,7 @@ const publishRate = ref(20)
 
 // 录制文件
 const recordingFiles = ref<{ name: string }[]>([])
+const loadingFile = ref('')
 
 // 回放状态
 const playbackData = ref<PlaybackRow[]>([])
@@ -130,14 +138,21 @@ async function loadExternalCSV() {
 
 // 加载录制文件回放
 async function loadFileForPlayback(fileName: string) {
+  loadingFile.value = fileName
   try {
-    const { GetDataDir } = await import('../../wailsjs/go/main/App')
-    const dataDir = await GetDataDir() as string
-    // 通过LoadCSVFile让用户选择，或直接读取
-    // 这里简化处理：使用LoadCSVFile
-    await loadExternalCSV()
-  } catch (e) {
+    const { ReadRecordingFile } = await import('../../wailsjs/go/main/App')
+    const content = await ReadRecordingFile(fileName) as string
+    if (content) {
+      parseAndLoadCSV(content)
+      ElMessage.success(`已加载: ${fileName}`)
+    } else {
+      ElMessage.warning('文件内容为空')
+    }
+  } catch (e: any) {
     console.error('loadFileForPlayback failed:', e)
+    ElMessage.error(`加载失败: ${e?.message || e}`)
+  } finally {
+    loadingFile.value = ''
   }
 }
 
@@ -287,6 +302,7 @@ const playbackChartOption = computed(() => {
     },
     yAxis: {
       type: 'value',
+      scale: true,
       name: 'kPa',
       nameTextStyle: { color: 'rgba(255,255,255,0.5)' },
       axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },

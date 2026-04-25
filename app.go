@@ -345,7 +345,11 @@ func (a *App) StartAcquisition(id string) error {
 
 // StopAcquisition 停止采集
 func (a *App) StopAcquisition(id string) error {
-	return a.deviceManager.StopAcquisition(id)
+	err := a.deviceManager.StopAcquisition(id)
+	if err == nil {
+		a.acquisitionHub.ClearDevice(id)
+	}
+	return err
 }
 
 // StartAcquisitionAll 批量启动采集
@@ -356,7 +360,14 @@ func (a *App) StartAcquisitionAll() int {
 
 // StopAcquisitionAll 批量停止采集
 func (a *App) StopAcquisitionAll() {
+	// 先获取所有正在采集的设备ID，用于清除hub中的旧数据
+	statuses := a.deviceManager.GetStatusAll()
 	a.deviceManager.StopAcquisitionAll()
+	for _, s := range statuses {
+		if s.Acquiring {
+			a.acquisitionHub.ClearDevice(s.ID)
+		}
+	}
 }
 
 // GetDeviceStatusAll 获取所有设备状态
@@ -690,6 +701,24 @@ func (a *App) ListRecordingFiles() []string {
 		}
 	}
 	return files
+}
+
+// ReadRecordingFile 按文件名直接读取录制文件内容
+func (a *App) ReadRecordingFile(fileName string) (string, error) {
+	// 安全检查：防止路径遍历
+	if filepath.IsAbs(fileName) || !filepath.IsLocal(fileName) {
+		return "", fmt.Errorf("invalid file name: %s", fileName)
+	}
+
+	dataDir := a.GetDataDir()
+	filePath := filepath.Join(dataDir, fileName)
+
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return "", fmt.Errorf("read file failed: %w", err)
+	}
+
+	return string(data), nil
 }
 
 // ==================== 三孔移位测试 API ====================

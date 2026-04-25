@@ -5,20 +5,13 @@
       <div class="axis-title">
         <span class="axis-name">{{ axis.name }}轴</span>
         <el-tag :type="axis.kind === 'LINEAR' ? 'primary' : 'success'" size="small">
-          {{ axis.kind === 'LINEAR' ? '平移轴' : '旋转轴' }}
+          {{ axis.kind === 'LINEAR' ? '平移' : '旋转' }}
         </el-tag>
       </div>
       <div class="axis-actions">
-        <!-- 限位指示灯 -->
         <div class="limit-indicators">
-          <div class="limit-item">
-            <span class="dot" :class="{ active: axis.negLimitActive }"></span>
-            <span class="label">-限</span>
-          </div>
-          <div class="limit-item">
-            <span class="dot" :class="{ active: axis.posLimitActive }"></span>
-            <span class="label">+限</span>
-          </div>
+          <span class="limit-dot" :class="{ active: axis.negLimitActive }" title="负限位">-</span>
+          <span class="limit-dot" :class="{ active: axis.posLimitActive }" title="正限位">+</span>
         </div>
         <el-tag :type="runStateTagType" size="small" effect="dark">
           {{ runStateLabel }}
@@ -31,17 +24,15 @@
 
     <!-- 位置显示 -->
     <div class="position-display">
-      <div class="position-row">
-        <span class="label">当前位置</span>
-        <span class="value" :class="{ 'is-homed': axis.isHomed }">
+      <div class="position-value">
+        <span class="number" :class="{ 'is-homed': axis.isHomed }">
           {{ axis.currentPosition.toFixed(2) }}
-          <span class="unit">{{ unit }}</span>
         </span>
+        <span class="unit">{{ unit }}</span>
       </div>
-      <!-- 位置进度条 -->
+      <!-- 简化位置条 -->
       <div class="position-bar">
         <div class="bar-track">
-          <div class="bar-center"></div>
           <div class="bar-indicator" :style="{ left: `${positionPercent}%` }"></div>
         </div>
         <div class="bar-labels">
@@ -52,68 +43,61 @@
       </div>
     </div>
 
-    <!-- 目标位置 & 相对距离 并列 -->
-    <div class="input-row-group">
+    <!-- 输入控制 -->
+    <div class="control-row">
       <div class="input-group">
-        <span class="input-label">目标位置</span>
-        <div class="input-row">
-          <el-input-number
-            v-model="localTarget"
-            :precision="2"
-            :step="stepValue"
-            :min="-maxPosition"
-            :max="maxPosition"
-            size="small"
-            controls-position="right"
-            @change="onTargetChange"
-          />
-          <span class="input-unit">{{ unit }}</span>
-        </div>
+        <span class="input-label">目标</span>
+        <el-input-number
+          v-model="localTarget"
+          :precision="2"
+          :step="stepValue"
+          :min="-maxPosition"
+          :max="maxPosition"
+          size="small"
+          controls-position="right"
+          @change="onTargetChange"
+        />
       </div>
       <div class="input-group">
-        <span class="input-label">相对距离 (Jog)</span>
-        <div class="input-row">
-          <el-input-number
-            v-model="localRelative"
-            :precision="2"
-            :step="stepValue"
-            :min="0.01"
-            :max="maxPosition"
-            size="small"
-            controls-position="right"
-            @change="onRelativeChange"
-          />
-          <span class="input-unit">{{ unit }}</span>
-        </div>
+        <span class="input-label">步距</span>
+        <el-input-number
+          v-model="localRelative"
+          :precision="2"
+          :step="stepValue"
+          :min="0.01"
+          :max="maxPosition"
+          size="small"
+          controls-position="right"
+          @change="onRelativeChange"
+        />
       </div>
     </div>
 
     <!-- 控制按钮 -->
-    <div class="control-buttons">
-      <el-button type="primary" size="small" :disabled="!canJog" @click="onJog('minus')">
-        <el-icon><ArrowLeft /></el-icon> Jog-
+    <div class="button-row">
+      <el-button size="small" :disabled="!canJog" @click="onJog('minus')">
+        <el-icon><ArrowLeft /></el-icon>
       </el-button>
       <el-button type="success" size="small" :disabled="!canRun" :loading="isRunning" @click="onMoveToTarget">
-        <el-icon><VideoPlay /></el-icon> 运行
+        运行
       </el-button>
-      <el-button type="primary" size="small" :disabled="!canJog" @click="onJog('plus')">
-        Jog+ <el-icon><ArrowRight /></el-icon>
+      <el-button size="small" :disabled="!canJog" @click="onJog('plus')">
+        <el-icon><ArrowRight /></el-icon>
       </el-button>
       <el-button type="danger" size="small" :disabled="!isRunning && !isJogging" @click="onStop">
-        <el-icon><CircleClose /></el-icon> 停止
+        停止
       </el-button>
     </div>
 
-    <!-- 置零按钮 -->
-    <el-button class="home-button" type="info" size="small" plain @click="onHome">
-      <el-icon><Aim /></el-icon> 置零 (当前位置设为0)
+    <el-button class="home-btn" type="info" size="small" plain @click="onHome">
+      <el-icon><Aim /></el-icon> 置零
     </el-button>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { Setting, ArrowLeft, ArrowRight, VideoPlay, CircleClose, Aim } from '@element-plus/icons-vue'
+import { Setting, ArrowLeft, ArrowRight, Aim } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { useMotionStore } from '../../stores/motion'
 
@@ -202,27 +186,27 @@ async function onHome() {
 
 <style scoped lang="scss">
 .axis-card {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 10px;
-  padding: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  transition: all 0.3s ease;
+  gap: 10px;
+  transition: all 0.2s;
 
   &:hover {
-    border-color: rgba(0, 245, 255, 0.3);
-    box-shadow: 0 2px 12px rgba(0, 245, 255, 0.1);
+    border-color: rgba(0, 245, 255, 0.2);
   }
 
   &.is-running {
-    border-color: rgba(0, 255, 136, 0.4);
-    box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.15);
+    border-color: rgba(0, 255, 136, 0.3);
+    background: rgba(0, 255, 136, 0.03);
   }
 
   &.is-error {
-    border-color: rgba(255, 51, 102, 0.4);
-    box-shadow: 0 0 0 2px rgba(255, 51, 102, 0.15);
+    border-color: rgba(255, 77, 79, 0.3);
+    background: rgba(255, 77, 79, 0.03);
   }
 }
 
@@ -230,19 +214,17 @@ async function onHome() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 
 .axis-title {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+
   .axis-name {
     font-size: 14px;
     font-weight: 600;
-    color: #b829ff;
+    color: rgba(255, 255, 255, 0.9);
   }
 }
 
@@ -254,53 +236,49 @@ async function onHome() {
 
 .limit-indicators {
   display: flex;
-  gap: 6px;
-  align-items: center;
-  padding-right: 8px;
-  border-right: 1px solid rgba(255,255,255,0.06);
+  gap: 4px;
 
-  .limit-item {
+  .limit-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     display: flex;
     align-items: center;
-    gap: 3px;
+    justify-content: center;
     font-size: 10px;
-    color: rgba(255,255,255,0.4);
+    color: rgba(255, 255, 255, 0.3);
+    font-weight: 600;
 
-    .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #111;
-      border: 1px solid #444;
-      transition: all 0.2s;
-
-      &.active {
-        background: #ff4d4f;
-        border-color: #ff4d4f;
-        box-shadow: 0 0 5px rgba(255, 77, 79, 0.5);
-      }
+    &.active {
+      background: rgba(255, 77, 79, 0.2);
+      border-color: rgba(255, 77, 79, 0.5);
+      color: #ff4d4f;
     }
   }
 }
 
 .position-display {
-  margin-bottom: 12px;
-
-  .position-row {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
+  .position-value {
+    text-align: center;
     margin-bottom: 8px;
 
-    .label { font-size: 13px; color: rgba(255,255,255,0.5); }
-    .value {
-      font-size: 20px;
+    .number {
+      font-size: 24px;
       font-weight: 600;
       color: #00f5ff;
       font-family: 'Courier New', monospace;
 
-      &.is-homed { color: #00ff88; }
-      .unit { font-size: 12px; font-weight: 400; color: rgba(255,255,255,0.4); margin-left: 3px; }
+      &.is-homed {
+        color: #00ff88;
+      }
+    }
+
+    .unit {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.4);
+      margin-left: 4px;
     }
   }
 }
@@ -308,32 +286,19 @@ async function onHome() {
 .position-bar {
   .bar-track {
     position: relative;
-    height: 6px;
-    background: rgba(255,255,255,0.06);
-    border-radius: 3px;
-    overflow: visible;
-
-    .bar-center {
-      position: absolute;
-      left: 50%;
-      width: 2px;
-      height: 100%;
-      background: rgba(255,255,255,0.2);
-      transform: translateX(-50%);
-      z-index: 1;
-    }
+    height: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 2px;
 
     .bar-indicator {
       position: absolute;
       top: 50%;
-      width: 12px;
-      height: 12px;
-      background: linear-gradient(135deg, #3b82f6, #10b981);
+      width: 8px;
+      height: 8px;
+      background: #00f5ff;
       border-radius: 50%;
       transform: translate(-50%, -50%);
-      transition: left 0.1s ease;
-      box-shadow: 0 0 4px rgba(59, 130, 246, 0.5);
-      z-index: 2;
+      transition: left 0.1s;
     }
   }
 
@@ -341,58 +306,39 @@ async function onHome() {
     display: flex;
     justify-content: space-between;
     margin-top: 4px;
-    font-size: 11px;
-    color: rgba(255,255,255,0.25);
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.3);
   }
 }
 
-.input-row-group {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
+.control-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }
 
 .input-group {
-  flex: 1;
-  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 
   .input-label {
-    display: block;
-    font-size: 12px;
-    color: rgba(255,255,255,0.5);
-    margin-bottom: 5px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
   }
 
-  .input-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    .el-input-number { flex: 1; }
-    .input-unit { font-size: 12px; color: rgba(255,255,255,0.4); min-width: 20px; }
+  :deep(.el-input-number) {
+    width: 100%;
   }
 }
 
-.control-buttons {
+.button-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 10px;
-
-  .el-button {
-    padding: 8px 4px;
-    font-size: 12px;
-    height: 32px;
-    .el-icon { font-size: 13px; }
-  }
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
 }
 
-.home-button {
+.home-btn {
   width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  height: 32px;
-  font-size: 12px;
 }
 </style>

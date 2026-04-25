@@ -42,10 +42,7 @@
     <!-- 主内容区 -->
     <div class="main-content">
       <!-- 左侧：轴控制面板 -->
-      <div class="control-panel">
-        <div class="panel-header">
-          <h3 class="panel-title">轴控制面板</h3>
-        </div>
+      <GlassCard title="轴控制面板" icon="🎮" class="control-panel">
         <div class="axes-grid">
           <AxisControlCard
             v-for="axis in motionStore.allAxes"
@@ -54,7 +51,7 @@
             @configure="onConfigureAxis"
           />
         </div>
-      </div>
+      </GlassCard>
 
       <!-- 右侧：系统状态 -->
       <div class="status-panel">
@@ -149,6 +146,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useMotionStore } from '../stores/motion'
+import GlassCard from '../components/GlassCard.vue'
 import AxisControlCard from '../components/MotionControl/AxisControlCard.vue'
 import AxisConfigDialog from '../components/MotionControl/AxisConfigDialog.vue'
 
@@ -363,35 +361,19 @@ onMounted(async () => {
 }
 
 .control-panel {
-  background: rgba(255,255,255,0.02);
-  border-radius: 4px;
-  padding: 12px;
-  border: 1px solid rgba(255,255,255,0.06);
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-
-  .panel-header {
+  :deep(.card-body) {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 10px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-    flex-shrink: 0;
-    .panel-title {
-      font-size: 14px;
-      font-weight: 600;
-      color: #00f5ff;
-      margin: 0;
-    }
+    flex-direction: column;
   }
 }
 
 .axes-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
   gap: 12px;
   flex: 1;
   min-height: 0;
@@ -407,19 +389,19 @@ onMounted(async () => {
 }
 
 .status-section {
-  background: rgba(255,255,255,0.02);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
   padding: 10px;
   flex-shrink: 0;
 
   .section-title {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
-    color: #00f5ff;
+    color: rgba(255, 255, 255, 0.8);
     margin-bottom: 8px;
     padding-left: 6px;
-    border-left: 3px solid #00f5ff;
+    border-left: 2px solid rgba(0, 245, 255, 0.5);
   }
 
   .section-title-row {
@@ -441,14 +423,19 @@ onMounted(async () => {
     align-items: center;
     padding: 6px 10px;
     background: rgba(255,255,255,0.03);
-    border-radius: 5px;
-    .label { font-size: 12px; color: rgba(255,255,255,0.4); }
+    border-radius: 6px;
+
+    .label { 
+      font-size: 11px; 
+      color: rgba(255,255,255,0.4);
+    }
     .value {
       font-size: 12px;
       font-weight: 500;
       color: rgba(255,255,255,0.8);
+
       &.connected { color: #00ff88; }
-      &.disconnected { color: rgba(255,255,255,0.25); }
+      &.disconnected { color: rgba(255,255,255,0.3); }
       &.error { color: #ff3366; }
     }
   }
@@ -468,17 +455,28 @@ onMounted(async () => {
     cursor: pointer;
     transition: all 0.2s;
     border: 1px solid transparent;
-    &:hover { background: rgba(255,255,255,0.05); }
+
+    &:hover { 
+      background: rgba(255,255,255,0.05);
+    }
+
     &.is-selected {
       border-color: rgba(0, 245, 255, 0.3);
       background: rgba(0, 245, 255, 0.05);
     }
+
     .axis-info {
       display: flex;
       align-items: center;
       gap: 6px;
-      .axis-name { font-size: 13px; font-weight: 600; color: #b829ff; width: 24px; }
+      .axis-name { 
+        font-size: 13px; 
+        font-weight: 600; 
+        color: rgba(255,255,255,0.85);
+        width: 24px;
+      }
     }
+
     .position-value {
       display: flex;
       align-items: baseline;
@@ -488,19 +486,34 @@ onMounted(async () => {
         font-weight: 600;
         color: #00f5ff;
         font-family: 'Courier New', monospace;
+
         &.is-homed { color: #00ff88; }
       }
       .unit { font-size: 11px; color: rgba(255,255,255,0.4); }
     }
+
     .state-badge {
       font-size: 10px;
       padding: 2px 6px;
       border-radius: 9px;
       font-weight: 500;
-      &.idle { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); }
-      &.running { background: rgba(0, 255, 136, 0.1); color: #00ff88; }
-      &.jogging_minus, &.jogging_plus { background: rgba(255, 170, 0, 0.1); color: #ffaa00; }
-      &.error { background: rgba(255, 51, 102, 0.1); color: #ff3366; }
+
+      &.idle { 
+        background: rgba(255,255,255,0.05); 
+        color: rgba(255,255,255,0.4); 
+      }
+      &.running { 
+        background: rgba(0, 255, 136, 0.1); 
+        color: #00ff88;
+      }
+      &.jogging_minus, &.jogging_plus { 
+        background: rgba(255, 170, 0, 0.1); 
+        color: #ffaa00;
+      }
+      &.error { 
+        background: rgba(255, 51, 102, 0.1); 
+        color: #ff3366;
+      }
     }
   }
 }
@@ -510,6 +523,7 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   min-height: 0;
+
   .log-container {
     flex: 1;
     overflow-y: auto;
@@ -519,11 +533,13 @@ onMounted(async () => {
     font-family: 'Courier New', monospace;
     font-size: 11px;
     line-height: 1.5;
+
     .log-item {
       color: rgba(255,255,255,0.4);
       padding: 1px 0;
       border-bottom: 1px solid rgba(255,255,255,0.03);
     }
+
     .log-empty {
       color: rgba(255,255,255,0.2);
       text-align: center;

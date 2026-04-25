@@ -131,28 +131,28 @@
                 <div class="form-group">
                   <label class="group-label">X范围</label>
                   <div class="range-inputs">
-                    <el-input-number v-model="store.config.layout.rectangle.xMin" :step="5" size="small" style="width:70px" />
+                    <el-input-number v-model="store.config.layout.rectangle.xMin" :step="5" size="small" style="width:90px" />
                     <span class="range-separator">~</span>
-                    <el-input-number v-model="store.config.layout.rectangle.xMax" :step="5" size="small" style="width:70px" />
+                    <el-input-number v-model="store.config.layout.rectangle.xMax" :step="5" size="small" style="width:90px" />
                   </div>
                 </div>
                 <div class="form-group">
                   <label class="group-label">Y范围</label>
                   <div class="range-inputs">
-                    <el-input-number v-model="store.config.layout.rectangle.yMin" :step="5" size="small" style="width:70px" />
+                    <el-input-number v-model="store.config.layout.rectangle.yMin" :step="5" size="small" style="width:90px" />
                     <span class="range-separator">~</span>
-                    <el-input-number v-model="store.config.layout.rectangle.yMax" :step="5" size="small" style="width:70px" />
+                    <el-input-number v-model="store.config.layout.rectangle.yMax" :step="5" size="small" style="width:90px" />
                   </div>
                 </div>
               </div>
               <div class="form-row">
                 <div class="form-group">
                   <label class="group-label">X步长</label>
-                  <el-input-number v-model="xStep" :min="1" :step="1" size="small" style="width:80px" />
+                  <el-input-number v-model="xStep" :min="1" :step="1" size="small" style="width:100px" />
                 </div>
                 <div class="form-group">
                   <label class="group-label">Y步长</label>
-                  <el-input-number v-model="yStep" :min="1" :step="1" size="small" style="width:80px" />
+                  <el-input-number v-model="yStep" :min="1" :step="1" size="small" style="width:100px" />
                 </div>
               </div>
             </template>
@@ -163,15 +163,15 @@
                 <div class="form-group">
                   <label class="group-label">起点</label>
                   <div class="point-inputs">
-                    <el-input-number v-model="store.config.layout.line.startX" :step="5" size="small" style="width:70px" />
-                    <el-input-number v-model="store.config.layout.line.startY" :step="5" size="small" style="width:70px" />
+                    <el-input-number v-model="store.config.layout.line.startX" :step="5" size="small" style="width:90px" />
+                    <el-input-number v-model="store.config.layout.line.startY" :step="5" size="small" style="width:90px" />
                   </div>
                 </div>
                 <div class="form-group">
                   <label class="group-label">终点</label>
                   <div class="point-inputs">
-                    <el-input-number v-model="store.config.layout.line.endX" :step="5" size="small" style="width:70px" />
-                    <el-input-number v-model="store.config.layout.line.endY" :step="5" size="small" style="width:70px" />
+                    <el-input-number v-model="store.config.layout.line.endX" :step="5" size="small" style="width:90px" />
+                    <el-input-number v-model="store.config.layout.line.endY" :step="5" size="small" style="width:90px" />
                   </div>
                 </div>
               </div>
@@ -702,6 +702,7 @@ function makeWaveOption(data: number[], color: string, unit?: string) {
     },
     yAxis: {
       type: 'value',
+      scale: true,
       axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
       axisLabel: { color: 'rgba(255,255,255,0.3)', fontSize: 9 },
       splitLine: { lineStyle: { color: 'rgba(255,255,255,0.04)' } },

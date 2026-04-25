@@ -5,7 +5,7 @@
         <el-button type="primary" size="small" @click="openAddDialog">添加设备</el-button>
         <el-button size="small" @click="scanDevices">扫描设备</el-button>
       </template>
-      <el-table :data="deviceStore.statuses" class="device-table" stripe>
+      <el-table :data="deviceStore.statuses" class="device-table">
         <el-table-column prop="name" label="设备名称" min-width="140">
           <template #default="{ row }">
             <div class="device-name">
@@ -22,7 +22,7 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="acquiring" label="采集" width="90" align="center">
+        <el-table-column prop="acquiring" label="采集" min-width="100" align="center">
           <template #default="{ row }">
             <div v-if="row.acquiring" class="acquiring-badge">
               <span class="pulse-dot"></span>
@@ -133,8 +133,10 @@
           </div>
           <div class="form-group">
             <label class="group-label">采样频率</label>
-            <el-input-number v-model="editForm.publishRate" :min="1" :max="100" :step="1" size="small" style="width: 90px" controls-position="right" />
-            <span class="unit">Hz</span>
+            <div class="input-with-unit">
+              <el-input-number v-model="editForm.publishRate" :min="1" :max="100" :step="1" size="small" style="width: 90px" controls-position="right" />
+              <span class="unit">Hz</span>
+            </div>
           </div>
         </div>
       </div>
@@ -164,7 +166,7 @@
       <!-- 通道编辑表格 -->
       <div class="channel-section">
         <div class="section-title">📋 通道配置</div>
-        <el-table :data="editChannels" size="small" class="channel-table" :max-height="320" stripe>
+        <el-table :data="editChannels" size="small" class="channel-table" :max-height="320">
           <el-table-column prop="index" label="#" width="45" align="center">
             <template #default="{ row }">
               <span class="channel-index">{{ row.index }}</span>
@@ -527,9 +529,16 @@ async function removeDevice(id: string) {
   :deep(td) {
     font-size: 12px;
     padding: 10px 8px !important;
+    color: rgba(255,255,255,0.8) !important;
+  }
+  :deep(tr) {
+    background: transparent !important;
   }
   :deep(tr:hover) {
     background: rgba(255,255,255,0.04) !important;
+  }
+  :deep(.el-table__row--striped) {
+    background: transparent !important;
   }
 }
 
@@ -591,6 +600,7 @@ async function removeDevice(id: string) {
   color: #00f5ff;
   font-size: 11px;
   font-weight: 500;
+  white-space: nowrap;
 
   .pulse-dot {
     width: 6px;
@@ -681,6 +691,11 @@ async function removeDevice(id: string) {
   margin-left: 4px;
 }
 
+.input-with-unit {
+  display: flex;
+  align-items: center;
+}
+
 .hint-text {
   font-size: 10px;
   color: rgba(255,255,255,0.35);
@@ -714,12 +729,22 @@ async function removeDevice(id: string) {
     font-size: 11px;
     font-weight: 600;
     color: rgba(255,255,255,0.7) !important;
-    background: rgba(255,255,255,0.05) !important;
+    background: rgba(255,255,255,0.08) !important;
     padding: 8px 4px !important;
   }
   :deep(td) {
     font-size: 11px;
     padding: 6px 4px !important;
+    color: rgba(255,255,255,0.85) !important;
+  }
+  :deep(tr) {
+    background: transparent !important;
+  }
+  :deep(tr:hover) {
+    background: rgba(255,255,255,0.04) !important;
+  }
+  :deep(.el-table__row--striped) {
+    background: transparent !important;
   }
 }
 
@@ -738,5 +763,26 @@ async function removeDevice(id: string) {
 .readonly-text {
   font-size: 11px;
   color: rgba(255,255,255,0.55);
+}
+
+// 表格内输入框样式统一
+.channel-table {
+  :deep(.el-input__wrapper) {
+    background-color: rgba(0, 0, 0, 0.3) !important;
+  }
+  :deep(.el-input-number__decrease),
+  :deep(.el-input-number__increase) {
+    background: rgba(255,255,255,0.08) !important;
+    border-color: rgba(255,255,255,0.1) !important;
+    color: rgba(255,255,255,0.6) !important;
+  }
+  :deep(.el-switch__core) {
+    background-color: rgba(255,255,255,0.15) !important;
+    border-color: rgba(255,255,255,0.1) !important;
+  }
+  :deep(.el-switch.is-checked .el-switch__core) {
+    background-color: var(--accent-color) !important;
+    border-color: var(--accent-color) !important;
+  }
 }
 </style>

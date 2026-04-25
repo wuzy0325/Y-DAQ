@@ -114,6 +114,16 @@ body::before {
   box-shadow: 0 0 0 1px var(--border-color) inset !important;
 }
 
+.el-input__inner {
+  color: var(--text-main) !important;
+}
+
+.el-input-number {
+  .el-input__inner {
+    color: var(--text-main) !important;
+  }
+}
+
 .el-table {
   --el-table-bg-color: transparent !important;
   --el-table-tr-bg-color: transparent !important;

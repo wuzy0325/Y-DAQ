@@ -220,6 +220,7 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
       const { StopThreeHoleTraversal } = await import('../../wailsjs/go/main/App')
       await StopThreeHoleTraversal()
       isRunning.value = false
+      realtime.value = null
     } catch (e) {
       console.error('stopTest failed:', e)
     }
@@ -244,10 +245,13 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
           isRunning.value = true
         })
         EventsOn('three-hole:realtime', (data: ThreeHoleTraversalRealtimeEvent) => {
-          realtime.value = data
+          if (isRunning.value) {
+            realtime.value = data
+          }
         })
         EventsOn('three-hole:complete', (data: ThreeHoleTraversalCompleteEvent) => {
           isRunning.value = false
+          realtime.value = null
           fetchStatus()
         })
         EventsOn('three-hole:error', (data: ThreeHoleTraversalErrorEvent) => {
