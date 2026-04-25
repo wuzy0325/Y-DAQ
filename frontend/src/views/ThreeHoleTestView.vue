@@ -34,7 +34,7 @@
         <!-- 布点预览图 -->
         <GlassCard title="布点预览" icon="🗺️">
           <div class="point-legend">
-            <span class="legend-item"><span class="legend-dot pending"></span>未走</span>
+            <span class="legend-item"><span class="legend-dot pending"></span>待测</span>
             <span class="legend-item"><span class="legend-dot moving"></span>移动</span>
             <span class="legend-item"><span class="legend-dot acquiring"></span>采集</span>
             <span class="legend-item"><span class="legend-dot waiting"></span>等待</span>
@@ -106,120 +106,191 @@
     </div>
 
     <!-- ==================== 设置弹窗 ==================== -->
-    <el-dialog v-model="showSettingsDialog" title="三孔插值移位测试 - 设置" width="700px" :append-to-body="true" top="5vh">
+    <el-dialog v-model="showSettingsDialog" title="测试设置" width="600px" :append-to-body="true" top="5vh" class="settings-dialog">
       <el-tabs>
         <!-- 测试配置 -->
         <el-tab-pane label="测试配置">
-          <el-form label-width="90px" size="small">
-            <el-form-item label="布点模式">
-              <el-select v-model="store.config.layout.pattern" style="width: 100%">
-                <el-option label="矩形" value="rectangle" />
-                <el-option label="直线" value="line" />
-                <el-option label="自定义" value="custom" />
-              </el-select>
-            </el-form-item>
+          <div class="settings-section">
+            <div class="section-title">📍 布点配置</div>
+            <el-form label-width="70px" size="small" class="compact-form">
+              <el-form-item label="布点模式">
+                <el-select v-model="store.config.layout.pattern" style="width: 160px">
+                  <el-option
+                    v-for="(label, key) in TraversalPatternLabels"
+                    :key="key"
+                    :label="label"
+                    :value="key"
+                  />
+                </el-select>
+              </el-form-item>
+            </el-form>
 
             <!-- 矩形布点参数 -->
-            <template v-if="store.config.layout.pattern === 'rectangle' && store.config.layout.rectangle">
-              <el-form-item label="X范围">
-                <div style="display:flex;gap:8px;align-items:center">
-                  <el-input-number v-model="store.config.layout.rectangle.xMin" :step="5" size="small" style="width:100px" />
-                  <span>~</span>
-                  <el-input-number v-model="store.config.layout.rectangle.xMax" :step="5" size="small" style="width:100px" />
+            <template v-if="store.config.layout.pattern === TraversalPattern.RECTANGLE && store.config.layout.rectangle">
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="group-label">X范围</label>
+                  <div class="range-inputs">
+                    <el-input-number v-model="store.config.layout.rectangle.xMin" :step="5" size="small" style="width:70px" />
+                    <span class="range-separator">~</span>
+                    <el-input-number v-model="store.config.layout.rectangle.xMax" :step="5" size="small" style="width:70px" />
+                  </div>
                 </div>
-              </el-form-item>
-              <el-form-item label="Y范围">
-                <div style="display:flex;gap:8px;align-items:center">
-                  <el-input-number v-model="store.config.layout.rectangle.yMin" :step="5" size="small" style="width:100px" />
-                  <span>~</span>
-                  <el-input-number v-model="store.config.layout.rectangle.yMax" :step="5" size="small" style="width:100px" />
+                <div class="form-group">
+                  <label class="group-label">Y范围</label>
+                  <div class="range-inputs">
+                    <el-input-number v-model="store.config.layout.rectangle.yMin" :step="5" size="small" style="width:70px" />
+                    <span class="range-separator">~</span>
+                    <el-input-number v-model="store.config.layout.rectangle.yMax" :step="5" size="small" style="width:70px" />
+                  </div>
                 </div>
-              </el-form-item>
-              <el-form-item label="X步长">
-                <el-input-number v-model="xStep" :min="1" :step="1" size="small" style="width:100px" /> °
-              </el-form-item>
-              <el-form-item label="Y步长">
-                <el-input-number v-model="yStep" :min="1" :step="1" size="small" style="width:100px" /> °
-              </el-form-item>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="group-label">X步长</label>
+                  <el-input-number v-model="xStep" :min="1" :step="1" size="small" style="width:80px" />
+                </div>
+                <div class="form-group">
+                  <label class="group-label">Y步长</label>
+                  <el-input-number v-model="yStep" :min="1" :step="1" size="small" style="width:80px" />
+                </div>
+              </div>
             </template>
 
             <!-- 直线布点参数 -->
-            <template v-if="store.config.layout.pattern === 'line' && store.config.layout.line">
-              <el-form-item label="起点">
-                <div style="display:flex;gap:8px;align-items:center">
-                  <el-input-number v-model="store.config.layout.line.startX" :step="5" size="small" style="width:80px" />
-                  <el-input-number v-model="store.config.layout.line.startY" :step="5" size="small" style="width:80px" />
+            <template v-if="store.config.layout.pattern === TraversalPattern.LINE && store.config.layout.line">
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="group-label">起点</label>
+                  <div class="point-inputs">
+                    <el-input-number v-model="store.config.layout.line.startX" :step="5" size="small" style="width:70px" />
+                    <el-input-number v-model="store.config.layout.line.startY" :step="5" size="small" style="width:70px" />
+                  </div>
                 </div>
-              </el-form-item>
-              <el-form-item label="终点">
-                <div style="display:flex;gap:8px;align-items:center">
-                  <el-input-number v-model="store.config.layout.line.endX" :step="5" size="small" style="width:80px" />
-                  <el-input-number v-model="store.config.layout.line.endY" :step="5" size="small" style="width:80px" />
+                <div class="form-group">
+                  <label class="group-label">终点</label>
+                  <div class="point-inputs">
+                    <el-input-number v-model="store.config.layout.line.endX" :step="5" size="small" style="width:70px" />
+                    <el-input-number v-model="store.config.layout.line.endY" :step="5" size="small" style="width:70px" />
+                  </div>
                 </div>
-              </el-form-item>
+              </div>
             </template>
+          </div>
 
-            <el-divider content-position="left">硬件参数</el-divider>
+          <div class="settings-section">
+            <div class="section-title">⚙️ 硬件参数</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="group-label">X轴</label>
+                <div class="axis-inputs">
+                  <el-select v-model="store.config.motionX.axis" style="width: 60px">
+                    <el-option v-for="axis in axisOptions" :key="axis" :label="axis" :value="axis" />
+                  </el-select>
+                  <el-input-number v-model="store.config.motionX.scale" :step="0.1" size="small" style="width:70px" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="group-label">Y轴</label>
+                <div class="axis-inputs">
+                  <el-select v-model="store.config.motionY.axis" style="width: 60px">
+                    <el-option v-for="axis in axisOptions" :key="axis" :label="axis" :value="axis" />
+                  </el-select>
+                  <el-input-number v-model="store.config.motionY.scale" :step="0.1" size="small" style="width:70px" />
+                </div>
+              </div>
+            </div>
+          </div>
 
-            <el-form-item label="X轴">
-              <el-select v-model="store.config.motionX.axis" style="width: 80px">
-                <el-option label="X" value="X" />
-                <el-option label="Y" value="Y" />
-              </el-select>
-              <span style="margin-left:8px;color:rgba(255,255,255,0.5);font-size:12px">缩放</span>
-              <el-input-number v-model="store.config.motionX.scale" :step="0.1" size="small" style="width:80px" />
-            </el-form-item>
-            <el-form-item label="Y轴">
-              <el-select v-model="store.config.motionY.axis" style="width: 80px">
-                <el-option label="X" value="X" />
-                <el-option label="Y" value="Y" />
-              </el-select>
-              <span style="margin-left:8px;color:rgba(255,255,255,0.5);font-size:12px">缩放</span>
-              <el-input-number v-model="store.config.motionY.scale" :step="0.1" size="small" style="width:80px" />
-            </el-form-item>
-
-            <el-divider content-position="left">采集参数</el-divider>
-
-            <el-form-item label="驻留时间">
-              <el-input-number v-model="store.config.dwellTimeMs" :min="100" :step="100" size="small" /> ms
-            </el-form-item>
-            <el-form-item label="采样次数">
-              <el-input-number v-model="store.config.samplesPerPoint" :min="1" :max="100" size="small" />
-            </el-form-item>
-          </el-form>
+          <div class="settings-section">
+            <div class="section-title">📊 采集参数</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="group-label">驻留时间</label>
+                <el-input-number v-model="store.config.dwellTimeMs" :min="100" :step="100" size="small" style="width:100px" />
+                <span class="unit-label">ms</span>
+              </div>
+              <div class="form-group">
+                <label class="group-label">采样次数</label>
+                <el-input-number v-model="store.config.samplesPerPoint" :min="1" :max="100" size="small" style="width:100px" />
+              </div>
+            </div>
+          </div>
 
           <!-- 校准文件 -->
           <div class="calib-section">
             <div class="calib-header">
-              <span class="calib-label">校准文件</span>
-              <el-button size="small" @click="store.selectCalibFiles()">选择文件</el-button>
+              <div class="calib-title">
+                <span class="calib-icon">📄</span>
+                <span class="calib-label">校准文件</span>
+              </div>
+              <el-button size="small" type="primary" plain @click="store.selectCalibFiles()">选择文件</el-button>
             </div>
-            <div v-if="store.calibLoaded" class="calib-status loaded">已加载 {{ store.calibFiles.length }} 个校准文件</div>
-            <div v-else class="calib-status not-loaded">未加载校准文件</div>
+            <div v-if="store.calibLoaded" class="calib-status loaded">
+              <span class="status-dot"></span>已加载 {{ store.calibFiles.length }} 个文件
+            </div>
+            <div v-else class="calib-status not-loaded">
+              <span class="status-dot"></span>未加载校准文件
+            </div>
             <div v-if="store.calibFiles.length > 0" class="calib-file-list">
-              <div v-for="(f, i) in store.calibFiles" :key="i" class="calib-file-item">{{ f.split(/[/\\]/).pop() }}</div>
+              <div v-for="(f, i) in store.calibFiles" :key="i" class="calib-file-item" :title="f">{{ f.split(/[/\\]/).pop() }}</div>
             </div>
           </div>
         </el-tab-pane>
 
         <!-- 通道映射 -->
         <el-tab-pane label="通道映射">
-          <el-table :data="store.config.probeChannels" size="small" dark>
-            <el-table-column prop="name" label="通道名" width="100" />
-            <el-table-column prop="role" label="角色" width="140" />
-            <el-table-column label="通道号" width="120">
-              <template #default="{ row }">
-                <el-input-number v-model="row.channel" :min="0" :max="17" size="small" style="width:100px" />
-              </template>
-            </el-table-column>
-            <el-table-column label="启用" width="80">
-              <template #default="{ row }">
-                <el-switch v-model="row.enabled" size="small" />
-              </template>
-            </el-table-column>
-          </el-table>
-          <div class="channel-hint" style="margin-top:8px;font-size:11px;color:rgba(255,255,255,0.4)">
-            通道号对应采集设备的通道索引 (0-15: CH1-CH16, 16: 大气压, 17: 大气温度)
+          <div class="settings-section">
+            <div class="section-title">🔌 设备选择</div>
+            <div class="form-row device-row">
+              <div class="form-group device-group">
+                <label class="group-label">采集设备</label>
+                <el-select v-model="store.config.deviceId" placeholder="请选择采集设备" style="width: 220px" clearable size="small">
+                  <el-option
+                    v-for="dev in deviceStore.profiles"
+                    :key="dev.id"
+                    :label="`${dev.name} (${dev.type})`"
+                    :value="dev.id"
+                  />
+                </el-select>
+              </div>
+              <div class="form-group device-group">
+                <label class="group-label">运动控制器</label>
+                <el-select v-model="store.config.motionControllerId" placeholder="请选择运动控制器" style="width: 220px" clearable size="small">
+                  <el-option
+                    v-for="mc in motionStore.profiles"
+                    :key="mc.id"
+                    :label="`${mc.name} (${mc.type})`"
+                    :value="mc.id"
+                  />
+                </el-select>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <div class="section-title">📋 通道映射</div>
+            <el-table :data="store.config.probeChannels" size="small" class="channel-table" :header-cell-style="{background:'rgba(255,255,255,0.05)'}">
+              <el-table-column prop="name" label="通道" width="90" />
+              <el-table-column label="角色" width="130">
+                <template #default="{ row }">
+                  {{ ThreeHoleChannelRoleLabels[row.role as keyof typeof ThreeHoleChannelRoleLabels] || row.role }}
+                </template>
+              </el-table-column>
+              <el-table-column label="通道号" width="110">
+                <template #default="{ row }">
+                  <el-input-number v-model="row.channel" :min="0" :max="maxChannelIndex" size="small" style="width:85px" controls-position="right" />
+                </template>
+              </el-table-column>
+              <el-table-column label="启用" width="70" align="center">
+                <template #default="{ row }">
+                  <el-switch v-model="row.enabled" size="small" />
+                </template>
+              </el-table-column>
+            </el-table>
+            <div class="channel-hint">
+              通道号范围：0 ~ {{ maxChannelIndex }} ({{ selectedDeviceTypeName }})
+            </div>
           </div>
         </el-tab-pane>
       </el-tabs>
@@ -235,14 +306,57 @@
 import { ref, computed, onMounted, watch, nextTick, shallowRef } from 'vue'
 import { Setting } from '@element-plus/icons-vue'
 import { useThreeHoleTestStore } from '../stores/threeHoleTest'
+import { useDeviceStore } from '../stores/device'
+import { useMotionStore } from '../stores/motion'
+import {
+  TraversalPattern,
+  TraversalPatternLabels,
+  ThreeHoleChannelRoleLabels,
+  DeviceTypeLabels,
+  AxisName,
+  getTotalChannelCount,
+  type TraversalPatternValue,
+} from '../api/enums'
 import GlassCard from '../components/GlassCard.vue'
 import ChartPanel from '../components/ChartPanel.vue'
 import ValueDisplay from '../components/ValueDisplay.vue'
 
 const store = useThreeHoleTestStore()
+const deviceStore = useDeviceStore()
+const motionStore = useMotionStore()
 
 // ==================== 设置弹窗 ====================
 const showSettingsDialog = ref(false)
+
+// 当前选中设备的类型
+const selectedDeviceType = computed(() => {
+  if (!store.config.deviceId) return ''
+  const profile = deviceStore.profiles.find(p => p.id === store.config.deviceId)
+  return profile?.type || ''
+})
+
+// 当前选中设备名称
+const selectedDeviceTypeName = computed(() => {
+  if (!selectedDeviceType.value) return '未选择'
+  return DeviceTypeLabels[selectedDeviceType.value as keyof typeof DeviceTypeLabels] || selectedDeviceType.value
+})
+
+// 通道号最大值（根据设备类型动态调整）
+const maxChannelIndex = computed(() => {
+  if (!selectedDeviceType.value) return 17 // 默认 DAQ16
+  return getTotalChannelCount(selectedDeviceType.value as any) - 1
+})
+
+// 运动轴选项（从已连接的运动控制器获取可用轴）
+const axisOptions = computed(() => {
+  const mcId = store.config.motionControllerId
+  if (!mcId) return [AxisName.X, AxisName.Y]
+  const profile = motionStore.profiles.find(p => p.id === mcId)
+  if (profile?.axes?.length) {
+    return profile.axes.filter(a => a.enabled).map(a => a.name)
+  }
+  return [AxisName.X, AxisName.Y]
+})
 
 
 // 步长快捷设置
@@ -387,11 +501,11 @@ function drawPointCanvas() {
   const xRange = xMax - xMin || 1
   const yRange = yMax - yMin || 1
 
-  // 左侧留更多空间给Y轴标签，底部留更多空间给X轴标签
-  const padLeft = 55
-  const padRight = 20
-  const padTop = 20
-  const padBottom = 45
+  // 更紧凑的边距设置，给绘图区域留出更多空间
+  const padLeft = 48
+  const padRight = 16
+  const padTop = 16
+  const padBottom = 40
   const plotW = w - padLeft - padRight
   const plotH = h - padTop - padBottom
 
@@ -450,26 +564,26 @@ function drawPointCanvas() {
 
   // 绘制坐标轴标签
   ctx.fillStyle = 'rgba(255,255,255,0.55)'
-  ctx.font = '11px sans-serif'
+  ctx.font = '10px sans-serif'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'top'
   for (let x = Math.ceil(xMin / xStep) * xStep; x <= xMax + xStep * 0.01; x += xStep) {
-    ctx.fillText(formatTick(x, xStep), toCanvasX(x), h - padBottom + 6)
+    ctx.fillText(formatTick(x, xStep), toCanvasX(x), h - padBottom + 5)
   }
   ctx.textAlign = 'right'
   ctx.textBaseline = 'middle'
   for (let y = Math.ceil(yMin / yStep) * yStep; y <= yMax + yStep * 0.01; y += yStep) {
-    ctx.fillText(formatTick(y, yStep), padLeft - 8, toCanvasY(y))
+    ctx.fillText(formatTick(y, yStep), padLeft - 6, toCanvasY(y))
   }
 
   // 坐标轴标题
   ctx.fillStyle = 'rgba(255,255,255,0.45)'
-  ctx.font = '12px sans-serif'
+  ctx.font = '11px sans-serif'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'top'
-  ctx.fillText('X (mm)', padLeft + plotW / 2, h - padBottom + 22)
+  ctx.fillText('X (mm)', padLeft + plotW / 2, h - padBottom + 18)
   ctx.save()
-  ctx.translate(14, padTop + plotH / 2)
+  ctx.translate(12, padTop + plotH / 2)
   ctx.rotate(-Math.PI / 2)
   ctx.textAlign = 'center'
   ctx.textBaseline = 'top'
@@ -499,8 +613,8 @@ function drawPointCanvas() {
     completed: 'rgba(0,255,136,0.6)',
   }
 
-  // 绘制点位
-  const pointRadius = Math.max(3, Math.min(8, 200 / Math.sqrt(points.length)))
+  // 绘制点位 - 使用更小的点确保网格密集时也能清晰显示
+  const pointRadius = Math.max(2.5, Math.min(5, 140 / Math.sqrt(points.length)))
   for (const pt of points) {
     const cx = toCanvasX(pt.x)
     const cy = toCanvasY(pt.y)
@@ -647,6 +761,10 @@ function scheduleWaveUpdate() {
 
 onMounted(() => {
   store.startListening()
+  deviceStore.fetchProfiles()
+  deviceStore.fetchStatuses()
+  motionStore.fetchProfiles()
+  motionStore.fetchStatuses()
   nextTick(drawPointCanvas)
 })
 </script>
@@ -699,37 +817,37 @@ onMounted(() => {
 // 布点预览
 .point-legend {
   display: flex;
-  gap: 12px;
-  margin-bottom: 8px;
+  gap: 10px;
+  margin-bottom: 6px;
   flex-wrap: wrap;
 }
 
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  color: rgba(255,255,255,0.6);
+  gap: 3px;
+  font-size: 10px;
+  color: rgba(255,255,255,0.55);
 }
 
 .legend-dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   display: inline-block;
 
   &.pending { background: rgba(255,255,255,0.35); border: 1px solid rgba(255,255,255,0.2); }
-  &.moving { background: #ffaa00; box-shadow: 0 0 4px rgba(255,170,0,0.4); }
-  &.acquiring { background: #00f5ff; box-shadow: 0 0 4px rgba(0,245,255,0.4); }
-  &.waiting { background: #ff3366; box-shadow: 0 0 4px rgba(255,51,102,0.4); }
-  &.completed { background: #00ff88; box-shadow: 0 0 4px rgba(0,255,136,0.3); }
+  &.moving { background: #ffaa00; box-shadow: 0 0 3px rgba(255,170,0,0.5); }
+  &.acquiring { background: #00f5ff; box-shadow: 0 0 3px rgba(0,245,255,0.5); }
+  &.waiting { background: #ff3366; box-shadow: 0 0 3px rgba(255,51,102,0.5); }
+  &.completed { background: #00ff88; box-shadow: 0 0 3px rgba(0,255,136,0.4); }
 }
 
 .point-canvas {
   width: 400px;
   height: 400px;
-  border-radius: 6px;
-  background: rgba(0,0,0,0.2);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.15);
 }
 
 // 实时数据
@@ -801,41 +919,190 @@ onMounted(() => {
   margin-bottom: 4px;
 }
 
-// 设置弹窗
+// 设置弹窗样式
+.settings-section {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.form-row {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 12px;
+  &:last-child { margin-bottom: 0; }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.group-label {
+  font-size: 11px;
+  color: rgba(255,255,255,0.55);
+  font-weight: 500;
+}
+
+.range-inputs, .point-inputs, .axis-inputs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.range-separator {
+  color: rgba(255,255,255,0.4);
+  font-size: 12px;
+}
+
+.unit-label {
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+  margin-left: 4px;
+}
+
+.compact-form :deep(.el-form-item) {
+  margin-bottom: 10px;
+}
+
+// 校准文件区域
 .calib-section {
-  margin-top: 12px;
-  padding: 8px;
+  padding: 12px;
   background: rgba(255,255,255,0.04);
-  border-radius: 6px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.06);
 }
 
 .calib-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 6px;
+  margin-bottom: 10px;
+}
+
+.calib-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.calib-icon {
+  font-size: 14px;
 }
 
 .calib-label {
-  font-size: 13px;
-  font-weight: 500;
-  color: rgba(255,255,255,0.8);
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
 }
 
 .calib-status {
-  font-size: 12px;
-  margin-bottom: 4px;
-  &.loaded { color: #00ff88; }
-  &.not-loaded { color: rgba(255,255,255,0.4); }
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  margin-bottom: 8px;
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  &.loaded {
+    color: #00ff88;
+    .status-dot { background: #00ff88; box-shadow: 0 0 4px rgba(0,255,136,0.4); }
+  }
+  &.not-loaded {
+    color: rgba(255,255,255,0.4);
+    .status-dot { background: rgba(255,255,255,0.3); }
+  }
 }
 
-.calib-file-list { max-height: 80px; overflow-y: auto; }
+.calib-file-list {
+  max-height: 80px;
+  overflow-y: auto;
+  padding: 6px 8px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 4px;
+}
 .calib-file-item {
-  font-size: 11px;
-  color: rgba(255,255,255,0.5);
+  font-size: 10px;
+  color: rgba(255,255,255,0.55);
   padding: 2px 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+// 通道映射样式
+.device-row {
+  gap: 20px;
+}
+.device-group {
+  flex: 1;
+}
+
+.channel-table {
+  :deep(th) {
+    font-size: 11px;
+    color: rgba(255,255,255,0.7) !important;
+    font-weight: 600;
+    padding: 8px 4px !important;
+  }
+  :deep(td) {
+    font-size: 11px;
+    color: rgba(255,255,255,0.6);
+    padding: 6px 4px !important;
+  }
+}
+
+.channel-hint {
+  margin-top: 10px;
+  font-size: 10px;
+  color: rgba(255,255,255,0.35);
+  text-align: right;
+}
+
+// 弹窗全局样式优化
+:deep(.settings-dialog) {
+  .el-dialog__header {
+    margin-right: 0;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .el-dialog__title {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.9);
+  }
+  .el-dialog__body {
+    padding: 16px 20px;
+  }
+  .el-tabs__nav-wrap::after {
+    background: rgba(255,255,255,0.08);
+  }
+  .el-tabs__item {
+    font-size: 12px;
+    color: rgba(255,255,255,0.55);
+    &.is-active {
+      color: #00f5ff;
+    }
+  }
+  .el-tabs__active-bar {
+    background: #00f5ff;
+  }
 }
 </style>

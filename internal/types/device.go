@@ -5,8 +5,36 @@ type DeviceType string
 
 const (
 	DeviceTypeSimulated DeviceType = "SIMULATED"
+	DeviceTypeXYDAQ8    DeviceType = "XY-DAQ8"
 	DeviceTypeXYDAQ16   DeviceType = "XY-DAQ16"
 )
+
+// PressureChannelCount 返回该设备类型的压力通道数
+func (t DeviceType) PressureChannelCount() int {
+	switch t {
+	case DeviceTypeXYDAQ8:
+		return 8
+	case DeviceTypeXYDAQ16:
+		return 16
+	default:
+		return 16
+	}
+}
+
+// TotalChannelCount 返回该设备类型的总通道数（压力+大气压+大气温度）
+func (t DeviceType) TotalChannelCount() int {
+	return t.PressureChannelCount() + 2
+}
+
+// StreamFrameSize 返回该设备类型的数据帧大小（字节）
+func (t DeviceType) StreamFrameSize() int {
+	return StreamFrameHeaderSize + t.TotalChannelCount()*4
+}
+
+// IsDAQDevice 是否为真实DAQ设备（非模拟）
+func (t DeviceType) IsDAQDevice() bool {
+	return t == DeviceTypeXYDAQ8 || t == DeviceTypeXYDAQ16
+}
 
 // ConnectionStatus 连接状态
 type ConnectionStatus string

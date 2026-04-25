@@ -154,6 +154,13 @@ func (s *ThreeHoleTraversalService) GetStatus() types.ThreeHoleTraversalTaskStat
 	return s.status
 }
 
+// GetConfig 获取当前测试配置
+func (s *ThreeHoleTraversalService) GetConfig() types.ThreeHoleTraversalConfig {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.config
+}
+
 // ==================== 测试主循环 ====================
 
 // runTestLoop 测试主循环

@@ -1,5 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import {
+  ThreeHoleChannelRole,
+  TraversalPattern,
+  type ThreeHoleChannelRoleValue,
+  type TraversalPatternValue,
+} from '../api/enums'
 
 // ==================== 类型定义 ====================
 
@@ -62,14 +68,14 @@ interface RectangleLayout {
 }
 
 interface TraversalLayout {
-  pattern: string
+  pattern: TraversalPatternValue
   line?: LineLayout
   rectangle?: RectangleLayout
   customPoints?: { id: string; x: number; y: number }[]
 }
 
 interface ThreeHoleProbeChannelConfig {
-  name: string; role: string; channel: number; enabled: boolean
+  name: string; role: ThreeHoleChannelRoleValue; channel: number; enabled: boolean
 }
 
 interface MotionAxisMapping {
@@ -82,6 +88,8 @@ interface ThreeHoleCalibFileInfo {
 
 interface ThreeHoleTraversalConfig {
   name: string
+  deviceId: string
+  motionControllerId: string
   layout: TraversalLayout
   probeChannels: ThreeHoleProbeChannelConfig[]
   motionX: MotionAxisMapping
@@ -108,8 +116,10 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
   // 配置
   const config = ref<ThreeHoleTraversalConfig>({
     name: `三孔移位测试-${new Date().toLocaleDateString()}`,
+    deviceId: '',
+    motionControllerId: '',
     layout: {
-      pattern: 'rectangle',
+      pattern: TraversalPattern.RECTANGLE,
       rectangle: {
         xMin: -20, xMax: 20, yMin: -20, yMax: 20,
         xSteps: [{ start: -20, end: 20, step: 5 }],
@@ -117,11 +127,11 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
       },
     },
     probeChannels: [
-      { name: 'P1', role: 'threeHole.p1', channel: 0, enabled: true },
-      { name: 'P2', role: 'threeHole.p2', channel: 1, enabled: true },
-      { name: 'P3', role: 'threeHole.p3', channel: 2, enabled: true },
-      { name: '大气压', role: 'threeHole.pAtm', channel: 16, enabled: true },
-      { name: '大气温度', role: 'threeHole.tAtm', channel: 17, enabled: true },
+      { name: 'P1', role: ThreeHoleChannelRole.P1, channel: 0, enabled: true },
+      { name: 'P2', role: ThreeHoleChannelRole.P2, channel: 1, enabled: true },
+      { name: 'P3', role: ThreeHoleChannelRole.P3, channel: 2, enabled: true },
+      { name: '大气压', role: ThreeHoleChannelRole.P_ATM, channel: 16, enabled: true },
+      { name: '大气温度', role: ThreeHoleChannelRole.T_ATM, channel: 17, enabled: true },
     ],
     motionX: { axis: 'X', scale: 1, offset: 0 },
     motionY: { axis: 'Y', scale: 1, offset: 0 },

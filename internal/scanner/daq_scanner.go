@@ -9,22 +9,22 @@ import (
 	"yx-daq/internal/types"
 )
 
-// XYDAQ16Scanner XY-DAQ16 UDP设备扫描器
-type XYDAQ16Scanner struct {
+// DAQScanner XY-DAQ UDP设备扫描器（DAQ8/DAQ16通用）
+type DAQScanner struct {
 	listenPort int
 	broadcastPort int
 }
 
-// NewXYDAQ16Scanner 创建扫描器
-func NewXYDAQ16Scanner() *XYDAQ16Scanner {
-	return &XYDAQ16Scanner{
+// NewDAQScanner 创建扫描器
+func NewDAQScanner() *DAQScanner {
+	return &DAQScanner{
 		listenPort:    7001,
 		broadcastPort: 7000,
 	}
 }
 
 // Scan 执行UDP广播扫描
-func (s *XYDAQ16Scanner) Scan(timeoutMs int) ([]types.DiscoveredDevice, error) {
+func (s *DAQScanner) Scan(timeoutMs int) ([]types.DiscoveredDevice, error) {
 	if timeoutMs == 0 {
 		timeoutMs = 3000
 	}
@@ -79,7 +79,7 @@ func (s *XYDAQ16Scanner) Scan(timeoutMs int) ([]types.DiscoveredDevice, error) {
 
 // parseResponse 解析扫描响应
 // 格式: IP, MAC, _, SN, FW, _, _, Port, Mask, GW
-func (s *XYDAQ16Scanner) parseResponse(resp string) (types.DiscoveredDevice, bool) {
+func (s *DAQScanner) parseResponse(resp string) (types.DiscoveredDevice, bool) {
 	parts := strings.Split(resp, ",")
 	if len(parts) < 10 {
 		return types.DiscoveredDevice{}, false
@@ -101,7 +101,7 @@ func (s *XYDAQ16Scanner) parseResponse(resp string) (types.DiscoveredDevice, boo
 }
 
 // getBroadcastAddresses 获取广播地址
-func (s *XYDAQ16Scanner) getBroadcastAddresses() ([]string, error) {
+func (s *DAQScanner) getBroadcastAddresses() ([]string, error) {
 	addrs := []string{"255.255.255.255"}
 
 	interfaces, err := net.Interfaces()
@@ -131,7 +131,7 @@ func (s *XYDAQ16Scanner) getBroadcastAddresses() ([]string, error) {
 }
 
 // calcBroadcast 计算广播地址
-func (s *XYDAQ16Scanner) calcBroadcast(ipNet *net.IPNet) string {
+func (s *DAQScanner) calcBroadcast(ipNet *net.IPNet) string {
 	ip := ipNet.IP.To4()
 	mask := ipNet.Mask
 	if len(ip) != 4 || len(mask) != 4 {

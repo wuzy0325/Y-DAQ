@@ -133,8 +133,8 @@ func (m *DeviceManager) Connect(id string) error {
 
 	var drv DeviceDriver
 	switch profile.Type {
-	case types.DeviceTypeXYDAQ16:
-		drv = driver.NewXYDAQ16Driver(profile.Host, profile.Port, profile.StreamID, profile.Channels)
+	case types.DeviceTypeXYDAQ8, types.DeviceTypeXYDAQ16:
+		drv = driver.NewXYDAQDriver(profile.Host, profile.Port, profile.StreamID, profile.Channels, profile.Type)
 	case types.DeviceTypeSimulated:
 		drv = driver.NewSimulatedDevice(profile.Channels)
 	default:
@@ -312,19 +312,21 @@ func (m *DeviceManager) Init() {
 	}
 
 	if !loaded {
-		// 无配置文件，创建默认模拟设备
-		defaultChannels := make([]types.ChannelConfig, types.MaxDaqChannels)
-		for i := 0; i < types.MaxDaqChannels; i++ {
+		// 无配置文件，创建默认模拟设备（默认DAQ16通道规格）
+		pressureCount := types.DeviceTypeXYDAQ16.PressureChannelCount()
+		totalChannels := types.DeviceTypeXYDAQ16.TotalChannelCount()
+		defaultChannels := make([]types.ChannelConfig, totalChannels)
+		for i := 0; i < totalChannels; i++ {
 			name := fmt.Sprintf("CH%d", i+1)
-			if i == 16 {
+			if i == pressureCount {
 				name = "大气压"
-			} else if i == 17 {
+			} else if i == pressureCount+1 {
 				name = "大气温度"
 			}
 			defaultChannels[i] = types.ChannelConfig{
 				Index:     i,
 				Name:      name,
-				Enabled:   i < 16 || i == 16 || i == 17, // 默认启用16通道+大气压+温度
+				Enabled:   true,
 				Unit:      "kPa",
 				Precision: 3,
 			}

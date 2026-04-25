@@ -30,7 +30,7 @@ type App struct {
 	configManager      *storage.ConfigManager
 	dataStorage        *storage.DataStorageService
 	pdfReport          *storage.PdfReportService
-	daqScanner         *scanner.XYDAQ16Scanner
+	daqScanner         *scanner.DAQScanner
 	publishCancel      chan struct{}
 }
 
@@ -41,7 +41,7 @@ func NewApp() *App {
 		motionManager:  manager.NewMotionControllerManager(),
 		acquisitionHub: manager.NewAcquisitionHub(),
 		pdfReport:      storage.NewPdfReportService(),
-		daqScanner:     scanner.NewXYDAQ16Scanner(),
+		daqScanner:     scanner.NewDAQScanner(),
 		publishCancel:  make(chan struct{}),
 	}
 }
@@ -109,27 +109,53 @@ func (a *App) startup(ctx context.Context) {
 	a.threeHoleService = three_hole.NewThreeHoleTraversalService(&threeHoleEventPublisher{app: a})
 	a.threeHoleService.SetBatchGetter(func(channels []types.ThreeHoleProbeChannelConfig) (map[int]float64, error) {
 		result := make(map[int]float64)
+		// 获取当前测试配置中的设备ID
+		config := a.threeHoleService.GetConfig()
+		deviceID := config.DeviceID
 		for _, ch := range channels {
 			if !ch.Enabled {
 				continue
 			}
-			// 从所有已连接的采集设备获取数据
-			snapshots := a.acquisitionHub.GetSnapshot()
-			for _, snap := range snapshots {
-				for i, idx := range snap.ChannelIndices {
-					if idx == ch.Channel && i < len(snap.Channels) {
-						result[ch.Channel] = snap.Channels[i]
-						break
+			if deviceID != "" {
+				// 按指定设备ID获取数据
+				snapshots := a.acquisitionHub.GetSnapshot()
+				for _, snap := range snapshots {
+					if snap.DeviceID != deviceID {
+						continue
+					}
+					for i, idx := range snap.ChannelIndices {
+						if idx == ch.Channel && i < len(snap.Channels) {
+							result[ch.Channel] = snap.Channels[i]
+							break
+						}
 					}
 				}
-				if _, ok := result[ch.Channel]; ok {
-					break
+			} else {
+				// 兼容：未指定设备时从所有已连接设备获取
+				snapshots := a.acquisitionHub.GetSnapshot()
+				for _, snap := range snapshots {
+					for i, idx := range snap.ChannelIndices {
+						if idx == ch.Channel && i < len(snap.Channels) {
+							result[ch.Channel] = snap.Channels[i]
+							break
+						}
+					}
+					if _, ok := result[ch.Channel]; ok {
+						break
+					}
 				}
 			}
 		}
 		return result, nil
 	})
 	a.threeHoleService.SetMotionController(func(axis types.AxisName, position float64) error {
+		// 获取当前测试配置中的运动控制器ID
+		config := a.threeHoleService.GetConfig()
+		mcID := config.MotionControllerID
+		if mcID != "" && a.motionManager.IsConnected(mcID) {
+			return a.motionManager.MoveTo(mcID, axis, position)
+		}
+		// 兼容：未指定控制器时使用第一个已连接的
 		profiles := a.motionManager.GetProfiles()
 		for _, p := range profiles {
 			if a.motionManager.IsConnected(p.ID) {

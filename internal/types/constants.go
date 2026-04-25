@@ -1,11 +1,13 @@
 package types
 
-// XY-DAQ16 常量
+// 数据帧常量
 const (
-	MaxDaqChannels        = 18
-	PressureChannelCount  = 16
 	StreamFrameHeaderSize = 5
-	StreamFrameSize      = 5 + 18*4 // 77 bytes
+
+	// 以下为 DAQ16 兼容常量，新代码应使用 DeviceType 的方法获取通道规格
+	MaxDaqChannels       = 18 // DAQ16: 16压力 + 大气压 + 大气温度
+	PressureChannelCount = 16 // DAQ16 压力通道数
+	StreamFrameSize      = 5 + 18*4 // DAQ16 帧大小: 77 bytes
 )
 
 // 数据发布常量

@@ -61,11 +61,24 @@ func (interp *ThreeHoleInterpolator) LoadCalibFiles(filePaths []string) error {
 		return allData[i].CMa < allData[j].CMa
 	})
 
+	// 校验所有校准文件的攻角序列一致
+	refEntries := allData[0].Entries
+	for k := 1; k < len(allData); k++ {
+		if len(allData[k].Entries) != len(refEntries) {
+			return fmt.Errorf("calib file %d has %d entries, expected %d (same as file 0)", k, len(allData[k].Entries), len(refEntries))
+		}
+		for i := range refEntries {
+			if math.Abs(allData[k].Entries[i].Alpha-refEntries[i].Alpha) > 1e-6 {
+				return fmt.Errorf("calib file %d entry %d alpha=%.6f differs from file 0 alpha=%.6f", k, i, allData[k].Entries[i].Alpha, refEntries[i].Alpha)
+			}
+		}
+	}
+
 	interp.calibData = allData
 
-	// 提取攻角序列（取第一个文件的攻角）
-	interp.alphaOri = make([]float64, len(allData[0].Entries))
-	for i, e := range allData[0].Entries {
+	// 提取攻角序列（所有文件共用，已校验一致）
+	interp.alphaOri = make([]float64, len(refEntries))
+	for i, e := range refEntries {
 		interp.alphaOri[i] = e.Alpha
 	}
 
@@ -120,7 +133,7 @@ func (interp *ThreeHoleInterpolator) Calculate(rawData types.ThreeHoleRawData) t
 	// 步骤1：计算压力差分 ΔP 和压力系数比 Kb_temp
 	deltaP := 2*P2 - P1 - P3
 
-	// ΔP 接近零的异常处理
+	// ΔP 接近零的异常处理：ΔP≈0 只代表攻角接近零，无法通过Kb反查，标记结果无效
 	if math.Abs(deltaP) < dpZeroThreshold {
 		return types.ThreeHoleInterpolationResult{
 			PtProbe:        P2,
@@ -128,7 +141,7 @@ func (interp *ThreeHoleInterpolator) Calculate(rawData types.ThreeHoleRawData) t
 			MachProbe:      0,
 			AlphaProbe:     0,
 			IterationCount: 0,
-			Valid:          true,
+			Valid:          false,
 		}
 	}
 
@@ -142,7 +155,7 @@ func (interp *ThreeHoleInterpolator) Calculate(rawData types.ThreeHoleRawData) t
 			MachProbe:      interp.initMa,
 			AlphaProbe:     0,
 			IterationCount: 0,
-			Valid:          true,
+			Valid:          false,
 		}
 	}
 
@@ -176,7 +189,7 @@ func (interp *ThreeHoleInterpolator) Calculate(rawData types.ThreeHoleRawData) t
 
 		// 子步骤D：收敛判断
 		if math.Abs(maNew-maCurrent) < convergenceTol {
-			maCurrent = maNew
+			maCurrent = clampMa(maNew, interp.minMa, interp.maxMa)
 			break
 		}
 
@@ -238,24 +251,24 @@ func (interp *ThreeHoleInterpolator) interpolate2D(kbTemp float64, maCurrent flo
 	return interp.interpolateInKbDirection(kbAlphaMap, kbTemp)
 }
 
-// findNearestTwoCalib 找到距离当前马赫数最近的两个校准数据
+// findNearestTwoCalib 找到包围当前马赫数的两个校准数据
+// 保证 calib1.CMa <= calib2.CMa，且 maCurrent 落在 [calib1.CMa, calib2.CMa] 区间内
+// 超出校准范围时，取最近的两个相邻校准点
 func (interp *ThreeHoleInterpolator) findNearestTwoCalib(maCurrent float64) (calib1, calib2 types.ThreeHoleCalibData) {
-	// 按距离排序
-	sorted := make([]types.ThreeHoleCalibData, len(interp.calibData))
-	copy(sorted, interp.calibData)
-	sort.Slice(sorted, func(i, j int) bool {
-		di := math.Abs(sorted[i].CMa - maCurrent)
-		dj := math.Abs(sorted[j].CMa - maCurrent)
-		return di < dj
-	})
-
-	calib1 = sorted[0]
-	if len(sorted) > 1 {
-		calib2 = sorted[1]
-	} else {
-		calib2 = sorted[0]
+	n := len(interp.calibData)
+	if n == 1 {
+		return interp.calibData[0], interp.calibData[0]
 	}
-	return
+
+	// calibData 已按 CMa 升序排列，找到 maCurrent 落在哪两个相邻校准马赫数之间
+	for i := 0; i < n-1; i++ {
+		if maCurrent <= interp.calibData[i+1].CMa {
+			return interp.calibData[i], interp.calibData[i+1]
+		}
+	}
+
+	// maCurrent 超出最大校准马赫数，取最后两个
+	return interp.calibData[n-2], interp.calibData[n-1]
 }
 
 // kbAlphaEntry 马赫数插值后的映射条目

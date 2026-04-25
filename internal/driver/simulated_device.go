@@ -11,17 +11,24 @@ import (
 
 // SimulatedDevice 模拟设备（用于无硬件调试）
 type SimulatedDevice struct {
-	acquiring atomic.Bool
-	onData    DataCallback
-	channels  []types.ChannelConfig
-	stopCh    chan struct{}
+	acquiring     atomic.Bool
+	onData        DataCallback
+	channels      []types.ChannelConfig
+	pressureCount int // 压力通道数
+	stopCh        chan struct{}
 }
 
 // NewSimulatedDevice 创建模拟设备
 func NewSimulatedDevice(channels []types.ChannelConfig) *SimulatedDevice {
+	// 从通道配置推断压力通道数：总通道数-2（大气压+大气温度）
+	pressureCount := len(channels) - 2
+	if pressureCount < 1 {
+		pressureCount = 16
+	}
 	return &SimulatedDevice{
-		channels: channels,
-		stopCh:   make(chan struct{}),
+		channels:      channels,
+		pressureCount: pressureCount,
+		stopCh:        make(chan struct{}),
 	}
 }
 
@@ -99,10 +106,10 @@ func (s *SimulatedDevice) simulateData(periodMs int) {
 				if ch.Enabled {
 					noise := rand.Float64()*2 - 1 // -1 ~ 1
 					var val float64
-					if i < 16 {
-						// 16个压力通道：基准 + 通道偏移 + 随机波动
+					if i < s.pressureCount {
+						// 压力通道：基准 + 通道偏移 + 随机波动
 						val = basePressure + float64(i)*5 + noise*2
-					} else if i == 16 {
+					} else if i == s.pressureCount {
 						// 大气压通道
 						val = basePressure + noise*0.3
 					} else {

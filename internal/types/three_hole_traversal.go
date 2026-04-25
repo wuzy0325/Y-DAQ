@@ -96,16 +96,18 @@ type ThreeHoleCalibFileInfo struct {
 
 // ThreeHoleTraversalConfig 三孔移位测试配置
 type ThreeHoleTraversalConfig struct {
-	Name            string                      `json:"name"`
-	Layout          TraversalLayout             `json:"layout"`
-	ProbeChannels   []ThreeHoleProbeChannelConfig `json:"probeChannels"`
-	MotionX         MotionAxisMapping           `json:"motionX"`
-	MotionY         MotionAxisMapping           `json:"motionY"`
-	CalibFiles      []ThreeHoleCalibFileInfo    `json:"calibFiles"`
-	DwellTimeMs     int                         `json:"dwellTimeMs"`
-	SamplesPerPoint int                         `json:"samplesPerPoint"`
-	SavePath        string                      `json:"savePath"`
-	SaveFileName    string                      `json:"saveFileName"`
+	Name               string                        `json:"name"`
+	DeviceID           string                        `json:"deviceId"`           // 采集设备ID
+	MotionControllerID string                        `json:"motionControllerId"` // 运动控制器ID
+	Layout             TraversalLayout               `json:"layout"`
+	ProbeChannels      []ThreeHoleProbeChannelConfig `json:"probeChannels"`
+	MotionX            MotionAxisMapping             `json:"motionX"`
+	MotionY            MotionAxisMapping             `json:"motionY"`
+	CalibFiles         []ThreeHoleCalibFileInfo      `json:"calibFiles"`
+	DwellTimeMs        int                           `json:"dwellTimeMs"`
+	SamplesPerPoint    int                           `json:"samplesPerPoint"`
+	SavePath           string                        `json:"savePath"`
+	SaveFileName       string                        `json:"saveFileName"`
 }
 
 // ==================== 三孔原始数据 ====================

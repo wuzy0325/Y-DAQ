@@ -801,6 +801,8 @@ export namespace types {
 	}
 	export class ThreeHoleTraversalConfig {
 	    name: string;
+	    deviceId: string;
+	    motionControllerId: string;
 	    layout: TraversalLayout;
 	    probeChannels: ThreeHoleProbeChannelConfig[];
 	    motionX: MotionAxisMapping;
@@ -818,6 +820,8 @@ export namespace types {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.name = source["name"];
+	        this.deviceId = source["deviceId"];
+	        this.motionControllerId = source["motionControllerId"];
 	        this.layout = this.convertValues(source["layout"], TraversalLayout);
 	        this.probeChannels = this.convertValues(source["probeChannels"], ThreeHoleProbeChannelConfig);
 	        this.motionX = this.convertValues(source["motionX"], MotionAxisMapping);

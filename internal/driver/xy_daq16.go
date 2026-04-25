@@ -16,8 +16,8 @@ import (
 // DataCallback 数据回调函数类型
 type DataCallback func(payload types.DataPayload)
 
-// XYDAQ16Driver XY-DAQ16 TCP驱动
-type XYDAQ16Driver struct {
+// XYDAQDriver XY-DAQ TCP驱动（支持DAQ8/DAQ16）
+type XYDAQDriver struct {
 	mu             sync.Mutex
 	host           string
 	port           int
@@ -30,29 +30,42 @@ type XYDAQ16Driver struct {
 	reconnectCount int
 	stopReconnect  chan struct{}
 	channels       []types.ChannelConfig
+	pressureCount  int // 压力通道数（8或16）
+	totalChannels  int // 总通道数（压力+大气压+大气温度）
+	frameSize      int // 数据帧大小（字节）
 	// 命令响应通道
 	cmdRespCh      chan []byte
 }
 
-// NewXYDAQ16Driver 创建XY-DAQ16驱动
-func NewXYDAQ16Driver(host string, port, streamID int, channels []types.ChannelConfig) *XYDAQ16Driver {
-	return &XYDAQ16Driver{
-		host:      host,
-		port:      port,
-		streamID:  streamID,
-		channels:  channels,
+// NewXYDAQDriver 创建XY-DAQ驱动（DAQ8/DAQ16通用）
+func NewXYDAQDriver(host string, port, streamID int, channels []types.ChannelConfig, deviceType types.DeviceType) *XYDAQDriver {
+	pressureCount := deviceType.PressureChannelCount()
+	totalChannels := deviceType.TotalChannelCount()
+	return &XYDAQDriver{
+		host:          host,
+		port:          port,
+		streamID:      streamID,
+		channels:      channels,
+		pressureCount: pressureCount,
+		totalChannels: totalChannels,
+		frameSize:     deviceType.StreamFrameSize(),
 		stopReconnect: make(chan struct{}),
-		cmdRespCh: make(chan []byte, 1),
+		cmdRespCh:     make(chan []byte, 1),
 	}
 }
 
+// NewXYDAQ16Driver 创建XY-DAQ16驱动（兼容旧接口）
+func NewXYDAQ16Driver(host string, port, streamID int, channels []types.ChannelConfig) *XYDAQDriver {
+	return NewXYDAQDriver(host, port, streamID, channels, types.DeviceTypeXYDAQ16)
+}
+
 // SetDataCallback 设置数据回调
-func (d *XYDAQ16Driver) SetDataCallback(cb DataCallback) {
+func (d *XYDAQDriver) SetDataCallback(cb DataCallback) {
 	d.onData = cb
 }
 
 // Connect 建立TCP连接
-func (d *XYDAQ16Driver) Connect() error {
+func (d *XYDAQDriver) Connect() error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
@@ -82,7 +95,7 @@ func (d *XYDAQ16Driver) Connect() error {
 }
 
 // Disconnect 断开连接
-func (d *XYDAQ16Driver) Disconnect() {
+func (d *XYDAQDriver) Disconnect() {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
@@ -101,17 +114,17 @@ func (d *XYDAQ16Driver) Disconnect() {
 }
 
 // IsConnected 是否已连接
-func (d *XYDAQ16Driver) IsConnected() bool {
+func (d *XYDAQDriver) IsConnected() bool {
 	return d.connected.Load()
 }
 
 // IsAcquiring 是否采集中
-func (d *XYDAQ16Driver) IsAcquiring() bool {
+func (d *XYDAQDriver) IsAcquiring() bool {
 	return d.acquiring.Load()
 }
 
 // StartAcquisition 启动采集
-func (d *XYDAQ16Driver) StartAcquisition(periodMs int) error {
+func (d *XYDAQDriver) StartAcquisition(periodMs int) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
@@ -146,7 +159,7 @@ func (d *XYDAQ16Driver) StartAcquisition(periodMs int) error {
 }
 
 // StopAcquisition 停止采集
-func (d *XYDAQ16Driver) StopAcquisition() error {
+func (d *XYDAQDriver) StopAcquisition() error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
@@ -165,7 +178,7 @@ func (d *XYDAQ16Driver) StopAcquisition() error {
 }
 
 // SendRawCommand 发送原始命令
-func (d *XYDAQ16Driver) SendRawCommand(command string) (string, error) {
+func (d *XYDAQDriver) SendRawCommand(command string) (string, error) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
@@ -181,20 +194,20 @@ func (d *XYDAQ16Driver) SendRawCommand(command string) (string, error) {
 }
 
 // UpdateChannels 热更新通道配置
-func (d *XYDAQ16Driver) UpdateChannels(channels []types.ChannelConfig) {
+func (d *XYDAQDriver) UpdateChannels(channels []types.ChannelConfig) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.channels = channels
 }
 
 // receiveLoop 数据接收循环
-func (d *XYDAQ16Driver) receiveLoop() {
+func (d *XYDAQDriver) receiveLoop() {
 	buf := make([]byte, 4096)
 	for d.connected.Load() {
 		n, err := d.conn.Read(buf)
 		if err != nil {
 			if d.connected.Load() {
-				log.Printf("XY-DAQ16 read error: %v", err)
+				log.Printf("XY-DAQ read error: %v", err)
 				d.handleDisconnect()
 			}
 			return
@@ -207,7 +220,7 @@ func (d *XYDAQ16Driver) receiveLoop() {
 }
 
 // processBuffer 处理接收缓冲区（2字节长度前缀拆包）
-func (d *XYDAQ16Driver) processBuffer() {
+func (d *XYDAQDriver) processBuffer() {
 	for len(d.recvBuffer) >= 2 {
 		// 2字节大端长度前缀
 		frameLen := int(binary.BigEndian.Uint16(d.recvBuffer[:2]))
@@ -229,14 +242,14 @@ func (d *XYDAQ16Driver) processBuffer() {
 }
 
 // handleStreamFrame 处理二进制数据流帧
-func (d *XYDAQ16Driver) handleStreamFrame(frame []byte) {
-	// 帧结构: 头(5B) + CH1(4B float32 BE) + ... + CH18(4B)
-	if len(frame) < types.StreamFrameSize {
+func (d *XYDAQDriver) handleStreamFrame(frame []byte) {
+	// 帧结构: 头(5B) + CH1(4B float32 BE) + ... + CHn(4B)
+	if len(frame) < d.frameSize {
 		return
 	}
 
-	values := make([]float64, types.MaxDaqChannels)
-	for i := 0; i < types.MaxDaqChannels; i++ {
+	values := make([]float64, d.totalChannels)
+	for i := 0; i < d.totalChannels; i++ {
 		offset := types.StreamFrameHeaderSize + i*4
 		bits := binary.BigEndian.Uint32(frame[offset : offset+4])
 		values[i] = float64(math.Float32frombits(bits))
@@ -265,7 +278,7 @@ func (d *XYDAQ16Driver) handleStreamFrame(frame []byte) {
 }
 
 // handleDisconnect 处理断连（指数退避重连）
-func (d *XYDAQ16Driver) handleDisconnect() {
+func (d *XYDAQDriver) handleDisconnect() {
 	d.connected.Store(false)
 	d.acquiring.Store(false)
 
@@ -282,20 +295,20 @@ func (d *XYDAQ16Driver) handleDisconnect() {
 		}
 
 		d.reconnectCount++
-		log.Printf("XY-DAQ16 reconnecting... attempt %d/%d", d.reconnectCount, types.MaxReconnectAttempts)
+		log.Printf("XY-DAQ reconnecting... attempt %d/%d", d.reconnectCount, types.MaxReconnectAttempts)
 
 		if err := d.Connect(); err == nil {
-			log.Printf("XY-DAQ16 reconnected successfully")
+			log.Printf("XY-DAQ reconnected successfully")
 			return
 		}
 	}
 
-	log.Printf("XY-DAQ16 max reconnect attempts reached")
+	log.Printf("XY-DAQ max reconnect attempts reached")
 }
 
 // SendCommand 发送命令并等待ASCII响应（用于查询类命令）
 // 注意：此方法在receiveLoop启动前调用，直接从conn读取响应
-func (d *XYDAQ16Driver) SendCommand(cmd string) (string, error) {
+func (d *XYDAQDriver) SendCommand(cmd string) (string, error) {
 	if !d.connected.Load() || d.conn == nil {
 		return "", fmt.Errorf("device not connected")
 	}
@@ -327,13 +340,13 @@ func (d *XYDAQ16Driver) SendCommand(cmd string) (string, error) {
 }
 
 // readAndUpdateEUUnit 连接后读取设备EU单位并更新通道配置
-func (d *XYDAQ16Driver) readAndUpdateEUUnit() {
+func (d *XYDAQDriver) readAndUpdateEUUnit() {
 	// 读取EU转换系数: u01101 → 返回EU压力转换系数
 	// 系数索引02对应EU转换系数c0，其中包含单位信息
 	// 先读取传感器1的量程代码: u0010A
 	resp, err := d.SendCommand("u0010A")
 	if err != nil {
-		log.Printf("XY-DAQ16 read range code failed: %v", err)
+		log.Printf("XY-DAQ read range code failed: %v", err)
 		return
 	}
 
@@ -342,20 +355,20 @@ func (d *XYDAQ16Driver) readAndUpdateEUUnit() {
 		// 尝试通过EU系数推断单位
 		resp2, err2 := d.SendCommand("u01102")
 		if err2 != nil {
-			log.Printf("XY-DAQ16 read EU coeff failed: %v", err2)
+			log.Printf("XY-DAQ read EU coeff failed: %v", err2)
 			return
 		}
 		unit = euCoeffToUnit(resp2)
 	}
 
 	if unit != "" {
-		// 更新CH0-15的单位（大气压固定kPa，大气温度固定°C）
+		// 更新压力通道的单位（大气压固定kPa，大气温度固定°C）
 		for i := range d.channels {
-			if d.channels[i].Index < 16 {
+			if d.channels[i].Index < d.pressureCount {
 				d.channels[i].Unit = unit
 			}
 		}
-		log.Printf("XY-DAQ16 EU unit from device: %s", unit)
+		log.Printf("XY-DAQ EU unit from device: %s", unit)
 	}
 }
 
