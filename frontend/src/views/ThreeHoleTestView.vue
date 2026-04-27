@@ -11,9 +11,22 @@
             启动测试
           </el-button>
         </el-tooltip>
-        <el-button v-if="store.isRunning" type="warning" @click="store.pauseTest()">暂停</el-button>
-        <el-button v-if="store.isRunning" type="success" @click="store.resumeTest()">恢复</el-button>
+        <el-button v-if="store.isRunning && !store.isPaused" type="warning" @click="store.pauseTest()">暂停</el-button>
+        <el-button v-if="store.isPaused" type="success" @click="store.resumeTest()">恢复</el-button>
         <el-button v-if="store.isRunning" type="danger" @click="store.stopTest()">停止</el-button>
+      </div>
+      <!-- 测试进度条 -->
+      <div v-if="store.isRunning && store.progress" class="toolbar-progress">
+        <el-progress
+          :percentage="Math.round(store.progress.progress)"
+          :stroke-width="10"
+          color="#00f5ff"
+        />
+        <div class="test-progress-meta">
+          <span class="meta-item">{{ store.progress.completedPoints }} / {{ store.progress.totalPoints }} 点</span>
+          <span class="meta-item phase-badge" :class="store.progress.phase || 'acquiring'">{{ phaseLabel }}</span>
+          <span class="meta-item">X={{ store.progress.currentX.toFixed(1) }}°  Y={{ store.progress.currentY.toFixed(1) }}°</span>
+        </div>
       </div>
       <div class="toolbar-right">
         <span v-if="store.calibLoaded" class="calib-ok">校准文件已加载 ({{ store.calibFiles.length }})</span>
@@ -24,7 +37,7 @@
 
     <!-- 错误信息 -->
     <div v-if="store.lastError" class="error-bar">
-      <el-alert :title="store.lastError" type="error" :closable="false" show-icon />
+      <el-alert :title="store.lastError" type="error" :closable="true" @close="store.lastError = ''" show-icon />
     </div>
 
     <!-- 主内容区 -->
@@ -56,14 +69,6 @@
             </div>
           </div>
 
-          <!-- 进度 -->
-          <div v-if="store.progress" class="progress-section">
-            <el-progress :percentage="store.progress.progress" :stroke-width="10" color="#00f5ff" />
-            <div class="progress-text">
-              {{ store.progress.completedPoints }} / {{ store.progress.totalPoints }}
-              (X={{ store.progress.currentX.toFixed(1) }}°, Y={{ store.progress.currentY.toFixed(1) }}°)
-            </div>
-          </div>
         </GlassCard>
       </div>
 
@@ -175,6 +180,16 @@
                   </div>
                 </div>
               </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="group-label">X步长</label>
+                  <el-input-number v-model="lineXStep" :min="1" :step="1" size="small" style="width:100px" />
+                </div>
+                <div class="form-group">
+                  <label class="group-label">Y步长</label>
+                  <el-input-number v-model="lineYStep" :min="1" :step="1" size="small" style="width:100px" />
+                </div>
+              </div>
             </template>
           </div>
 
@@ -188,6 +203,9 @@
                     <el-option v-for="axis in axisOptions" :key="axis" :label="axis" :value="axis" />
                   </el-select>
                   <el-input-number v-model="store.config.motionX.scale" :step="0.1" size="small" style="width:70px" />
+                  <span class="unit-label">×</span>
+                  <el-input-number v-model="store.config.motionX.offset" :step="1" size="small" style="width:70px" />
+                  <span class="unit-label">+</span>
                 </div>
               </div>
               <div class="form-group">
@@ -197,6 +215,9 @@
                     <el-option v-for="axis in axisOptions" :key="axis" :label="axis" :value="axis" />
                   </el-select>
                   <el-input-number v-model="store.config.motionY.scale" :step="0.1" size="small" style="width:70px" />
+                  <span class="unit-label">×</span>
+                  <el-input-number v-model="store.config.motionY.offset" :step="1" size="small" style="width:70px" />
+                  <span class="unit-label">+</span>
                 </div>
               </div>
             </div>
@@ -213,6 +234,16 @@
               <div class="form-group">
                 <label class="group-label">采样次数</label>
                 <el-input-number v-model="store.config.samplesPerPoint" :min="1" :max="100" size="small" style="width:100px" />
+              </div>
+            </div>
+            <div class="form-row" style="margin-top: 8px">
+              <div class="form-group" style="flex: 1">
+                <label class="group-label">保存路径</label>
+                <el-input v-model="store.config.savePath" placeholder="默认 ~/.yx-daq/recordings/" size="small" clearable />
+              </div>
+              <div class="form-group" style="flex: 1">
+                <label class="group-label">文件名</label>
+                <el-input v-model="store.config.saveFileName" placeholder="ThreeHoleTraversal-xxx.csv" size="small" clearable />
               </div>
             </div>
           </div>
@@ -296,14 +327,14 @@
       </el-tabs>
 
       <template #footer>
-        <el-button @click="showSettingsDialog = false">关闭</el-button>
+        <el-button type="primary" @click="store.saveConfig(); showSettingsDialog = false">保存</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, nextTick, shallowRef } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick, shallowRef } from 'vue'
 import { Setting } from '@element-plus/icons-vue'
 import { useThreeHoleTestStore } from '../stores/threeHoleTest'
 import { useDeviceStore } from '../stores/device'
@@ -359,11 +390,23 @@ const axisOptions = computed(() => {
 })
 
 
+// 阶段标签
+const phaseLabel = computed(() => {
+  const map: Record<string, string> = {
+    moving: '移动中',
+    waiting: '等待中',
+    acquiring: '采集中',
+  }
+  return map[store.progress?.phase || ''] || '采集中'
+})
+
 // 步长快捷设置
 const xStep = ref(5)
 const yStep = ref(5)
+const lineXStep = ref(5)
+const lineYStep = ref(5)
 
-// 同步步长配置：当步长或范围变化时，更新配置中的分段步长
+// 同步矩形步长配置
 watch(
   () => {
     const r = store.config.layout.rectangle
@@ -374,6 +417,23 @@ watch(
     if (!val) return
     store.config.layout.rectangle!.xSteps = [{ start: val.xMin, end: val.xMax, step: val.xs }]
     store.config.layout.rectangle!.ySteps = [{ start: val.yMin, end: val.yMax, step: val.ys }]
+  },
+  { immediate: true }
+)
+
+// 同步直线步长配置
+watch(
+  () => {
+    const l = store.config.layout.line
+    if (!l) return null
+    return { startX: l.startX, startY: l.startY, endX: l.endX, endY: l.endY, xs: lineXStep.value, ys: lineYStep.value }
+  },
+  (val) => {
+    if (!val) return
+    const l = store.config.layout.line
+    if (!l) return
+    l.xSteps = [{ start: l.startX, end: l.endX, step: val.xs }]
+    l.ySteps = [{ start: l.startY, end: l.endY, step: val.ys }]
   },
   { immediate: true }
 )
@@ -391,11 +451,13 @@ const previewPoints = computed(() => {
 
   if (layout.pattern === 'rectangle' && layout.rectangle) {
     const r = layout.rectangle
-    // 直接从 xMin/xMax/yMin/yMax + xStep/yStep 计算点位，确保所有依赖都被追踪
-    const xValues = expandRange(r.xMin, r.xMax, xStep.value)
-    const yValues = expandRange(r.yMin, r.yMax, yStep.value)
-    for (const y of yValues) {
-      for (const x of xValues) {
+    // 使用 expandSteps 展开多分段步长，与后端 expandStepSegments 行为一致
+    const xValues = expandSteps(r.xSteps)
+    const yValues = expandSteps(r.ySteps)
+    if (xValues.length === 0) { xValues.push(r.xMin, r.xMax) }
+    if (yValues.length === 0) { yValues.push(r.yMin, r.yMax) }
+    for (const x of xValues) {
+      for (const y of yValues) {
         points.push({ x, y, state: 'pending' })
       }
     }
@@ -403,37 +465,40 @@ const previewPoints = computed(() => {
     const l = layout.line
     const xValues = expandSteps(l.xSteps)
     const yValues = expandSteps(l.ySteps)
-    const n = Math.max(xValues.length, yValues.length)
-    for (let i = 0; i < n; i++) {
-      const x = i < xValues.length ? xValues[i] : xValues[xValues.length - 1]
-      const y = i < yValues.length ? yValues[i] : yValues[yValues.length - 1]
-      points.push({ x, y, state: 'pending' })
+    if (xValues.length === 0 && yValues.length === 0) {
+      points.push({ x: l.startX, y: l.startY, state: 'pending' })
+      points.push({ x: l.endX, y: l.endY, state: 'pending' })
+    } else {
+      if (yValues.length === 0) { yValues.push(l.startY) }
+      if (xValues.length === 0) { xValues.push(l.startX) }
+      for (const x of xValues) {
+        for (const y of yValues) {
+          points.push({ x, y, state: 'pending' })
+        }
+      }
     }
   }
 
-  // 根据已完成数据点更新状态
-  const completedPoints = store.taskStatus?.dataPoints ?? []
-  const currentPoint = store.progress
-  const completedSet = new Set(completedPoints.map(p => `${p.x.toFixed(4)},${p.y.toFixed(4)}`))
+  // 从进度事件获取已完成点数（运行时可靠更新，无需等待 complete 事件）
+  const completedCount = store.progress?.completedPoints ?? 0
 
-  for (const pt of points) {
-    const key = `${pt.x.toFixed(4)},${pt.y.toFixed(4)}`
-    if (completedSet.has(key)) {
-      pt.state = 'completed'
-    }
+  // 按序号标记已完成点（与后端遍历顺序一致）
+  for (let i = 0; i < points.length && i < completedCount; i++) {
+    points[i].state = 'completed'
   }
 
   // 标记当前正在处理的点
+  const currentPoint = store.progress
   if (currentPoint && store.isRunning) {
     const cx = currentPoint.currentX
     const cy = currentPoint.currentY
-    for (const pt of points) {
-      if (pt.state === 'pending') {
-        const dist = Math.sqrt((pt.x - cx) ** 2 + (pt.y - cy) ** 2)
-        if (dist < 0.01) {
-          pt.state = store.realtime ? 'acquiring' : 'moving'
-          break
-        }
+    const phase = currentPoint.phase
+    for (let i = completedCount; i < points.length; i++) {
+      const pt = points[i]
+      const dist = Math.sqrt((pt.x - cx) ** 2 + (pt.y - cy) ** 2)
+      if (dist < 0.01) {
+        pt.state = (phase === 'moving' || phase === 'waiting' || phase === 'acquiring') ? phase : 'acquiring'
+        break
       }
     }
   }
@@ -664,9 +729,16 @@ const maHistory = ref<number[]>([])
 const alphaHistory = ref<number[]>([])
 const waveLabels = ref<number[]>([])
 
+// 记录已追加到波形的pointId，防止同一布点重复追加
+let lastWavePointId = ''
+
 // 监听实时数据追加波形
 watch(() => store.realtime, (rt) => {
-  if (!rt) return
+  if (!rt || !store.isRunning || store.isPaused) return
+  // 同一个布点只追加一次波形数据（后端可能因多次采样推送多次realtime事件）
+  if (rt.pointId && rt.pointId === lastWavePointId) return
+  lastWavePointId = rt.pointId || ''
+
   ptHistory.value.push(rt.interpResult.ptProbe)
   psHistory.value.push(rt.interpResult.psProbe)
   maHistory.value.push(rt.interpResult.machProbe)
@@ -682,6 +754,20 @@ watch(() => store.realtime, (rt) => {
   }
 
   scheduleWaveUpdate()
+})
+
+// 测试停止时重置去重标记
+watch(() => store.isRunning, (running) => {
+  if (!running) {
+    lastWavePointId = ''
+  }
+  if (running) {
+    ptHistory.value = []
+    psHistory.value = []
+    maHistory.value = []
+    alphaHistory.value = []
+    waveLabels.value = []
+  }
 })
 
 function makeWaveOption(data: number[], color: string, unit?: string) {
@@ -762,19 +848,41 @@ function scheduleWaveUpdate() {
 
 onMounted(() => {
   store.startListening()
+  store.loadConfig()
+  store.startRealtimeMonitor()
   deviceStore.fetchProfiles()
   deviceStore.fetchStatuses()
   motionStore.fetchProfiles()
   motionStore.fetchStatuses()
   nextTick(drawPointCanvas)
 })
+
+onUnmounted(() => {
+  store.stopRealtimeMonitor()
+  store.stopTest()
+})
+
+// 配置变更时自动保存（防抖500ms，避免输入时频繁写后端）
+// 同时重启实时监控以使用最新配置
+let configSaveTimer: number | null = null
+watch(() => store.config, () => {
+  if (configSaveTimer) clearTimeout(configSaveTimer)
+  configSaveTimer = window.setTimeout(() => {
+    store.saveConfig()
+    // 重启实时监控以应用最新配置（通道映射等）
+    if (!store.isRunning) {
+      store.stopRealtimeMonitor()
+      store.startRealtimeMonitor()
+    }
+  }, 500)
+}, { deep: true })
 </script>
 
 <style lang="scss" scoped>
 .three-hole-test-view {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .toolbar {
@@ -785,18 +893,69 @@ onMounted(() => {
   background: rgba(255,255,255,0.04);
   border-radius: 8px;
   border: 1px solid rgba(255,255,255,0.08);
+  gap: 12px;
 }
 
 .toolbar-left, .toolbar-right {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
+}
+
+// 工具栏中的进度条
+.toolbar-progress {
+  flex: 1;
+  max-width: 400px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 6px;
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.toolbar-progress :deep(.el-progress-bar__outer) {
+  border-radius: 3px;
+  background-color: rgba(255,255,255,0.06) !important;
+}
+
+.toolbar-progress :deep(.el-progress__text) {
+  font-size: 11px;
+  color: #fff;
+  min-width: 32px;
 }
 
 .calib-ok { font-size: 12px; color: #00ff88; }
 .calib-no { font-size: 12px; color: rgba(255,255,255,0.4); }
 
 .error-bar { margin: 0; }
+
+.test-progress-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+}
+
+.test-progress-meta .meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.phase-badge {
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+}
+.phase-badge.moving   { background: rgba(255,170,0,0.35); color: #ffcc66; }
+.phase-badge.waiting  { background: rgba(255,51,102,0.35); color: #ff7799; }
+.phase-badge.acquiring{ background: rgba(0,245,255,0.25); color: #66f5ff; }
 
 .main-content {
   display: flex;
@@ -892,13 +1051,6 @@ onMounted(() => {
   color: rgba(255,255,255,0.3);
   text-align: center;
   padding: 20px;
-}
-
-.progress-section { margin-top: 12px; }
-.progress-text {
-  font-size: 12px;
-  color: rgba(255,255,255,0.6);
-  margin-top: 4px;
 }
 
 // 波形图

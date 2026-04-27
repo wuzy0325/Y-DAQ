@@ -181,6 +181,7 @@ type ThreeHoleTraversalProgressEvent struct {
 	Progress        float64 `json:"progress"`
 	CurrentX        float64 `json:"currentX"`
 	CurrentY        float64 `json:"currentY"`
+	Phase           string  `json:"phase,omitempty"`
 }
 
 // ThreeHoleTraversalRealtimeEvent 实时数据事件
@@ -200,8 +201,9 @@ type ThreeHoleTraversalCompleteEvent struct {
 
 // ThreeHoleTraversalErrorEvent 错误事件
 type ThreeHoleTraversalErrorEvent struct {
-	TaskID string `json:"taskId"`
-	Error  string `json:"error"`
+	TaskID  string `json:"taskId"`
+	Error   string `json:"error"`
+	IsFatal bool   `json:"isFatal"` // 致命错误会中止测试，非致命仅记录点位error
 }
 
 // ==================== 校准数据结构 ====================

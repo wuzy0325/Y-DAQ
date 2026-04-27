@@ -32,6 +32,8 @@ export function GetMotionStatusAll():Promise<Array<types.MotionControllerStatus>
 
 export function GetPublishRate():Promise<number>;
 
+export function GetThreeHoleCalibInfo():Promise<Array<types.ThreeHoleCalibFileInfo>>;
+
 export function GetThreeHoleTraversalStatus():Promise<types.ThreeHoleTraversalTaskStatus>;
 
 export function IsRecording():Promise<boolean>;
@@ -43,6 +45,8 @@ export function ListRecordingFiles():Promise<Array<string>>;
 export function LoadCSVFile():Promise<string>;
 
 export function LoadThreeHoleCalibFiles(arg1:Array<string>):Promise<void>;
+
+export function LoadThreeHoleConfig():Promise<types.ThreeHoleTraversalConfig>;
 
 export function MotionDefinePosition(arg1:string,arg2:types.AxisName,arg3:number):Promise<void>;
 
@@ -88,6 +92,8 @@ export function ResumeCalibration():Promise<void>;
 
 export function ResumeThreeHoleTraversal():Promise<void>;
 
+export function SaveThreeHoleConfig(arg1:types.ThreeHoleTraversalConfig):Promise<void>;
+
 export function ScanDevices():Promise<Array<types.DiscoveredDevice>>;
 
 export function SelectDataSavePath():Promise<string>;
@@ -106,6 +112,8 @@ export function StartCalibration(arg1:types.CalibrationConfig):Promise<string>;
 
 export function StartRecording():Promise<void>;
 
+export function StartThreeHoleRealtimeMonitor(arg1:types.ThreeHoleTraversalConfig):Promise<void>;
+
 export function StartThreeHoleTraversal(arg1:types.ThreeHoleTraversalConfig):Promise<string>;
 
 export function StopAcquisition(arg1:string):Promise<void>;
@@ -115,6 +123,8 @@ export function StopAcquisitionAll():Promise<void>;
 export function StopCalibration():Promise<void>;
 
 export function StopRecording():Promise<void>;
+
+export function StopThreeHoleRealtimeMonitor():Promise<void>;
 
 export function StopThreeHoleTraversal():Promise<void>;
 

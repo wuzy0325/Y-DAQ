@@ -151,8 +151,18 @@ func (s *CalibrationService) runCalibrationLoop() {
 		default:
 		}
 
-		// 检查暂停
+		// 暂停期间持续推送实时数据，让用户能看到传感器当前读数
 		for s.paused.Load() {
+			rawData := s.readRawData()
+			if rawData != nil && s.eventPublisher != nil {
+				coefficients := CalculateFiveHoleCoefficients(*rawData)
+				s.eventPublisher.EmitRealtime(types.CalibrationRealtimeEvent{
+					TaskID:       s.status.TaskID,
+					PointID:      point.ID,
+					RawData:      *rawData,
+					Coefficients: coefficients,
+				})
+			}
 			select {
 			case <-s.cancelCh:
 				return

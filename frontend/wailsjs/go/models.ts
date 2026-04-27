@@ -375,6 +375,7 @@ export namespace types {
 	    port: number;
 	    streamId: number;
 	    periodMs: number;
+	    autoConnect: boolean;
 	    channels: ChannelConfig[];
 	
 	    static createFrom(source: any = {}) {
@@ -390,6 +391,7 @@ export namespace types {
 	        this.port = source["port"];
 	        this.streamId = source["streamId"];
 	        this.periodMs = source["periodMs"];
+	        this.autoConnect = source["autoConnect"];
 	        this.channels = this.convertValues(source["channels"], ChannelConfig);
 	    }
 	

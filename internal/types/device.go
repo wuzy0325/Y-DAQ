@@ -59,14 +59,15 @@ type ChannelConfig struct {
 
 // DeviceProfile 设备完整配置
 type DeviceProfile struct {
-	ID        string         `json:"id"`
-	Name      string         `json:"name"`
-	Type      DeviceType     `json:"type"`
-	Host      string         `json:"host"`
-	Port      int            `json:"port"`
-	StreamID  int            `json:"streamId"`
-	PeriodMs  int            `json:"periodMs"`  // 采集周期(毫秒)，0表示使用默认50ms
-	Channels  []ChannelConfig `json:"channels"`
+	ID          string         `json:"id"`
+	Name        string         `json:"name"`
+	Type        DeviceType     `json:"type"`
+	Host        string         `json:"host"`
+	Port        int            `json:"port"`
+	StreamID    int            `json:"streamId"`
+	PeriodMs    int            `json:"periodMs"`    // 采集周期(毫秒)，0表示使用默认50ms
+	AutoConnect bool           `json:"autoConnect"` // 是否自动连接
+	Channels    []ChannelConfig `json:"channels"`
 }
 
 // DeviceInstance 运行时设备实例

@@ -119,6 +119,7 @@ type ConfigManager struct {
 	Acquisition *ConfigStore
 	Calibration *ConfigStore
 	Storage     *ConfigStore
+	ThreeHole   *ConfigStore
 }
 
 // NewConfigManager 创建配置管理器
@@ -129,12 +130,13 @@ func NewConfigManager(configDir string) *ConfigManager {
 		Acquisition: NewConfigStore(filepath.Join(configDir, "acquisition.json"), map[string]interface{}{}),
 		Calibration: NewConfigStore(filepath.Join(configDir, "calibration.json"), map[string]interface{}{}),
 		Storage:     NewConfigStore(filepath.Join(configDir, "storage.json"), map[string]interface{}{}),
+		ThreeHole:   NewConfigStore(filepath.Join(configDir, "three_hole.json"), map[string]interface{}{}),
 	}
 }
 
 // LoadAll 加载所有配置
 func (m *ConfigManager) LoadAll() error {
-	stores := []*ConfigStore{m.Devices, m.Motion, m.Acquisition, m.Calibration, m.Storage}
+	stores := []*ConfigStore{m.Devices, m.Motion, m.Acquisition, m.Calibration, m.Storage, m.ThreeHole}
 	var firstErr error
 	for _, s := range stores {
 		if err := s.Load(); err != nil {

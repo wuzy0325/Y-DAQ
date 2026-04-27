@@ -62,6 +62,10 @@ export function GetPublishRate() {
   return window['go']['main']['App']['GetPublishRate']();
 }
 
+export function GetThreeHoleCalibInfo() {
+  return window['go']['main']['App']['GetThreeHoleCalibInfo']();
+}
+
 export function GetThreeHoleTraversalStatus() {
   return window['go']['main']['App']['GetThreeHoleTraversalStatus']();
 }
@@ -84,6 +88,10 @@ export function LoadCSVFile() {
 
 export function LoadThreeHoleCalibFiles(arg1) {
   return window['go']['main']['App']['LoadThreeHoleCalibFiles'](arg1);
+}
+
+export function LoadThreeHoleConfig() {
+  return window['go']['main']['App']['LoadThreeHoleConfig']();
 }
 
 export function MotionDefinePosition(arg1, arg2, arg3) {
@@ -174,6 +182,10 @@ export function ResumeThreeHoleTraversal() {
   return window['go']['main']['App']['ResumeThreeHoleTraversal']();
 }
 
+export function SaveThreeHoleConfig(arg1) {
+  return window['go']['main']['App']['SaveThreeHoleConfig'](arg1);
+}
+
 export function ScanDevices() {
   return window['go']['main']['App']['ScanDevices']();
 }
@@ -210,6 +222,10 @@ export function StartRecording() {
   return window['go']['main']['App']['StartRecording']();
 }
 
+export function StartThreeHoleRealtimeMonitor(arg1) {
+  return window['go']['main']['App']['StartThreeHoleRealtimeMonitor'](arg1);
+}
+
 export function StartThreeHoleTraversal(arg1) {
   return window['go']['main']['App']['StartThreeHoleTraversal'](arg1);
 }
@@ -228,6 +244,10 @@ export function StopCalibration() {
 
 export function StopRecording() {
   return window['go']['main']['App']['StopRecording']();
+}
+
+export function StopThreeHoleRealtimeMonitor() {
+  return window['go']['main']['App']['StopThreeHoleRealtimeMonitor']();
 }
 
 export function StopThreeHoleTraversal() {

@@ -1,6 +1,6 @@
 <template>
   <div class="value-display">
-    <div class="value" :style="{ color: color }">{{ formattedValue }}</div>
+    <div class="value" :style="{ color: color, minWidth: minWidth }">{{ formattedValue }}</div>
     <div v-if="unit" class="unit">{{ unit }}</div>
   </div>
 </template>
@@ -22,6 +22,13 @@ const formattedValue = computed(() => {
   if (typeof props.value !== 'number' || isNaN(props.value)) return '--'
   return props.value.toFixed(props.precision)
 })
+
+// 根据精度计算最小宽度，避免数值变化时宽度跳变
+// 格式: 整数部分 + 小数点 + 小数部分 + 符号位，如 "-12345.678" = 9ch
+const minWidth = computed(() => {
+  // precision=3 最多如 "-12345.678" ≈ 9ch，给足空间
+  return `${props.precision + 6}ch`
+})
 </script>
 
 <style lang="scss" scoped>
@@ -37,7 +44,6 @@ const formattedValue = computed(() => {
   font-weight: 600;
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  min-width: 5ch;
   text-align: right;
 }
 

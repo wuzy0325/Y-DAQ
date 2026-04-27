@@ -42,6 +42,20 @@
           </div>
           <span v-if="s.acquiring" class="acq-tag">采集中</span>
           <span v-if="s.acquiring && isRecording" class="rec-tag">记录中</span>
+          <el-button
+            v-if="s.status !== 'Connected'"
+            type="primary"
+            size="small"
+            class="conn-btn"
+            @click.stop="handleConnect(s.id)"
+          >连接</el-button>
+          <el-button
+            v-else
+            type="warning"
+            size="small"
+            class="conn-btn"
+            @click.stop="handleDisconnect(s.id)"
+          >断开</el-button>
         </div>
         <div v-if="deviceStore.statuses.length === 0" class="no-device">
           暂无设备，请先在设备管理中添加设备
@@ -144,6 +158,18 @@ async function handleStopAcqAll() {
   } catch (e: any) {
     ElMessage.error(`停止采集失败: ${e?.message || e}`)
   }
+}
+
+async function handleConnect(id: string) {
+  const err = await deviceStore.connectDevice(id)
+  if (err) ElMessage.error(`连接失败: ${err}`)
+  else ElMessage.success('设备已连接')
+}
+
+async function handleDisconnect(id: string) {
+  const err = await deviceStore.disconnectDevice(id)
+  if (err) ElMessage.error(`断开失败: ${err}`)
+  else ElMessage.success('设备已断开')
 }
 
 // ==================== 录制控制 ====================
@@ -619,6 +645,12 @@ watch(() => deviceStore.isAcquiring, (acquiring) => {
   background: rgba(255,51,102,0.15);
   color: #ff3366;
   flex-shrink: 0;
+}
+
+.conn-btn {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  font-size: 11px;
 }
 
 .acq-controls {

@@ -17,7 +17,9 @@ import (
 const (
 	maxIterations    = 20          // 最大迭代次数
 	convergenceTol  = 1e-4        // 收敛容差
-	dpZeroThreshold = 1e-6        // ΔP 判零阈值
+	deltaPZeroThreshold = 1e-6    // ΔP 判零阈值（压力差分，单位 Pa）
+	maDiffThreshold  = 1e-6       // 马赫数差判零
+	kbDiffThreshold  = 1e-6       // Kb 系数差判零
 	gamma           = 1.4         // 比热比
 	gammaRatio      = (gamma - 1) / gamma // 0.2857
 	machCoeff       = 2 / (gamma - 1)     // 5
@@ -134,7 +136,7 @@ func (interp *ThreeHoleInterpolator) Calculate(rawData types.ThreeHoleRawData) t
 	deltaP := 2*P2 - P1 - P3
 
 	// ΔP 接近零的异常处理：ΔP≈0 只代表攻角接近零，无法通过Kb反查，标记结果无效
-	if math.Abs(deltaP) < dpZeroThreshold {
+	if math.Abs(deltaP) < deltaPZeroThreshold {
 		return types.ThreeHoleInterpolationResult{
 			PtProbe:        P2,
 			PsProbe:        P2,
@@ -288,7 +290,7 @@ func (interp *ThreeHoleInterpolator) interpolateInMaDirection(calib1, calib2 typ
 
 	// 计算插值比例
 	ratio := 0.0
-	if math.Abs(calib2.CMa-calib1.CMa) > dpZeroThreshold {
+	if math.Abs(calib2.CMa-calib1.CMa) > maDiffThreshold {
 		ratio = (maCurrent - calib1.CMa) / (calib2.CMa - calib1.CMa)
 		ratio = math.Max(0, math.Min(1, ratio))
 	}
@@ -341,7 +343,7 @@ func (interp *ThreeHoleInterpolator) interpolateInKbDirection(kbAlphaMap []kbAlp
 			j1 := kbAlphaMap[j+1]
 
 			denom := j1.Kb - j0.Kb
-			if math.Abs(denom) < dpZeroThreshold {
+			if math.Abs(denom) < kbDiffThreshold {
 				return j0.Alpha, j0.Kt, j0.Sb, true
 			}
 
@@ -364,7 +366,7 @@ func (interp *ThreeHoleInterpolator) interpolateInKbDirection(kbAlphaMap []kbAlp
 // Ma = sqrt(5 * |((Pt+Pa)/(Ps+Pa))^0.2857 - 1|)
 func calculateMachNumber(pt, ps, pa float64) float64 {
 	psAbs := ps + pa
-	if math.Abs(psAbs) < dpZeroThreshold {
+	if math.Abs(psAbs) < deltaPZeroThreshold {
 		return 0
 	}
 

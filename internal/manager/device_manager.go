@@ -333,13 +333,14 @@ func (m *DeviceManager) Init() {
 		}
 
 		simProfile := types.DeviceProfile{
-			ID:       "sim-1",
-			Name:     "模拟设备",
-			Type:     types.DeviceTypeSimulated,
-			Host:     "127.0.0.1",
-			Port:     9000,
-			StreamID: 1,
-			Channels: defaultChannels,
+			ID:          "sim-1",
+			Name:        "模拟设备",
+			Type:        types.DeviceTypeSimulated,
+			Host:        "127.0.0.1",
+			Port:        9000,
+			StreamID:    1,
+			AutoConnect: true,
+			Channels:    defaultChannels,
 		}
 
 		m.mu.Lock()
@@ -352,19 +353,26 @@ func (m *DeviceManager) Init() {
 	m.AutoConnect()
 }
 
-// AutoConnect 自动连接所有配置的设备
+// AutoConnect 自动连接所有启用了自动连接的设备
 func (m *DeviceManager) AutoConnect() {
 	m.mu.RLock()
-	ids := make([]string, 0, len(m.profiles))
-	for id := range m.profiles {
-		ids = append(ids, id)
+	type kv struct {
+		id   string
+		auto bool
+	}
+	pairs := make([]kv, 0, len(m.profiles))
+	for id, p := range m.profiles {
+		pairs = append(pairs, kv{id, p.AutoConnect})
 	}
 	m.mu.RUnlock()
 
-	for _, id := range ids {
-		if !m.IsConnected(id) {
-			if err := m.Connect(id); err != nil {
-				log.Printf("auto connect device %s failed: %v", id, err)
+	for _, pair := range pairs {
+		if !pair.auto {
+			continue
+		}
+		if !m.IsConnected(pair.id) {
+			if err := m.Connect(pair.id); err != nil {
+				log.Printf("auto connect device %s failed: %v", pair.id, err)
 			}
 		}
 	}

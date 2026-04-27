@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"yx-daq/internal/types"
 )
@@ -22,6 +23,9 @@ func NewThreeHoleCsvWriter() *ThreeHoleCsvWriter {
 
 // Initialize 初始化 CSV 文件（创建文件、写表头）
 func (w *ThreeHoleCsvWriter) Initialize(savePath string, fileName string) error {
+	if fileName == "" {
+		fileName = fmt.Sprintf("ThreeHoleTraversal-%s.csv", time.Now().Format("2006-01-02"))
+	}
 	os.MkdirAll(savePath, 0755)
 	filePath := filepath.Join(savePath, fileName)
 

@@ -85,6 +85,16 @@
       </div>
 
       <div class="dialog-section">
+        <div class="section-title">🔌 连接选项</div>
+        <div class="form-row">
+          <div class="form-group auto-connect-row">
+            <span class="auto-connect-label">添加后自动连接</span>
+            <el-switch v-model="newDevice.autoConnect" size="small" />
+          </div>
+        </div>
+      </div>
+
+      <div class="dialog-section">
         <div class="section-title">⚙️ 采集参数</div>
         <div class="form-row three-col">
           <div class="form-group">
@@ -137,6 +147,12 @@
               <el-input-number v-model="editForm.publishRate" :min="1" :max="100" :step="1" size="small" style="width: 90px" controls-position="right" />
               <span class="unit">Hz</span>
             </div>
+          </div>
+        </div>
+        <div class="form-row" style="margin-top: 12px">
+          <div class="form-group auto-connect-row">
+            <span class="auto-connect-label">自动连接</span>
+            <el-switch v-model="editForm.autoConnect" size="small" />
           </div>
         </div>
       </div>
@@ -248,6 +264,7 @@ const newDevice = ref({
   publishRate: 20,
   unit: 'kPa',
   precision: 3,
+  autoConnect: true,
 })
 
 function openAddDialog() {
@@ -259,6 +276,7 @@ function openAddDialog() {
     publishRate: 20,
     unit: 'kPa',
     precision: 3,
+    autoConnect: true,
   }
   showAddDialog.value = true
 }
@@ -296,6 +314,7 @@ async function addDevice() {
       port: newDevice.value.port,
       streamId: 1,
       periodMs: Math.round(1000 / newDevice.value.publishRate),
+      autoConnect: newDevice.value.autoConnect,
       channels,
     })
 
@@ -310,12 +329,13 @@ async function addDevice() {
     showAddDialog.value = false
     ElMessage.success(`设备 "${deviceName}" 添加成功`)
 
-    // 尝试自动连接
-    try {
-      await ConnectDevice(id)
-      ElMessage.success(`设备 "${deviceName}" 已连接`)
-    } catch (connErr: any) {
-      ElMessage.warning(`设备已添加，但连接失败: ${connErr?.message || connErr}`)
+    if (newDevice.value.autoConnect) {
+      try {
+        await ConnectDevice(id)
+        ElMessage.success(`设备 "${deviceName}" 已连接`)
+      } catch (connErr: any) {
+        ElMessage.warning(`设备已添加，但连接失败: ${connErr?.message || connErr}`)
+      }
     }
 
     await deviceStore.fetchProfiles()
@@ -338,6 +358,7 @@ const editForm = ref({
   publishRate: 20,
   unit: 'kPa',
   precision: 3,
+  autoConnect: true,
 })
 
 // 通道编辑数据（深拷贝，独立编辑）
@@ -380,6 +401,7 @@ function openEditDialog(id: string) {
     publishRate,
     unit: ch0Unit,
     precision: ch0Precision,
+    autoConnect: (profile as any).autoConnect !== false,
   }
   // 深拷贝通道配置
   editChannels.value = profile.channels.map(c => ({ ...c }))
@@ -444,6 +466,7 @@ async function saveEdit() {
       port: editForm.value.port,
       streamId: profile.streamId,
       periodMs: Math.round(1000 / editForm.value.publishRate),
+      autoConnect: editForm.value.autoConnect,
       channels: updatedChannels,
     })
 
@@ -456,6 +479,24 @@ async function saveEdit() {
         const { SetPublishRate } = await import('../../wailsjs/go/main/App')
         await SetPublishRate(editForm.value.publishRate)
       } catch {}
+
+      // 根据 autoConnect 自动连接或断开
+      const { ConnectDevice, DisconnectDevice } = await import('../../wailsjs/go/main/App')
+      if (editForm.value.autoConnect) {
+        const oldStatus = deviceStore.statuses.find(s => s.id === editForm.value.id)
+        if (!oldStatus || oldStatus.status !== 'Connected') {
+          try {
+            await ConnectDevice(editForm.value.id)
+            ElMessage.success('设备已自动连接')
+          } catch (connErr: any) {
+            ElMessage.warning(`自动连接失败: ${connErr?.message || connErr}`)
+          }
+        }
+      } else {
+        try {
+          await DisconnectDevice(editForm.value.id)
+        } catch {}
+      }
 
       showEditDialog.value = false
       ElMessage.success('设备配置已更新')
@@ -711,6 +752,18 @@ async function removeDevice(id: string) {
 .special-channels {
   font-size: 10px;
   color: rgba(255,255,255,0.45);
+}
+
+.auto-connect-row {
+  display: flex;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 8px;
+}
+.auto-connect-label {
+  font-size: 12px;
+  color: rgba(255,255,255,0.75);
+  font-weight: 500;
 }
 
 // ==================== 通道表格 ====================

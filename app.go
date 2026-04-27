@@ -180,6 +180,8 @@ func (a *App) startup(ctx context.Context) {
 // shutdown 应用关闭
 func (a *App) shutdown(ctx context.Context) {
 	a.publishCancel <- struct{}{}
+	a.threeHoleService.Stop()
+	a.threeHoleService.StopRealtimeMonitor()
 	a.dataStorage.StopRecording()
 	a.deviceManager.StopAcquisitionAll()
 	// 保存设备配置
@@ -733,6 +735,11 @@ func (a *App) IsThreeHoleCalibLoaded() bool {
 	return a.threeHoleService.IsCalibLoaded()
 }
 
+// GetThreeHoleCalibInfo 获取三孔校准文件信息
+func (a *App) GetThreeHoleCalibInfo() []types.ThreeHoleCalibFileInfo {
+	return a.threeHoleService.GetCalibInfo()
+}
+
 // StartThreeHoleTraversal 启动三孔移位测试
 func (a *App) StartThreeHoleTraversal(config types.ThreeHoleTraversalConfig) (string, error) {
 	return a.threeHoleService.Start(config)
@@ -751,11 +758,63 @@ func (a *App) ResumeThreeHoleTraversal() {
 // StopThreeHoleTraversal 停止三孔移位测试
 func (a *App) StopThreeHoleTraversal() {
 	a.threeHoleService.Stop()
+	// 停止硬件运动
+	config := a.threeHoleService.GetConfig()
+	mcID := config.MotionControllerID
+	if mcID != "" && a.motionManager.IsConnected(mcID) {
+		_ = a.motionManager.EmergencyStop(mcID)
+	} else {
+		profiles := a.motionManager.GetProfiles()
+		for _, p := range profiles {
+			if a.motionManager.IsConnected(p.ID) {
+				_ = a.motionManager.EmergencyStop(p.ID)
+			}
+		}
+	}
+}
+
+// StartThreeHoleRealtimeMonitor 启动三孔实时数据监控
+func (a *App) StartThreeHoleRealtimeMonitor(config types.ThreeHoleTraversalConfig) {
+	a.threeHoleService.StartRealtimeMonitor(config)
+}
+
+// StopThreeHoleRealtimeMonitor 停止三孔实时数据监控
+func (a *App) StopThreeHoleRealtimeMonitor() {
+	a.threeHoleService.StopRealtimeMonitor()
 }
 
 // GetThreeHoleTraversalStatus 获取三孔移位测试状态
 func (a *App) GetThreeHoleTraversalStatus() types.ThreeHoleTraversalTaskStatus {
 	return a.threeHoleService.GetStatus()
+}
+
+// SaveThreeHoleConfig 保存三孔移位测试配置
+func (a *App) SaveThreeHoleConfig(config types.ThreeHoleTraversalConfig) error {
+	if a.configManager == nil {
+		return fmt.Errorf("config manager not initialized")
+	}
+	return a.configManager.ThreeHole.Set(config)
+}
+
+// LoadThreeHoleConfig 加载三孔移位测试配置
+func (a *App) LoadThreeHoleConfig() (types.ThreeHoleTraversalConfig, error) {
+	if a.configManager == nil {
+		return types.ThreeHoleTraversalConfig{}, fmt.Errorf("config manager not initialized")
+	}
+	data := a.configManager.ThreeHole.Get()
+	if data == nil {
+		return types.ThreeHoleTraversalConfig{}, nil
+	}
+	// 通过 JSON 序列化/反序列化转换类型
+	jsonBytes, err := json.Marshal(data)
+	if err != nil {
+		return types.ThreeHoleTraversalConfig{}, fmt.Errorf("marshal config failed: %w", err)
+	}
+	var config types.ThreeHoleTraversalConfig
+	if err := json.Unmarshal(jsonBytes, &config); err != nil {
+		return types.ThreeHoleTraversalConfig{}, fmt.Errorf("unmarshal config failed: %w", err)
+	}
+	return config, nil
 }
 
 // SelectThreeHoleCalibFiles 选择三孔校准文件（弹出文件对话框）
