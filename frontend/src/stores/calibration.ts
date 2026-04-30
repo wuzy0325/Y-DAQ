@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import {
   StartCalibration, PauseCalibration, ResumeCalibration,
@@ -43,12 +43,12 @@ export const useCalibrationStore = defineStore('calibration', () => {
   const taskStatus = ref<CalibrationTaskStatus | null>(null)
   const progress = ref<CalibrationProgressEvent | null>(null)
   const realtime = ref<CalibrationRealtimeEvent | null>(null)
-  const isRunning = ref(false)
+  const isRunning = computed(() => taskStatus.value?.status === 'running' || taskStatus.value?.status === 'paused')
 
   async function startCalibration(config: any) {
     try {
       await StartCalibration(config)
-      isRunning.value = true
+      await fetchStatus()
     } catch (e) {
       console.error('startCalibration failed:', e)
     }
@@ -73,7 +73,7 @@ export const useCalibrationStore = defineStore('calibration', () => {
   async function stopCalibration() {
     try {
       await StopCalibration()
-      isRunning.value = false
+      await fetchStatus()
     } catch (e) {
       console.error('stopCalibration failed:', e)
     }
@@ -91,13 +91,11 @@ export const useCalibrationStore = defineStore('calibration', () => {
     try {
       EventsOn('calibration:progress', (data: CalibrationProgressEvent) => {
         progress.value = data
-        isRunning.value = true
       })
       EventsOn('calibration:realtime', (data: CalibrationRealtimeEvent) => {
         realtime.value = data
       })
       EventsOn('calibration:complete', () => {
-        isRunning.value = false
         fetchStatus()
       })
     } catch (e) {

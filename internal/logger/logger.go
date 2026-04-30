@@ -22,10 +22,6 @@ var (
 	closer io.Closer
 )
 
-func LogDir() string {
-	return logDir
-}
-
 func Init() error {
 	mu.Lock()
 	defer mu.Unlock()

@@ -130,26 +130,3 @@ func TestCalculateStdDev_SingleValue(t *testing.T) {
 		t.Errorf("StdDev of single value should be 0, got %v", result)
 	}
 }
-
-func TestMatchChannelByRole(t *testing.T) {
-	tests := []struct {
-		role    types.ProbeChannelRole
-		name    string
-		matches bool
-	}{
-		{types.RoleP1, "P1", true},
-		{types.RoleP1, "孔1压力", true},
-		{types.RoleP1, "CH1", false},
-		{types.RoleP2, "P2", true},
-		{types.RolePAtm, "大气压力", true},
-		{types.RoleTAtm, "大气温度", true},
-		{types.RolePTotal, "总压", true},
-	}
-
-	for _, tt := range tests {
-		result := MatchChannelByRole(tt.role, tt.name)
-		if result != tt.matches {
-			t.Errorf("MatchChannelByRole(%v, %v) = %v, want %v", tt.role, tt.name, result, tt.matches)
-		}
-	}
-}

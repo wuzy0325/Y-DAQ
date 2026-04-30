@@ -13,6 +13,9 @@ import {
   StopThreeHoleRealtimeMonitor,
   SaveThreeHoleConfig,
   LoadThreeHoleConfig,
+  ConnectDevice,
+  StartAcquisition,
+  GetDeviceStatusAll,
 } from '../../wailsjs/go/main/App'
 import { EventsOn, EventsOff } from '../../wailsjs/runtime/runtime'
 import {
@@ -21,7 +24,6 @@ import {
   type ThreeHoleChannelRoleValue,
   type TraversalPatternValue,
 } from '../api/enums'
-import { useDeviceStore } from './device'
 import { useMotionStore } from './motion'
 
 // ==================== 类型定义 ====================
@@ -128,8 +130,8 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
   const taskStatus = ref<ThreeHoleTraversalTaskStatus | null>(null)
   const progress = ref<ThreeHoleTraversalProgressEvent | null>(null)
   const realtime = ref<ThreeHoleTraversalRealtimeEvent | null>(null)
-  const isRunning = ref(false)
-  const isPaused = ref(false)
+  const isRunning = computed(() => taskStatus.value?.status === 'running' || taskStatus.value?.status === 'paused')
+  const isPaused = computed(() => taskStatus.value?.status === 'paused')
   const calibLoaded = ref(false)
   const calibFiles = ref<string[]>([])
   const lastError = ref<string>('')
@@ -208,25 +210,31 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
     const deviceId = config.value.deviceId
     if (!deviceId) return
 
-    const deviceStore = useDeviceStore()
-    await deviceStore.fetchStatuses()
-    const ds = deviceStore.statuses.find(s => s.id === deviceId)
-    if (!ds) return
+    try {
+      const statuses = await GetDeviceStatusAll() as { id: string; status: string; acquiring: boolean }[]
+      const ds = statuses.find(s => s.id === deviceId)
+      if (!ds) return
 
-    if (ds.status !== 'Connected') {
-      const err = await deviceStore.connectDevice(deviceId)
-      if (err) {
-        lastError.value = `自动连接设备失败: ${err}`
-        return
+      if (ds.status !== 'Connected') {
+        try {
+          await ConnectDevice(deviceId)
+        } catch (e) {
+          lastError.value = `自动连接设备失败: ${e}`
+          return
+        }
       }
-    }
 
-    const updated = deviceStore.statuses.find(s => s.id === deviceId)
-    if (updated && !updated.acquiring) {
-      const err = await deviceStore.startAcquisition(deviceId)
-      if (err) {
-        lastError.value = `自动启动采集失败: ${err}`
+      const updated = (await GetDeviceStatusAll() as { id: string; status: string; acquiring: boolean }[])
+        .find(s => s.id === deviceId)
+      if (updated && !updated.acquiring) {
+        try {
+          await StartAcquisition(deviceId)
+        } catch (e) {
+          lastError.value = `自动启动采集失败: ${e}`
+        }
       }
+    } catch (e) {
+      console.error('ensureDeviceAcquiring failed:', e)
     }
   }
 
@@ -247,17 +255,16 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
       }
     }
 
-    isRunning.value = true
-    isPaused.value = false
     taskStatus.value = null
     lastError.value = ''
 
     try {
       await StartThreeHoleTraversal(config.value as any)
+      // 后端启动成功后，通过 fetchStatus 获取最新 taskStatus，isRunning/isPaused 自动派生
+      await fetchStatus()
     } catch (e) {
       console.error('startTest failed:', e)
       lastError.value = `启动测试失败: ${e}`
-      isRunning.value = false
     }
   }
 
@@ -265,7 +272,6 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
     try {
       await PauseThreeHoleTraversal()
       await fetchStatus()
-      isPaused.value = taskStatus.value?.status === 'paused'
     } catch (e) {
       console.error('pauseTest failed:', e)
     }
@@ -275,7 +281,6 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
     try {
       await ResumeThreeHoleTraversal()
       await fetchStatus()
-      isPaused.value = taskStatus.value?.status === 'paused'
     } catch (e) {
       console.error('resumeTest failed:', e)
     }
@@ -288,11 +293,8 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
     } catch (e) {
       console.error('stopTest failed:', e)
     }
-    // 仅在后端确认状态变更后更新前端状态
     const status = taskStatus.value?.status
     if (status === 'idle' || status === 'completed' || status === 'error') {
-      isRunning.value = false
-      isPaused.value = false
       realtime.value = null
       progress.value = null
     }
@@ -334,17 +336,13 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
       EventsOn('three-hole:realtime', (data: ThreeHoleTraversalRealtimeEvent) => {
         realtime.value = data
       })
-      EventsOn('three-hole:complete', async (data: ThreeHoleTraversalCompleteEvent) => {
-        isRunning.value = false
-        isPaused.value = false
+      EventsOn('three-hole:complete', async (_data: ThreeHoleTraversalCompleteEvent) => {
         progress.value = null
         await fetchStatus()
       })
       EventsOn('three-hole:error', (data: ThreeHoleTraversalErrorEvent) => {
         lastError.value = data.error
         if (data.isFatal) {
-          isRunning.value = false
-          isPaused.value = false
           progress.value = null
         }
       })

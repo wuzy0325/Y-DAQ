@@ -16,18 +16,10 @@ export const DeviceTypeLabels: Record<DeviceTypeValue, string> = {
   [DeviceType.XY_DAQ16]: 'XY-DAQ16',
 }
 
-// 设备类型对应的压力通道数
-export function getPressureChannelCount(type: DeviceTypeValue): number {
-  switch (type) {
-    case DeviceType.XY_DAQ8: return 8
-    case DeviceType.XY_DAQ16: return 16
-    default: return 16
-  }
-}
-
 // 设备类型对应的总通道数（压力 + 大气压 + 大气温度）
 export function getTotalChannelCount(type: DeviceTypeValue): number {
-  return getPressureChannelCount(type) + 2
+  const pressureCount = type === DeviceType.XY_DAQ8 ? 8 : 16
+  return pressureCount + 2
 }
 
 // 三孔通道角色
@@ -64,26 +56,6 @@ export const TraversalPatternLabels: Record<TraversalPatternValue, string> = {
   [TraversalPattern.LINE]: '直线',
   [TraversalPattern.RECTANGLE]: '矩形',
   [TraversalPattern.CUSTOM]: '自定义',
-}
-
-// 测试状态
-export const TraversalTestStatus = {
-  IDLE: 'idle',
-  RUNNING: 'running',
-  PAUSED: 'paused',
-  COMPLETED: 'completed',
-  ERROR: 'error',
-} as const
-
-export type TraversalTestStatusValue = typeof TraversalTestStatus[keyof typeof TraversalTestStatus]
-
-// 测试状态中文标签
-export const TraversalTestStatusLabels: Record<TraversalTestStatusValue, string> = {
-  [TraversalTestStatus.IDLE]: '空闲',
-  [TraversalTestStatus.RUNNING]: '运行中',
-  [TraversalTestStatus.PAUSED]: '已暂停',
-  [TraversalTestStatus.COMPLETED]: '已完成',
-  [TraversalTestStatus.ERROR]: '错误',
 }
 
 // 运动轴名

@@ -55,11 +55,6 @@ func NewXYDAQDriver(host string, port, streamID int, channels []types.ChannelCon
 	}
 }
 
-// NewXYDAQ16Driver 创建XY-DAQ16驱动（兼容旧接口）
-func NewXYDAQ16Driver(host string, port, streamID int, channels []types.ChannelConfig) *XYDAQDriver {
-	return NewXYDAQDriver(host, port, streamID, channels, types.DeviceTypeXYDAQ16)
-}
-
 // SetDataCallback 设置数据回调
 func (d *XYDAQDriver) SetDataCallback(cb DataCallback) {
 	d.onData = cb
