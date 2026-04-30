@@ -3,11 +3,11 @@
     <!-- 顶部工具栏 -->
     <div class="toolbar">
       <div class="toolbar-left">
-        <el-button type="primary" @click="showSettingsDialog = true" :disabled="store.isRunning">
+        <el-button type="primary" :disabled="store.isRunning" @click="showSettingsDialog = true">
           <el-icon><Setting /></el-icon> 设置
         </el-button>
         <el-tooltip v-if="!store.isRunning" :content="!store.calibLoaded ? '请先加载校准文件' : ''" :disabled="store.calibLoaded" placement="bottom">
-          <el-button type="success" @click="store.startTest()" :disabled="!store.calibLoaded">
+          <el-button type="success" :disabled="!store.calibLoaded" @click="store.startTest()">
             启动测试
           </el-button>
         </el-tooltip>
@@ -37,7 +37,7 @@
 
     <!-- 错误信息 -->
     <div v-if="store.lastError" class="error-bar">
-      <el-alert :title="store.lastError" type="error" :closable="true" @close="store.lastError = ''" show-icon />
+      <el-alert :title="store.lastError" type="error" :closable="true" show-icon @close="store.clearError()" />
     </div>
 
     <!-- 主内容区 -->
@@ -47,13 +47,16 @@
         <!-- 布点预览图 -->
         <GlassCard title="布点预览" icon="🗺️">
           <div class="point-legend">
-            <span class="legend-item"><span class="legend-dot pending"></span>待测</span>
-            <span class="legend-item"><span class="legend-dot moving"></span>移动</span>
-            <span class="legend-item"><span class="legend-dot acquiring"></span>采集</span>
-            <span class="legend-item"><span class="legend-dot waiting"></span>等待</span>
-            <span class="legend-item"><span class="legend-dot completed"></span>完成</span>
+            <span class="legend-item"><span class="legend-dot pending" />待测</span>
+            <span class="legend-item"><span class="legend-dot moving" />移动</span>
+            <span class="legend-item"><span class="legend-dot acquiring" />采集</span>
+            <span class="legend-item"><span class="legend-dot waiting" />等待</span>
+            <span class="legend-item"><span class="legend-dot completed" />完成</span>
           </div>
-          <canvas ref="pointCanvasRef" class="point-canvas" width="400" height="400"></canvas>
+          <canvas ref="pointCanvasRef" class="point-canvas" width="400" height="400" />
+          <div v-if="previewPoints.length > 10000" class="point-count-warning">
+            ⚠ 布点数量 {{ previewPoints.length }} 较大，测试耗时可能很长
+          </div>
         </GlassCard>
 
         <!-- 实时数据 -->
@@ -68,7 +71,6 @@
               <div class="data-item"><span class="label">T∞</span><ValueDisplay :value="store.realtime?.rawData.tAtm" :precision="2" unit="°C" /></div>
             </div>
           </div>
-
         </GlassCard>
       </div>
 
@@ -105,8 +107,6 @@
             <div class="data-item"><span class="label">迭代次数</span><ValueDisplay :value="store.realtime?.interpResult.iterationCount" :precision="0" color="rgba(255,255,255,0.6)" /></div>
           </div>
         </GlassCard>
-
-
       </div>
     </div>
 
@@ -197,27 +197,19 @@
             <div class="section-title">⚙️ 硬件参数</div>
             <div class="form-row">
               <div class="form-group">
-                <label class="group-label">X轴</label>
+                <label class="group-label">α方向</label>
                 <div class="axis-inputs">
-                  <el-select v-model="store.config.motionX.axis" style="width: 60px">
+                  <el-select v-model="store.config.motionAlpha.axis" style="width: 60px">
                     <el-option v-for="axis in axisOptions" :key="axis" :label="axis" :value="axis" />
                   </el-select>
-                  <el-input-number v-model="store.config.motionX.scale" :step="0.1" size="small" style="width:70px" />
-                  <span class="unit-label">×</span>
-                  <el-input-number v-model="store.config.motionX.offset" :step="1" size="small" style="width:70px" />
-                  <span class="unit-label">+</span>
                 </div>
               </div>
               <div class="form-group">
-                <label class="group-label">Y轴</label>
+                <label class="group-label">β方向</label>
                 <div class="axis-inputs">
-                  <el-select v-model="store.config.motionY.axis" style="width: 60px">
+                  <el-select v-model="store.config.motionBeta.axis" style="width: 60px">
                     <el-option v-for="axis in axisOptions" :key="axis" :label="axis" :value="axis" />
                   </el-select>
-                  <el-input-number v-model="store.config.motionY.scale" :step="0.1" size="small" style="width:70px" />
-                  <span class="unit-label">×</span>
-                  <el-input-number v-model="store.config.motionY.offset" :step="1" size="small" style="width:70px" />
-                  <span class="unit-label">+</span>
                 </div>
               </div>
             </div>
@@ -234,6 +226,11 @@
               <div class="form-group">
                 <label class="group-label">采样次数</label>
                 <el-input-number v-model="store.config.samplesPerPoint" :min="1" :max="100" size="small" style="width:100px" />
+              </div>
+              <div class="form-group">
+                <label class="group-label">采样间隔</label>
+                <el-input-number v-model="store.config.sampleIntervalMs" :min="10" :step="10" size="small" style="width:100px" />
+                <span class="unit-label">ms</span>
               </div>
             </div>
             <div class="form-row" style="margin-top: 8px">
@@ -258,10 +255,10 @@
               <el-button size="small" type="primary" plain @click="store.selectCalibFiles()">选择文件</el-button>
             </div>
             <div v-if="store.calibLoaded" class="calib-status loaded">
-              <span class="status-dot"></span>已加载 {{ store.calibFiles.length }} 个文件
+              <span class="status-dot" />已加载 {{ store.calibFiles.length }} 个文件
             </div>
             <div v-else class="calib-status not-loaded">
-              <span class="status-dot"></span>未加载校准文件
+              <span class="status-dot" />未加载校准文件
             </div>
             <div v-if="store.calibFiles.length > 0" class="calib-file-list">
               <div v-for="(f, i) in store.calibFiles" :key="i" class="calib-file-item" :title="f">{{ f.split(/[/\\]/).pop() }}</div>
@@ -336,9 +333,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick, shallowRef } from 'vue'
 import { Setting } from '@element-plus/icons-vue'
-import { useThreeHoleTestStore } from '../stores/threeHoleTest'
 import { useDeviceStore } from '../stores/device'
 import { useMotionStore } from '../stores/motion'
+import { useThreeHoleTestStore } from '../stores/threeHoleTest'
 import {
   TraversalPattern,
   TraversalPatternLabels,
@@ -348,8 +345,8 @@ import {
   getTotalChannelCount,
   type TraversalPatternValue,
 } from '../api/enums'
-import GlassCard from '../components/GlassCard.vue'
 import ChartPanel from '../components/ChartPanel.vue'
+import GlassCard from '../components/GlassCard.vue'
 import ValueDisplay from '../components/ValueDisplay.vue'
 
 const store = useThreeHoleTestStore()
@@ -487,20 +484,11 @@ const previewPoints = computed(() => {
     points[i].state = 'completed'
   }
 
-  // 标记当前正在处理的点
+  // 标记当前正在处理的点（按索引定位，与后端遍历顺序一致）
   const currentPoint = store.progress
-  if (currentPoint && store.isRunning) {
-    const cx = currentPoint.currentX
-    const cy = currentPoint.currentY
+  if (currentPoint && store.isRunning && completedCount < points.length) {
     const phase = currentPoint.phase
-    for (let i = completedCount; i < points.length; i++) {
-      const pt = points[i]
-      const dist = Math.sqrt((pt.x - cx) ** 2 + (pt.y - cy) ** 2)
-      if (dist < 0.01) {
-        pt.state = (phase === 'moving' || phase === 'waiting' || phase === 'acquiring') ? phase : 'acquiring'
-        break
-      }
-    }
+    points[completedCount].state = (phase === 'moving' || phase === 'waiting' || phase === 'acquiring') ? phase : 'acquiring'
   }
 
   return points
@@ -509,7 +497,12 @@ const previewPoints = computed(() => {
 function expandSteps(steps: { start: number; end: number; step: number }[]): number[] {
   const values: number[] = []
   for (const seg of steps) {
-    const step = seg.step || 1
+    // step=0 时只取起止点，与后端 expandStepSegments 行为保持一致
+    if (seg.step === 0) {
+      values.push(seg.start, seg.end)
+      continue
+    }
+    const step = seg.step
     for (let v = seg.start; v <= seg.end + step * 0.01; v += step) {
       values.push(Math.round(v * 10000) / 10000)
     }
@@ -859,7 +852,6 @@ onMounted(() => {
 
 onUnmounted(() => {
   store.stopRealtimeMonitor()
-  store.stopTest()
 })
 
 // 配置变更时自动保存（防抖500ms，避免输入时频繁写后端）
@@ -980,6 +972,13 @@ watch(() => store.config, () => {
   gap: 10px;
   margin-bottom: 6px;
   flex-wrap: wrap;
+}
+
+.point-count-warning {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #ff9800;
+  text-align: center;
 }
 
 .legend-item {

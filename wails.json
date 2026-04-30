@@ -12,9 +12,9 @@
   },
   "info": {
     "companyName": "YX",
-    "productName": "YX-DAQ 五孔探针校准系统",
+    "productName": "YX-DAQ",
     "productVersion": "1.0.0",
     "copyright": "Copyright © 2026 YX",
-    "comments": "五孔探针校准系统桌面端应用"
+    "comments": "YX-DAQ桌面端应用"
   }
 }

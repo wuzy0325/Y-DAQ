@@ -12,13 +12,17 @@
           size="small"
           :disabled="!hasConnectedDevice && !deviceStore.isAcquiring"
           @click="deviceStore.isAcquiring ? handleStopAcqAll() : handleStartAcqAll()"
-        >{{ deviceStore.isAcquiring ? '停止采集' : '开始采集' }}</el-button>
+        >
+          {{ deviceStore.isAcquiring ? '停止采集' : '开始采集' }}
+        </el-button>
         <el-button
           :type="isRecording ? 'danger' : 'primary'"
           size="small"
           :disabled="!deviceStore.isAcquiring && !isRecording"
           @click="isRecording ? handleStopRecording() : handleStartRecording()"
-        >{{ isRecording ? '停止记录' : '开始记录' }}</el-button>
+        >
+          {{ isRecording ? '停止记录' : '开始记录' }}
+        </el-button>
       </div>
       <div class="device-list">
         <div
@@ -35,7 +39,7 @@
               disconnected: s.status !== 'Connected',
               acquiring: s.acquiring,
             }"
-          ></span>
+          />
           <div class="device-info">
             <span class="device-name">{{ s.name }}</span>
             <span class="device-type">{{ s.type }}</span>
@@ -48,14 +52,18 @@
             size="small"
             class="conn-btn"
             @click.stop="handleConnect(s.id)"
-          >连接</el-button>
+          >
+            连接
+          </el-button>
           <el-button
             v-else
             type="warning"
             size="small"
             class="conn-btn"
             @click.stop="handleDisconnect(s.id)"
-          >断开</el-button>
+          >
+            断开
+          </el-button>
         </div>
         <div v-if="deviceStore.statuses.length === 0" class="no-device">
           暂无设备，请先在设备管理中添加设备
@@ -71,10 +79,10 @@
         <GlassCard title="实时压力数据" icon="📊" class="chart-card">
           <template #actions>
             <el-popover
+              v-model:visible="channelSelectorVisible"
               placement="bottom-end"
               :width="200"
               trigger="click"
-              v-model:visible="channelSelectorVisible"
             >
               <template #reference>
                 <el-button size="small">通道选择</el-button>
@@ -85,7 +93,9 @@
                     :model-value="allChannelsSelected"
                     :indeterminate="!allChannelsSelected && visibleChannels.size > 0"
                     @change="toggleAllChannels"
-                  >全选</el-checkbox>
+                  >
+                    全选
+                  </el-checkbox>
                 </div>
                 <div class="selector-list">
                   <el-checkbox
@@ -93,7 +103,9 @@
                     :key="ch.index"
                     :model-value="visibleChannels.has(ch.index)"
                     @change="toggleChannel(ch.index)"
-                  >{{ ch.label }}</el-checkbox>
+                  >
+                    {{ ch.label }}
+                  </el-checkbox>
                 </div>
               </div>
             </el-popover>
@@ -122,8 +134,9 @@
 import { ref, computed, watch, onMounted, shallowRef, triggerRef } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useDeviceStore } from '../stores/device'
-import GlassCard from '../components/GlassCard.vue'
+import { NEON_COLORS } from '../constants/colors'
 import ChartPanel from '../components/ChartPanel.vue'
+import GlassCard from '../components/GlassCard.vue'
 import ValueDisplay from '../components/ValueDisplay.vue'
 
 // keep-alive 需要组件名匹配
@@ -360,7 +373,7 @@ watch(() => deviceStore.snapshots, (snaps) => {
   scheduleChartUpdate()
 })
 
-const NEON_COLORS = ['#b829ff', '#00f5ff', '#00ff88', '#ffaa00', '#ff3366', '#00aaff', '#d966ff', '#66faff']
+// NEON_COLORS 从 constants/colors.ts 导入，与 SCSS 变量保持同步
 
 // 使用 shallowRef 避免深层响应式追踪，减少不必要的触发
 const chartOption = shallowRef<Record<string, any>>({
@@ -570,13 +583,13 @@ watch(() => deviceStore.isAcquiring, (acquiring) => {
 
   &:hover {
     background: rgba(255,255,255,0.08);
-    border-color: rgba(0,245,255,0.3);
+    border-color: rgba($color-accent, 0.3);
   }
 
   &.active {
-    background: rgba(0,245,255,0.1);
-    border-color: rgba(0,245,255,0.5);
-    box-shadow: 0 0 12px rgba(0,245,255,0.15);
+    background: rgba($color-accent, 0.1);
+    border-color: rgba($color-accent, 0.5);
+    box-shadow: 0 0 12px rgba($color-accent, 0.15);
   }
 }
 
@@ -587,17 +600,17 @@ watch(() => deviceStore.isAcquiring, (acquiring) => {
   flex-shrink: 0;
 
   &.connected {
-    background: #00ff88;
-    box-shadow: 0 0 8px rgba(0,255,136,0.6);
+    background: $color-success;
+    box-shadow: 0 0 8px $color-success-glow;
   }
 
   &.disconnected {
-    background: #666;
+    background: rgba(255,255,255,0.3);
   }
 
   &.acquiring {
-    background: #00f5ff;
-    box-shadow: 0 0 8px rgba(0,245,255,0.6);
+    background: $color-accent;
+    box-shadow: 0 0 8px $color-accent-glow;
     animation: lightPulse 1.5s ease-in-out infinite;
   }
 }
@@ -633,8 +646,8 @@ watch(() => deviceStore.isAcquiring, (acquiring) => {
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 10px;
-  background: rgba(0,245,255,0.15);
-  color: #00f5ff;
+  background: rgba($color-accent, 0.15);
+  color: $color-accent;
   flex-shrink: 0;
 }
 
@@ -642,8 +655,8 @@ watch(() => deviceStore.isAcquiring, (acquiring) => {
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 10px;
-  background: rgba(255,51,102,0.15);
-  color: #ff3366;
+  background: rgba($color-danger, 0.15);
+  color: $color-danger;
   flex-shrink: 0;
 }
 

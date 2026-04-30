@@ -7,6 +7,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { COLOR_ACCENT } from '../constants/colors'
 
 const props = withDefaults(defineProps<{
   value?: number
@@ -15,7 +16,7 @@ const props = withDefaults(defineProps<{
   color?: string
 }>(), {
   precision: 3,
-  color: '#00f5ff',
+  color: COLOR_ACCENT,
 })
 
 const formattedValue = computed(() => {

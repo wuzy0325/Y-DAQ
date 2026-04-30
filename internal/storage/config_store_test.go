@@ -10,26 +10,22 @@ func TestConfigStore_SaveAndLoad(t *testing.T) {
 	tmpDir := t.TempDir()
 	filePath := filepath.Join(tmpDir, "test.json")
 
-	defaultData := map[string]interface{}{
+	defaultData := map[string]any{
 		"key1": "value1",
 		"key2": float64(42),
 	}
 
 	store := NewConfigStore(filePath, defaultData)
 
-	// 保存
 	if err := store.Save(); err != nil {
 		t.Fatalf("Save failed: %v", err)
 	}
 
-	// 验证文件存在
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		t.Fatal("config file was not created")
 	}
 
-	// 重新加载
-	loadData := make(map[string]interface{})
-	store2 := NewConfigStore(filePath, &loadData)
+	store2 := NewConfigStore(filePath, map[string]any{})
 	if err := store2.Load(); err != nil {
 		t.Fatalf("Load failed: %v", err)
 	}
@@ -39,9 +35,9 @@ func TestConfigStore_Set(t *testing.T) {
 	tmpDir := t.TempDir()
 	filePath := filepath.Join(tmpDir, "test.json")
 
-	store := NewConfigStore(filePath, map[string]interface{}{})
+	store := NewConfigStore(filePath, map[string]any{})
 
-	newData := map[string]interface{}{
+	newData := map[string]any{
 		"updated": true,
 	}
 
@@ -49,8 +45,7 @@ func TestConfigStore_Set(t *testing.T) {
 		t.Fatalf("Set failed: %v", err)
 	}
 
-	// 验证数据已更新
-	data := store.Get().(map[string]interface{})
+	data := store.Get()
 	if data["updated"] != true {
 		t.Error("data was not updated")
 	}

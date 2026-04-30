@@ -1,7 +1,7 @@
 <template>
   <div class="calibration-view">
     <div class="grid-row">
-      <GlassCard title="校准配置" icon="🔬" style="flex: 0 0 360px">
+      <GlassCard title="校准配置" icon="🔬" class="left-panel">
         <el-form label-width="80px" size="small">
           <el-form-item label="校准类型">
             <el-select v-model="config.type" style="width: 100%">
@@ -21,14 +21,14 @@
             </el-select>
           </el-form-item>
           <el-form-item label="α范围">
-            <div style="display:flex;gap:8px;align-items:center">
+            <div class="form-row">
               <el-input-number v-model="config.alphaMin" :step="5" size="small" style="width:100px" />
               <span>~</span>
               <el-input-number v-model="config.alphaMax" :step="5" size="small" style="width:100px" />
             </div>
           </el-form-item>
           <el-form-item label="β范围">
-            <div style="display:flex;gap:8px;align-items:center">
+            <div class="form-row">
               <el-input-number v-model="config.betaMin" :step="5" size="small" style="width:100px" />
               <span>~</span>
               <el-input-number v-model="config.betaMax" :step="5" size="small" style="width:100px" />
@@ -63,7 +63,7 @@
         </div>
       </GlassCard>
 
-      <div style="flex:1; display:flex; flex-direction:column; gap:16px">
+      <div class="right-panel">
         <GlassCard title="实时数据" icon="⚡">
           <div class="realtime-panel">
             <div class="section-label">原始压力</div>
@@ -95,7 +95,7 @@
         </GlassCard>
 
         <GlassCard title="系数等值线图" icon="🗺️">
-          <div style="display:flex;gap:8px;margin-bottom:8px">
+          <div class="chart-controls">
             <el-radio-group v-model="contourField" size="small">
               <el-radio-button label="Kalpha">Kα</el-radio-button>
               <el-radio-button label="Kbeta">Kβ</el-radio-button>
@@ -108,7 +108,7 @@
       </div>
     </div>
 
-    <GlassCard title="校准结果" icon="📋" style="margin-top: 16px">
+    <GlassCard title="校准结果" icon="📋" class="mt-lg">
       <template #actions>
         <el-button v-if="hasResults" type="primary" size="small" @click="exportCSV">导出CSV</el-button>
         <el-button v-if="hasResults" type="success" size="small" @click="exportPDF">导出PDF</el-button>
@@ -136,10 +136,10 @@
 <script setup lang="ts">
 import { reactive, ref, computed } from 'vue'
 import { useCalibrationStore } from '../stores/calibration'
-import GlassCard from '../components/GlassCard.vue'
-import ChartPanel from '../components/ChartPanel.vue'
-import ValueDisplay from '../components/ValueDisplay.vue'
 import CalibPointEditor from '../components/CalibPointEditor.vue'
+import ChartPanel from '../components/ChartPanel.vue'
+import GlassCard from '../components/GlassCard.vue'
+import ValueDisplay from '../components/ValueDisplay.vue'
 
 const calibStore = useCalibrationStore()
 
@@ -304,22 +304,28 @@ async function exportPDF() {
 </script>
 
 <style lang="scss" scoped>
-.calibration-view { display: flex; flex-direction: column; gap: 16px; }
-.grid-row { display: flex; gap: 16px; }
+.calibration-view { display: flex; flex-direction: column; gap: $spacing-lg; }
+.grid-row { display: flex; gap: $spacing-lg; }
 
-.calib-controls { display: flex; gap: 8px; margin-top: 12px; }
-.point-editor-section { margin-top: 12px; }
+.left-panel { flex: 0 0 360px; }
+.right-panel { flex: 1; display: flex; flex-direction: column; gap: $spacing-lg; }
+.form-row { display: flex; gap: $spacing-sm; align-items: center; }
+.chart-controls { display: flex; gap: $spacing-sm; margin-bottom: $spacing-sm; }
+.mt-lg { margin-top: $spacing-lg; }
 
-.realtime-panel { display: flex; flex-direction: column; gap: 8px; }
-.section-label { font-size: 11px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; }
-.raw-data, .coefficients { display: flex; flex-wrap: wrap; gap: 8px; }
+.calib-controls { display: flex; gap: $spacing-sm; margin-top: $spacing-md; }
+.point-editor-section { margin-top: $spacing-md; }
+
+.realtime-panel { display: flex; flex-direction: column; gap: $spacing-sm; }
+.section-label { font-size: $font-size-xs; color: $text-muted; text-transform: uppercase; letter-spacing: 1px; }
+.raw-data, .coefficients { display: flex; flex-wrap: wrap; gap: $spacing-sm; }
 .data-item, .coeff-item {
-  background: rgba(255,255,255,0.04); border-radius: 6px; padding: 6px 10px;
+  background: $glass-bg; border-radius: 6px; padding: 6px 10px;
   display: flex; flex-direction: column; align-items: center; min-width: 70px;
 }
 .data-item .label, .coeff-item .label { font-size: 10px; color: rgba(255,255,255,0.5); margin-bottom: 2px; }
 
 .no-data { color: rgba(255,255,255,0.3); text-align: center; padding: 20px; }
-.progress-section { margin-top: 12px; }
-.progress-text { font-size: 12px; color: rgba(255,255,255,0.6); margin-top: 4px; }
+.progress-section { margin-top: $spacing-md; }
+.progress-text { font-size: $font-size-sm; color: $text-tertiary; margin-top: 4px; }
 </style>

@@ -6,25 +6,27 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+
+	"yx-daq/internal/types"
 )
 
 // ConfigStore JSON配置存储（原子写入）
-type ConfigStore struct {
+type ConfigStore[T any] struct {
 	mu       sync.RWMutex
 	filePath string
-	data     interface{}
+	data     T
 }
 
 // NewConfigStore 创建配置存储
-func NewConfigStore(filePath string, defaultData interface{}) *ConfigStore {
-	return &ConfigStore{
+func NewConfigStore[T any](filePath string, defaultData T) *ConfigStore[T] {
+	return &ConfigStore[T]{
 		filePath: filePath,
 		data:     defaultData,
 	}
 }
 
 // Load 从文件加载配置
-func (s *ConfigStore) Load() error {
+func (s *ConfigStore[T]) Load() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -36,16 +38,14 @@ func (s *ConfigStore) Load() error {
 		return fmt.Errorf("read config file failed: %w", err)
 	}
 
-	// 修复损坏的JSON
 	raw = tryFixCorruptedJson(raw)
 	if len(raw) == 0 {
 		return s.writeLocked()
 	}
 
-	// 先解析为通用类型，再赋值，避免 map/数组类型不匹配导致反序列化失败
-	var parsed interface{}
+	var parsed T
 	if err := json.Unmarshal(raw, &parsed); err != nil {
-		return fmt.Errorf("parse config file failed: %w", err)
+		return s.writeLocked()
 	}
 	s.data = parsed
 
@@ -53,13 +53,13 @@ func (s *ConfigStore) Load() error {
 }
 
 // Save 保存配置到文件（原子写入）
-func (s *ConfigStore) Save() error {
+func (s *ConfigStore[T]) Save() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.writeLocked()
 }
 
-func (s *ConfigStore) writeLocked() error {
+func (s *ConfigStore[T]) writeLocked() error {
 	dir := filepath.Dir(s.filePath)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err
@@ -70,7 +70,6 @@ func (s *ConfigStore) writeLocked() error {
 		return fmt.Errorf("marshal config failed: %w", err)
 	}
 
-	// 原子写入：先写临时文件，再重命名
 	tmpPath := s.filePath + ".tmp"
 	if err := os.WriteFile(tmpPath, data, 0644); err != nil {
 		return fmt.Errorf("write temp file failed: %w", err)
@@ -83,15 +82,15 @@ func (s *ConfigStore) writeLocked() error {
 	return nil
 }
 
-// Get 获取数据（只读副本）
-func (s *ConfigStore) Get() interface{} {
+// Get 获取数据
+func (s *ConfigStore[T]) Get() T {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.data
 }
 
 // Set 设置数据并保存
-func (s *ConfigStore) Set(data interface{}) error {
+func (s *ConfigStore[T]) Set(data T) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.data = data
@@ -103,47 +102,55 @@ func tryFixCorruptedJson(raw []byte) []byte {
 	if len(raw) == 0 {
 		return []byte("{}")
 	}
-	// 尝试解析，如果成功直接返回
-	var test interface{}
+	var test any
 	if json.Unmarshal(raw, &test) == nil {
 		return raw
 	}
-	// 简单修复：空文件返回空对象
 	return []byte("{}")
 }
 
 // ConfigManager 管理所有配置存储
 type ConfigManager struct {
-	Devices     *ConfigStore
-	Motion      *ConfigStore
-	Acquisition *ConfigStore
-	Calibration *ConfigStore
-	Storage     *ConfigStore
-	ThreeHole   *ConfigStore
+	Devices     *ConfigStore[[]types.DeviceProfile]
+	Motion      *ConfigStore[[]types.MotionControllerProfile]
+	Acquisition *ConfigStore[map[string]any] // TODO: 替换为具体类型如 ConfigStore[AcquisitionConfig]
+	Calibration *ConfigStore[map[string]any] // TODO: 替换为具体类型如 ConfigStore[CalibrationConfig]
+	Storage     *ConfigStore[map[string]any] // TODO: 替换为具体类型如 ConfigStore[StorageConfig]
+	ThreeHole   *ConfigStore[types.ThreeHoleTraversalConfig]
 }
 
 // NewConfigManager 创建配置管理器
 func NewConfigManager(configDir string) *ConfigManager {
 	return &ConfigManager{
-		Devices:     NewConfigStore(filepath.Join(configDir, "devices.json"), map[string]interface{}{}),
-		Motion:      NewConfigStore(filepath.Join(configDir, "motion.json"), map[string]interface{}{}),
-		Acquisition: NewConfigStore(filepath.Join(configDir, "acquisition.json"), map[string]interface{}{}),
-		Calibration: NewConfigStore(filepath.Join(configDir, "calibration.json"), map[string]interface{}{}),
-		Storage:     NewConfigStore(filepath.Join(configDir, "storage.json"), map[string]interface{}{}),
-		ThreeHole:   NewConfigStore(filepath.Join(configDir, "three_hole.json"), map[string]interface{}{}),
+		Devices:     NewConfigStore(filepath.Join(configDir, "devices.json"), []types.DeviceProfile{}),
+		Motion:      NewConfigStore(filepath.Join(configDir, "motion.json"), []types.MotionControllerProfile{}),
+		Acquisition: NewConfigStore(filepath.Join(configDir, "acquisition.json"), map[string]any{}),
+		Calibration: NewConfigStore(filepath.Join(configDir, "calibration.json"), map[string]any{}),
+		Storage:     NewConfigStore(filepath.Join(configDir, "storage.json"), map[string]any{}),
+		ThreeHole:   NewConfigStore(filepath.Join(configDir, "three_hole.json"), types.ThreeHoleTraversalConfig{}),
 	}
 }
 
 // LoadAll 加载所有配置
 func (m *ConfigManager) LoadAll() error {
-	stores := []*ConfigStore{m.Devices, m.Motion, m.Acquisition, m.Calibration, m.Storage, m.ThreeHole}
 	var firstErr error
-	for _, s := range stores {
-		if err := s.Load(); err != nil {
-			if firstErr == nil {
-				firstErr = err
-			}
-		}
+	if err := m.Devices.Load(); err != nil && firstErr == nil {
+		firstErr = err
+	}
+	if err := m.Motion.Load(); err != nil && firstErr == nil {
+		firstErr = err
+	}
+	if err := m.Acquisition.Load(); err != nil && firstErr == nil {
+		firstErr = err
+	}
+	if err := m.Calibration.Load(); err != nil && firstErr == nil {
+		firstErr = err
+	}
+	if err := m.Storage.Load(); err != nil && firstErr == nil {
+		firstErr = err
+	}
+	if err := m.ThreeHole.Load(); err != nil && firstErr == nil {
+		firstErr = err
 	}
 	return firstErr
 }

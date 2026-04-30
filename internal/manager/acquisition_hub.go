@@ -12,7 +12,6 @@ type AcquisitionHub struct {
 	mu         sync.RWMutex
 	latestData map[string]types.DataPayload
 	publishHz  int
-	snapshots  []types.DataPayload
 	onSnapshot func(snapshots []types.DataPayload)
 }
 

@@ -17,7 +17,7 @@
         <el-table-column prop="status" label="连接状态" width="110" align="center">
           <template #default="{ row }">
             <div class="status-badge" :class="row.status === 'Connected' ? 'connected' : 'disconnected'">
-              <span class="status-dot"></span>
+              <span class="status-dot" />
               <span class="status-text">{{ row.status === 'Connected' ? '已连接' : '未连接' }}</span>
             </div>
           </template>
@@ -25,7 +25,7 @@
         <el-table-column prop="acquiring" label="采集" min-width="100" align="center">
           <template #default="{ row }">
             <div v-if="row.acquiring" class="acquiring-badge">
-              <span class="pulse-dot"></span>
+              <span class="pulse-dot" />
               <span>采集中</span>
             </div>
             <span v-else class="idle-badge">--</span>
@@ -70,7 +70,7 @@
         </el-form>
       </div>
 
-      <div class="dialog-section" v-if="newDevice.type !== 'SIMULATED'">
+      <div v-if="newDevice.type !== 'SIMULATED'" class="dialog-section">
         <div class="section-title">🔗 网络配置</div>
         <div class="form-row">
           <div class="form-group">
@@ -234,11 +234,10 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
-import { ElMessage } from 'element-plus'
 import { Edit, Link, CircleClose, Delete } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import { useDeviceStore } from '../stores/device'
 import GlassCard from '../components/GlassCard.vue'
-import StatusIndicator from '../components/StatusIndicator.vue'
 
 const deviceStore = useDeviceStore()
 
@@ -609,18 +608,18 @@ async function removeDevice(id: string) {
   font-weight: 500;
 
   &.connected {
-    background: rgba(0,255,136,0.1);
-    color: #00ff88;
+    background: rgba($color-success, 0.1);
+    color: $color-success;
     .status-dot {
-      background: #00ff88;
-      box-shadow: 0 0 4px rgba(0,255,136,0.5);
+      background: $color-success;
+      box-shadow: 0 0 4px rgba($color-success, 0.5);
     }
   }
   &.disconnected {
-    background: rgba(255,255,255,0.06);
-    color: rgba(255,255,255,0.5);
+    background: $glass-bg;
+    color: $text-tertiary;
     .status-dot {
-      background: rgba(255,255,255,0.4);
+      background: $text-muted;
     }
   }
 
@@ -637,8 +636,8 @@ async function removeDevice(id: string) {
   gap: 6px;
   padding: 3px 10px;
   border-radius: 12px;
-  background: rgba(0,245,255,0.1);
-  color: #00f5ff;
+  background: rgba($color-accent, 0.1);
+  color: $color-accent;
   font-size: 11px;
   font-weight: 500;
   white-space: nowrap;
@@ -647,7 +646,7 @@ async function removeDevice(id: string) {
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #00f5ff;
+    background: $color-accent;
     animation: pulse 1.5s infinite;
   }
 }

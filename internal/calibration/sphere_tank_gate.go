@@ -1,7 +1,7 @@
 package calibration
 
 import (
-	"log"
+	"log/slog"
 	"math"
 	"time"
 
@@ -10,8 +10,8 @@ import (
 
 // SphereTankGate 球罐稳定门控
 type SphereTankGate struct {
-	config      types.SphereTankGateConfig
-	dataGetter  func(deviceID string, channelIndex int) (float64, bool)
+	config     types.SphereTankGateConfig
+	dataGetter func(deviceID string, channelIndex int) (float64, bool)
 }
 
 // NewSphereTankGate 创建球罐门控
@@ -47,47 +47,41 @@ func (g *SphereTankGate) WaitForStable(deviceID string, maxWaitMs int) (bool, in
 	ticker := time.NewTicker(sampleInterval)
 	defer ticker.Stop()
 
-	for {
-		select {
-		case <-ticker.C:
-			elapsed := time.Since(startTime)
-			if elapsed > maxDuration {
-				log.Printf("SphereTankGate: timeout after %v", elapsed)
-				return false, int(elapsed.Milliseconds())
-			}
+	for range ticker.C {
+		elapsed := time.Since(startTime)
+		if elapsed > maxDuration {
+			slog.Warn("SphereTankGate timeout", "elapsed", elapsed)
+			return false, int(elapsed.Milliseconds())
+		}
 
-			// 读取当前压力值
-			currentValue, ok := g.dataGetter(deviceID, g.config.ChannelIndex)
-			if !ok {
-				continue
-			}
+		currentValue, ok := g.dataGetter(deviceID, g.config.ChannelIndex)
+		if !ok {
+			continue
+		}
 
-			if !hasPrev {
-				prevValue = currentValue
-				hasPrev = true
-				continue
-			}
-
-			// 计算变化率 (单位/ms)
-			rate := math.Abs(currentValue-prevValue) / sampleInterval.Seconds()
+		if !hasPrev {
 			prevValue = currentValue
+			hasPrev = true
+			continue
+		}
 
-			if rate <= thresholdRate {
-				// 变化率低于阈值
-				if stableStart.IsZero() {
-					stableStart = time.Now()
-				}
-				stableDuration := time.Since(stableStart)
-				if stableDuration >= time.Duration(stableRequiredMs)*time.Millisecond {
-					log.Printf("SphereTankGate: stable after %v (rate=%.6f)", elapsed, rate)
-					return true, int(elapsed.Milliseconds())
-				}
-			} else {
-				// 变化率超过阈值，重置稳定计时
-				stableStart = time.Time{}
+		rate := math.Abs(currentValue-prevValue) / sampleInterval.Seconds()
+		prevValue = currentValue
+
+		if rate <= thresholdRate {
+			if stableStart.IsZero() {
+				stableStart = time.Now()
 			}
+			stableDuration := time.Since(stableStart)
+			if stableDuration >= time.Duration(stableRequiredMs)*time.Millisecond {
+				slog.Info("SphereTankGate stable", "elapsed", elapsed, "rate", rate)
+				return true, int(elapsed.Milliseconds())
+			}
+		} else {
+			stableStart = time.Time{}
 		}
 	}
+	return false, 0
 }
 
 // IsStable 快速检查当前是否稳定（不等待）

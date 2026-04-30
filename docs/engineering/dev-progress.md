@@ -174,64 +174,7 @@ yx-daq/build/bin/yx-daq.exe              (Windows 可执行文件, 1440×900 窗
 yx-daq/build/bin/yx-daq-amd64-installer.exe  (NSIS安装包, 需 wails build --nsis)
 ```
 
-## 目录结构
-
-```
-yx-daq/
-├── app.go                          # Wails API 层 (35+ 绑定方法)
-├── main.go                         # Go 入口 (窗口 1440×900)
-├── wails.json                      # Wails 配置 (含NSIS info)
-├── build.bat                       # 一键构建脚本
-├── go.mod / go.sum                 # Go 依赖
-├── internal/
-│   ├── types/                      # 共享类型
-│   │   ├── device.go, motion.go, calibration.go, constants.go
-│   ├── driver/                     # 驱动层
-│   │   ├── xy_daq16.go             # XY-DAQ16 TCP 驱动
-│   │   ├── b140.go                 # B140 TCP 驱动
-│   │   ├── simulated_device.go     # 模拟设备
-│   │   └── simulated_motion.go     # 模拟运动控制器
-│   ├── manager/                    # 管理器层
-│   │   ├── device_manager.go, motion_manager.go, acquisition_hub.go
-│   ├── calibration/                # 校准模块
-│   │   ├── service.go              # 校准服务
-│   │   ├── formulas.go             # 系数计算公式
-│   │   ├── encoder_compensation.go # 编码器补偿状态机
-│   │   ├── sphere_tank_gate.go     # 球罐稳定门控
-│   │   └── formulas_test.go        # 单元测试
-│   ├── storage/                    # 数据存储
-│   │   ├── config_store.go         # JSON 配置持久化
-│   │   ├── data_storage.go         # CSV 录制/导出
-│   │   ├── pdf_report.go           # PDF 报告生成
-│   │   └── config_store_test.go    # 单元测试
-│   └── scanner/
-│       └── daq_scanner.go          # UDP 扫描器
-├── frontend/
-│   ├── src/
-│   │   ├── main.ts, App.vue
-│   │   ├── assets/styles/          # 深色霓虹样式系统
-│   │   ├── components/             # 通用组件
-│   │   │   ├── GlassCard.vue, ChartPanel.vue
-│   │   │   ├── StatusIndicator.vue, ValueDisplay.vue
-│   │   │   ├── CalibPointEditor.vue  # 校准点可视化编辑器
-│   │   │   └── __tests__/            # 组件测试
-│   │   │       ├── ValueDisplay.test.ts
-│   │   │       ├── StatusIndicator.test.ts
-│   │   │       └── GlassCard.test.ts
-│   │   ├── layouts/MainLayout.vue
-│   │   ├── stores/                 # Pinia stores
-│   │   │   ├── device.ts, motion.ts, calibration.ts
-│   │   └── views/                  # 页面视图
-│   │       ├── DashboardView.vue   # 仪表盘 + ECharts实时图
-│   │       ├── DeviceView.vue      # 设备管理 + 配置表单 + ECharts
-│   │       ├── MotionView.vue      # 运动控制 + 配置表单
-│   │       ├── CalibrationView.vue # 五孔校准 + 等值线图 + CSV/PDF导出 + 点编辑
-│   │       └── DataView.vue        # 数据管理 + CSV回放
-│   └── wailsjs/                    # Wails 自动生成的绑定
-└── build/
-    ├── bin/yx-daq.exe              # 构建产物
-    └── windows/installer/          # NSIS安装包配置
-```
+> 目录结构详见 `architecture.md`，此处不再重复。
 
 ## 待完善项
 

@@ -206,6 +206,10 @@ export function SetPublishRate(arg1) {
   return window['go']['main']['App']['SetPublishRate'](arg1);
 }
 
+export function SetUnit(arg1, arg2) {
+  return window['go']['main']['App']['SetUnit'](arg1, arg2);
+}
+
 export function StartAcquisition(arg1) {
   return window['go']['main']['App']['StartAcquisition'](arg1);
 }

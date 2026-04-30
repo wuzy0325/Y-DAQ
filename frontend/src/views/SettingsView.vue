@@ -34,7 +34,7 @@
           </div>
         </div>
         
-        <div class="file-list" v-if="recordingFiles.length > 0">
+        <div v-if="recordingFiles.length > 0" class="file-list">
           <div 
             v-for="file in recordingFiles" 
             :key="file.name" 
@@ -61,7 +61,7 @@
         <div class="section-header">
           <span class="section-icon">▶️</span>
           <span class="section-title">数据回放</span>
-          <div class="section-actions" v-if="playbackData.length > 0">
+          <div v-if="playbackData.length > 0" class="section-actions">
             <div class="speed-control">
               <span class="speed-label">{{ playbackSpeed }}x</span>
               <el-slider v-model="playbackSpeed" :min="0.25" :max="4" :step="0.25" :show-tooltip="false" style="width: 80px" />
@@ -104,47 +104,32 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ref, onMounted } from 'vue'
 import { Folder, Refresh, Upload, Document, VideoPlay, FolderOpened, RefreshLeft, VideoPause } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import { usePlayback } from '../composables/usePlayback'
 import ChartPanel from '../components/ChartPanel.vue'
+import { GetDataDir, SetDataSavePath, SelectDataSavePath, ListRecordingFiles, LoadCSVFile, ReadRecordingFile } from '../../wailsjs/go/main/App'
 
-// 数据保存路径
+const {
+  playbackData, playbackIndex, isPlaying, playbackSpeed,
+  parseAndLoadCSV, togglePlayback, resetPlayback,
+  playbackProgress, currentTimeLabel, playbackChartOption,
+} = usePlayback()
+
 const dataSavePath = ref('')
-
-// 录制文件
 const recordingFiles = ref<{ name: string }[]>([])
 
-// 回放状态
-const playbackData = ref<PlaybackRow[]>([])
-const playbackIndex = ref(0)
-const isPlaying = ref(false)
-const playbackSpeed = ref(1)
-let playbackTimer: number | null = null
-
-interface PlaybackRow {
-  timestamp: string
-  deviceId: string
-  channelIndex: number
-  channelName: string
-  value: number
-  unit: string
-}
-
-// 加载数据保存路径
 async function loadDataSavePath() {
   try {
-    const { GetDataDir } = await import('../../wailsjs/go/main/App')
     dataSavePath.value = await GetDataDir() as string
   } catch (e) {
     console.error('loadDataSavePath failed:', e)
   }
 }
 
-// 选择数据保存路径
 async function selectPath() {
   try {
-    const { SelectDataSavePath, SetDataSavePath } = await import('../../wailsjs/go/main/App')
     const dir = await SelectDataSavePath() as string
     if (dir) {
       await SetDataSavePath(dir)
@@ -155,10 +140,8 @@ async function selectPath() {
   }
 }
 
-// 恢复默认路径
 async function resetPath() {
   try {
-    const { SetDataSavePath, GetDataDir } = await import('../../wailsjs/go/main/App')
     await SetDataSavePath('')
     dataSavePath.value = await GetDataDir() as string
   } catch (e) {
@@ -166,10 +149,8 @@ async function resetPath() {
   }
 }
 
-// 刷新文件列表
 async function refreshFiles() {
   try {
-    const { ListRecordingFiles } = await import('../../wailsjs/go/main/App')
     const files = await ListRecordingFiles() as string[]
     recordingFiles.value = files.map(f => ({ name: f }))
   } catch (e) {
@@ -177,10 +158,8 @@ async function refreshFiles() {
   }
 }
 
-// 加载外部CSV
 async function loadExternalCSV() {
   try {
-    const { LoadCSVFile } = await import('../../wailsjs/go/main/App')
     const content = await LoadCSVFile() as string
     if (content) {
       parseAndLoadCSV(content)
@@ -190,197 +169,20 @@ async function loadExternalCSV() {
   }
 }
 
-// 加载录制文件回放
 async function loadFileForPlayback(fileName: string) {
-  console.log('[loadFileForPlayback] clicked, fileName:', fileName)
   try {
-    console.log('[loadFileForPlayback] importing ReadRecordingFile...')
-    const { ReadRecordingFile } = await import('../../wailsjs/go/main/App')
-    console.log('[loadFileForPlayback] ReadRecordingFile:', ReadRecordingFile)
     const content = await ReadRecordingFile(fileName) as string
-    console.log('[loadFileForPlayback] content length:', content?.length)
     if (content) {
-      console.log('[loadFileForPlayback] calling parseAndLoadCSV...')
       parseAndLoadCSV(content)
     } else {
-      console.warn('[loadFileForPlayback] content is empty')
+      ElMessage.warning('文件内容为空')
     }
   } catch (e: any) {
-    console.error('[loadFileForPlayback] failed:', e)
+    console.error('loadFileForPlayback failed:', e)
     ElMessage.error(`加载文件失败: ${e?.message || e}`)
   }
 }
 
-// 解析CSV内容
-function parseAndLoadCSV(content: string) {
-  console.log('[parseAndLoadCSV] start, content length:', content.length)
-  // 去除BOM
-  if (content.charCodeAt(0) === 0xFEFF) {
-    console.log('[parseAndLoadCSV] detected BOM, removing')
-    content = content.slice(1)
-  }
-
-  const lines = content.split('\n').filter(l => l.trim())
-  console.log('[parseAndLoadCSV] lines count:', lines.length)
-  if (lines.length < 2) {
-    console.warn('[parseAndLoadCSV] not enough lines, returning')
-    return
-  }
-
-  console.log('[parseAndLoadCSV] header:', lines[0])
-  // 跳过表头
-  const dataRows: PlaybackRow[] = []
-  for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(',')
-    console.log(`[parseAndLoadCSV] row ${i} cols=${cols.length}:`, cols)
-    if (cols.length >= 6) {
-      dataRows.push({
-        timestamp: cols[0].trim(),
-        deviceId: cols[1].trim(),
-        channelIndex: parseInt(cols[2].trim()) || 0,
-        channelName: cols[3].trim(),
-        value: parseFloat(cols[4].trim()) || 0,
-        unit: cols[5].trim(),
-      })
-    }
-  }
-
-  console.log('[parseAndLoadCSV] dataRows parsed:', dataRows.length)
-  if (dataRows.length > 0) {
-    playbackData.value = dataRows
-    playbackIndex.value = 0
-    isPlaying.value = false
-    console.log('[parseAndLoadCSV] playbackData updated, rows:', dataRows.length)
-  } else {
-    console.warn('[parseAndLoadCSV] no valid data rows found')
-  }
-}
-
-// 回放控制
-function togglePlayback() {
-  if (isPlaying.value) {
-    pausePlayback()
-  } else {
-    startPlayback()
-  }
-}
-
-function startPlayback() {
-  if (playbackData.value.length === 0) return
-  isPlaying.value = true
-
-  const intervalMs = 50 / playbackSpeed.value
-  playbackTimer = window.setInterval(() => {
-    if (playbackIndex.value < playbackData.value.length - 1) {
-      playbackIndex.value++
-    } else {
-      pausePlayback()
-    }
-  }, intervalMs)
-}
-
-function pausePlayback() {
-  isPlaying.value = false
-  if (playbackTimer !== null) {
-    clearInterval(playbackTimer)
-    playbackTimer = null
-  }
-}
-
-function resetPlayback() {
-  pausePlayback()
-  playbackIndex.value = 0
-}
-
-onUnmounted(() => {
-  if (playbackTimer !== null) {
-    clearInterval(playbackTimer)
-  }
-})
-
-// 回放进度
-const playbackProgress = computed(() => {
-  if (playbackData.value.length === 0) return 0
-  return Math.round((playbackIndex.value / (playbackData.value.length - 1)) * 100)
-})
-
-const currentTimeLabel = computed(() => {
-  if (playbackData.value.length === 0) return '--'
-  return playbackData.value[playbackIndex.value]?.timestamp ?? '--'
-})
-
-// 回放图表 - 按通道分组显示折线
-const CHANNEL_COLORS = ['#b829ff', '#00f5ff', '#00ff88', '#ffaa00', '#ff3366', '#00aaff', '#d966ff', '#66faff']
-
-const playbackChartOption = computed(() => {
-  if (playbackData.value.length === 0) {
-    return {
-      backgroundColor: 'transparent',
-      title: { text: '等待回放数据...', left: 'center', top: 'center', textStyle: { color: 'rgba(255,255,255,0.3)' } },
-    }
-  }
-
-  // 按通道分组
-  const channelMap = new Map<string, { time: number; value: number }[]>()
-  const data = playbackData.value
-  const endIdx = playbackIndex.value + 1
-
-  for (let i = 0; i < endIdx && i < data.length; i++) {
-    const row = data[i]
-    const key = `${row.channelName}`
-    if (!channelMap.has(key)) {
-      channelMap.set(key, [])
-    }
-    channelMap.get(key)!.push({ time: i, value: row.value })
-  }
-
-  const series: any[] = []
-  let chIdx = 0
-  channelMap.forEach((points, name) => {
-    series.push({
-      name,
-      type: 'line',
-      data: points.map(p => [p.time, p.value]),
-      smooth: true,
-      symbol: 'none',
-      lineStyle: { width: 1.5, color: CHANNEL_COLORS[chIdx % CHANNEL_COLORS.length] },
-      itemStyle: { color: CHANNEL_COLORS[chIdx % CHANNEL_COLORS.length] },
-    })
-    chIdx++
-  })
-
-  return {
-    backgroundColor: 'transparent',
-    tooltip: {
-      trigger: 'axis',
-      backgroundColor: 'rgba(10,10,26,0.9)',
-      borderColor: 'rgba(0,245,255,0.3)',
-      textStyle: { color: '#fff' },
-    },
-    legend: {
-      top: 0,
-      textStyle: { color: 'rgba(255,255,255,0.6)', fontSize: 10 },
-    },
-    grid: { left: 60, right: 20, top: 30, bottom: 30 },
-    xAxis: {
-      type: 'category',
-      axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
-      axisLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 10 },
-    },
-    yAxis: {
-      type: 'value',
-      scale: true,
-      name: 'kPa',
-      nameTextStyle: { color: 'rgba(255,255,255,0.5)' },
-      axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
-      axisLabel: { color: 'rgba(255,255,255,0.4)' },
-      splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } },
-    },
-    series,
-  }
-})
-
-// 初始化
 onMounted(() => {
   loadDataSavePath()
   refreshFiles()
@@ -397,8 +199,8 @@ onMounted(() => {
 
 // 通用区块样式
 .settings-section {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
+  background: $bg-tertiary;
+  border: 1px solid $glass-bg;
   border-radius: 10px;
   padding: 16px;
 }
@@ -409,7 +211,7 @@ onMounted(() => {
   gap: 8px;
   margin-bottom: 12px;
   padding-bottom: 12px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid $glass-bg;
 
   .section-icon {
     font-size: 16px;
@@ -489,13 +291,13 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 8px 10px;
-  background: rgba(255,255,255,0.03);
+  background: $bg-tertiary;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    background: rgba(255,255,255,0.06);
+    background: $glass-bg;
   }
 }
 
@@ -552,7 +354,7 @@ onMounted(() => {
 
     &.time {
       font-family: monospace;
-      color: #00f5ff;
+      color: $color-accent;
     }
   }
 }
@@ -567,7 +369,7 @@ onMounted(() => {
 
   .speed-label {
     font-size: 11px;
-    color: #00f5ff;
+    color: $color-accent;
     font-weight: 500;
     min-width: 30px;
   }
@@ -598,9 +400,9 @@ onMounted(() => {
   background-color: rgba(255,255,255,0.1);
 }
 :deep(.el-slider__bar) {
-  background-color: #00f5ff;
+  background-color: $color-accent;
 }
 :deep(.el-slider__button) {
-  border-color: #00f5ff;
+  border-color: $color-accent;
 }
 </style>

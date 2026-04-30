@@ -2,9 +2,9 @@
   <div class="data-view">
     <div class="grid-row">
       <!-- 录制控制 -->
-      <GlassCard title="数据管理" icon="💾" style="flex: 0 0 360px">
+      <GlassCard title="数据管理" icon="💾" class="sidebar-card">
         <div class="recording-status">
-          <span class="status-dot" :class="recording ? 'recording' : ''"></span>
+          <span class="status-dot" :class="recording ? 'recording' : ''" />
           <span>{{ recording ? '录制中...' : '未录制' }}</span>
         </div>
         <div class="data-info">
@@ -24,7 +24,7 @@
       </GlassCard>
 
       <!-- 录制文件列表 -->
-      <GlassCard title="录制文件" icon="📁" style="flex: 1">
+      <GlassCard title="录制文件" icon="📁" class="flex-card">
         <template #actions>
           <el-button type="primary" size="small" @click="loadExternalCSV">加载CSV</el-button>
           <el-button size="small" @click="refreshFiles">刷新</el-button>
@@ -39,7 +39,9 @@
                 :disabled="loadingFile === row.name"
                 :loading="loadingFile === row.name"
                 @click="loadFileForPlayback(row.name)"
-              >回放</el-button>
+              >
+                回放
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -78,44 +80,32 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useDeviceStore } from '../stores/device'
-import GlassCard from '../components/GlassCard.vue'
+import { usePlayback } from '../composables/usePlayback'
 import ChartPanel from '../components/ChartPanel.vue'
+import GlassCard from '../components/GlassCard.vue'
+import { ListRecordingFiles, LoadCSVFile, ReadRecordingFile } from '../../wailsjs/go/main/App'
 
 const deviceStore = useDeviceStore()
+
+const {
+  playbackData, playbackIndex, isPlaying, playbackSpeed,
+  parseAndLoadCSV, togglePlayback, resetPlayback,
+  playbackProgress, currentTimeLabel, playbackChartOption,
+} = usePlayback()
+
 const recording = ref(false)
 const publishRate = ref(20)
-
-// 录制文件
 const recordingFiles = ref<{ name: string }[]>([])
 const loadingFile = ref('')
 
-// 回放状态
-const playbackData = ref<PlaybackRow[]>([])
-const playbackIndex = ref(0)
-const isPlaying = ref(false)
-const playbackSpeed = ref(1)
-let playbackTimer: number | null = null
-
-interface PlaybackRow {
-  timestamp: string
-  deviceId: string
-  channelIndex: number
-  channelName: string
-  value: number
-  unit: string
-}
-
-// 录制控制
 function startRecording() { recording.value = true }
 function stopRecording() { recording.value = false }
 
-// 刷新文件列表
 async function refreshFiles() {
   try {
-    const { ListRecordingFiles } = await import('../../wailsjs/go/main/App')
     const files = await ListRecordingFiles() as string[]
     recordingFiles.value = files.map(f => ({ name: f }))
   } catch (e) {
@@ -123,10 +113,8 @@ async function refreshFiles() {
   }
 }
 
-// 加载外部CSV
 async function loadExternalCSV() {
   try {
-    const { LoadCSVFile } = await import('../../wailsjs/go/main/App')
     const content = await LoadCSVFile() as string
     if (content) {
       parseAndLoadCSV(content)
@@ -136,11 +124,9 @@ async function loadExternalCSV() {
   }
 }
 
-// 加载录制文件回放
 async function loadFileForPlayback(fileName: string) {
   loadingFile.value = fileName
   try {
-    const { ReadRecordingFile } = await import('../../wailsjs/go/main/App')
     const content = await ReadRecordingFile(fileName) as string
     if (content) {
       parseAndLoadCSV(content)
@@ -156,170 +142,16 @@ async function loadFileForPlayback(fileName: string) {
   }
 }
 
-// 解析CSV内容
-function parseAndLoadCSV(content: string) {
-  // 去除BOM
-  if (content.charCodeAt(0) === 0xFEFF) {
-    content = content.slice(1)
-  }
-
-  const lines = content.split('\n').filter(l => l.trim())
-  if (lines.length < 2) return
-
-  // 跳过表头
-  const dataRows: PlaybackRow[] = []
-  for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(',')
-    if (cols.length >= 6) {
-      dataRows.push({
-        timestamp: cols[0].trim(),
-        deviceId: cols[1].trim(),
-        channelIndex: parseInt(cols[2].trim()) || 0,
-        channelName: cols[3].trim(),
-        value: parseFloat(cols[4].trim()) || 0,
-        unit: cols[5].trim(),
-      })
-    }
-  }
-
-  if (dataRows.length > 0) {
-    playbackData.value = dataRows
-    playbackIndex.value = 0
-    isPlaying.value = false
-  }
-}
-
-// 回放控制
-function togglePlayback() {
-  if (isPlaying.value) {
-    pausePlayback()
-  } else {
-    startPlayback()
-  }
-}
-
-function startPlayback() {
-  if (playbackData.value.length === 0) return
-  isPlaying.value = true
-
-  const intervalMs = 50 / playbackSpeed.value
-  playbackTimer = window.setInterval(() => {
-    if (playbackIndex.value < playbackData.value.length - 1) {
-      playbackIndex.value++
-    } else {
-      pausePlayback()
-    }
-  }, intervalMs)
-}
-
-function pausePlayback() {
-  isPlaying.value = false
-  if (playbackTimer !== null) {
-    clearInterval(playbackTimer)
-    playbackTimer = null
-  }
-}
-
-function resetPlayback() {
-  pausePlayback()
-  playbackIndex.value = 0
-}
-
-onUnmounted(() => {
-  if (playbackTimer !== null) {
-    clearInterval(playbackTimer)
-  }
+onMounted(() => {
+  refreshFiles()
 })
-
-// 回放进度
-const playbackProgress = computed(() => {
-  if (playbackData.value.length === 0) return 0
-  return Math.round((playbackIndex.value / (playbackData.value.length - 1)) * 100)
-})
-
-const currentTimeLabel = computed(() => {
-  if (playbackData.value.length === 0) return '--'
-  return playbackData.value[playbackIndex.value]?.timestamp ?? '--'
-})
-
-// 回放图表 - 按通道分组显示折线
-const CHANNEL_COLORS = ['#b829ff', '#00f5ff', '#00ff88', '#ffaa00', '#ff3366', '#00aaff', '#d966ff', '#66faff']
-
-const playbackChartOption = computed(() => {
-  if (playbackData.value.length === 0) {
-    return {
-      backgroundColor: 'transparent',
-      title: { text: '等待回放数据...', left: 'center', top: 'center', textStyle: { color: 'rgba(255,255,255,0.3)' } },
-    }
-  }
-
-  // 按通道分组
-  const channelMap = new Map<string, { time: number; value: number }[]>()
-  const data = playbackData.value
-  const endIdx = playbackIndex.value + 1
-
-  for (let i = 0; i < endIdx && i < data.length; i++) {
-    const row = data[i]
-    const key = `${row.channelName}`
-    if (!channelMap.has(key)) {
-      channelMap.set(key, [])
-    }
-    channelMap.get(key)!.push({ time: i, value: row.value })
-  }
-
-  const series: any[] = []
-  let chIdx = 0
-  channelMap.forEach((points, name) => {
-    series.push({
-      name,
-      type: 'line',
-      data: points.map(p => [p.time, p.value]),
-      smooth: true,
-      symbol: 'none',
-      lineStyle: { width: 1.5, color: CHANNEL_COLORS[chIdx % CHANNEL_COLORS.length] },
-      itemStyle: { color: CHANNEL_COLORS[chIdx % CHANNEL_COLORS.length] },
-    })
-    chIdx++
-  })
-
-  return {
-    backgroundColor: 'transparent',
-    tooltip: {
-      trigger: 'axis',
-      backgroundColor: 'rgba(10,10,26,0.9)',
-      borderColor: 'rgba(0,245,255,0.3)',
-      textStyle: { color: '#fff' },
-    },
-    legend: {
-      top: 0,
-      textStyle: { color: 'rgba(255,255,255,0.6)', fontSize: 10 },
-    },
-    grid: { left: 60, right: 20, top: 30, bottom: 30 },
-    xAxis: {
-      type: 'category',
-      axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
-      axisLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 10 },
-    },
-    yAxis: {
-      type: 'value',
-      scale: true,
-      name: 'kPa',
-      nameTextStyle: { color: 'rgba(255,255,255,0.5)' },
-      axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
-      axisLabel: { color: 'rgba(255,255,255,0.4)' },
-      splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } },
-    },
-    series,
-  }
-})
-
-// 初始化加载文件列表
-refreshFiles()
 </script>
 
 <style lang="scss" scoped>
 .data-view { display: flex; flex-direction: column; gap: 16px; }
 .grid-row { display: flex; gap: 16px; }
+.sidebar-card { flex: 0 0 360px; }
+.flex-card { flex: 1; }
 
 .record-controls { display: flex; gap: 8px; margin-top: 12px; }
 
@@ -329,8 +161,8 @@ refreshFiles()
 }
 
 .status-dot {
-  width: 8px; height: 8px; border-radius: 50%; background: #666;
-  &.recording { background: #ff3366; box-shadow: 0 0 8px rgba(255,51,102,0.6); animation: pulse 1s infinite; }
+  width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.3);
+  &.recording { background: $color-danger; box-shadow: 0 0 8px $color-danger-glow; animation: pulse 1s infinite; }
 }
 
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
@@ -338,7 +170,7 @@ refreshFiles()
 .data-info { display: flex; gap: 24px; }
 .info-item { display: flex; flex-direction: column; gap: 2px; }
 .info-label { font-size: 11px; color: rgba(255,255,255,0.4); }
-.info-value { font-size: 16px; color: #00f5ff; font-family: monospace; }
+.info-value { font-size: 16px; color: $color-accent; font-family: monospace; }
 
 .playback-content { display: flex; flex-direction: column; gap: 8px; }
 .playback-info {
@@ -349,7 +181,7 @@ refreshFiles()
   display: flex; align-items: center; gap: 6px; margin-left: 8px;
 }
 .speed-label { font-size: 11px; color: rgba(255,255,255,0.5); }
-.speed-value { font-size: 11px; color: #00f5ff; min-width: 30px; }
+.speed-value { font-size: 11px; color: $color-accent; min-width: 30px; }
 
 .no-data { color: rgba(255,255,255,0.3); text-align: center; padding: 20px; }
 </style>

@@ -1,5 +1,13 @@
-import { defineStore } from 'pinia'
 import { ref, computed, shallowRef } from 'vue'
+import { defineStore } from 'pinia'
+import {
+  GetDeviceProfiles, UpdateDeviceProfile,
+  ConnectDevice, DisconnectDevice,
+  StartAcquisition, StopAcquisition,
+  StartAcquisitionAll, StopAcquisitionAll,
+  GetDeviceStatusAll, ScanDevices,
+} from '../../wailsjs/go/main/App'
+import { EventsOn } from '../../wailsjs/runtime/runtime'
 
 interface ChannelConfig {
   index: number
@@ -49,7 +57,6 @@ export const useDeviceStore = defineStore('device', () => {
 
   async function fetchProfiles() {
     try {
-      const { GetDeviceProfiles } = await import('../../wailsjs/go/main/App')
       profiles.value = await GetDeviceProfiles() as DeviceProfile[]
     } catch (e) {
       console.warn('fetchProfiles failed:', e)
@@ -58,7 +65,6 @@ export const useDeviceStore = defineStore('device', () => {
 
   async function updateProfile(profile: DeviceProfile): Promise<string | null> {
     try {
-      const { UpdateDeviceProfile } = await import('../../wailsjs/go/main/App')
       await UpdateDeviceProfile(profile as any)
       await fetchProfiles()
       return null
@@ -71,7 +77,6 @@ export const useDeviceStore = defineStore('device', () => {
 
   async function fetchStatuses() {
     try {
-      const { GetDeviceStatusAll } = await import('../../wailsjs/go/main/App')
       statuses.value = await GetDeviceStatusAll() as DeviceStatus[]
     } catch (e) {
       console.warn('fetchStatuses failed:', e)
@@ -80,7 +85,6 @@ export const useDeviceStore = defineStore('device', () => {
 
   async function connectDevice(id: string): Promise<string | null> {
     try {
-      const { ConnectDevice } = await import('../../wailsjs/go/main/App')
       await ConnectDevice(id)
       await fetchStatuses()
       return null
@@ -93,7 +97,6 @@ export const useDeviceStore = defineStore('device', () => {
 
   async function disconnectDevice(id: string): Promise<string | null> {
     try {
-      const { DisconnectDevice } = await import('../../wailsjs/go/main/App')
       await DisconnectDevice(id)
       await fetchStatuses()
       return null
@@ -106,7 +109,6 @@ export const useDeviceStore = defineStore('device', () => {
 
   async function startAcquisition(id: string): Promise<string | null> {
     try {
-      const { StartAcquisition } = await import('../../wailsjs/go/main/App')
       await StartAcquisition(id)
       await fetchStatuses()
       return null
@@ -119,7 +121,6 @@ export const useDeviceStore = defineStore('device', () => {
 
   async function stopAcquisition(id: string): Promise<string | null> {
     try {
-      const { StopAcquisition } = await import('../../wailsjs/go/main/App')
       await StopAcquisition(id)
       await fetchStatuses()
       return null
@@ -132,16 +133,14 @@ export const useDeviceStore = defineStore('device', () => {
 
   function startListening() {
     try {
-      import('../../wailsjs/runtime/runtime').then(({ EventsOn }) => {
-        EventsOn('daq:data-snapshot', (data: DataPayload[]) => {
-          snapshots.value = data
-          for (const payload of data) {
-            latestData.value.set(payload.deviceId, payload)
-          }
-        })
-        EventsOn('device:status-updated', (data: DeviceStatus[]) => {
-          statuses.value = data
-        })
+      EventsOn('daq:data-snapshot', (data: DataPayload[]) => {
+        snapshots.value = data
+        for (const payload of data) {
+          latestData.value.set(payload.deviceId, payload)
+        }
+      })
+      EventsOn('device:status-updated', (data: DeviceStatus[]) => {
+        statuses.value = data
       })
     } catch (e) {
       console.warn('startListening failed:', e)

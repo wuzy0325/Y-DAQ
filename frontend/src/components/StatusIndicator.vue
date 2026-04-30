@@ -1,6 +1,6 @@
 <template>
   <span class="status-indicator" :class="[status, { pulse: animated }]">
-    <span class="dot"></span>
+    <span class="dot" />
     <span v-if="label" class="label">{{ label }}</span>
   </span>
 </template>
@@ -30,13 +30,13 @@ withDefaults(defineProps<{
   display: inline-block;
 }
 
-.connected .dot { background: #00ff88; box-shadow: 0 0 8px rgba(0,255,136,0.6); }
-.disconnected .dot { background: #666; }
-.error .dot { background: #ff3366; box-shadow: 0 0 8px rgba(255,51,102,0.6); }
-.running .dot { background: #00f5ff; box-shadow: 0 0 8px rgba(0,245,255,0.6); }
-.warning .dot { background: #ffaa00; box-shadow: 0 0 8px rgba(255,170,0,0.6); }
+.connected .dot { background: $color-success; box-shadow: 0 0 8px $color-success-glow; }
+.disconnected .dot { background: rgba(255,255,255,0.3); }
+.error .dot { background: $color-danger; box-shadow: 0 0 8px $color-danger-glow; }
+.running .dot { background: $color-accent; box-shadow: 0 0 8px $color-accent-glow; }
+.warning .dot { background: $color-warning; box-shadow: 0 0 8px $color-warning-glow; }
 
-.label { color: rgba(255,255,255,0.7); }
+.label { color: $text-secondary; }
 
 .pulse .dot {
   animation: statusPulse 1.5s ease-in-out infinite;

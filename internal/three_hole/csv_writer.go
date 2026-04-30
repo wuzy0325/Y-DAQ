@@ -12,9 +12,12 @@ import (
 
 // ThreeHoleCsvWriter 三孔移位测试 CSV 写入器
 type ThreeHoleCsvWriter struct {
-	file   *os.File
-	writer *csv.Writer
+	file     *os.File
+	writer   *csv.Writer
+	flushCnt int // 累计写入点数，达到阈值时 flush
 }
+
+const csvFlushInterval = 50 // 每写 50 点 flush 一次
 
 // NewThreeHoleCsvWriter 创建 CSV 写入器
 func NewThreeHoleCsvWriter() *ThreeHoleCsvWriter {
@@ -26,7 +29,12 @@ func (w *ThreeHoleCsvWriter) Initialize(savePath string, fileName string) error 
 	if fileName == "" {
 		fileName = fmt.Sprintf("ThreeHoleTraversal-%s.csv", time.Now().Format("2006-01-02"))
 	}
-	os.MkdirAll(savePath, 0755)
+	if filepath.IsAbs(fileName) || !filepath.IsLocal(fileName) {
+		return fmt.Errorf("invalid file name: %s", fileName)
+	}
+	if err := os.MkdirAll(savePath, 0755); err != nil {
+		return fmt.Errorf("create save directory failed: %w", err)
+	}
 	filePath := filepath.Join(savePath, fileName)
 
 	file, err := os.Create(filePath)
@@ -35,7 +43,7 @@ func (w *ThreeHoleCsvWriter) Initialize(savePath string, fileName string) error 
 	}
 
 	// 写入 UTF-8 BOM
-	file.Write([]byte{0xEF, 0xBB, 0xBF})
+	file.Write([]byte{0xEF, 0xBB, 0xBF}) // ignore error: BOM写入失败不影响后续CSV写入
 
 	w.file = file
 	w.writer = csv.NewWriter(file)
@@ -82,7 +90,11 @@ func (w *ThreeHoleCsvWriter) AppendPoint(dp types.ThreeHoleTraversalDataPoint) e
 	if err := w.writer.Write(record); err != nil {
 		return fmt.Errorf("write record failed: %w", err)
 	}
-	w.writer.Flush()
+
+	w.flushCnt++
+	if w.flushCnt%csvFlushInterval == 0 {
+		w.writer.Flush()
+	}
 
 	return nil
 }

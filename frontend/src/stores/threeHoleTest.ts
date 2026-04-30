@@ -1,12 +1,28 @@
-import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { useDeviceStore } from './device'
+import { defineStore } from 'pinia'
+import {
+  SelectThreeHoleCalibFiles,
+  LoadThreeHoleCalibFiles,
+  GetThreeHoleCalibInfo,
+  StartThreeHoleTraversal,
+  PauseThreeHoleTraversal,
+  ResumeThreeHoleTraversal,
+  StopThreeHoleTraversal,
+  GetThreeHoleTraversalStatus,
+  StartThreeHoleRealtimeMonitor,
+  StopThreeHoleRealtimeMonitor,
+  SaveThreeHoleConfig,
+  LoadThreeHoleConfig,
+} from '../../wailsjs/go/main/App'
+import { EventsOn, EventsOff } from '../../wailsjs/runtime/runtime'
 import {
   ThreeHoleChannelRole,
   TraversalPattern,
   type ThreeHoleChannelRoleValue,
   type TraversalPatternValue,
 } from '../api/enums'
+import { useDeviceStore } from './device'
+import { useMotionStore } from './motion'
 
 // ==================== 类型定义 ====================
 
@@ -16,7 +32,7 @@ interface ThreeHoleRawData {
 
 interface ThreeHoleInterpolationResult {
   ptProbe: number; psProbe: number; machProbe: number; alphaProbe: number
-  iterationCount: number; valid: boolean
+  iterationCount: number; converged: boolean; valid: boolean; errorMsg?: string
 }
 
 interface ThreeHoleTraversalDataPoint {
@@ -81,7 +97,7 @@ interface ThreeHoleProbeChannelConfig {
 }
 
 interface MotionAxisMapping {
-  axis: string; scale: number; offset: number
+  axis: string
 }
 
 interface ThreeHoleCalibFileInfo {
@@ -94,11 +110,13 @@ interface ThreeHoleTraversalConfig {
   motionControllerId: string
   layout: TraversalLayout
   probeChannels: ThreeHoleProbeChannelConfig[]
-  motionX: MotionAxisMapping
-  motionY: MotionAxisMapping
+  motionAlpha: MotionAxisMapping
+  motionBeta: MotionAxisMapping
   calibFiles: ThreeHoleCalibFileInfo[]
   dwellTimeMs: number
   samplesPerPoint: number
+  sampleIntervalMs: number
+  motionTimeoutMs: number
   savePath: string
   saveFileName: string
 }
@@ -139,11 +157,13 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
       { name: '大气压', role: ThreeHoleChannelRole.P_ATM, channel: 16, enabled: true },
       { name: '大气温度', role: ThreeHoleChannelRole.T_ATM, channel: 17, enabled: true },
     ],
-    motionX: { axis: 'X', scale: 1, offset: 0 },
-    motionY: { axis: 'Y', scale: 1, offset: 0 },
+    motionAlpha: { axis: 'X' },
+    motionBeta: { axis: 'Y' },
     calibFiles: [],
     dwellTimeMs: 2000,
     samplesPerPoint: 10,
+    sampleIntervalMs: 50,
+    motionTimeoutMs: 30000,
     savePath: '',
     saveFileName: '',
   })
@@ -164,11 +184,9 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
 
   async function selectCalibFiles() {
     try {
-      const { SelectThreeHoleCalibFiles } = await import('../../wailsjs/go/main/App')
       const files = await SelectThreeHoleCalibFiles() as string[]
       if (files && files.length > 0) {
         calibFiles.value = files
-        const { LoadThreeHoleCalibFiles, GetThreeHoleCalibInfo } = await import('../../wailsjs/go/main/App')
         await LoadThreeHoleCalibFiles(files)
         const infos = await GetThreeHoleCalibInfo() as { cMa: number }[]
         calibLoaded.value = true
@@ -218,6 +236,16 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
       lastError.value = '请先加载校准文件'
       return
     }
+    // 检查运动控制器连接状态
+    const mcId = config.value.motionControllerId
+    if (mcId) {
+      const motionStore = useMotionStore()
+      const mcStatus = motionStore.statuses.find(s => s.id === mcId)
+      if (!mcStatus || mcStatus.status !== 'Connected') {
+        lastError.value = '运动控制器未连接，请先在设备页面连接运动控制器'
+        return
+      }
+    }
 
     isRunning.value = true
     isPaused.value = false
@@ -225,7 +253,6 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
     lastError.value = ''
 
     try {
-      const { StartThreeHoleTraversal } = await import('../../wailsjs/go/main/App')
       await StartThreeHoleTraversal(config.value as any)
     } catch (e) {
       console.error('startTest failed:', e)
@@ -236,7 +263,6 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
 
   async function pauseTest() {
     try {
-      const { PauseThreeHoleTraversal } = await import('../../wailsjs/go/main/App')
       await PauseThreeHoleTraversal()
       await fetchStatus()
       isPaused.value = taskStatus.value?.status === 'paused'
@@ -247,7 +273,6 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
 
   async function resumeTest() {
     try {
-      const { ResumeThreeHoleTraversal } = await import('../../wailsjs/go/main/App')
       await ResumeThreeHoleTraversal()
       await fetchStatus()
       isPaused.value = taskStatus.value?.status === 'paused'
@@ -258,23 +283,25 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
 
   async function stopTest() {
     try {
-      const { StopThreeHoleTraversal } = await import('../../wailsjs/go/main/App')
       await StopThreeHoleTraversal()
       await fetchStatus()
     } catch (e) {
       console.error('stopTest failed:', e)
     }
-    isRunning.value = false
-    isPaused.value = false
-    realtime.value = null
-    progress.value = null
+    // 仅在后端确认状态变更后更新前端状态
+    const status = taskStatus.value?.status
+    if (status === 'idle' || status === 'completed' || status === 'error') {
+      isRunning.value = false
+      isPaused.value = false
+      realtime.value = null
+      progress.value = null
+    }
   }
 
   // ==================== 实时数据监控 ====================
 
   async function startRealtimeMonitor() {
     try {
-      const { StartThreeHoleRealtimeMonitor } = await import('../../wailsjs/go/main/App')
       await StartThreeHoleRealtimeMonitor(config.value as any)
     } catch (e) {
       console.error('startRealtimeMonitor failed:', e)
@@ -283,7 +310,6 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
 
   async function stopRealtimeMonitor() {
     try {
-      const { StopThreeHoleRealtimeMonitor } = await import('../../wailsjs/go/main/App')
       await StopThreeHoleRealtimeMonitor()
     } catch (e) {
       console.error('stopRealtimeMonitor failed:', e)
@@ -292,7 +318,6 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
 
   async function fetchStatus() {
     try {
-      const { GetThreeHoleTraversalStatus } = await import('../../wailsjs/go/main/App')
       taskStatus.value = await GetThreeHoleTraversalStatus() as ThreeHoleTraversalTaskStatus
     } catch (e) {
       console.warn('fetchStatus failed:', e)
@@ -303,31 +328,46 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
 
   function startListening() {
     try {
-      import('../../wailsjs/runtime/runtime').then(({ EventsOn }) => {
-        EventsOn('three-hole:progress', (data: ThreeHoleTraversalProgressEvent) => {
-          if (isRunning.value) progress.value = data
-        })
-        EventsOn('three-hole:realtime', (data: ThreeHoleTraversalRealtimeEvent) => {
-          realtime.value = data
-        })
-        EventsOn('three-hole:complete', (data: ThreeHoleTraversalCompleteEvent) => {
+      EventsOn('three-hole:progress', (data: ThreeHoleTraversalProgressEvent) => {
+        if (isRunning.value) progress.value = data
+      })
+      EventsOn('three-hole:realtime', (data: ThreeHoleTraversalRealtimeEvent) => {
+        realtime.value = data
+      })
+      EventsOn('three-hole:complete', async (data: ThreeHoleTraversalCompleteEvent) => {
+        isRunning.value = false
+        isPaused.value = false
+        progress.value = null
+        await fetchStatus()
+      })
+      EventsOn('three-hole:error', (data: ThreeHoleTraversalErrorEvent) => {
+        lastError.value = data.error
+        if (data.isFatal) {
           isRunning.value = false
           isPaused.value = false
           progress.value = null
-          fetchStatus()
-        })
-        EventsOn('three-hole:error', (data: ThreeHoleTraversalErrorEvent) => {
-          lastError.value = data.error
-          if (data.isFatal) {
-            isRunning.value = false
-            isPaused.value = false
-            progress.value = null
-          }
-        })
+        }
       })
     } catch (e) {
       console.warn('startListening failed:', e)
     }
+  }
+
+  function stopListening() {
+    try {
+      EventsOff('three-hole:progress')
+      EventsOff('three-hole:realtime')
+      EventsOff('three-hole:complete')
+      EventsOff('three-hole:error')
+    } catch (e) {
+      console.warn('stopListening failed:', e)
+    }
+  }
+
+  // ==================== 错误清除 ====================
+
+  function clearError() {
+    lastError.value = ''
   }
 
   // ==================== CSV 导出 ====================
@@ -336,7 +376,7 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
     const dataPoints = taskStatus.value?.dataPoints ?? []
     if (dataPoints.length === 0) return
 
-    const BOM = '\uFEFF'
+    const BOM = '﻿'
     const headers = [
       '点号', 'X', 'Y', 'P1', 'P2', 'P3', 'P∞', 'T∞',
       '总压Pt', '静压Ps', '马赫数Ma', '攻角Alpha', '迭代次数', '采样数', '时间戳',
@@ -366,10 +406,7 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
   function saveConfig() {
     try {
       localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(config.value))
-      // 同步保存到后端
-      import('../../wailsjs/go/main/App').then(({ SaveThreeHoleConfig }) => {
-        SaveThreeHoleConfig(config.value as any)
-      }).catch(() => {})
+      SaveThreeHoleConfig(config.value as any).catch(() => {})
     } catch (e) {
       console.error('保存三孔测试配置失败:', e)
     }
@@ -378,7 +415,6 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
   async function loadConfig() {
     try {
       // 优先从后端加载
-      const { LoadThreeHoleConfig } = await import('../../wailsjs/go/main/App')
       try {
         const loaded = await LoadThreeHoleConfig() as any
         if (loaded && loaded.probeChannels && loaded.probeChannels.length > 0) {
@@ -400,7 +436,6 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
       const filePaths = savedCalibFiles.map(f => f.filePath).filter(Boolean)
       if (filePaths.length > 0) {
         try {
-          const { LoadThreeHoleCalibFiles, GetThreeHoleCalibInfo } = await import('../../wailsjs/go/main/App')
           await LoadThreeHoleCalibFiles(filePaths)
           const infos = await GetThreeHoleCalibInfo() as { cMa: number }[]
           calibFiles.value = filePaths
@@ -437,7 +472,7 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
     // 方法
     selectCalibFiles, startTest, pauseTest, resumeTest, stopTest,
     ensureDeviceAcquiring,
-    fetchStatus, startListening, exportCSV,
+    fetchStatus, startListening, stopListening, clearError, exportCSV,
     saveConfig, loadConfig,
     startRealtimeMonitor, stopRealtimeMonitor,
   }

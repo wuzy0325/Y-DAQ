@@ -2,7 +2,8 @@ package three_hole
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
+	"math"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -18,6 +19,9 @@ type ThreeHoleBatchGetter func(channels []types.ThreeHoleProbeChannelConfig) (ma
 // ThreeHoleMotionController 运动控制函数
 type ThreeHoleMotionController func(axis types.AxisName, position float64) error
 
+// ThreeHoleMotionWaiter 运动等待函数（阻塞直到指定轴运动完成或超时）
+type ThreeHoleMotionWaiter func(axis types.AxisName, timeoutMs int) error
+
 // ThreeHoleEventPublisher 事件发布接口
 type ThreeHoleEventPublisher interface {
 	EmitProgress(event types.ThreeHoleTraversalProgressEvent)
@@ -30,20 +34,21 @@ type ThreeHoleEventPublisher interface {
 
 // ThreeHoleTraversalService 三孔移位测试服务
 type ThreeHoleTraversalService struct {
-	mu             sync.Mutex
-	status         types.ThreeHoleTraversalTaskStatus
-	running        atomic.Bool
-	paused         atomic.Bool
-	testGen        atomic.Int64 // 每 Start() 递增，旧 goroutine 退出时检测以防止干扰新 goroutine
-	cancelCh       chan struct{}
-	pauseCh        chan struct{}
-	resumeCh       chan struct{}
-	doneCh         chan struct{}
+	mu       sync.Mutex
+	status   types.ThreeHoleTraversalTaskStatus
+	running  atomic.Bool
+	paused   atomic.Bool
+	testGen  atomic.Int64 // 每 Start() 递增，旧 goroutine 退出时检测以防止干扰新 goroutine
+	cancelCh chan struct{}
+	pauseCh  chan struct{}
+	resumeCh chan struct{}
+	doneCh   chan struct{}
 
 	config         types.ThreeHoleTraversalConfig
 	interpolator   *ThreeHoleInterpolator
 	batchGetter    ThreeHoleBatchGetter
 	motionCtrl     ThreeHoleMotionController
+	motionWaiter   ThreeHoleMotionWaiter
 	eventPublisher ThreeHoleEventPublisher
 
 	// 实时监控（测试未运行时也推送实时数据）
@@ -56,9 +61,9 @@ func NewThreeHoleTraversalService(publisher ThreeHoleEventPublisher) *ThreeHoleT
 	return &ThreeHoleTraversalService{
 		interpolator:   NewThreeHoleInterpolator(),
 		eventPublisher: publisher,
-		cancelCh:      make(chan struct{}),
-		pauseCh:       make(chan struct{}),
-		resumeCh:      make(chan struct{}),
+		cancelCh:       make(chan struct{}),
+		pauseCh:        make(chan struct{}),
+		resumeCh:       make(chan struct{}),
 	}
 }
 
@@ -70,6 +75,11 @@ func (s *ThreeHoleTraversalService) SetBatchGetter(getter ThreeHoleBatchGetter) 
 // SetMotionController 设置运动控制函数
 func (s *ThreeHoleTraversalService) SetMotionController(ctrl ThreeHoleMotionController) {
 	s.motionCtrl = ctrl
+}
+
+// SetMotionWaiter 设置运动等待函数
+func (s *ThreeHoleTraversalService) SetMotionWaiter(waiter ThreeHoleMotionWaiter) {
+	s.motionWaiter = waiter
 }
 
 // LoadCalibFiles 加载校准文件
@@ -142,9 +152,9 @@ func (s *ThreeHoleTraversalService) runRealtimeMonitor() {
 		interpResult := s.interpolator.Calculate(*rawData)
 
 		s.eventPublisher.EmitRealtime(types.ThreeHoleTraversalRealtimeEvent{
-			TaskID:      "monitor",
-			PointID:     "realtime",
-			RawData:     *rawData,
+			TaskID:       "monitor",
+			PointID:      "realtime",
+			RawData:      *rawData,
 			InterpResult: interpResult,
 		})
 	}
@@ -176,6 +186,12 @@ func (s *ThreeHoleTraversalService) Start(config types.ThreeHoleTraversalConfig)
 	s.doneCh = doneCh
 
 	points := generatePoints(config.Layout)
+	if len(points) > maxTraversalPoints {
+		return "", fmt.Errorf("点位数量 %d 超过最大限制 %d", len(points), maxTraversalPoints)
+	}
+	if len(points) == 0 {
+		return "", fmt.Errorf("布点配置生成0个点位")
+	}
 
 	s.status = types.ThreeHoleTraversalTaskStatus{
 		TaskID:      taskID,
@@ -230,7 +246,6 @@ func (s *ThreeHoleTraversalService) Stop() {
 		s.mu.Unlock()
 		return
 	}
-	doneCh := s.doneCh
 	cancelCh := s.cancelCh
 	s.mu.Unlock()
 
@@ -244,14 +259,8 @@ func (s *ThreeHoleTraversalService) Stop() {
 	default:
 	}
 
-	if doneCh != nil {
-		select {
-		case <-doneCh:
-		case <-time.After(5 * time.Second):
-			log.Printf("warning: test goroutine did not exit within 5s")
-		}
-	}
-
+	// 立即返回，不等待 goroutine 退出。goroutine 通过 cancelCh / running 标志退出，
+	// 代际计数器 testGen 防止残留 goroutine 干扰新测试。
 	s.mu.Lock()
 	s.status.Status = types.TraversalStatusIdle
 	s.mu.Unlock()
@@ -286,7 +295,7 @@ func (s *ThreeHoleTraversalService) runTestLoop(points []types.TraversalPoint, c
 
 	csvWriter := NewThreeHoleCsvWriter()
 	if err := csvWriter.Initialize(s.config.SavePath, s.config.SaveFileName); err != nil {
-		log.Printf("csv init failed: %v", err)
+		slog.Error("csv init failed", "err", err)
 		s.emitFatalError(fmt.Sprintf("CSV初始化失败: %v", err))
 		return
 	}
@@ -313,9 +322,9 @@ func (s *ThreeHoleTraversalService) runTestLoop(points []types.TraversalPoint, c
 			if rawData != nil && s.eventPublisher != nil {
 				interpResult := s.interpolator.Calculate(*rawData)
 				s.eventPublisher.EmitRealtime(types.ThreeHoleTraversalRealtimeEvent{
-					TaskID:      taskID,
-					PointID:     point.ID,
-					RawData:     *rawData,
+					TaskID:       taskID,
+					PointID:      point.ID,
+					RawData:      *rawData,
 					InterpResult: interpResult,
 				})
 			}
@@ -333,13 +342,13 @@ func (s *ThreeHoleTraversalService) runTestLoop(points []types.TraversalPoint, c
 			if !s.running.Load() {
 				return
 			}
-			log.Printf("point %s failed: %v", point.ID, err)
+			slog.Error("point test failed", "point", point.ID, "err", err)
 			s.emitPointError(fmt.Sprintf("点位 %s 测试失败: %v", point.ID, err))
 			continue
 		}
 
 		if err := csvWriter.AppendPoint(dataPoint); err != nil {
-			log.Printf("csv write point %s failed: %v", point.ID, err)
+			slog.Error("csv write point failed", "point", point.ID, "err", err)
 		}
 
 		s.mu.Lock()
@@ -406,7 +415,7 @@ func (s *ThreeHoleTraversalService) emitPointPhase(point types.TraversalPoint, p
 func (s *ThreeHoleTraversalService) checkCancelled(cancelCh chan struct{}) error {
 	select {
 	case <-cancelCh:
-		return fmt.Errorf("cancelled")
+		return fmt.Errorf("canceled")
 	default:
 		return nil
 	}
@@ -432,13 +441,23 @@ func (s *ThreeHoleTraversalService) runSinglePoint(point types.TraversalPoint, c
 
 	s.emitPointPhase(point, "moving")
 	if s.motionCtrl != nil {
-		targetX := resolveTargetPosition(point.X, s.config.MotionX)
-		if err := s.motionCtrl(s.config.MotionX.Axis, targetX); err != nil {
-			return types.ThreeHoleTraversalDataPoint{}, fmt.Errorf("move X to %.2f failed: %w", targetX, err)
+		if err := s.motionCtrl(s.config.MotionAlpha.Axis, point.X); err != nil {
+			return types.ThreeHoleTraversalDataPoint{}, fmt.Errorf("move α axis to %.2f failed: %w", point.X, err)
 		}
-		targetY := resolveTargetPosition(point.Y, s.config.MotionY)
-		if err := s.motionCtrl(s.config.MotionY.Axis, targetY); err != nil {
-			return types.ThreeHoleTraversalDataPoint{}, fmt.Errorf("move Y to %.2f failed: %w", targetY, err)
+		if err := s.motionCtrl(s.config.MotionBeta.Axis, point.Y); err != nil {
+			return types.ThreeHoleTraversalDataPoint{}, fmt.Errorf("move β axis to %.2f failed: %w", point.Y, err)
+		}
+		if s.motionWaiter != nil {
+			motionTimeout := s.config.MotionTimeoutMs
+			if motionTimeout <= 0 {
+				motionTimeout = 30000
+			}
+			if err := s.motionWaiter(s.config.MotionAlpha.Axis, motionTimeout); err != nil {
+					slog.Warn("motion waiter α axis timeout", "axis", s.config.MotionAlpha.Axis, "err", err)
+				}
+				if err := s.motionWaiter(s.config.MotionBeta.Axis, motionTimeout); err != nil {
+					slog.Warn("motion waiter β axis timeout", "axis", s.config.MotionBeta.Axis, "err", err)
+				}
 		}
 	}
 
@@ -495,9 +514,9 @@ func (s *ThreeHoleTraversalService) dwellWithRealtimeUpdate(point types.Traversa
 			if rawData != nil {
 				interpResult := s.interpolator.Calculate(*rawData)
 				s.eventPublisher.EmitRealtime(types.ThreeHoleTraversalRealtimeEvent{
-					TaskID:      taskID,
-					PointID:     point.ID,
-					RawData:     *rawData,
+					TaskID:       taskID,
+					PointID:      point.ID,
+					RawData:      *rawData,
 					InterpResult: interpResult,
 				})
 			}
@@ -507,11 +526,6 @@ func (s *ThreeHoleTraversalService) dwellWithRealtimeUpdate(point types.Traversa
 			return
 		}
 	}
-}
-
-// resolveTargetPosition 角度→位置映射（含scale/offset）
-func resolveTargetPosition(sourceValue float64, mapping types.MotionAxisMapping) float64 {
-	return sourceValue*mapping.Scale + mapping.Offset
 }
 
 // acquireAndInterpolate 采集数据并执行插值
@@ -541,14 +555,18 @@ func (s *ThreeHoleTraversalService) acquireAndInterpolate(point types.TraversalP
 		if s.eventPublisher != nil {
 			interpResult := s.interpolator.Calculate(*rawData)
 			s.eventPublisher.EmitRealtime(types.ThreeHoleTraversalRealtimeEvent{
-				TaskID:      taskID,
-				PointID:     point.ID,
-				RawData:     *rawData,
+				TaskID:       taskID,
+				PointID:      point.ID,
+				RawData:      *rawData,
 				InterpResult: interpResult,
 			})
 		}
 
-		time.Sleep(50 * time.Millisecond)
+		intervalMs := s.config.SampleIntervalMs
+		if intervalMs <= 0 {
+			intervalMs = 50
+		}
+		time.Sleep(time.Duration(intervalMs) * time.Millisecond)
 	}
 
 	if len(samples) == 0 {
@@ -585,6 +603,7 @@ func (s *ThreeHoleTraversalService) readRawData() *types.ThreeHoleRawData {
 
 	data, err := s.batchGetter(s.config.ProbeChannels)
 	if err != nil {
+		slog.Warn("readRawData batch getter failed", "err", err)
 		return nil
 	}
 
@@ -614,15 +633,28 @@ func (s *ThreeHoleTraversalService) readRawData() *types.ThreeHoleRawData {
 	return result
 }
 
-// calculateThreeHoleAverage 计算多次采样的平均值
+// calculateThreeHoleAverage 计算多次采样的平均值（3σ 异常值剔除）
 func calculateThreeHoleAverage(samples []types.ThreeHoleRawData) types.ThreeHoleRawData {
 	if len(samples) == 0 {
 		return types.ThreeHoleRawData{}
 	}
+	if len(samples) < 4 {
+		return simpleAverage(samples)
+	}
 
+	// 对每个字段做 3σ 剔除后取均值
+	return types.ThreeHoleRawData{
+		P1:   outlierFilteredAvg(mapField(samples, func(s types.ThreeHoleRawData) float64 { return s.P1 })),
+		P2:   outlierFilteredAvg(mapField(samples, func(s types.ThreeHoleRawData) float64 { return s.P2 })),
+		P3:   outlierFilteredAvg(mapField(samples, func(s types.ThreeHoleRawData) float64 { return s.P3 })),
+		PAtm: outlierFilteredAvg(mapField(samples, func(s types.ThreeHoleRawData) float64 { return s.PAtm })),
+		TAtm: outlierFilteredAvg(mapField(samples, func(s types.ThreeHoleRawData) float64 { return s.TAtm })),
+	}
+}
+
+func simpleAverage(samples []types.ThreeHoleRawData) types.ThreeHoleRawData {
 	n := float64(len(samples))
 	result := types.ThreeHoleRawData{}
-
 	for _, s := range samples {
 		result.P1 += s.P1
 		result.P2 += s.P2
@@ -630,14 +662,54 @@ func calculateThreeHoleAverage(samples []types.ThreeHoleRawData) types.ThreeHole
 		result.PAtm += s.PAtm
 		result.TAtm += s.TAtm
 	}
-
 	result.P1 /= n
 	result.P2 /= n
 	result.P3 /= n
 	result.PAtm /= n
 	result.TAtm /= n
-
 	return result
+}
+
+func mapField(samples []types.ThreeHoleRawData, fn func(types.ThreeHoleRawData) float64) []float64 {
+	vals := make([]float64, len(samples))
+	for i, s := range samples {
+		vals[i] = fn(s)
+	}
+	return vals
+}
+
+// outlierFilteredAvg 3σ 异常值剔除后取均值，若剔除后不足2个则回退到全量均值
+func outlierFilteredAvg(vals []float64) float64 {
+	n := len(vals)
+	mean := 0.0
+	for _, v := range vals {
+		mean += v
+	}
+	mean /= float64(n)
+
+	variance := 0.0
+	for _, v := range vals {
+		d := v - mean
+		variance += d * d
+	}
+	variance /= float64(n)
+	stdDev := math.Sqrt(variance)
+
+	lo := mean - 3*stdDev
+	hi := mean + 3*stdDev
+
+	sum := 0.0
+	cnt := 0
+	for _, v := range vals {
+		if v >= lo && v <= hi {
+			sum += v
+			cnt++
+		}
+	}
+	if cnt < 2 {
+		return mean
+	}
+	return sum / float64(cnt)
 }
 
 // emitPointError 记录点位错误但不中断测试（只更新 LastError，不改 Status）
@@ -676,6 +748,9 @@ func (s *ThreeHoleTraversalService) emitFatalError(errMsg string) {
 
 // ==================== 点位生成 ====================
 
+// maxTraversalPoints 最大点位数量限制，防止配置不当导致内存溢出
+const maxTraversalPoints = 50000
+
 // generatePoints 根据布点配置生成测试点位
 func generatePoints(layout types.TraversalLayout) []types.TraversalPoint {
 	switch layout.Pattern {
@@ -690,7 +765,7 @@ func generatePoints(layout types.TraversalLayout) []types.TraversalPoint {
 	}
 }
 
-// generateLinePoints 直线布点
+// generateLinePoints 直线/网格布点（当XSteps和YSteps都有值时生成X*Y网格点）
 func generateLinePoints(line *types.LineLayout) []types.TraversalPoint {
 	if line == nil {
 		return nil
@@ -737,6 +812,9 @@ func generateRectanglePoints(rect *types.RectangleLayout) []types.TraversalPoint
 	if rect == nil {
 		return nil
 	}
+	if rect.XMin > rect.XMax || rect.YMin > rect.YMax {
+		return nil
+	}
 
 	var points []types.TraversalPoint
 	id := 0
@@ -770,12 +848,23 @@ func generateRectanglePoints(rect *types.RectangleLayout) []types.TraversalPoint
 func expandStepSegments(segments []types.StepSegment) []float64 {
 	var values []float64
 	for _, seg := range segments {
+		if seg.Start > seg.End {
+			continue
+		}
 		if seg.Step == 0 {
 			values = append(values, seg.Start, seg.End)
 			continue
 		}
-		for v := seg.Start; v <= seg.End+1e-9; v += seg.Step {
-			values = append(values, v)
+		if seg.Step < 0 {
+			continue
+		}
+		// 使用整数步数计算，避免浮点累加精度问题
+		n := int((seg.End-seg.Start)/seg.Step + 0.5)
+		if n < 0 || n > maxTraversalPoints {
+			continue
+		}
+		for i := 0; i <= n; i++ {
+			values = append(values, seg.Start+float64(i)*seg.Step)
 		}
 	}
 	return values

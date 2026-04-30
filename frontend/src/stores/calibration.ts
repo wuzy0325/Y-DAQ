@@ -1,5 +1,10 @@
-import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { defineStore } from 'pinia'
+import {
+  StartCalibration, PauseCalibration, ResumeCalibration,
+  StopCalibration, GetCalibrationStatus,
+} from '../../wailsjs/go/main/App'
+import { EventsOn, EventsOff } from '../../wailsjs/runtime/runtime'
 
 interface FiveHoleRawData {
   p1: number; p2: number; p3: number; p4: number; p5: number
@@ -42,7 +47,6 @@ export const useCalibrationStore = defineStore('calibration', () => {
 
   async function startCalibration(config: any) {
     try {
-      const { StartCalibration } = await import('../../wailsjs/go/main/App')
       await StartCalibration(config)
       isRunning.value = true
     } catch (e) {
@@ -52,7 +56,6 @@ export const useCalibrationStore = defineStore('calibration', () => {
 
   async function pauseCalibration() {
     try {
-      const { PauseCalibration } = await import('../../wailsjs/go/main/App')
       await PauseCalibration()
     } catch (e) {
       console.error('pauseCalibration failed:', e)
@@ -61,7 +64,6 @@ export const useCalibrationStore = defineStore('calibration', () => {
 
   async function resumeCalibration() {
     try {
-      const { ResumeCalibration } = await import('../../wailsjs/go/main/App')
       await ResumeCalibration()
     } catch (e) {
       console.error('resumeCalibration failed:', e)
@@ -70,7 +72,6 @@ export const useCalibrationStore = defineStore('calibration', () => {
 
   async function stopCalibration() {
     try {
-      const { StopCalibration } = await import('../../wailsjs/go/main/App')
       await StopCalibration()
       isRunning.value = false
     } catch (e) {
@@ -80,7 +81,6 @@ export const useCalibrationStore = defineStore('calibration', () => {
 
   async function fetchStatus() {
     try {
-      const { GetCalibrationStatus } = await import('../../wailsjs/go/main/App')
       taskStatus.value = await GetCalibrationStatus() as CalibrationTaskStatus
     } catch (e) {
       console.warn('fetchCalibStatus failed:', e)
@@ -89,27 +89,35 @@ export const useCalibrationStore = defineStore('calibration', () => {
 
   function startListening() {
     try {
-      import('../../wailsjs/runtime/runtime').then(({ EventsOn }) => {
-        EventsOn('calibration:progress', (data: CalibrationProgressEvent) => {
-          progress.value = data
-          isRunning.value = true
-        })
-        EventsOn('calibration:realtime', (data: CalibrationRealtimeEvent) => {
-          realtime.value = data
-        })
-        EventsOn('calibration:complete', () => {
-          isRunning.value = false
-          fetchStatus()
-        })
+      EventsOn('calibration:progress', (data: CalibrationProgressEvent) => {
+        progress.value = data
+        isRunning.value = true
+      })
+      EventsOn('calibration:realtime', (data: CalibrationRealtimeEvent) => {
+        realtime.value = data
+      })
+      EventsOn('calibration:complete', () => {
+        isRunning.value = false
+        fetchStatus()
       })
     } catch (e) {
       console.warn('calibration startListening failed:', e)
     }
   }
 
+  function stopListening() {
+    try {
+      EventsOff('calibration:progress')
+      EventsOff('calibration:realtime')
+      EventsOff('calibration:complete')
+    } catch (e) {
+      console.warn('calibration stopListening failed:', e)
+    }
+  }
+
   return {
     taskStatus, progress, realtime, isRunning,
     startCalibration, pauseCalibration, resumeCalibration, stopCalibration,
-    fetchStatus, startListening,
+    fetchStatus, startListening, stopListening,
   }
 })

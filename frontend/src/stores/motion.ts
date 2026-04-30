@@ -1,5 +1,13 @@
-import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { defineStore } from 'pinia'
+import {
+  GetMotionProfiles, GetMotionStatusAll, ConnectMotion, DisconnectMotion,
+  MotionMoveTo, MotionMoveBy, MotionJog, MotionStop, MotionEmergencyStop,
+  MotionHome, MotionDefinePosition, MotionIsAxisMoving, MotionMotorOff,
+  AddMotionProfile,
+} from '../../wailsjs/go/main/App'
+import { types } from '../../wailsjs/go/models'
+import { EventsOn } from '../../wailsjs/runtime/runtime'
 
 // 轴类型
 type AxisKind = 'LINEAR' | 'ROTARY'
@@ -244,7 +252,6 @@ export const useMotionStore = defineStore('motion', () => {
   // 基础API
   async function fetchProfiles() {
     try {
-      const { GetMotionProfiles } = await import('../../wailsjs/go/main/App')
       profiles.value = await GetMotionProfiles() as MotionControllerProfile[]
     } catch (e) {
       console.warn('fetchMotionProfiles failed:', e)
@@ -253,7 +260,6 @@ export const useMotionStore = defineStore('motion', () => {
 
   async function fetchStatuses() {
     try {
-      const { GetMotionStatusAll } = await import('../../wailsjs/go/main/App')
       statuses.value = await GetMotionStatusAll() as MotionControllerStatus[]
     } catch (e) {
       console.warn('fetchMotionStatuses failed:', e)
@@ -265,12 +271,10 @@ export const useMotionStore = defineStore('motion', () => {
     connectionStatus.value = 'connecting'
     addLog('正在连接运动控制器...')
     try {
-      const { ConnectMotion } = await import('../../wailsjs/go/main/App')
       await ConnectMotion(id)
       activeControllerId.value = id
       connectionStatus.value = 'connected'
       addLog('运动控制器连接成功')
-      // 连接后同步位置
       await syncPositionsFromStatus()
       return { success: true }
     } catch (e: any) {
@@ -284,14 +288,10 @@ export const useMotionStore = defineStore('motion', () => {
   async function disconnectController(): Promise<{ success: boolean; error?: string }> {
     if (!activeControllerId.value) return { success: true }
     try {
-      // 先停止所有轴
       await stopAllAxes()
-      // 关闭电机
       try {
-        const { MotionMotorOff } = await import('../../wailsjs/go/main/App')
         await MotionMotorOff(activeControllerId.value)
       } catch (_) { /* ignore */ }
-      const { DisconnectMotion } = await import('../../wailsjs/go/main/App')
       await DisconnectMotion(activeControllerId.value)
       connectionStatus.value = 'disconnected'
       addLog('运动控制器已断开')
@@ -301,10 +301,8 @@ export const useMotionStore = defineStore('motion', () => {
     }
   }
 
-  // 从后端状态同步位置到前端
   async function syncPositionsFromStatus() {
     try {
-      const { GetMotionStatusAll } = await import('../../wailsjs/go/main/App')
       const allStatuses = await GetMotionStatusAll() as MotionControllerStatus[]
       statuses.value = allStatuses
       for (const ctrl of allStatuses) {
@@ -316,7 +314,6 @@ export const useMotionStore = defineStore('motion', () => {
               uiState.isHomed = ax.homed
               uiState.posLimitActive = ax.posLimit
               uiState.negLimitActive = ax.negLimit
-              // 同步运动状态
               if (ax.moving && uiState.runState === 'idle') {
                 uiState.runState = 'running'
               } else if (!ax.moving && uiState.runState !== 'idle' && uiState.runState !== 'error') {
@@ -335,10 +332,8 @@ export const useMotionStore = defineStore('motion', () => {
     const uiState = axisUIStates.value[axis]
     if (!uiState) return { success: false, error: '未知轴' }
 
-    // 状态容错：如果本地认为在运动，先复查
     if (uiState.runState !== 'idle') {
       try {
-        const { MotionIsAxisMoving } = await import('../../wailsjs/go/main/App')
         const moving = await MotionIsAxisMoving(activeControllerId.value, axis)
         if (!moving) {
           uiState.runState = 'idle'
@@ -351,7 +346,6 @@ export const useMotionStore = defineStore('motion', () => {
     }
 
     try {
-      const { MotionMoveTo } = await import('../../wailsjs/go/main/App')
       await MotionMoveTo(activeControllerId.value, axis, position)
       uiState.runState = 'running'
       addLog(`${axis}轴运动到目标位置 ${position}${getAxisUnit(uiState.kind)}`)
@@ -367,7 +361,6 @@ export const useMotionStore = defineStore('motion', () => {
   async function moveBy(axis: string, delta: number): Promise<{ success: boolean; error?: string }> {
     if (!activeControllerId.value) return { success: false, error: '控制器未连接' }
     try {
-      const { MotionMoveBy } = await import('../../wailsjs/go/main/App')
       await MotionMoveBy(activeControllerId.value, axis, delta)
       addLog(`${axis}轴相对移动 ${delta}`)
       return { success: true }
@@ -383,7 +376,6 @@ export const useMotionStore = defineStore('motion', () => {
     if (uiState.runState !== 'idle') return { success: false, error: '轴当前不在空闲状态' }
 
     try {
-      const { MotionJog } = await import('../../wailsjs/go/main/App')
       const dir = direction === 'plus' ? 1 : -1
       await MotionJog(activeControllerId.value, axis, dir, uiState.config.maxSpeed)
       uiState.runState = direction === 'minus' ? 'jogging_minus' : 'jogging_plus'
@@ -407,7 +399,6 @@ export const useMotionStore = defineStore('motion', () => {
   async function stopAxis(axis: string): Promise<{ success: boolean; error?: string }> {
     if (!activeControllerId.value) return { success: false, error: '控制器未连接' }
     try {
-      const { MotionStop } = await import('../../wailsjs/go/main/App')
       await MotionStop(activeControllerId.value, axis)
       const uiState = axisUIStates.value[axis]
       if (uiState) uiState.runState = 'idle'
@@ -421,7 +412,6 @@ export const useMotionStore = defineStore('motion', () => {
   async function stopAllAxes(): Promise<{ success: boolean; error?: string }> {
     if (!activeControllerId.value) return { success: true }
     try {
-      const { MotionEmergencyStop } = await import('../../wailsjs/go/main/App')
       await MotionEmergencyStop(activeControllerId.value)
       for (const state of Object.values(axisUIStates.value)) {
         state.runState = 'idle'
@@ -436,7 +426,6 @@ export const useMotionStore = defineStore('motion', () => {
   async function home(axis: string): Promise<{ success: boolean; error?: string }> {
     if (!activeControllerId.value) return { success: false, error: '控制器未连接' }
     try {
-      const { MotionHome } = await import('../../wailsjs/go/main/App')
       await MotionHome(activeControllerId.value, axis)
       addLog(`${axis}轴回零`)
       return { success: true }
@@ -448,7 +437,6 @@ export const useMotionStore = defineStore('motion', () => {
   async function definePosition(axis: string, position: number): Promise<{ success: boolean; error?: string }> {
     if (!activeControllerId.value) return { success: false, error: '控制器未连接' }
     try {
-      const { MotionDefinePosition } = await import('../../wailsjs/go/main/App')
       await MotionDefinePosition(activeControllerId.value, axis, position)
       const uiState = axisUIStates.value[axis]
       if (uiState) {
@@ -466,7 +454,6 @@ export const useMotionStore = defineStore('motion', () => {
   async function emergencyStop(): Promise<{ success: boolean; error?: string }> {
     if (!activeControllerId.value) return { success: true }
     try {
-      const { MotionEmergencyStop } = await import('../../wailsjs/go/main/App')
       await MotionEmergencyStop(activeControllerId.value)
       for (const state of Object.values(axisUIStates.value)) {
         state.runState = 'idle'
@@ -520,8 +507,6 @@ export const useMotionStore = defineStore('motion', () => {
   async function addController(name: string, type: string, address: string, port: number): Promise<{ success: boolean; error?: string }> {
     const id = `mc-${Date.now()}`
     try {
-      const { AddMotionProfile, ConnectMotion } = await import('../../wailsjs/go/main/App')
-      const { types } = await import('../../wailsjs/go/models')
       const defaultAxes = [
         types.AxisConfig.createFrom({ name: 'X', enabled: true, kind: 'LINEAR', inverted: false, stepAngleDeg: 1.8, microSteps: 16, lead: 5, maxSpeed: 50, encoderScale: 0.005, encoderCompensation: types.EncoderCompensationConfig.createFrom({ enabled: false, tolerance: 0.01, maxCycles: 3, settleMs: 100, minStep: 0, timeoutMs: 5000 }) }),
         types.AxisConfig.createFrom({ name: 'Y', enabled: true, kind: 'LINEAR', inverted: false, stepAngleDeg: 1.8, microSteps: 16, lead: 5, maxSpeed: 50, encoderScale: 0.005, encoderCompensation: types.EncoderCompensationConfig.createFrom({ enabled: false, tolerance: 0.01, maxCycles: 3, settleMs: 100, minStep: 0, timeoutMs: 5000 }) }),
@@ -552,30 +537,26 @@ export const useMotionStore = defineStore('motion', () => {
   // 事件监听
   function startListening() {
     try {
-      import('../../wailsjs/runtime/runtime').then(({ EventsOn }) => {
-        EventsOn('motion:status-updated', (data: MotionControllerStatus[]) => {
-          statuses.value = data
-          // 同步位置和状态到前端
-          for (const ctrl of data) {
-            if (ctrl.status === 'Connected') {
-              for (const ax of ctrl.axes) {
-                const uiState = axisUIStates.value[ax.name]
-                if (uiState) {
-                  uiState.currentPosition = ax.position
-                  uiState.isHomed = ax.homed
-                  uiState.posLimitActive = ax.posLimit
-                  uiState.negLimitActive = ax.negLimit
-                  // 仅在后端报告运动状态且前端处于idle时更新
-                  if (ax.moving && uiState.runState === 'idle') {
-                    uiState.runState = 'running'
-                  } else if (!ax.moving && uiState.runState !== 'idle' && uiState.runState !== 'error') {
-                    uiState.runState = 'idle'
-                  }
+      EventsOn('motion:status-updated', (data: MotionControllerStatus[]) => {
+        statuses.value = data
+        for (const ctrl of data) {
+          if (ctrl.status === 'Connected') {
+            for (const ax of ctrl.axes) {
+              const uiState = axisUIStates.value[ax.name]
+              if (uiState) {
+                uiState.currentPosition = ax.position
+                uiState.isHomed = ax.homed
+                uiState.posLimitActive = ax.posLimit
+                uiState.negLimitActive = ax.negLimit
+                if (ax.moving && uiState.runState === 'idle') {
+                  uiState.runState = 'running'
+                } else if (!ax.moving && uiState.runState !== 'idle' && uiState.runState !== 'error') {
+                  uiState.runState = 'idle'
                 }
               }
             }
           }
-        })
+        }
       })
     } catch (e) {
       console.warn('motion startListening failed:', e)

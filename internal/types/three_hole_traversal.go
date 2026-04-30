@@ -41,29 +41,29 @@ type StepSegment struct {
 
 // LineLayout 直线布点配置
 type LineLayout struct {
-	StartX float64      `json:"startX"`
-	StartY float64      `json:"startY"`
-	EndX   float64      `json:"endX"`
-	EndY   float64      `json:"endY"`
+	StartX float64       `json:"startX"`
+	StartY float64       `json:"startY"`
+	EndX   float64       `json:"endX"`
+	EndY   float64       `json:"endY"`
 	XSteps []StepSegment `json:"xSteps"`
 	YSteps []StepSegment `json:"ySteps"`
 }
 
 // RectangleLayout 矩形布点配置
 type RectangleLayout struct {
-	XMin   float64      `json:"xMin"`
-	XMax   float64      `json:"xMax"`
-	YMin   float64      `json:"yMin"`
-	YMax   float64      `json:"yMax"`
+	XMin   float64       `json:"xMin"`
+	XMax   float64       `json:"xMax"`
+	YMin   float64       `json:"yMin"`
+	YMax   float64       `json:"yMax"`
 	XSteps []StepSegment `json:"xSteps"`
 	YSteps []StepSegment `json:"ySteps"`
 }
 
 // TraversalLayout 布点配置
 type TraversalLayout struct {
-	Pattern    TraversalPattern `json:"pattern"`
-	Line       *LineLayout      `json:"line,omitempty"`
-	Rectangle  *RectangleLayout `json:"rectangle,omitempty"`
+	Pattern      TraversalPattern `json:"pattern"`
+	Line         *LineLayout      `json:"line,omitempty"`
+	Rectangle    *RectangleLayout `json:"rectangle,omitempty"`
 	CustomPoints []TraversalPoint `json:"customPoints,omitempty"`
 }
 
@@ -78,9 +78,7 @@ type TraversalPoint struct {
 
 // MotionAxisMapping 运动轴映射
 type MotionAxisMapping struct {
-	Axis   AxisName `json:"axis"`
-	Scale  float64  `json:"scale"`
-	Offset float64  `json:"offset"`
+	Axis AxisName `json:"axis"`
 }
 
 // ==================== 校准文件 ====================
@@ -101,11 +99,13 @@ type ThreeHoleTraversalConfig struct {
 	MotionControllerID string                        `json:"motionControllerId"` // 运动控制器ID
 	Layout             TraversalLayout               `json:"layout"`
 	ProbeChannels      []ThreeHoleProbeChannelConfig `json:"probeChannels"`
-	MotionX            MotionAxisMapping             `json:"motionX"`
-	MotionY            MotionAxisMapping             `json:"motionY"`
+	MotionAlpha        MotionAxisMapping             `json:"motionAlpha"`
+	MotionBeta         MotionAxisMapping             `json:"motionBeta"`
 	CalibFiles         []ThreeHoleCalibFileInfo      `json:"calibFiles"`
 	DwellTimeMs        int                           `json:"dwellTimeMs"`
 	SamplesPerPoint    int                           `json:"samplesPerPoint"`
+	SampleIntervalMs   int                           `json:"sampleIntervalMs"` // 采样间隔（毫秒）
+	MotionTimeoutMs    int                           `json:"motionTimeoutMs"`  // 运动等待超时（毫秒）
 	SavePath           string                        `json:"savePath"`
 	SaveFileName       string                        `json:"saveFileName"`
 }
@@ -125,25 +125,27 @@ type ThreeHoleRawData struct {
 
 // ThreeHoleInterpolationResult 三孔插值结果
 type ThreeHoleInterpolationResult struct {
-	PtProbe        float64 `json:"ptProbe"`        // 探针计算总压（表压 Pa）
-	PsProbe        float64 `json:"psProbe"`        // 探针计算静压（表压 Pa）
-	MachProbe      float64 `json:"machProbe"`      // 计算马赫数
-	AlphaProbe     float64 `json:"alphaProbe"`     // 计算攻角（度）
-	IterationCount int     `json:"iterationCount"` // 迭代收敛次数
-	Valid          bool    `json:"valid"`          // 结果是否有效
+	PtProbe        float64 `json:"ptProbe"`            // 探针计算总压（表压 Pa）
+	PsProbe        float64 `json:"psProbe"`            // 探针计算静压（表压 Pa）
+	MachProbe      float64 `json:"machProbe"`          // 计算马赫数
+	AlphaProbe     float64 `json:"alphaProbe"`         // 计算攻角（度）
+	IterationCount int     `json:"iterationCount"`     // 迭代收敛次数
+	Converged      bool    `json:"converged"`          // 迭代是否收敛
+	Valid          bool    `json:"valid"`              // 结果是否有效
+	ErrorMsg       string  `json:"errorMsg,omitempty"` // 无效/警告原因描述
 }
 
 // ==================== 测试数据点 ====================
 
 // ThreeHoleTraversalDataPoint 三孔移位测试数据点
 type ThreeHoleTraversalDataPoint struct {
-	PointID       string                       `json:"pointId"`
-	X             float64                      `json:"x"`
-	Y             float64                      `json:"y"`
-	RawData       ThreeHoleRawData             `json:"rawData"`
-	InterpResult  ThreeHoleInterpolationResult `json:"interpResult"`
-	SampleCount   int                          `json:"sampleCount"`
-	Timestamp     int64                        `json:"timestamp"`
+	PointID      string                       `json:"pointId"`
+	X            float64                      `json:"x"`
+	Y            float64                      `json:"y"`
+	RawData      ThreeHoleRawData             `json:"rawData"`
+	InterpResult ThreeHoleInterpolationResult `json:"interpResult"`
+	SampleCount  int                          `json:"sampleCount"`
+	Timestamp    int64                        `json:"timestamp"`
 }
 
 // ==================== 测试状态 ====================
@@ -161,14 +163,14 @@ const (
 
 // ThreeHoleTraversalTaskStatus 三孔移位测试任务状态
 type ThreeHoleTraversalTaskStatus struct {
-	TaskID          string                       `json:"taskId"`
-	Status          TraversalTestStatus          `json:"status"`
-	TotalPoints     int                          `json:"totalPoints"`
-	CompletedPoints int                          `json:"completedPoints"`
-	Progress        float64                      `json:"progress"`
-	CurrentPoint    *TraversalPoint              `json:"currentPoint,omitempty"`
+	TaskID          string                        `json:"taskId"`
+	Status          TraversalTestStatus           `json:"status"`
+	TotalPoints     int                           `json:"totalPoints"`
+	CompletedPoints int                           `json:"completedPoints"`
+	Progress        float64                       `json:"progress"`
+	CurrentPoint    *TraversalPoint               `json:"currentPoint,omitempty"`
 	DataPoints      []ThreeHoleTraversalDataPoint `json:"dataPoints"`
-	LastError       string                       `json:"lastError,omitempty"`
+	LastError       string                        `json:"lastError,omitempty"`
 }
 
 // ==================== 事件类型 ====================
@@ -186,9 +188,9 @@ type ThreeHoleTraversalProgressEvent struct {
 
 // ThreeHoleTraversalRealtimeEvent 实时数据事件
 type ThreeHoleTraversalRealtimeEvent struct {
-	TaskID      string                       `json:"taskId"`
-	PointID     string                       `json:"pointId"`
-	RawData     ThreeHoleRawData             `json:"rawData"`
+	TaskID       string                       `json:"taskId"`
+	PointID      string                       `json:"pointId"`
+	RawData      ThreeHoleRawData             `json:"rawData"`
 	InterpResult ThreeHoleInterpolationResult `json:"interpResult"`
 }
 
@@ -218,6 +220,8 @@ type ThreeHoleCalibEntry struct {
 
 // ThreeHoleCalibData 单个校准马赫数下的校准数据
 type ThreeHoleCalibData struct {
-	CMa    float64              `json:"cMa"`
-	Entries []ThreeHoleCalibEntry `json:"entries"`
+	CMa      float64               `json:"cMa"`
+	FilePath string                `json:"filePath"` // 来源文件路径
+	FileName string                `json:"fileName"` // 来源文件名
+	Entries  []ThreeHoleCalibEntry `json:"entries"`
 }

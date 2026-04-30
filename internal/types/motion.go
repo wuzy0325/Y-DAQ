@@ -14,8 +14,8 @@ const (
 type AxisKind string
 
 const (
-	AxisKindLinear  AxisKind = "LINEAR"
-	AxisKindRotary  AxisKind = "ROTARY"
+	AxisKindLinear AxisKind = "LINEAR"
+	AxisKindRotary AxisKind = "ROTARY"
 )
 
 // MotionControllerType 运动控制器类型
@@ -38,48 +38,48 @@ type EncoderCompensationConfig struct {
 
 // AxisConfig 轴配置
 type AxisConfig struct {
-	Name                 AxisName                 `json:"name"`
-	Enabled              bool                     `json:"enabled"`
-	Kind                 AxisKind                 `json:"kind"`
-	Inverted             bool                     `json:"inverted"`
-	StepAngleDeg         float64                  `json:"stepAngleDeg"`
-	MicroSteps           int                      `json:"microSteps"`
-	Lead                 float64                  `json:"lead"`
-	MaxSpeed             float64                  `json:"maxSpeed"`
-	EncoderScale         float64                  `json:"encoderScale"`
-	EncoderCompensation  EncoderCompensationConfig `json:"encoderCompensation"`
+	Name                AxisName                  `json:"name"`
+	Enabled             bool                      `json:"enabled"`
+	Kind                AxisKind                  `json:"kind"`
+	Inverted            bool                      `json:"inverted"`
+	StepAngleDeg        float64                   `json:"stepAngleDeg"`
+	MicroSteps          int                       `json:"microSteps"`
+	Lead                float64                   `json:"lead"`
+	MaxSpeed            float64                   `json:"maxSpeed"`
+	EncoderScale        float64                   `json:"encoderScale"`
+	EncoderCompensation EncoderCompensationConfig `json:"encoderCompensation"`
 }
 
 // MotionControllerProfile 运动控制器配置
 type MotionControllerProfile struct {
-	ID      string                   `json:"id"`
-	Name    string                   `json:"name"`
-	Type    MotionControllerType     `json:"type"`
-	Address string                   `json:"address"`
-	Port    int                      `json:"port"`
-	TimeoutMs int                    `json:"timeoutMs"`
-	Axes    []AxisConfig             `json:"axes"`
+	ID        string               `json:"id"`
+	Name      string               `json:"name"`
+	Type      MotionControllerType `json:"type"`
+	Address   string               `json:"address"`
+	Port      int                  `json:"port"`
+	TimeoutMs int                  `json:"timeoutMs"`
+	Axes      []AxisConfig         `json:"axes"`
 }
 
 // AxisStatus 轴运行时状态
 type AxisStatus struct {
-	Name          AxisName `json:"name"`
-	Position      float64  `json:"position"`
-	Moving        bool     `json:"moving"`
-	Homed         bool     `json:"homed"`
-	PosLimit      bool     `json:"posLimit"`
-	NegLimit      bool     `json:"negLimit"`
-	Compensating  bool     `json:"compensating"`
+	Name         AxisName `json:"name"`
+	Position     float64  `json:"position"`
+	Moving       bool     `json:"moving"`
+	Homed        bool     `json:"homed"`
+	PosLimit     bool     `json:"posLimit"`
+	NegLimit     bool     `json:"negLimit"`
+	Compensating bool     `json:"compensating"`
 }
 
 // MotionControllerStatus 运动控制器状态
 type MotionControllerStatus struct {
-	ID         string           `json:"id"`
-	Name       string           `json:"name"`
-	Type       MotionControllerType `json:"type"`
-	Status     ConnectionStatus `json:"status"`
-	Axes       []AxisStatus     `json:"axes"`
-	LastError  string           `json:"lastError"`
+	ID        string               `json:"id"`
+	Name      string               `json:"name"`
+	Type      MotionControllerType `json:"type"`
+	Status    ConnectionStatus     `json:"status"`
+	Axes      []AxisStatus         `json:"axes"`
+	LastError string               `json:"lastError"`
 }
 
 // LimitStatus 限位状态

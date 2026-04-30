@@ -87,6 +87,7 @@ func (s *SimulatedDevice) UpdateChannels(channels []types.ChannelConfig) {
 
 // simulateData 模拟数据生成
 func (s *SimulatedDevice) simulateData(periodMs int) {
+	defer s.acquiring.Store(false)
 	ticker := time.NewTicker(time.Duration(periodMs) * time.Millisecond)
 	defer ticker.Stop()
 
@@ -106,14 +107,12 @@ func (s *SimulatedDevice) simulateData(periodMs int) {
 				if ch.Enabled {
 					noise := rand.Float64()*2 - 1 // -1 ~ 1
 					var val float64
-					if i < s.pressureCount {
-						// 压力通道：基准 + 通道偏移 + 随机波动
+					switch {
+					case i < s.pressureCount:
 						val = basePressure + float64(i)*5 + noise*2
-					} else if i == s.pressureCount {
-						// 大气压通道
+					case i == s.pressureCount:
 						val = basePressure + noise*0.3
-					} else {
-						// 温度通道 (25°C附近)
+					default:
 						val = 25.0 + noise*0.5
 					}
 					values = append(values, math.Round(val*1000)/1000)

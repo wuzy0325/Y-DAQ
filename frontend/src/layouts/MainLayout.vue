@@ -18,7 +18,7 @@
         </router-link>
       </nav>
       <div class="topbar-right">
-        <span class="status-dot" :class="deviceConnected ? 'connected' : 'disconnected'"></span>
+        <span class="status-dot" :class="deviceConnected ? 'connected' : 'disconnected'" />
         <span class="status-text">{{ deviceConnected ? '设备已连接' : '设备未连接' }}</span>
         <span class="status-divider">|</span>
         <span class="status-path" :title="dataSavePath">📂 {{ dataSavePath }}</span>
@@ -113,13 +113,13 @@ onUnmounted(() => {
 
 .logo-icon {
   font-size: 20px;
-  filter: drop-shadow(0 0 8px rgba(184, 41, 255, 0.6));
+  filter: drop-shadow(0 0 8px $color-primary-glow);
 }
 
 .logo-text {
   font-size: 16px;
   font-weight: bold;
-  background: linear-gradient(135deg, #b829ff, #00f5ff);
+  background: $gradient-primary;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -151,9 +151,9 @@ onUnmounted(() => {
   }
 
   &.active {
-    background: rgba(184, 41, 255, 0.15);
-    color: #b829ff;
-    box-shadow: 0 0 10px rgba(184, 41, 255, 0.2);
+    background: rgba($color-primary, 0.15);
+    color: $color-primary;
+    box-shadow: 0 0 10px rgba($color-primary, 0.2);
   }
 }
 
@@ -178,16 +178,16 @@ onUnmounted(() => {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #666;
+  background: rgba(255,255,255,0.3);
 
   &.connected {
-    background: #00ff88;
-    box-shadow: 0 0 8px rgba(0, 255, 136, 0.6);
+    background: $color-success;
+    box-shadow: 0 0 8px $color-success-glow;
   }
 
   &.disconnected {
-    background: #ff3366;
-    box-shadow: 0 0 8px rgba(255, 51, 102, 0.4);
+    background: $color-danger;
+    box-shadow: 0 0 8px $color-danger-glow;
   }
 }
 

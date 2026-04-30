@@ -41,49 +41,49 @@ type ConnectionStatus string
 
 const (
 	StatusDisconnected ConnectionStatus = "Disconnected"
-	StatusConnecting  ConnectionStatus = "Connecting"
-	StatusConnected   ConnectionStatus = "Connected"
-	StatusError       ConnectionStatus = "Error"
+	StatusConnecting   ConnectionStatus = "Connecting"
+	StatusConnected    ConnectionStatus = "Connected"
+	StatusError        ConnectionStatus = "Error"
 )
 
 // ChannelConfig 通道配置
 type ChannelConfig struct {
-	Index    int     `json:"index"`
-	Name     string  `json:"name"`
-	Enabled  bool    `json:"enabled"`
-	Unit     string  `json:"unit"`
-	Precision int    `json:"precision"`
-	RangeMin float64 `json:"rangeMin"`
-	RangeMax float64 `json:"rangeMax"`
+	Index     int     `json:"index"`
+	Name      string  `json:"name"`
+	Enabled   bool    `json:"enabled"`
+	Unit      string  `json:"unit"`
+	Precision int     `json:"precision"`
+	RangeMin  float64 `json:"rangeMin"`
+	RangeMax  float64 `json:"rangeMax"`
 }
 
 // DeviceProfile 设备完整配置
 type DeviceProfile struct {
-	ID          string         `json:"id"`
-	Name        string         `json:"name"`
-	Type        DeviceType     `json:"type"`
-	Host        string         `json:"host"`
-	Port        int            `json:"port"`
-	StreamID    int            `json:"streamId"`
-	PeriodMs    int            `json:"periodMs"`    // 采集周期(毫秒)，0表示使用默认50ms
-	AutoConnect bool           `json:"autoConnect"` // 是否自动连接
+	ID          string          `json:"id"`
+	Name        string          `json:"name"`
+	Type        DeviceType      `json:"type"`
+	Host        string          `json:"host"`
+	Port        int             `json:"port"`
+	StreamID    int             `json:"streamId"`
+	PeriodMs    int             `json:"periodMs"`    // 采集周期(毫秒)，0表示使用默认50ms
+	AutoConnect bool            `json:"autoConnect"` // 是否自动连接
 	Channels    []ChannelConfig `json:"channels"`
 }
 
 // DeviceInstance 运行时设备实例
 type DeviceInstance struct {
-	ProfileID  string           `json:"profileId"`
-	Status     ConnectionStatus `json:"status"`
-	Acquiring  bool             `json:"acquiring"`
-	LastError  string           `json:"lastError"`
+	ProfileID string           `json:"profileId"`
+	Status    ConnectionStatus `json:"status"`
+	Acquiring bool             `json:"acquiring"`
+	LastError string           `json:"lastError"`
 }
 
 // DataPayload 数据帧
 type DataPayload struct {
-	DeviceID      string    `json:"deviceId"`
-	Timestamp     int64     `json:"timestamp"`
-	Channels      []float64 `json:"channels"`
-	ChannelIndices []int    `json:"channelIndices"`
+	DeviceID       string    `json:"deviceId"`
+	Timestamp      int64     `json:"timestamp"`
+	Channels       []float64 `json:"channels"`
+	ChannelIndices []int     `json:"channelIndices"`
 }
 
 // DiscoveredDevice UDP扫描发现的设备
@@ -99,10 +99,10 @@ type DiscoveredDevice struct {
 
 // DeviceStatus 设备状态摘要
 type DeviceStatus struct {
-	ID         string           `json:"id"`
-	Name       string           `json:"name"`
-	Type       DeviceType       `json:"type"`
-	Status     ConnectionStatus `json:"status"`
-	Acquiring  bool             `json:"acquiring"`
-	LastError  string           `json:"lastError"`
+	ID        string           `json:"id"`
+	Name      string           `json:"name"`
+	Type      DeviceType       `json:"type"`
+	Status    ConnectionStatus `json:"status"`
+	Acquiring bool             `json:"acquiring"`
+	LastError string           `json:"lastError"`
 }

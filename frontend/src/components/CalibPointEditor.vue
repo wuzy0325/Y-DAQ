@@ -6,7 +6,7 @@
       <el-button size="small" @click="resetPoints">重置网格</el-button>
       <span class="point-count">共 {{ points.length }} 个点</span>
     </div>
-    <div class="canvas-wrapper" ref="wrapperRef">
+    <div ref="wrapperRef" class="canvas-wrapper">
       <canvas
         ref="canvasRef"
         class="point-canvas"
@@ -14,7 +14,7 @@
         @mousemove="onMouseMove"
         @mouseup="onMouseUp"
         @mouseleave="onMouseUp"
-      ></canvas>
+      />
     </div>
     <div v-if="selectedIdx >= 0" class="selected-info">
       <span>选中点 #{{ selectedIdx + 1 }}</span>

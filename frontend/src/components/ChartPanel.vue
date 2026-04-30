@@ -1,5 +1,5 @@
 <template>
-  <div ref="chartRef" class="chart-container" :style="{ width, height }"></div>
+  <div ref="chartRef" class="chart-container" :style="{ width, height }" />
 </template>
 
 <script setup lang="ts">
@@ -48,7 +48,7 @@ defineExpose({
 })
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .chart-container {
   min-height: 0;
 }

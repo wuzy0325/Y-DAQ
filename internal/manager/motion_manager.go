@@ -2,8 +2,9 @@ package manager
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"yx-daq/internal/driver"
@@ -38,11 +39,12 @@ type MotionController interface {
 
 // MotionControllerManager 运动控制器管理器
 type MotionControllerManager struct {
-	mu         sync.RWMutex
-	profiles   map[string]types.MotionControllerProfile
-	instances  map[string]MotionController
-	statuses   map[string][]types.AxisStatus
-	pollCancel chan struct{}
+	mu          sync.RWMutex
+	profiles    map[string]types.MotionControllerProfile
+	instances   map[string]MotionController
+	statuses    map[string][]types.AxisStatus
+	pollCancel  chan struct{}
+	pollRunning atomic.Bool
 }
 
 // NewMotionControllerManager 创建运动控制器管理器
@@ -76,8 +78,8 @@ func (m *MotionControllerManager) GetProfiles() []types.MotionControllerProfile 
 // IsConnected 检查控制器是否连接
 func (m *MotionControllerManager) IsConnected(id string) bool {
 	m.mu.RLock()
-	defer m.mu.RUnlock()
 	ctrl, ok := m.instances[id]
+	m.mu.RUnlock()
 	if !ok {
 		return false
 	}
@@ -203,15 +205,28 @@ func (m *MotionControllerManager) DefinePosition(id string, axis types.AxisName,
 // GetStatusAll 获取所有控制器状态
 func (m *MotionControllerManager) GetStatusAll() []types.MotionControllerStatus {
 	m.mu.RLock()
-	defer m.mu.RUnlock()
+	profiles := make(map[string]types.MotionControllerProfile, len(m.profiles))
+	for id, p := range m.profiles {
+		profiles[id] = p
+	}
+	instances := make(map[string]MotionController, len(m.instances))
+	for id, ctrl := range m.instances {
+		instances[id] = ctrl
+	}
+	cachedStatuses := make(map[string][]types.AxisStatus, len(m.statuses))
+	for id, axes := range m.statuses {
+		cachedStatuses[id] = axes
+	}
+	m.mu.RUnlock()
+
 	statuses := []types.MotionControllerStatus{}
-	for id, profile := range m.profiles {
+	for id, profile := range profiles {
 		status := types.MotionControllerStatus{
 			ID:   id,
 			Name: profile.Name,
 			Type: profile.Type,
 		}
-		if ctrl, ok := m.instances[id]; ok {
+		if ctrl, ok := instances[id]; ok {
 			status.Status = types.StatusConnected
 			if axes, err := ctrl.GetAllAxisStatus(); err == nil {
 				status.Axes = axes
@@ -219,7 +234,7 @@ func (m *MotionControllerManager) GetStatusAll() []types.MotionControllerStatus 
 		} else {
 			status.Status = types.StatusDisconnected
 		}
-		if axes, ok := m.statuses[id]; ok {
+		if axes, ok := cachedStatuses[id]; ok {
 			status.Axes = axes
 		}
 		statuses = append(statuses, status)
@@ -229,6 +244,12 @@ func (m *MotionControllerManager) GetStatusAll() []types.MotionControllerStatus 
 
 // StartPolling 启动状态轮询
 func (m *MotionControllerManager) StartPolling() {
+	if m.pollRunning.Load() {
+		return
+	}
+	m.pollRunning.Store(true)
+	defer m.pollRunning.Store(false)
+
 	ticker := time.NewTicker(time.Duration(types.MotionPollIntervalMs) * time.Millisecond)
 	defer ticker.Stop()
 
@@ -244,7 +265,10 @@ func (m *MotionControllerManager) StartPolling() {
 
 // StopPolling 停止轮询
 func (m *MotionControllerManager) StopPolling() {
-	m.pollCancel <- struct{}{}
+	select {
+	case m.pollCancel <- struct{}{}:
+	default:
+	}
 }
 
 // pollStatus 轮询所有控制器状态
@@ -289,8 +313,8 @@ func (m *MotionControllerManager) Init() {
 		ID:        "b140-mc-1",
 		Name:      "B140 运动控制器",
 		Type:      types.MotionTypeB140,
-		Address:   "192.168.3.100",
-		Port:      23,
+		Address:   "192.168.1.101",
+		Port:      5000,
 		TimeoutMs: 5000,
 		Axes:      defaultAxes,
 	}
@@ -308,7 +332,7 @@ func (m *MotionControllerManager) Init() {
 	m.AddProfile(b140Profile)
 	m.AddProfile(simProfile)
 	if err := m.Connect(simProfile.ID); err != nil {
-		log.Printf("connect simulated motion controller failed: %v", err)
+		slog.Error("connect simulated motion controller failed", "err", err)
 	}
 
 	go m.StartPolling()
@@ -415,6 +439,3 @@ func (m *MotionControllerManager) RemoveProfile(id string) {
 	defer m.mu.Unlock()
 	delete(m.profiles, id)
 }
-
-// unused import guard
-var _ = time.Millisecond

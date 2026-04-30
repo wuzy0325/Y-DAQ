@@ -1,11 +1,9 @@
 package manager
 
 import (
-	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"sync"
-	"time"
 
 	"yx-daq/internal/driver"
 	"yx-daq/internal/storage"
@@ -31,7 +29,7 @@ type DeviceManager struct {
 	instances   map[string]DeviceDriver
 	dataSink    func(payload types.DataPayload)
 	latestData  map[string]types.DataPayload
-	configStore *storage.ConfigStore
+	configStore *storage.ConfigStore[[]types.DeviceProfile]
 }
 
 // NewDeviceManager 创建设备管理器
@@ -44,7 +42,7 @@ func NewDeviceManager() *DeviceManager {
 }
 
 // SetConfigStore 设置配置存储（用于持久化）
-func (m *DeviceManager) SetConfigStore(store *storage.ConfigStore) {
+func (m *DeviceManager) SetConfigStore(store *storage.ConfigStore[[]types.DeviceProfile]) {
 	m.configStore = store
 }
 
@@ -55,7 +53,7 @@ func (m *DeviceManager) saveProfiles() {
 	}
 	profiles := m.GetProfiles()
 	if err := m.configStore.Set(profiles); err != nil {
-		log.Printf("save device profiles failed: %v", err)
+		slog.Error("save device profiles failed", "err", err)
 	}
 }
 
@@ -123,10 +121,9 @@ func (m *DeviceManager) GetProfileByID(id string) *types.DeviceProfile {
 
 // Connect 连接设备
 func (m *DeviceManager) Connect(id string) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
+	m.mu.RLock()
 	profile, ok := m.profiles[id]
+	m.mu.RUnlock()
 	if !ok {
 		return fmt.Errorf("device profile not found: %s", id)
 	}
@@ -141,15 +138,14 @@ func (m *DeviceManager) Connect(id string) error {
 		return fmt.Errorf("unsupported device type: %s", profile.Type)
 	}
 
-	// 设置数据回调
+	dataSink := m.dataSink
 	drv.SetDataCallback(func(payload types.DataPayload) {
-		// 覆盖 DeviceID 为实际设备ID，确保与 profile ID 一致
 		payload.DeviceID = id
 		m.mu.Lock()
 		m.latestData[id] = payload
 		m.mu.Unlock()
-		if m.dataSink != nil {
-			m.dataSink(payload)
+		if dataSink != nil {
+			dataSink(payload)
 		}
 	})
 
@@ -157,7 +153,9 @@ func (m *DeviceManager) Connect(id string) error {
 		return err
 	}
 
+	m.mu.Lock()
 	m.instances[id] = drv
+	m.mu.Unlock()
 	return nil
 }
 
@@ -200,7 +198,7 @@ func (m *DeviceManager) StartAcquisitionAll(periodMs int) int {
 	count := 0
 	for id, drv := range m.instances {
 		if err := drv.StartAcquisition(periodMs); err != nil {
-			log.Printf("start acquisition for %s failed: %v", id, err)
+			slog.Error("start acquisition failed", "id", id, "err", err)
 		} else {
 			count++
 		}
@@ -214,7 +212,7 @@ func (m *DeviceManager) StopAcquisitionAll() {
 	defer m.mu.RUnlock()
 	for id, drv := range m.instances {
 		if err := drv.StopAcquisition(); err != nil {
-			log.Printf("stop acquisition for %s failed: %v", id, err)
+			slog.Error("stop acquisition failed", "id", id, "err", err)
 		}
 	}
 }
@@ -222,15 +220,24 @@ func (m *DeviceManager) StopAcquisitionAll() {
 // GetStatusAll 获取所有设备状态
 func (m *DeviceManager) GetStatusAll() []types.DeviceStatus {
 	m.mu.RLock()
-	defer m.mu.RUnlock()
+	profiles := make(map[string]types.DeviceProfile, len(m.profiles))
+	for id, p := range m.profiles {
+		profiles[id] = p
+	}
+	instances := make(map[string]DeviceDriver, len(m.instances))
+	for id, drv := range m.instances {
+		instances[id] = drv
+	}
+	m.mu.RUnlock()
+
 	statuses := []types.DeviceStatus{}
-	for id, profile := range m.profiles {
+	for id, profile := range profiles {
 		status := types.DeviceStatus{
 			ID:   id,
 			Name: profile.Name,
 			Type: profile.Type,
 		}
-		if drv, ok := m.instances[id]; ok {
+		if drv, ok := instances[id]; ok {
 			if drv.IsConnected() {
 				status.Status = types.StatusConnected
 			}
@@ -278,36 +285,79 @@ func (m *DeviceManager) GetAllLatestData() []types.DataPayload {
 	return snapshots
 }
 
+// UnitSetter 单位设置接口（仅XY-DAQ驱动实现）
+type UnitSetter interface {
+	SetUnit(unit string) error
+}
+
+// SetUnit 设置设备压力单位（写入硬件）
+func (m *DeviceManager) SetUnit(id string, unit string) error {
+	m.mu.RLock()
+	drv, ok := m.instances[id]
+	m.mu.RUnlock()
+	if !ok {
+		return fmt.Errorf("device not connected: %s", id)
+	}
+
+	setter, ok := drv.(UnitSetter)
+	if !ok {
+		return fmt.Errorf("device does not support SetUnit: %s", id)
+	}
+
+	if err := setter.SetUnit(unit); err != nil {
+		return err
+	}
+
+	m.mu.Lock()
+	if profile, exists := m.profiles[id]; exists {
+		for i := range profile.Channels {
+			if profile.Channels[i].Index < profile.Type.PressureChannelCount() {
+				profile.Channels[i].Unit = unit
+			}
+		}
+		m.profiles[id] = profile
+	}
+	m.mu.Unlock()
+	m.saveProfiles()
+
+	return nil
+}
+
+// IsAcquiring 检查指定设备是否正在采集
+func (m *DeviceManager) IsAcquiring(id string) bool {
+	m.mu.RLock()
+	drv, ok := m.instances[id]
+	m.mu.RUnlock()
+	if !ok {
+		return false
+	}
+	return drv.IsAcquiring()
+}
+
 // IsConnected 检查设备是否连接
 func (m *DeviceManager) IsConnected(id string) bool {
 	m.mu.RLock()
-	defer m.mu.RUnlock()
-	if drv, ok := m.instances[id]; ok {
-		return drv.IsConnected()
+	drv, ok := m.instances[id]
+	m.mu.RUnlock()
+	if !ok {
+		return false
 	}
-	return false
+	return drv.IsConnected()
 }
 
 // Init 初始化（从配置文件加载设备，若无则创建默认模拟设备）
 func (m *DeviceManager) Init() {
 	loaded := false
 	if m.configStore != nil {
-		raw := m.configStore.Get()
-		if raw != nil {
-			// 尝试解析为 DeviceProfile 列表
-			jsonBytes, err := json.Marshal(raw)
-			if err == nil {
-				var profiles []types.DeviceProfile
-				if err := json.Unmarshal(jsonBytes, &profiles); err == nil && len(profiles) > 0 {
-					for _, p := range profiles {
-						m.mu.Lock()
-						m.profiles[p.ID] = p
-						m.mu.Unlock()
-					}
-					loaded = true
-					log.Printf("loaded %d device profiles from config", len(profiles))
-				}
+		profiles := m.configStore.Get()
+		if len(profiles) > 0 {
+			for _, p := range profiles {
+				m.mu.Lock()
+				m.profiles[p.ID] = p
+				m.mu.Unlock()
 			}
+			loaded = true
+			slog.Info("loaded device profiles from config", "count", len(profiles))
 		}
 	}
 
@@ -372,11 +422,8 @@ func (m *DeviceManager) AutoConnect() {
 		}
 		if !m.IsConnected(pair.id) {
 			if err := m.Connect(pair.id); err != nil {
-				log.Printf("auto connect device %s failed: %v", pair.id, err)
+				slog.Error("auto connect device failed", "id", pair.id, "err", err)
 			}
 		}
 	}
 }
-
-// unused import guard
-var _ = time.Millisecond

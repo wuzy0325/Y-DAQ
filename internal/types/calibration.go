@@ -11,41 +11,41 @@ const (
 type CalibrationStatus string
 
 const (
-	CalibStatusIdle         CalibrationStatus = "idle"
-	CalibStatusConfiguring  CalibrationStatus = "configuring"
-	CalibStatusRunning      CalibrationStatus = "running"
-	CalibStatusPaused       CalibrationStatus = "paused"
-	CalibStatusCompleted    CalibrationStatus = "completed"
-	CalibStatusError        CalibrationStatus = "error"
+	CalibStatusIdle        CalibrationStatus = "idle"
+	CalibStatusConfiguring CalibrationStatus = "configuring"
+	CalibStatusRunning     CalibrationStatus = "running"
+	CalibStatusPaused      CalibrationStatus = "paused"
+	CalibStatusCompleted   CalibrationStatus = "completed"
+	CalibStatusError       CalibrationStatus = "error"
 )
 
 // ProbeChannelRole 探针通道语义角色
 type ProbeChannelRole string
 
 const (
-	RoleP1      ProbeChannelRole = "fiveHole.p1"
-	RoleP2      ProbeChannelRole = "fiveHole.p2"
-	RoleP3      ProbeChannelRole = "fiveHole.p3"
-	RoleP4      ProbeChannelRole = "fiveHole.p4"
-	RoleP5      ProbeChannelRole = "fiveHole.p5"
-	RolePAtm    ProbeChannelRole = "fiveHole.pAtm"
-	RoleTAtm    ProbeChannelRole = "fiveHole.tAtm"
-	RolePTotal  ProbeChannelRole = "fiveHole.pTotal"
+	RoleP1     ProbeChannelRole = "fiveHole.p1"
+	RoleP2     ProbeChannelRole = "fiveHole.p2"
+	RoleP3     ProbeChannelRole = "fiveHole.p3"
+	RoleP4     ProbeChannelRole = "fiveHole.p4"
+	RoleP5     ProbeChannelRole = "fiveHole.p5"
+	RolePAtm   ProbeChannelRole = "fiveHole.pAtm"
+	RoleTAtm   ProbeChannelRole = "fiveHole.tAtm"
+	RolePTotal ProbeChannelRole = "fiveHole.pTotal"
 )
 
 // ProbeChannelConfig 探针通道配置
 type ProbeChannelConfig struct {
-	Name    string            `json:"name"`
-	Role    ProbeChannelRole  `json:"role"`
-	Channel int               `json:"channel"`
-	Enabled bool              `json:"enabled"`
+	Name    string           `json:"name"`
+	Role    ProbeChannelRole `json:"role"`
+	Channel int              `json:"channel"`
+	Enabled bool             `json:"enabled"`
 }
 
 // CalibrationPoint 校准点
 type CalibrationPoint struct {
-	ID          string  `json:"id"`
-	Alpha       float64 `json:"alpha"`
-	Beta        float64 `json:"beta"`
+	ID    string  `json:"id"`
+	Alpha float64 `json:"alpha"`
+	Beta  float64 `json:"beta"`
 }
 
 // SphereTankGateConfig 球罐门控配置
@@ -72,14 +72,14 @@ type CalibrationConfig struct {
 
 // FiveHoleRawData 五孔原始数据
 type FiveHoleRawData struct {
-	P1      float64  `json:"p1"`
-	P2      float64  `json:"p2"`
-	P3      float64  `json:"p3"`
-	P4      float64  `json:"p4"`
-	P5      float64  `json:"p5"`
-	PAtm    float64  `json:"pAtm"`
-	TAtm    float64  `json:"tAtm"`
-	PTotal  *float64 `json:"pTotal,omitempty"`
+	P1     float64  `json:"p1"`
+	P2     float64  `json:"p2"`
+	P3     float64  `json:"p3"`
+	P4     float64  `json:"p4"`
+	P5     float64  `json:"p5"`
+	PAtm   float64  `json:"pAtm"`
+	TAtm   float64  `json:"tAtm"`
+	PTotal *float64 `json:"pTotal,omitempty"`
 }
 
 // FiveHoleCoefficients 五孔系数
@@ -92,25 +92,25 @@ type FiveHoleCoefficients struct {
 
 // CalibrationDataPoint 校准数据点
 type CalibrationDataPoint struct {
-	PointID     string              `json:"pointId"`
-	Alpha       float64             `json:"alpha"`
-	Beta        float64             `json:"beta"`
-	RawData     FiveHoleRawData     `json:"rawData"`
+	PointID      string               `json:"pointId"`
+	Alpha        float64              `json:"alpha"`
+	Beta         float64              `json:"beta"`
+	RawData      FiveHoleRawData      `json:"rawData"`
 	Coefficients FiveHoleCoefficients `json:"coefficients"`
-	SampleCount int                 `json:"sampleCount"`
-	StdDev      float64             `json:"stdDev"`
+	SampleCount  int                  `json:"sampleCount"`
+	StdDev       float64              `json:"stdDev"`
 }
 
 // CalibrationTaskStatus 校准任务状态
 type CalibrationTaskStatus struct {
-	TaskID          string              `json:"taskId"`
-	Status          CalibrationStatus   `json:"status"`
-	TotalPoints     int                 `json:"totalPoints"`
-	CompletedPoints int                 `json:"completedPoints"`
-	Progress        float64             `json:"progress"`
-	CurrentPoint    *CalibrationPoint   `json:"currentPoint,omitempty"`
+	TaskID          string                 `json:"taskId"`
+	Status          CalibrationStatus      `json:"status"`
+	TotalPoints     int                    `json:"totalPoints"`
+	CompletedPoints int                    `json:"completedPoints"`
+	Progress        float64                `json:"progress"`
+	CurrentPoint    *CalibrationPoint      `json:"currentPoint,omitempty"`
 	DataPoints      []CalibrationDataPoint `json:"dataPoints"`
-	LastError       string              `json:"lastError,omitempty"`
+	LastError       string                 `json:"lastError,omitempty"`
 }
 
 // CalibrationProgressEvent 校准进度事件
@@ -128,7 +128,7 @@ type CalibrationRealtimeEvent struct {
 	TaskID       string               `json:"taskId"`
 	PointID      string               `json:"pointId"`
 	RawData      FiveHoleRawData      `json:"rawData"`
-	Coefficients FiveHoleCoefficients  `json:"coefficients"`
+	Coefficients FiveHoleCoefficients `json:"coefficients"`
 }
 
 // CalibrationCompleteEvent 校准完成事件

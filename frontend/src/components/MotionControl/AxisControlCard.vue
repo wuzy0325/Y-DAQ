@@ -33,7 +33,7 @@
       <!-- 简化位置条 -->
       <div class="position-bar">
         <div class="bar-track">
-          <div class="bar-indicator" :style="{ left: `${positionPercent}%` }"></div>
+          <div class="bar-indicator" :style="{ left: `${positionPercent}%` }" />
         </div>
         <div class="bar-labels">
           <span>-{{ maxPosition }}</span>
@@ -184,10 +184,10 @@ async function onHome() {
 }
 </script>
 
-<style scoped lang="scss">
+<style lang="scss" scoped>
 .axis-card {
   background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid $glass-border-light;
   border-radius: 8px;
   padding: 12px;
   display: flex;
@@ -196,17 +196,17 @@ async function onHome() {
   transition: all 0.2s;
 
   &:hover {
-    border-color: rgba(0, 245, 255, 0.2);
+    border-color: rgba($color-accent, 0.2);
   }
 
   &.is-running {
-    border-color: rgba(0, 255, 136, 0.3);
-    background: rgba(0, 255, 136, 0.03);
+    border-color: rgba($color-success, 0.3);
+    background: rgba($color-success, 0.03);
   }
 
   &.is-error {
-    border-color: rgba(255, 77, 79, 0.3);
-    background: rgba(255, 77, 79, 0.03);
+    border-color: rgba($color-danger, 0.3);
+    background: rgba($color-danger, 0.03);
   }
 }
 
@@ -224,7 +224,7 @@ async function onHome() {
   .axis-name {
     font-size: 14px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.9);
+    color: $text-secondary;
   }
 }
 
@@ -252,9 +252,9 @@ async function onHome() {
     font-weight: 600;
 
     &.active {
-      background: rgba(255, 77, 79, 0.2);
-      border-color: rgba(255, 77, 79, 0.5);
-      color: #ff4d4f;
+      background: rgba($color-danger, 0.2);
+      border-color: rgba($color-danger, 0.5);
+      color: $color-danger;
     }
   }
 }
@@ -267,17 +267,17 @@ async function onHome() {
     .number {
       font-size: 24px;
       font-weight: 600;
-      color: #00f5ff;
+      color: $color-accent;
       font-family: 'Courier New', monospace;
 
       &.is-homed {
-        color: #00ff88;
+        color: $color-success;
       }
     }
 
     .unit {
       font-size: 12px;
-      color: rgba(255, 255, 255, 0.4);
+      color: $text-muted;
       margin-left: 4px;
     }
   }
@@ -295,7 +295,7 @@ async function onHome() {
       top: 50%;
       width: 8px;
       height: 8px;
-      background: #00f5ff;
+      background: $color-accent;
       border-radius: 50%;
       transform: translate(-50%, -50%);
       transition: left 0.1s;
@@ -307,7 +307,7 @@ async function onHome() {
     justify-content: space-between;
     margin-top: 4px;
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.3);
+    color: $text-muted;
   }
 }
 

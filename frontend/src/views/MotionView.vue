@@ -19,13 +19,17 @@
             type="success"
             :loading="motionStore.connectionStatus === 'connecting'"
             @click="connectController"
-          >连接</el-button>
+          >
+            连接
+          </el-button>
           <el-button
             v-else
             type="danger"
             plain
             @click="disconnectController"
-          >断开</el-button>
+          >
+            断开
+          </el-button>
         </div>
 
         <!-- 紧急停止 -->
@@ -34,8 +38,9 @@
           class="estop-btn"
           :disabled="!motionStore.isAnyAxisRunning"
           @click="onEmergencyStop"
-        >紧急停止</el-button>
-
+        >
+          紧急停止
+        </el-button>
       </div>
     </div>
 
@@ -138,7 +143,6 @@
 
     <!-- 轴配置对话框 -->
     <AxisConfigDialog ref="configDialog" />
-
   </div>
 </template>
 
@@ -147,8 +151,8 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useMotionStore } from '../stores/motion'
 import GlassCard from '../components/GlassCard.vue'
-import AxisControlCard from '../components/MotionControl/AxisControlCard.vue'
 import AxisConfigDialog from '../components/MotionControl/AxisConfigDialog.vue'
+import AxisControlCard from '../components/MotionControl/AxisControlCard.vue'
 
 const motionStore = useMotionStore()
 const configDialog = ref<InstanceType<typeof AxisConfigDialog>>()
@@ -171,8 +175,8 @@ const activeProfile = computed(() => {
 })
 
 // 可编辑的连接信息（默认值对应B140控制器）
-const editableAddress = ref('192.168.3.100')
-const editablePort = ref(23)
+const editableAddress = ref('192.168.1.101')
+const editablePort = ref(5000)
 
 // 同步 profile 的 address/port 到可编辑字段
 watch(activeProfile, (profile) => {
@@ -299,7 +303,7 @@ onMounted(async () => {
   justify-content: space-between;
   margin-bottom: 12px;
   padding-bottom: 10px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid $glass-border-light;
   flex-shrink: 0;
 }
 
@@ -310,14 +314,14 @@ onMounted(async () => {
   .page-title {
     font-size: 20px;
     font-weight: 600;
-    color: #00f5ff;
+    color: $color-accent;
     margin: 0;
   }
   .controller-name {
     font-size: 13px;
     color: rgba(255,255,255,0.4);
     padding: 3px 10px;
-    background: rgba(255,255,255,0.04);
+    background: $glass-bg;
     border-radius: 4px;
   }
 }
@@ -332,8 +336,8 @@ onMounted(async () => {
     align-items: center;
     gap: 8px;
     padding: 0 12px;
-    border-left: 1px solid rgba(255,255,255,0.06);
-    border-right: 1px solid rgba(255,255,255,0.06);
+    border-left: 1px solid $glass-border-light;
+    border-right: 1px solid $glass-border-light;
   }
 
   .estop-btn {
@@ -389,8 +393,8 @@ onMounted(async () => {
 }
 
 .status-section {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: $glass-bg;
+  border: 1px solid $glass-border;
   border-radius: 8px;
   padding: 10px;
   flex-shrink: 0;
@@ -401,7 +405,7 @@ onMounted(async () => {
     color: rgba(255, 255, 255, 0.8);
     margin-bottom: 8px;
     padding-left: 6px;
-    border-left: 2px solid rgba(0, 245, 255, 0.5);
+    border-left: 2px solid rgba($color-accent, 0.5);
   }
 
   .section-title-row {
@@ -434,9 +438,9 @@ onMounted(async () => {
       font-weight: 500;
       color: rgba(255,255,255,0.8);
 
-      &.connected { color: #00ff88; }
+      &.connected { color: $color-success; }
       &.disconnected { color: rgba(255,255,255,0.3); }
-      &.error { color: #ff3366; }
+      &.error { color: $color-danger; }
     }
   }
 }
@@ -461,8 +465,8 @@ onMounted(async () => {
     }
 
     &.is-selected {
-      border-color: rgba(0, 245, 255, 0.3);
-      background: rgba(0, 245, 255, 0.05);
+      border-color: rgba($color-accent, 0.3);
+      background: rgba($color-accent, 0.05);
     }
 
     .axis-info {
@@ -484,10 +488,10 @@ onMounted(async () => {
       .value {
         font-size: 14px;
         font-weight: 600;
-        color: #00f5ff;
+        color: $color-accent;
         font-family: 'Courier New', monospace;
 
-        &.is-homed { color: #00ff88; }
+        &.is-homed { color: $color-success; }
       }
       .unit { font-size: 11px; color: rgba(255,255,255,0.4); }
     }
@@ -502,17 +506,17 @@ onMounted(async () => {
         background: rgba(255,255,255,0.05); 
         color: rgba(255,255,255,0.4); 
       }
-      &.running { 
-        background: rgba(0, 255, 136, 0.1); 
-        color: #00ff88;
+      &.running {
+        background: rgba($color-success, 0.1);
+        color: $color-success;
       }
-      &.jogging_minus, &.jogging_plus { 
-        background: rgba(255, 170, 0, 0.1); 
-        color: #ffaa00;
+      &.jogging_minus, &.jogging_plus {
+        background: rgba($color-warning, 0.1);
+        color: $color-warning;
       }
-      &.error { 
-        background: rgba(255, 51, 102, 0.1); 
-        color: #ff3366;
+      &.error {
+        background: rgba($color-danger, 0.1);
+        color: $color-danger;
       }
     }
   }

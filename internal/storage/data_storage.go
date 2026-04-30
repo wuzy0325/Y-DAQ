@@ -31,7 +31,7 @@ func (s *DataStorageService) StartRecording() error {
 		return fmt.Errorf("already recording")
 	}
 
-	os.MkdirAll(s.outputDir, 0755)
+	os.MkdirAll(s.outputDir, 0755) // ignore error: 目录已存在或后续Create会报错
 	filename := fmt.Sprintf("recording-%s.csv", time.Now().Format("2006-01-02-15-04-05"))
 	filePath := filepath.Join(s.outputDir, filename)
 
@@ -41,7 +41,7 @@ func (s *DataStorageService) StartRecording() error {
 	}
 
 	// 写入 UTF-8 BOM
-	file.Write([]byte{0xEF, 0xBB, 0xBF})
+	file.Write([]byte{0xEF, 0xBB, 0xBF}) // ignore error: BOM写入失败不影响后续CSV写入
 
 	s.currentFile = file
 	s.writer = csv.NewWriter(file)
@@ -109,7 +109,7 @@ func (s *DataStorageService) HandlePayload(payload types.DataPayload) error {
 
 // ExportCalibrationCSV 导出校准数据为CSV
 func (s *DataStorageService) ExportCalibrationCSV(dataPoints []types.CalibrationDataPoint, filePath string) error {
-	os.MkdirAll(filepath.Dir(filePath), 0755)
+	os.MkdirAll(filepath.Dir(filePath), 0755) // ignore error: 目录已存在或后续Create会报错
 
 	file, err := os.Create(filePath)
 	if err != nil {
@@ -118,7 +118,7 @@ func (s *DataStorageService) ExportCalibrationCSV(dataPoints []types.Calibration
 	defer file.Close()
 
 	// UTF-8 BOM
-	file.Write([]byte{0xEF, 0xBB, 0xBF})
+	file.Write([]byte{0xEF, 0xBB, 0xBF}) // ignore error: BOM写入失败不影响后续CSV写入
 
 	writer := csv.NewWriter(file)
 	defer writer.Flush()

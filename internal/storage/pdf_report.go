@@ -25,7 +25,7 @@ func (s *PdfReportService) ExportCalibrationReport(
 	config types.CalibrationConfig,
 	outputPath string,
 ) error {
-	os.MkdirAll(filepath.Dir(outputPath), 0755)
+	os.MkdirAll(filepath.Dir(outputPath), 0755) // ignore error: 目录已存在或后续pdf.OutputFileAndClose会报错
 
 	pdf := fpdf.New("P", "mm", "A4", "")
 	pdf.SetAutoPageBreak(true, 15)
@@ -283,7 +283,7 @@ func sqrt(x float64) float64 {
 	// Newton's method
 	z := 1.0
 	for i := 0; i < 20; i++ {
-		z = z - (z*z-x)/(2*z)
+		z -= (z*z - x) / (2 * z)
 	}
 	return z
 }

@@ -534,8 +534,6 @@ export namespace types {
 	}
 	export class MotionAxisMapping {
 	    axis: string;
-	    scale: number;
-	    offset: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new MotionAxisMapping(source);
@@ -544,8 +542,6 @@ export namespace types {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.axis = source["axis"];
-	        this.scale = source["scale"];
-	        this.offset = source["offset"];
 	    }
 	}
 	export class MotionControllerProfile {
@@ -695,7 +691,9 @@ export namespace types {
 	    machProbe: number;
 	    alphaProbe: number;
 	    iterationCount: number;
+	    converged: boolean;
 	    valid: boolean;
+	    errorMsg?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new ThreeHoleInterpolationResult(source);
@@ -708,7 +706,9 @@ export namespace types {
 	        this.machProbe = source["machProbe"];
 	        this.alphaProbe = source["alphaProbe"];
 	        this.iterationCount = source["iterationCount"];
+	        this.converged = source["converged"];
 	        this.valid = source["valid"];
+	        this.errorMsg = source["errorMsg"];
 	    }
 	}
 	export class ThreeHoleProbeChannelConfig {
@@ -807,11 +807,13 @@ export namespace types {
 	    motionControllerId: string;
 	    layout: TraversalLayout;
 	    probeChannels: ThreeHoleProbeChannelConfig[];
-	    motionX: MotionAxisMapping;
-	    motionY: MotionAxisMapping;
+	    motionAlpha: MotionAxisMapping;
+	    motionBeta: MotionAxisMapping;
 	    calibFiles: ThreeHoleCalibFileInfo[];
 	    dwellTimeMs: number;
 	    samplesPerPoint: number;
+	    sampleIntervalMs: number;
+	    motionTimeoutMs: number;
 	    savePath: string;
 	    saveFileName: string;
 	
@@ -826,11 +828,13 @@ export namespace types {
 	        this.motionControllerId = source["motionControllerId"];
 	        this.layout = this.convertValues(source["layout"], TraversalLayout);
 	        this.probeChannels = this.convertValues(source["probeChannels"], ThreeHoleProbeChannelConfig);
-	        this.motionX = this.convertValues(source["motionX"], MotionAxisMapping);
-	        this.motionY = this.convertValues(source["motionY"], MotionAxisMapping);
+	        this.motionAlpha = this.convertValues(source["motionAlpha"], MotionAxisMapping);
+	        this.motionBeta = this.convertValues(source["motionBeta"], MotionAxisMapping);
 	        this.calibFiles = this.convertValues(source["calibFiles"], ThreeHoleCalibFileInfo);
 	        this.dwellTimeMs = source["dwellTimeMs"];
 	        this.samplesPerPoint = source["samplesPerPoint"];
+	        this.sampleIntervalMs = source["sampleIntervalMs"];
+	        this.motionTimeoutMs = source["motionTimeoutMs"];
 	        this.savePath = source["savePath"];
 	        this.saveFileName = source["saveFileName"];
 	    }

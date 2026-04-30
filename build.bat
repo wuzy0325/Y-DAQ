@@ -58,7 +58,7 @@ if errorlevel 1 (
 )
 
 echo [2/4] Wails构建 (NSIS)...
-wails build --target windows/amd64 --nsis
+wails build -platform windows/amd64 -nsis
 if errorlevel 1 (
     echo Wails NSIS构建失败!
     echo 请确保已安装NSIS (https://nsis.sourceforge.io/Download)

@@ -11,7 +11,7 @@ import (
 
 // DAQScanner XY-DAQ UDP设备扫描器（DAQ8/DAQ16通用）
 type DAQScanner struct {
-	listenPort int
+	listenPort    int
 	broadcastPort int
 }
 

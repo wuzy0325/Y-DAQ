@@ -3,7 +3,7 @@ package driver
 import (
 	"encoding/binary"
 	"fmt"
-	"log"
+	"log/slog"
 	"math"
 	"net"
 	"sync"
@@ -34,7 +34,8 @@ type XYDAQDriver struct {
 	totalChannels  int // 总通道数（压力+大气压+大气温度）
 	frameSize      int // 数据帧大小（字节）
 	// 命令响应通道
-	cmdRespCh      chan []byte
+	cmdRespCh           chan []byte
+	recvLoopRunning     atomic.Bool
 }
 
 // NewXYDAQDriver 创建XY-DAQ驱动（DAQ8/DAQ16通用）
@@ -202,12 +203,14 @@ func (d *XYDAQDriver) UpdateChannels(channels []types.ChannelConfig) {
 
 // receiveLoop 数据接收循环
 func (d *XYDAQDriver) receiveLoop() {
+	d.recvLoopRunning.Store(true)
+	defer d.recvLoopRunning.Store(false)
 	buf := make([]byte, 4096)
 	for d.connected.Load() {
 		n, err := d.conn.Read(buf)
 		if err != nil {
 			if d.connected.Load() {
-				log.Printf("XY-DAQ read error: %v", err)
+				slog.Error("XY-DAQ read error", "err", err)
 				d.handleDisconnect()
 			}
 			return
@@ -236,8 +239,13 @@ func (d *XYDAQDriver) processBuffer() {
 		if len(payload) > 0 && payload[0] < 0x20 {
 			// 二进制帧
 			d.handleStreamFrame(payload)
+		} else {
+			// ASCII帧路由到命令响应通道
+			select {
+			case d.cmdRespCh <- payload:
+			default:
+			}
 		}
-		// ASCII帧忽略（命令响应）
 	}
 }
 
@@ -295,15 +303,15 @@ func (d *XYDAQDriver) handleDisconnect() {
 		}
 
 		d.reconnectCount++
-		log.Printf("XY-DAQ reconnecting... attempt %d/%d", d.reconnectCount, types.MaxReconnectAttempts)
+		slog.Warn("XY-DAQ reconnecting", "attempt", d.reconnectCount, "max", types.MaxReconnectAttempts)
 
 		if err := d.Connect(); err == nil {
-			log.Printf("XY-DAQ reconnected successfully")
+			slog.Info("XY-DAQ reconnected successfully")
 			return
 		}
 	}
 
-	log.Printf("XY-DAQ max reconnect attempts reached")
+	slog.Error("XY-DAQ max reconnect attempts reached")
 }
 
 // SendCommand 发送命令并等待ASCII响应（用于查询类命令）
@@ -339,73 +347,185 @@ func (d *XYDAQDriver) SendCommand(cmd string) (string, error) {
 	return string(resp), nil
 }
 
+// sendUnitCommand sends unit read/write commands via length-prefix protocol
+func (d *XYDAQDriver) sendUnitCommand(cmd string) (string, error) {
+	if !d.connected.Load() || d.conn == nil {
+		return "", fmt.Errorf("device not connected")
+	}
+
+	// receiveLoop 运行时通过 cmdRespCh 获取响应，避免与 receiveLoop 竞争 conn.Read
+	if d.recvLoopRunning.Load() {
+		// 排空残留响应
+		select {
+		case <-d.cmdRespCh:
+		default:
+		}
+
+		d.mu.Lock()
+		if _, err := d.conn.Write([]byte(cmd)); err != nil {
+			d.mu.Unlock()
+			return "", fmt.Errorf("send unit command %q failed: %w", cmd, err)
+		}
+		d.mu.Unlock()
+
+		select {
+		case payload := <-d.cmdRespCh:
+			return parseUnitPayload(payload)
+		case <-time.After(3 * time.Second):
+			return "", fmt.Errorf("unit command %q timeout", cmd)
+		}
+	}
+
+	// receiveLoop 未运行时直接读写（Connect 初始化阶段）
+	if _, err := d.conn.Write([]byte(cmd)); err != nil {
+		return "", fmt.Errorf("send unit command %q failed: %w", cmd, err)
+	}
+
+	d.conn.SetReadDeadline(time.Now().Add(3 * time.Second))
+	buf := make([]byte, 1024)
+	n, err := d.conn.Read(buf)
+	d.conn.SetReadDeadline(time.Time{})
+	if err != nil {
+		return "", fmt.Errorf("read unit command response failed: %w", err)
+	}
+	return parseUnitPayload(buf[:n])
+}
+
+// parseUnitPayload 解析单位命令响应帧
+func parseUnitPayload(raw []byte) (string, error) {
+	if len(raw) < 2 {
+		return "", fmt.Errorf("unit command response too short: %d bytes", len(raw))
+	}
+
+	frameLen := int(binary.BigEndian.Uint16(raw[:2]))
+	if frameLen < 2 || frameLen > len(raw) {
+		return "", fmt.Errorf("invalid unit response frame: len=%d, data=%d", frameLen, len(raw))
+	}
+
+	resp := string(raw[2:frameLen])
+	for i := 0; i < len(resp); i++ {
+		if resp[i] == 0 {
+			resp = resp[:i]
+			break
+		}
+	}
+	return trimSpace(resp), nil
+}
+
 // readAndUpdateEUUnit 连接后读取设备EU单位并更新通道配置
 func (d *XYDAQDriver) readAndUpdateEUUnit() {
-	// 读取EU转换系数: u01101 → 返回EU压力转换系数
-	// 系数索引02对应EU转换系数c0，其中包含单位信息
-	// 先读取传感器1的量程代码: u0010A
-	resp, err := d.SendCommand("u0010A")
+	resp, err := d.sendUnitCommand("u01101")
 	if err != nil {
-		log.Printf("XY-DAQ read range code failed: %v", err)
+		slog.Warn("XY-DAQ read EU unit failed", "err", err)
 		return
 	}
 
-	unit := rangeCodeToUnit(resp)
-	if unit == "" {
-		// 尝试通过EU系数推断单位
-		resp2, err2 := d.SendCommand("u01102")
-		if err2 != nil {
-			log.Printf("XY-DAQ read EU coeff failed: %v", err2)
-			return
-		}
-		unit = euCoeffToUnit(resp2)
-	}
-
+	unit := coeffToUnit(resp)
 	if unit != "" {
-		// 更新压力通道的单位（大气压固定kPa，大气温度固定°C）
 		for i := range d.channels {
 			if d.channels[i].Index < d.pressureCount {
 				d.channels[i].Unit = unit
 			}
 		}
-		log.Printf("XY-DAQ EU unit from device: %s", unit)
+		slog.Info("XY-DAQ EU unit from device", "unit", unit, "coeff", resp)
 	}
 }
 
-// rangeCodeToUnit 量程代码转单位
-// 1604设备量程代码对应不同的压力范围和单位
-func rangeCodeToUnit(code string) string {
-	// 去除空白
-	code = trimSpace(code)
-	switch code {
-	case "1", "01":
+// SetUnit 设置设备压力单位（写入硬件）
+func (d *XYDAQDriver) SetUnit(unit string) error {
+	coeff, ok := unitToCoeff(unit)
+	if !ok {
+		return fmt.Errorf("unsupported unit: %s", unit)
+	}
+
+	cmd := fmt.Sprintf("v01101 %s", coeff)
+	resp, err := d.sendUnitCommand(cmd)
+	if err != nil {
+		return fmt.Errorf("send set unit command failed: %w", err)
+	}
+
+	if resp != "A" {
+		return fmt.Errorf("set unit rejected by device: %s", resp)
+	}
+
+	for i := range d.channels {
+		if d.channels[i].Index < d.pressureCount {
+			d.channels[i].Unit = unit
+		}
+	}
+	slog.Info("XY-DAQ unit set", "unit", unit, "coeff", coeff)
+	return nil
+}
+
+// coeffToUnit EU转换系数/返回值 → 单位字符串
+func coeffToUnit(raw string) string {
+	raw = trimSpace(raw)
+
+	switch raw {
+	case "0":
+		return "kgf/cm²"
+	case "1":
 		return "psi"
-	case "2", "02":
+	case "6":
 		return "kPa"
-	case "3", "03":
-		return "kPa"
-	case "4", "04":
-		return "kPa"
-	case "5", "05":
-		return "bar"
-	case "6", "06":
-		return "mbar"
-	case "7", "07":
+	case "6894", "6894.76":
 		return "Pa"
-	case "8", "08":
-		return "mmHg"
-	case "9", "09":
-		return "MPa"
-	default:
+	}
+
+	var val float64
+	if _, err := fmt.Sscanf(raw, "%f", &val); err != nil {
 		return ""
 	}
+
+	type coeffUnit struct {
+		coeff float64
+		unit  string
+	}
+	table := []coeffUnit{
+		{1, "psi"},
+		{0.07031, "kgf/cm²"},
+		{0.0689476, "bar"},
+		{68.9476, "mbar"},
+		{6.89476, "kPa"},
+		{0.00689476, "MPa"},
+		{6894.76, "Pa"},
+		{51.7149, "mmHg"},
+		{0.068046, "atm"},
+	}
+
+	for _, entry := range table {
+		if math.Abs(val-entry.coeff)/entry.coeff < 0.01 {
+			return entry.unit
+		}
+	}
+
+	return ""
 }
 
-// euCoeffToUnit 通过EU转换系数推断单位（备用方案）
-func euCoeffToUnit(coeff string) string {
-	coeff = trimSpace(coeff)
-	// 如果无法从系数推断，返回空字符串，使用默认配置
-	return ""
+// unitToCoeff 单位字符串 → EU转换系数
+func unitToCoeff(unit string) (string, bool) {
+	switch unit {
+	case "psi":
+		return "1", true
+	case "kgf/cm²":
+		return "0.07031", true
+	case "bar":
+		return "0.0689476", true
+	case "mbar":
+		return "68.9476", true
+	case "kPa":
+		return "6.89476", true
+	case "MPa":
+		return "0.00689476", true
+	case "Pa":
+		return "6894.76", true
+	case "mmHg":
+		return "51.7149", true
+	case "atm":
+		return "0.068046", true
+	default:
+		return "", false
+	}
 }
 
 // trimSpace 去除字符串首尾空白和换行

@@ -15,14 +15,14 @@ import (
 // ==================== 常量 ====================
 
 const (
-	maxIterations    = 20          // 最大迭代次数
-	convergenceTol  = 1e-4        // 收敛容差
-	deltaPZeroThreshold = 1e-6    // ΔP 判零阈值（压力差分，单位 Pa）
-	maDiffThreshold  = 1e-6       // 马赫数差判零
-	kbDiffThreshold  = 1e-6       // Kb 系数差判零
-	gamma           = 1.4         // 比热比
-	gammaRatio      = (gamma - 1) / gamma // 0.2857
-	machCoeff       = 2 / (gamma - 1)     // 5
+	maxIterations       = 20                  // 最大迭代次数
+	convergenceTol      = 1e-4                // 收敛容差
+	deltaPZeroThreshold = 0.1                 // ΔP 判零阈值（压力差分，单位 Pa，与传感器噪声水平匹配）
+	maDiffThreshold     = 1e-6                // 马赫数差判零
+	kbDiffThreshold     = 1e-6                // Kb 系数差判零
+	gamma               = 1.4                 // 比热比
+	gammaRatio          = (gamma - 1) / gamma // 0.2857
+	machCoeff           = 2 / (gamma - 1)     // 5
 )
 
 // ==================== 插值器 ====================
@@ -43,13 +43,18 @@ func NewThreeHoleInterpolator() *ThreeHoleInterpolator {
 }
 
 // LoadCalibFiles 加载多个校准文件
-func (interp *ThreeHoleInterpolator) LoadCalibFiles(filePaths []string) error {
+func (i *ThreeHoleInterpolator) LoadCalibFiles(filePaths []string) error {
 	var allData []types.ThreeHoleCalibData
 
 	for _, fp := range filePaths {
 		data, err := parseCalibFile(fp)
 		if err != nil {
 			return fmt.Errorf("parse calib file %s failed: %w", fp, err)
+		}
+		data.FilePath = fp
+		data.FileName = fp
+		if idx := strings.LastIndexAny(fp, "/\\"); idx >= 0 {
+			data.FileName = fp[idx+1:]
 		}
 		allData = append(allData, *data)
 	}
@@ -76,44 +81,46 @@ func (interp *ThreeHoleInterpolator) LoadCalibFiles(filePaths []string) error {
 		}
 	}
 
-	interp.calibData = allData
+	i.calibData = allData
 
 	// 提取攻角序列（所有文件共用，已校验一致）
-	interp.alphaOri = make([]float64, len(refEntries))
-	for i, e := range refEntries {
-		interp.alphaOri[i] = e.Alpha
+	i.alphaOri = make([]float64, len(refEntries))
+	for idx, e := range refEntries {
+		i.alphaOri[idx] = e.Alpha
 	}
 
 	// 计算初始马赫数和范围
 	sumMa := 0.0
-	interp.minMa = allData[0].CMa
-	interp.maxMa = allData[0].CMa
+	i.minMa = allData[0].CMa
+	i.maxMa = allData[0].CMa
 	for _, d := range allData {
 		sumMa += d.CMa
-		if d.CMa < interp.minMa {
-			interp.minMa = d.CMa
+		if d.CMa < i.minMa {
+			i.minMa = d.CMa
 		}
-		if d.CMa > interp.maxMa {
-			interp.maxMa = d.CMa
+		if d.CMa > i.maxMa {
+			i.maxMa = d.CMa
 		}
 	}
-	interp.initMa = sumMa / float64(len(allData))
-	interp.loaded = true
+	i.initMa = sumMa / float64(len(allData))
+	i.loaded = true
 
 	return nil
 }
 
 // IsLoaded 是否已加载校准数据
-func (interp *ThreeHoleInterpolator) IsLoaded() bool {
-	return interp.loaded
+func (i *ThreeHoleInterpolator) IsLoaded() bool {
+	return i.loaded
 }
 
 // GetCalibInfo 获取校准文件信息
-func (interp *ThreeHoleInterpolator) GetCalibInfo() []types.ThreeHoleCalibFileInfo {
-	infos := make([]types.ThreeHoleCalibFileInfo, len(interp.calibData))
-	for i, d := range interp.calibData {
-		infos[i] = types.ThreeHoleCalibFileInfo{
-			CMa: d.CMa,
+func (i *ThreeHoleInterpolator) GetCalibInfo() []types.ThreeHoleCalibFileInfo {
+	infos := make([]types.ThreeHoleCalibFileInfo, len(i.calibData))
+	for idx, d := range i.calibData {
+		infos[idx] = types.ThreeHoleCalibFileInfo{
+			FilePath: d.FilePath,
+			FileName: d.FileName,
+			CMa:      d.CMa,
 		}
 	}
 	return infos
@@ -122,9 +129,9 @@ func (interp *ThreeHoleInterpolator) GetCalibInfo() []types.ThreeHoleCalibFileIn
 // Calculate 执行三孔插值计算
 // 输入：三孔原始压力数据
 // 输出：插值结果（总压、静压、马赫数、攻角）
-func (interp *ThreeHoleInterpolator) Calculate(rawData types.ThreeHoleRawData) types.ThreeHoleInterpolationResult {
-	if !interp.loaded {
-		return types.ThreeHoleInterpolationResult{Valid: false}
+func (i *ThreeHoleInterpolator) Calculate(rawData types.ThreeHoleRawData) types.ThreeHoleInterpolationResult {
+	if !i.loaded {
+		return types.ThreeHoleInterpolationResult{Valid: false, ErrorMsg: "校准文件未加载"}
 	}
 
 	P1 := rawData.P1
@@ -144,6 +151,7 @@ func (interp *ThreeHoleInterpolator) Calculate(rawData types.ThreeHoleRawData) t
 			AlphaProbe:     0,
 			IterationCount: 0,
 			Valid:          false,
+			ErrorMsg:       "ΔP 过小，无法计算攻角",
 		}
 	}
 
@@ -152,55 +160,50 @@ func (interp *ThreeHoleInterpolator) Calculate(rawData types.ThreeHoleRawData) t
 	// Kb_temp 为无穷大或非数值
 	if math.IsInf(kbTemp, 0) || math.IsNaN(kbTemp) {
 		return types.ThreeHoleInterpolationResult{
-			PtProbe:        P2,
-			PsProbe:        P2,
-			MachProbe:      interp.initMa,
-			AlphaProbe:     0,
-			IterationCount: 0,
-			Valid:          false,
+			PtProbe:  P2,
+			PsProbe:  P2,
+			Valid:    false,
+			ErrorMsg: "Kb 值为无穷大或无效",
 		}
 	}
 
 	// 步骤2：迭代求解马赫数和攻角
-	maCurrent := interp.initMa
+	maCurrent := i.initMa
 	iterationCount := 0
+	converged := false
 
-	for i := 0; i < maxIterations; i++ {
-		iterationCount = i + 1
+	for iter := 0; iter < maxIterations; iter++ {
+		iterationCount = iter + 1
 
-		// 子步骤A：二维插值查找
-		_, kt, sb, ok := interp.interpolate2D(kbTemp, maCurrent)
+		_, kt, sb, ok := i.interpolate2D(kbTemp, maCurrent)
 		if !ok {
-			// 插值失败，回退
 			return types.ThreeHoleInterpolationResult{
 				PtProbe:        P2,
 				PsProbe:        P2,
 				MachProbe:      maCurrent,
 				AlphaProbe:     0,
 				IterationCount: iterationCount,
+				Converged:      false,
 				Valid:          true,
+				ErrorMsg:       "插值失败",
 			}
 		}
 
-		// 子步骤B：计算总压和静压
 		pt := P2 + kt*deltaP
 		ps := pt - sb*deltaP
-
-		// 子步骤C：计算新的马赫数
 		maNew := calculateMachNumber(pt, ps, Pa)
 
-		// 子步骤D：收敛判断
 		if math.Abs(maNew-maCurrent) < convergenceTol {
-			maCurrent = clampMa(maNew, interp.minMa, interp.maxMa)
+			converged = true
+			maCurrent = clampMa(maNew, i.minMa, i.maxMa)
 			break
 		}
 
-		// 子步骤E：限制范围并更新
-		maCurrent = clampMa(maNew, interp.minMa, interp.maxMa)
+		maCurrent = clampMa(maNew, i.minMa, i.maxMa)
 	}
 
 	// 步骤3：用最终马赫数做一次最终插值
-	alphaFinal, ktFinal, sbFinal, ok := interp.interpolate2D(kbTemp, maCurrent)
+	alphaFinal, ktFinal, sbFinal, ok := i.interpolate2D(kbTemp, maCurrent)
 	if !ok {
 		return types.ThreeHoleInterpolationResult{
 			PtProbe:        P2,
@@ -208,7 +211,9 @@ func (interp *ThreeHoleInterpolator) Calculate(rawData types.ThreeHoleRawData) t
 			MachProbe:      maCurrent,
 			AlphaProbe:     0,
 			IterationCount: iterationCount,
+			Converged:      converged,
 			Valid:          true,
+			ErrorMsg:       "最终插值失败",
 		}
 	}
 
@@ -216,61 +221,75 @@ func (interp *ThreeHoleInterpolator) Calculate(rawData types.ThreeHoleRawData) t
 	psProbe := ptProbe - sbFinal*deltaP
 	machProbe := calculateMachNumber(ptProbe, psProbe, Pa)
 
-	return types.ThreeHoleInterpolationResult{
+	// 构建警告信息
+	var warnings []string
+	if !converged {
+		warnings = append(warnings, fmt.Sprintf("迭代未收敛(%d次)", iterationCount))
+	}
+	if machProbe < i.minMa || machProbe > i.maxMa {
+		warnings = append(warnings, fmt.Sprintf("马赫数%.4f超出校准范围[%.2f,%.2f]", machProbe, i.minMa, i.maxMa))
+	}
+
+	result := types.ThreeHoleInterpolationResult{
 		PtProbe:        ptProbe,
 		PsProbe:        psProbe,
 		MachProbe:      machProbe,
 		AlphaProbe:     alphaFinal,
 		IterationCount: iterationCount,
+		Converged:      converged,
 		Valid:          true,
 	}
+	if len(warnings) > 0 {
+		result.ErrorMsg = strings.Join(warnings, "; ")
+	}
+	return result
 }
 
 // ==================== 二维插值核心算法 ====================
 
 // interpolate2D 核心二维插值：在给定马赫数下，根据 Kb 值反查攻角和系数
-func (interp *ThreeHoleInterpolator) interpolate2D(kbTemp float64, maCurrent float64) (alpha, kt, sb float64, ok bool) {
-	if len(interp.calibData) == 0 {
+func (i *ThreeHoleInterpolator) interpolate2D(kbTemp float64, maCurrent float64) (alpha, kt, sb float64, ok bool) {
+	if len(i.calibData) == 0 {
 		return 0, 0, 0, false
 	}
 
 	// 第一步：选取两个最近的校准马赫数
-	calib1, calib2 := interp.findNearestTwoCalib(maCurrent)
+	calib1, calib2 := i.findNearestTwoCalib(maCurrent)
 
 	// 第二步：在马赫数方向线性插值，构建当前马赫数下的系数表
-	kbAlphaMap := interp.interpolateInMaDirection(calib1, calib2, maCurrent)
+	kbAlphaMap := i.interpolateInMaDirection(calib1, calib2, maCurrent)
 
 	if len(kbAlphaMap) == 0 {
 		return 0, 0, 0, false
 	}
 
 	// 第三步：按 Kb 值升序排序
-	sort.Slice(kbAlphaMap, func(i, j int) bool {
-		return kbAlphaMap[i].Kb < kbAlphaMap[j].Kb
+	sort.Slice(kbAlphaMap, func(a, b int) bool {
+		return kbAlphaMap[a].Kb < kbAlphaMap[b].Kb
 	})
 
 	// 第四步：在 Kb 方向插值反查攻角和系数
-	return interp.interpolateInKbDirection(kbAlphaMap, kbTemp)
+	return i.interpolateInKbDirection(kbAlphaMap, kbTemp)
 }
 
 // findNearestTwoCalib 找到包围当前马赫数的两个校准数据
 // 保证 calib1.CMa <= calib2.CMa，且 maCurrent 落在 [calib1.CMa, calib2.CMa] 区间内
 // 超出校准范围时，取最近的两个相邻校准点
-func (interp *ThreeHoleInterpolator) findNearestTwoCalib(maCurrent float64) (calib1, calib2 types.ThreeHoleCalibData) {
-	n := len(interp.calibData)
+func (i *ThreeHoleInterpolator) findNearestTwoCalib(maCurrent float64) (calib1, calib2 types.ThreeHoleCalibData) {
+	n := len(i.calibData)
 	if n == 1 {
-		return interp.calibData[0], interp.calibData[0]
+		return i.calibData[0], i.calibData[0]
 	}
 
 	// calibData 已按 CMa 升序排列，找到 maCurrent 落在哪两个相邻校准马赫数之间
-	for i := 0; i < n-1; i++ {
-		if maCurrent <= interp.calibData[i+1].CMa {
-			return interp.calibData[i], interp.calibData[i+1]
+	for idx := 0; idx < n-1; idx++ {
+		if maCurrent <= i.calibData[idx+1].CMa {
+			return i.calibData[idx], i.calibData[idx+1]
 		}
 	}
 
 	// maCurrent 超出最大校准马赫数，取最后两个
-	return interp.calibData[n-2], interp.calibData[n-1]
+	return i.calibData[n-2], i.calibData[n-1]
 }
 
 // kbAlphaEntry 马赫数插值后的映射条目
@@ -282,7 +301,7 @@ type kbAlphaEntry struct {
 }
 
 // interpolateInMaDirection 在马赫数方向线性插值
-func (interp *ThreeHoleInterpolator) interpolateInMaDirection(calib1, calib2 types.ThreeHoleCalibData, maCurrent float64) []kbAlphaEntry {
+func (i *ThreeHoleInterpolator) interpolateInMaDirection(calib1, calib2 types.ThreeHoleCalibData, maCurrent float64) []kbAlphaEntry {
 	n := len(calib1.Entries)
 	if n == 0 {
 		return nil
@@ -296,17 +315,17 @@ func (interp *ThreeHoleInterpolator) interpolateInMaDirection(calib1, calib2 typ
 	}
 
 	result := make([]kbAlphaEntry, n)
-	for i := 0; i < n; i++ {
-		e1 := calib1.Entries[i]
+	for idx := 0; idx < n; idx++ {
+		e1 := calib1.Entries[idx]
 		// 如果 calib2 的条目数不够，用 calib1 的
 		var e2 types.ThreeHoleCalibEntry
-		if i < len(calib2.Entries) {
-			e2 = calib2.Entries[i]
+		if idx < len(calib2.Entries) {
+			e2 = calib2.Entries[idx]
 		} else {
 			e2 = e1
 		}
 
-		result[i] = kbAlphaEntry{
+		result[idx] = kbAlphaEntry{
 			Kb:    e1.Kb + ratio*(e2.Kb-e1.Kb),
 			Alpha: e1.Alpha + ratio*(e2.Alpha-e1.Alpha),
 			Kt:    e1.Kt + ratio*(e2.Kt-e1.Kt),
@@ -318,52 +337,62 @@ func (interp *ThreeHoleInterpolator) interpolateInMaDirection(calib1, calib2 typ
 }
 
 // interpolateInKbDirection 在 Kb 方向插值反查攻角和系数
-func (interp *ThreeHoleInterpolator) interpolateInKbDirection(kbAlphaMap []kbAlphaEntry, kbTemp float64) (alpha, kt, sb float64, ok bool) {
+// 不依赖 Kb 单调性：找到 kbTemp 左右最近的两个数据点做线性插值
+func (i *ThreeHoleInterpolator) interpolateInKbDirection(kbAlphaMap []kbAlphaEntry, kbTemp float64) (alpha, kt, sb float64, ok bool) {
 	n := len(kbAlphaMap)
 	if n == 0 {
 		return 0, 0, 0, false
 	}
 
-	// 边界处理：Kb_temp 小于等于最小值
-	if kbTemp <= kbAlphaMap[0].Kb {
-		e := kbAlphaMap[0]
-		return e.Alpha, e.Kt, e.Sb, true
-	}
-
-	// 边界处理：Kb_temp 大于等于最大值
-	if kbTemp >= kbAlphaMap[n-1].Kb {
-		e := kbAlphaMap[n-1]
-		return e.Alpha, e.Kt, e.Sb, true
-	}
-
-	// 线性搜索找到相邻两点
-	for j := 0; j < n-1; j++ {
-		if kbAlphaMap[j].Kb <= kbTemp && kbTemp <= kbAlphaMap[j+1].Kb {
-			j0 := kbAlphaMap[j]
-			j1 := kbAlphaMap[j+1]
-
-			denom := j1.Kb - j0.Kb
-			if math.Abs(denom) < kbDiffThreshold {
-				return j0.Alpha, j0.Kt, j0.Sb, true
+	// 找到小于等于 kbTemp 的最大 Kb (idxLo) 和大于等于 kbTemp 的最小 Kb (idxHi)
+	idxLo, idxHi := -1, -1
+	for j := 0; j < n; j++ {
+		kb := kbAlphaMap[j].Kb
+		if kb <= kbTemp {
+			if idxLo == -1 || kb > kbAlphaMap[idxLo].Kb {
+				idxLo = j
 			}
-
-			r := (kbTemp - j0.Kb) / denom
-			alpha = j0.Alpha + r*(j1.Alpha-j0.Alpha)
-			kt = j0.Kt + r*(j1.Kt-j0.Kt)
-			sb = j0.Sb + r*(j1.Sb-j0.Sb)
-			return alpha, kt, sb, true
+		}
+		if kb >= kbTemp {
+			if idxHi == -1 || kb < kbAlphaMap[idxHi].Kb {
+				idxHi = j
+			}
 		}
 	}
 
-	// 未找到（不应到达此处）
-	e := kbAlphaMap[n-1]
-	return e.Alpha, e.Kt, e.Sb, true
+	switch {
+	case idxLo == -1 && idxHi == -1:
+		return 0, 0, 0, false
+	case idxLo == -1:
+		e := kbAlphaMap[idxHi]
+		return e.Alpha, e.Kt, e.Sb, true
+	case idxHi == -1:
+		e := kbAlphaMap[idxLo]
+		return e.Alpha, e.Kt, e.Sb, true
+	case idxLo == idxHi:
+		e := kbAlphaMap[idxLo]
+		return e.Alpha, e.Kt, e.Sb, true
+	}
+
+	j0 := kbAlphaMap[idxLo]
+	j1 := kbAlphaMap[idxHi]
+
+	denom := j1.Kb - j0.Kb
+	if math.Abs(denom) < kbDiffThreshold {
+		return j0.Alpha, j0.Kt, j0.Sb, true
+	}
+
+	r := (kbTemp - j0.Kb) / denom
+	alpha = j0.Alpha + r*(j1.Alpha-j0.Alpha)
+	kt = j0.Kt + r*(j1.Kt-j0.Kt)
+	sb = j0.Sb + r*(j1.Sb-j0.Sb)
+	return alpha, kt, sb, true
 }
 
 // ==================== 辅助函数 ====================
 
 // calculateMachNumber 根据总压、静压和大气压计算马赫数
-// Ma = sqrt(5 * |((Pt+Pa)/(Ps+Pa))^0.2857 - 1|)
+// Ma = sqrt(5 * ((Pt+Pa)/(Ps+Pa))^0.2857 - 1)
 func calculateMachNumber(pt, ps, pa float64) float64 {
 	psAbs := ps + pa
 	if math.Abs(psAbs) < deltaPZeroThreshold {
@@ -377,8 +406,11 @@ func calculateMachNumber(pt, ps, pa float64) float64 {
 	}
 
 	maSq := machCoeff * (math.Pow(ratio, gammaRatio) - 1)
-	// 防御性处理：使用绝对值
-	return math.Sqrt(math.Abs(maSq))
+	// maSq < 0 表示总压<静压，物理不合理，返回0
+	if maSq < 0 {
+		return 0
+	}
+	return math.Sqrt(maSq)
 }
 
 // clampMa 将马赫数限制在校准范围内
@@ -396,9 +428,10 @@ func clampMa(ma, minMa, maxMa float64) float64 {
 
 // parseCalibFile 解析单个校准文件
 // 格式：
-//   第1行：CMa（校准马赫数）
-//   第2行：Nalpha（攻角数据条数）
-//   第3~Nalpha+2行：Kb  Kt  Sb  Alpha（每行4列）
+//
+//	第1行：CMa（校准马赫数）
+//	第2行：Nalpha（攻角数据条数）
+//	第3~Nalpha+2行：Kb  Kt  Sb  Alpha（每行4列）
 func parseCalibFile(filePath string) (*types.ThreeHoleCalibData, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -468,7 +501,7 @@ func parseCalibFile(filePath string) (*types.ThreeHoleCalibData, error) {
 	}
 
 	return &types.ThreeHoleCalibData{
-		CMa:    cMa,
+		CMa:     cMa,
 		Entries: entries,
 	}, nil
 }

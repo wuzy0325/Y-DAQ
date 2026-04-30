@@ -104,6 +104,8 @@ export function SetDataSavePath(arg1:string):Promise<void>;
 
 export function SetPublishRate(arg1:number):Promise<void>;
 
+export function SetUnit(arg1:string,arg2:string):Promise<void>;
+
 export function StartAcquisition(arg1:string):Promise<void>;
 
 export function StartAcquisitionAll():Promise<number>;

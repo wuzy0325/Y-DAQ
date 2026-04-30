@@ -3,6 +3,51 @@
 Windows-only Wails v2 desktop app (Go 1.23 + Vue 3 + TypeScript + Vite 3 + Element Plus + ECharts 6).
 多采集设备数据采集、显示、保存，设备管理与配置；连接运动控制器结合采集设备进行五孔探针、三孔探针等移位布点插值测试及数据导出。
 
+## Prerequisites
+
+| Dependency | Install | Verify |
+|------------|---------|--------|
+| Go 1.23+ | https://go.dev/dl/ | `go version` |
+| Node.js 18+ | https://nodejs.org/ | `node --version` |
+| Wails CLI v2 | `go install github.com/wailsapp/wails/v2/cmd/wails@latest` | `wails doctor` |
+| NSIS 3.x | https://nsis.sourceforge.io/Download → 安装后将 `C:\Program Files (x86)\NSIS` 加入系统 PATH | `makensis /VERSION` |
+
+> **NSIS PATH 注意**: NSIS 默认装到 `C:\Program Files (x86)\NSIS`，`makensis` 必须在系统 PATH 中，否则 `wails build -nsis` 会报 "makensis not found"。可在系统环境变量中添加，或临时 `set PATH=%PATH%;C:\Program Files (x86)\NSIS`。
+
+## Build Procedure
+
+### 1. 仅构建 exe
+```bat
+cd yx-daq
+build.bat
+```
+产物: `build\bin\yx-daq.exe`（直接运行，需目标机已装 WebView2）
+
+### 2. 构建 exe + NSIS 安装包
+```bat
+cd yx-daq
+build.bat nsis
+```
+产物:
+- `build\bin\yx-daq.exe` — 程序本体
+- `build\bin\yx-daq-amd64-installer.exe` — NSIS 安装包（自动装 WebView2、创建快捷方式、注册卸载程序）
+
+> **分发到其他电脑用 `yx-daq-amd64-installer.exe`**，安装包会自动处理依赖。
+
+### 3. Wails 命令行直接构建
+```bat
+wails build                          # 仅 exe
+wails build -platform windows/amd64 -nsis   # exe + NSIS 安装包
+wails build -s                       # 跳过前端编译（前端已构建时）
+```
+
+> **注意**: Wails v2 用 `-platform` 而非 `--target` 指定目标平台。
+
+### 4. 清理
+```bat
+build.bat clean
+```
+
 ## Commands
 
 | What | How |
@@ -12,7 +57,9 @@ Windows-only Wails v2 desktop app (Go 1.23 + Vue 3 + TypeScript + Vite 3 + Eleme
 | Build + installer | `build.bat nsis` |
 | Clean artifacts | `build.bat clean` |
 | Go compile check | `go build ./...` |
+| Go linter | `golangci-lint run ./internal/...` |
 | Frontend typecheck + build | `cd frontend && npm run build` (vue-tsc --noEmit then vite build) |
+| Frontend lint | `cd frontend && npm run lint` |
 | Frontend tests (happy-dom) | `cd frontend && npm run test` (vitest) |
 | Frontend tests (watch) | `cd frontend && npm run test:watch` |
 | Go tests | `go test ./internal/...` |
@@ -20,6 +67,34 @@ Windows-only Wails v2 desktop app (Go 1.23 + Vue 3 + TypeScript + Vite 3 + Eleme
 Test files (pattern: `src/**/*.{test,spec}.{js,ts}`):
 - Go: `internal/calibration/formulas_test.go`, `internal/storage/config_store_test.go`
 - Frontend: `frontend/src/components/__tests__/GlassCard.test.ts`, `StatusIndicator.test.ts`, `ValueDisplay.test.ts`
+
+## ECC Skills & Agents
+
+ECC agents and skills installed at system level (in `~/.claude/` and `~/.opencode/`).
+
+**可用 agents**（通过 Task 工具调用）：
+- `/plan` — 新功能实现规划
+- `/architect` — 架构设计决策  
+- `/code-review` — 代码质量审查
+- `/go-review` — Go 代码专项审查
+- `/go-build` — Go 构建错误修复
+- `/go-test` — Go 测试编写/执行
+- `/rust-review`, `/rust-build`, `/rust-test` — Rust 代码审查/构建/测试
+- `/python-review` — Python 代码审查
+- `/typescript-review` — TypeScript 专项审查
+- `/database-review` — 数据库/存储设计审查
+- `/tdd` — 测试驱动开发流程
+- `/verify` — 验证循环（lint → test → build）
+- `/refactor-clean` — 死代码清理
+- `/security` — 安全审查
+- `/checkpoint` — 保存检查点
+- `/save-session` — 保存 session 摘要
+
+**验证规范**：
+- 修改 Go 后：`golangci-lint run ./internal/...` + `go build ./...`
+- 修改前端后：`cd frontend && npm run lint` + `npm run build`
+- 代码提交前：运行 `/verify`
+- 复杂功能开发前：运行 `/plan`
 
 ## Architecture
 
@@ -36,19 +111,26 @@ Test files (pattern: `src/**/*.{test,spec}.{js,ts}`):
 
 ## Conventions
 
+**必须遵守以下文档**：
+- `docs/engineering/architecture.md` —— 架构与设计规范（目录结构、设计原则、接口设计、设计模式、反模式）
+- `docs/engineering/coding-standards.md` —— 编码规范（Go + 前端，权威）
+
+核心速查：
 - Config/recordings stored in `~/.yx-daq/` (user home directory)
 - `//go:embed all:frontend/dist` in `main.go` — frontend must be built before Go build
 - SCSS: Vite auto-injects `@use "@/assets/styles/variables.scss" as *;` globally
 - TS path alias: `@` → `/src` (configured in `vite.config.ts`)
 - Vitest uses `happy-dom` environment (not jsdom)
-- Wails auto-generates `frontend/wailsjs/` bindings (do not edit manually)
+- Wails auto-generates `frontend/wailsjs/` bindings (**禁止手动编辑**)
 - All external strings in Chinese (UI labels, error messages, file dialogs)
 - Axes: X=purple, Y=cyan, Z=green, U=orange (UI convention)
-- PDF export, CSV export, CSV replay features exist
+- Go 错误包装用 `%w`，日志用 `log.Printf`
+- 前端 Store 中 Wails 绑定必须静态 import
+- 前端样式必须 `<style lang="scss" scoped>`
 
 ## Directory & File Layout Rules
 
-**必须遵守 `docs/project-layout-rules.md`**，核心摘要如下：
+**必须遵守 `docs/engineering/architecture.md`**，核心摘要如下：
 
 - `internal/` 按业务领域分包（types → driver → manager → calibration/three_hole/storage），`app.go` 为依赖注入汇聚点，禁止循环依赖
 - 前端 `views/` 放页面组件，`components/` 放通用组件，`stores/` 放 Pinia 状态，组件不引用 `views/`

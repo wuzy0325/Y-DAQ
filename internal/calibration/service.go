@@ -2,7 +2,7 @@ package calibration
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -28,28 +28,28 @@ type EventPublisher interface {
 
 // CalibrationService 校准服务
 type CalibrationService struct {
-	mu              sync.Mutex
-	status          types.CalibrationTaskStatus
-	running         atomic.Bool
-	paused          atomic.Bool
-	cancelCh        chan struct{}
-	pauseCh         chan struct{}
-	resumeCh        chan struct{}
+	mu       sync.Mutex
+	status   types.CalibrationTaskStatus
+	running  atomic.Bool
+	paused   atomic.Bool
+	cancelCh chan struct{}
+	pauseCh  chan struct{}
+	resumeCh chan struct{}
 
-	config          types.CalibrationConfig
-	dataGetter      DataGetter
-	batchGetter     ChannelBatchGetter
-	motionCtrl      MotionController
-	eventPublisher  EventPublisher
+	config         types.CalibrationConfig
+	dataGetter     DataGetter
+	batchGetter    ChannelBatchGetter
+	motionCtrl     MotionController
+	eventPublisher EventPublisher
 }
 
 // NewCalibrationService 创建校准服务
 func NewCalibrationService(publisher EventPublisher) *CalibrationService {
 	return &CalibrationService{
 		eventPublisher: publisher,
-		cancelCh:      make(chan struct{}),
-		pauseCh:       make(chan struct{}),
-		resumeCh:      make(chan struct{}),
+		cancelCh:       make(chan struct{}),
+		pauseCh:        make(chan struct{}),
+		resumeCh:       make(chan struct{}),
 	}
 }
 
@@ -79,7 +79,7 @@ func (s *CalibrationService) Start(config types.CalibrationConfig) (string, erro
 
 	taskID := fmt.Sprintf("cal-%d", time.Now().UnixMilli())
 	s.config = config
-	s.cancelCh = make(chan struct{})
+	s.cancelCh = make(chan struct{}, 1)
 	s.pauseCh = make(chan struct{})
 	s.resumeCh = make(chan struct{})
 
@@ -175,10 +175,10 @@ func (s *CalibrationService) runCalibrationLoop() {
 		// 1. 移动到目标位置
 		if s.motionCtrl != nil {
 			if err := s.motionCtrl(s.config.AlphaAxis, point.Alpha); err != nil {
-				log.Printf("move to alpha=%.2f failed: %v", point.Alpha, err)
+				slog.Error("move to alpha failed", "alpha", point.Alpha, "err", err)
 			}
 			if err := s.motionCtrl(s.config.BetaAxis, point.Beta); err != nil {
-				log.Printf("move to beta=%.2f failed: %v", point.Beta, err)
+				slog.Error("move to beta failed", "beta", point.Beta, "err", err)
 			}
 		}
 
