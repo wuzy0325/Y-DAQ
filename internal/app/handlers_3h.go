@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"fmt"
@@ -163,22 +163,27 @@ func (a *App) SelectThreeHoleCalibFiles() []string {
 
 // ==================== 三孔移位测试事件发布器 ====================
 
+// threeHoleEventPublisher 三孔测试事件发布器实现
 type threeHoleEventPublisher struct {
 	app *App
 }
 
+// EmitProgress 发送进度事件
 func (p *threeHoleEventPublisher) EmitProgress(event types.ThreeHoleTraversalProgressEvent) {
 	wailsRuntime.EventsEmit(p.app.ctx, "three-hole:progress", event)
 }
 
+// EmitRealtime 发送实时数据事件
 func (p *threeHoleEventPublisher) EmitRealtime(event types.ThreeHoleTraversalRealtimeEvent) {
 	wailsRuntime.EventsEmit(p.app.ctx, "three-hole:realtime", event)
 }
 
-func (p *threeHoleEventPublisher) EmitComplete(event types.ThreeHoleTraversalCompleteEvent) {
+// EmitComplete 发送完成事件
+func (p *threeHoleEventPublisher) EmitComplete(event interface{}) {
 	wailsRuntime.EventsEmit(p.app.ctx, "three-hole:complete", event)
 }
 
+// EmitError 发送错误事件
 func (p *threeHoleEventPublisher) EmitError(event types.ThreeHoleTraversalErrorEvent) {
 	wailsRuntime.EventsEmit(p.app.ctx, "three-hole:error", event)
 }

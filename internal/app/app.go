@@ -1,9 +1,11 @@
-package main
+package app
 
 import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
+	"path/filepath"
 	"time"
 
 	"yx-daq/internal/calibration"
@@ -44,8 +46,8 @@ func NewApp() *App {
 	}
 }
 
-// startup 应用启动
-func (a *App) startup(ctx context.Context) {
+// Startup 应用启动
+func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
 
 	if err := logger.Init(); err != nil {
@@ -78,7 +80,7 @@ func (a *App) startup(ctx context.Context) {
 	a.initMotionFromConfig()
 
 	// 初始化校准服务
-	a.calibService = calibration.NewCalibrationService(&wailsEventPublisher{app: a})
+	a.calibService = calibration.NewCalibrationService(&CalibrationEventPublisher{ctx: a.ctx})
 	a.calibService.SetDataGetter(func(deviceID string, channelIndex int) (float64, bool) {
 		return a.deviceManager.GetChannelValue(deviceID, channelIndex)
 	})
@@ -106,7 +108,7 @@ func (a *App) startup(ctx context.Context) {
 	})
 
 	// 初始化三孔移位测试服务
-	a.threeHoleService = three_hole.NewThreeHoleTraversalService(&threeHoleEventPublisher{app: a})
+	a.threeHoleService = three_hole.NewThreeHoleTraversalService(&ThreeHoleEventPublisher{ctx: a.ctx})
 	a.threeHoleService.SetBatchGetter(func(channels []types.ThreeHoleProbeChannelConfig) (map[int]float64, error) {
 		result := make(map[int]float64)
 		config := a.threeHoleService.GetConfig()
@@ -189,8 +191,8 @@ func (a *App) startup(ctx context.Context) {
 	slog.Info("YX-DAQ application started")
 }
 
-// shutdown 应用关闭
-func (a *App) shutdown(ctx context.Context) {
+// Shutdown 应用关闭
+func (a *App) Shutdown(ctx context.Context) {
 	a.publishCancel <- struct{}{}
 	a.threeHoleService.Stop()
 	a.threeHoleService.StopRealtimeMonitor()
@@ -294,3 +296,22 @@ func (a *App) broadcastMotionStatus() {
 		}
 	}
 }
+
+// getConfigDir 获取配置目录路径
+func (a *App) getConfigDir() string {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		configDir = filepath.Join(os.TempDir(), "yx-daq-config")
+	}
+	return filepath.Join(configDir, "yx-daq")
+}
+
+// GetDataDir 获取数据存储目录路径
+func (a *App) GetDataDir() string {
+	dataDir, err := os.UserConfigDir()
+	if err != nil {
+		dataDir = filepath.Join(os.TempDir(), "yx-daq-data")
+	}
+	return filepath.Join(dataDir, "yx-daq", "data")
+}
+

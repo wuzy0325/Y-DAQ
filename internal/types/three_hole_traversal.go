@@ -1,5 +1,7 @@
 package types
 
+import "fmt"
+
 // ==================== 三孔探针通道角色 ====================
 
 // ThreeHoleChannelRole 三孔探针通道语义角色
@@ -224,4 +226,131 @@ type ThreeHoleCalibData struct {
 	FilePath string                `json:"filePath"` // 来源文件路径
 	FileName string                `json:"fileName"` // 来源文件名
 	Entries  []ThreeHoleCalibEntry `json:"entries"`
+}
+
+// Validate 验证三孔移位测试配置
+func (c *ThreeHoleTraversalConfig) Validate() error {
+	// 基本参数验证
+	if c.Name == "" {
+		return fmt.Errorf("测试名称不能为空")
+	}
+
+	if c.DeviceID == "" {
+		return fmt.Errorf("采集设备ID不能为空")
+	}
+
+	if c.MotionControllerID == "" {
+		return fmt.Errorf("运动控制器ID不能为空")
+	}
+
+	// 采样参数验证
+	if c.SamplesPerPoint < 1 {
+		return fmt.Errorf("每点位采样数必须≥1")
+	}
+
+	if c.DwellTimeMs < 100 {
+		return fmt.Errorf("驻留时间必须≥100ms")
+	}
+
+	if c.SampleIntervalMs < 10 {
+		return fmt.Errorf("采样间隔必须≥10ms")
+	}
+
+	if c.MotionTimeoutMs < 1000 {
+		return fmt.Errorf("运动超时时间必须≥1000ms")
+	}
+
+	// 布局配置验证
+	switch c.Layout.Pattern {
+	case TraversalPatternLine:
+		if c.Layout.Line == nil {
+			return fmt.Errorf("直线布点需要Line配置")
+		}
+		if c.Layout.Line.StartX == 0 && c.Layout.Line.EndX == 0 &&
+		   len(c.Layout.Line.XSteps) == 0 {
+			return fmt.Errorf("直线布点必须有X方向配置")
+		}
+
+	case TraversalPatternRectangle:
+		if c.Layout.Rectangle == nil {
+			return fmt.Errorf("矩形布点需要Rectangle配置")
+		}
+		if c.Layout.Rectangle.XMin > c.Layout.Rectangle.XMax {
+			return fmt.Errorf("XMin必须≤XMax")
+		}
+		if c.Layout.Rectangle.YMin > c.Layout.Rectangle.YMax {
+			return fmt.Errorf("YMin必须≤YMax")
+		}
+
+	case TraversalPatternCustom:
+		if len(c.Layout.CustomPoints) == 0 {
+			return fmt.Errorf("自定义布点需要至少1个点位")
+		}
+
+	default:
+		return fmt.Errorf("不支持的布点模式: %s", c.Layout.Pattern)
+	}
+
+	// 通道配置验证
+	if len(c.ProbeChannels) == 0 {
+		return fmt.Errorf("必须配置至少1个通道")
+	}
+
+	channelRoles := make(map[ThreeHoleChannelRole]bool)
+	for _, ch := range c.ProbeChannels {
+		if ch.Channel < 0 {
+			return fmt.Errorf("通道号必须≥0")
+		}
+		if !ch.Enabled {
+			continue
+		}
+
+		// 检查角色重复
+		if channelRoles[ch.Role] {
+			return fmt.Errorf("角色重复: %s", ch.Role)
+		}
+		channelRoles[ch.Role] = true
+
+		// 检查必要角色
+		if ch.Role == Role3H_P1 || ch.Role == Role3H_P2 || ch.Role == Role3H_P3 {
+			if ch.Channel < 0 {
+				return fmt.Errorf("压力通道号必须≥0")
+			}
+		}
+	}
+
+	// 检查必要角色是否都配置了
+	requiredRoles := map[ThreeHoleChannelRole]bool{
+		Role3H_P1:   false,
+		Role3H_P2:   false,
+		Role3H_P3:   false,
+		Role3H_PAtm: false,
+	}
+	for _, ch := range c.ProbeChannels {
+		if ch.Enabled {
+			requiredRoles[ch.Role] = true
+		}
+	}
+
+	if !requiredRoles[Role3H_P1] || !requiredRoles[Role3H_P2] || !requiredRoles[Role3H_P3] {
+		return fmt.Errorf("必须启用P1、P2、P3三个压力通道")
+	}
+
+	// 运动轴配置验证
+	if c.MotionAlpha.Axis == "" {
+		return fmt.Errorf("Alpha轴不能为空")
+	}
+	if c.MotionBeta.Axis == "" {
+		return fmt.Errorf("Beta轴不能为空")
+	}
+
+	// 文件保存配置验证
+	if c.SavePath == "" {
+		return fmt.Errorf("保存路径不能为空")
+	}
+	if c.SaveFileName == "" {
+		return fmt.Errorf("保存文件名不能为空")
+	}
+
+	return nil
 }

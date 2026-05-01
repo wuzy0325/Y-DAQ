@@ -210,6 +210,10 @@ export function SetUnit(arg1, arg2) {
   return window['go']['main']['App']['SetUnit'](arg1, arg2);
 }
 
+export function Shutdown(arg1) {
+  return window['go']['main']['App']['Shutdown'](arg1);
+}
+
 export function StartAcquisition(arg1) {
   return window['go']['main']['App']['StartAcquisition'](arg1);
 }
@@ -232,6 +236,10 @@ export function StartThreeHoleRealtimeMonitor(arg1) {
 
 export function StartThreeHoleTraversal(arg1) {
   return window['go']['main']['App']['StartThreeHoleTraversal'](arg1);
+}
+
+export function Startup(arg1) {
+  return window['go']['main']['App']['Startup'](arg1);
 }
 
 export function StopAcquisition(arg1) {

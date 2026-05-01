@@ -71,26 +71,42 @@ build.bat clean
 ```
 yx-daq/
 ├── main.go              # Go 入口，//go:embed all:frontend/dist
-├── app.go               # Wails 绑定（~50 API 方法），事件发布
-├── build.bat            # 一键构建脚本
-├── wails.json           # Wails 配置
-├── internal/
-│   ├── types/           # 共享类型定义
-│   ├── driver/          # 硬件驱动（XY-DAQ16 TCP、B140 TCP、模拟设备）
-│   ├── manager/         # 管理器（DeviceManager、MotionControllerManager、AcquisitionHub）
-│   ├── calibration/     # 五孔移位插值测试服务（当前隐藏）
-│   ├── three_hole/      # 三孔移位插值测试服务
-│   ├── storage/         # JSON 配置持久化、CSV 录制、PDF 报告
-│   └── scanner/         # UDP 设备扫描
+├── app/                 # 核心应用包（重构后）
+│   ├── app.go          # Wails 绑定（~50 API 方法），主应用结构
+│   ├── event_publishers.go  # 事件发布器实现
+│   └── handlers/       # API 处理器（作为 App struct 方法）
+│       ├── handlers_3h.go      # 三孔测试 API
+│       ├── handlers_motion.go  # 运动控制 API
+│       ├── handlers_device.go  # 设备管理 API
+│       ├── handlers_calib.go   # 校准 API
+│       ├── handlers_config.go  # 配置管理 API
+│       └── handlers_data.go   # 数据管理 API
+├── build.bat           # 一键构建脚本
+├── wails.json          # Wails 配置
+├── internal/           # 内部业务包（按领域划分）
+│   ├── types/          # 共享类型定义
+│   ├── driver/         # 硬件驱动（XY-DAQ16 TCP、B140 TCP、模拟设备）
+│   ├── manager/        # 管理器（DeviceManager、MotionControllerManager、AcquisitionHub）
+│   ├── calibration/    # 五孔探针校准服务
+│   ├── three_hole/     # 三孔移位测试服务
+│   ├── storage/        # JSON 配置持久化、CSV 录制、PDF 报告
+│   └── scanner/        # UDP 设备扫描
 └── frontend/
     ├── src/
-    │   ├── main.ts      # 前端入口
-    │   ├── stores/      # Pinia 状态管理
-    │   ├── views/       # 页面（Dashboard、Device、Motion、ThreeHoleTest、Settings、Data）
-    │   ├── components/  # 通用组件（GlassCard、ChartPanel、StatusIndicator、ValueDisplay）
-    │   └── layouts/     # MainLayout（侧边栏导航）
-    └── wailsjs/         # Wails 自动生成绑定（勿手动编辑）
+    │   ├── main.ts     # 前端入口
+    │   ├── stores/     # Pinia 状态管理
+    │   ├── views/      # 页面（Dashboard、Device、Motion、ThreeHoleTest、Settings、Data）
+    │   ├── components/ # 通用组件（GlassCard、ChartPanel、StatusIndicator、ValueDisplay）
+    │   └── layouts/    # MainLayout（侧边栏导航）
+    └── wailsjs/        # Wails 自动生成绑定（勿手动编辑）
 ```
+
+### 架构特点
+
+- **领域驱动设计** - 按业务功能分包，职责清晰
+- **Wails v2 最佳实践** - 所有处理器作为 App struct 的方法
+- **低耦合高内聚** - 消除了跨包依赖，提高可维护性
+- **事件驱动架构** - 统一的事件发布机制，前后端解耦
 
 ## 命令速查
 
@@ -111,5 +127,34 @@ yx-daq/
 所有配置和录制文件存储在 `~/.yx-daq/`（用户 home 目录），JSON 格式原子写入。
 
 ## 开发规范
+
+### 代码组织原则
+
+1. **单一职责** - 每个包专注于特定业务领域
+2. **包边界** - `internal/` 包只被内部引用，避免循环依赖
+3. **API 设计** - 所有公开方法必须通过 App struct 的方法暴露
+4. **事件驱动** - 使用统一的事件发布器进行前后端通信
+
+### 添加新功能
+
+1. 在 `internal/{domain}/` 创建相应的服务包
+2. 在 `app/handlers_*.go` 中添加对应的 API 方法
+3. 在 `app/event_publishers.go` 中添加事件发布支持
+4. 更新前端调用
+
+### 构建验证
+
+```bash
+# 验证后端编译
+go build ./internal/...
+go build main.go
+
+# 验证前端构建
+cd frontend && npm run build
+
+# 运行测试
+go test ./internal/...
+cd frontend && npm run test
+```
 
 详见 [docs/dev-guide.md](./docs/dev-guide.md)。

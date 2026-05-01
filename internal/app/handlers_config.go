@@ -1,9 +1,7 @@
-package main
+package app
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"yx-daq/internal/types"
 
@@ -30,16 +28,7 @@ func (a *App) LoadThreeHoleConfig() (types.ThreeHoleTraversalConfig, error) {
 
 // ==================== 路径配置 API ====================
 
-// GetDataDir 获取数据存储目录
-func (a *App) GetDataDir() string {
-	if a.configManager != nil {
-		data := a.configManager.Storage.Get()
-		if path, ok := data["dataSavePath"].(string); ok && path != "" {
-			return path
-		}
-	}
-	return filepath.Join(a.getConfigDir(), "data")
-}
+// ==================== 路径配置 API ====================
 
 // SetDataSavePath 设置数据保存路径
 func (a *App) SetDataSavePath(path string) error {
@@ -60,15 +49,4 @@ func (a *App) SelectDataSavePath() (string, error) {
 		return "", err
 	}
 	return dir, nil
-}
-
-// getConfigDir 获取配置目录
-func (a *App) getConfigDir() string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		home = "." // 无HOME则用当前目录
-	}
-	configDir := filepath.Join(home, ".yx-daq")
-	os.MkdirAll(configDir, 0755) // ignore error: 目录已存在或后续文件操作会报错
-	return configDir
 }

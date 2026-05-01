@@ -46,7 +46,17 @@
       "Bash(sed -i '350,351s/.*/\\\\t\\\\/\\\\/ sendUnitCommand 发送单位读写命令（无\\\\\\\\r\\\\\\\\n后缀，走长度前缀协议通道）/' internal/driver/xy_daq16.go)",
       "Bash(sed -i '351d' internal/driver/xy_daq16.go)",
       "Bash(wails generate *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(go version *)",
+      "Bash(npx knip *)",
+      "Bash(~/go/bin/deadcode ./...)",
+      "Bash(go tool *)",
+      "Bash(awk '{print $3}')",
+      "Bash(grep -E \"app\\\\.go$|main\\\\.go$\")",
+      "Bash(go mod *)",
+      "Bash(go clean *)",
+      "Bash(gh pr *)"
     ]
   }
 }
