@@ -232,6 +232,12 @@
                 <el-input-number v-model="store.config.sampleIntervalMs" :min="10" :step="10" size="small" style="width:100px" />
                 <span class="unit-label">ms</span>
               </div>
+              <div class="form-group">
+                <label class="group-label">运动超时</label>
+                <el-input-number v-model="store.config.motionTimeoutMs" :min="1000" :step="1000" size="small" style="width:100px" />
+                <span class="unit-label">ms</span>
+                <div class="form-hint">轴移动等待超时时间</div>
+              </div>
             </div>
             <div class="form-row" style="margin-top: 8px">
               <div class="form-group" style="flex: 1">
@@ -727,39 +733,71 @@ let lastWavePointId = ''
 
 // 监听实时数据追加波形
 watch(() => store.realtime, (rt) => {
-  if (!rt || !store.isRunning || store.isPaused) return
-  // 同一个布点只追加一次波形数据（后端可能因多次采样推送多次realtime事件）
-  if (rt.pointId && rt.pointId === lastWavePointId) return
-  lastWavePointId = rt.pointId || ''
+  if (!rt) return
 
-  ptHistory.value.push(rt.interpResult.ptProbe)
-  psHistory.value.push(rt.interpResult.psProbe)
-  maHistory.value.push(rt.interpResult.machProbe)
-  alphaHistory.value.push(rt.interpResult.alphaProbe)
-  waveLabels.value.push(waveLabels.value.length + 1)
+  // 测试运行时：每个布点添加一次，使用实际坐标作为标签
+  if (store.isRunning && !store.isPaused) {
+    // 同一个布点只追加一次波形数据
+    if (rt.pointId && rt.pointId === lastWavePointId) return
+    lastWavePointId = rt.pointId || ''
 
-  if (ptHistory.value.length > MAX_WAVE_POINTS) {
-    ptHistory.value.shift()
-    psHistory.value.shift()
-    maHistory.value.shift()
-    alphaHistory.value.shift()
-    waveLabels.value.shift()
+    // 添加数据，使用点位坐标作为标签
+    ptHistory.value.push(rt.interpResult.ptProbe)
+    psHistory.value.push(rt.interpResult.psProbe)
+    maHistory.value.push(rt.interpResult.machProbe)
+    alphaHistory.value.push(rt.interpResult.alphaProbe)
+    // 使用点位坐标作为x轴标签
+    waveLabels.value.push(`${rt.pointId}(${progress.value?.currentX?.toFixed(1) || '0'},${progress.value?.currentY?.toFixed(1) || '0'})`)
+
+    // 限制数据点数量
+    if (ptHistory.value.length > MAX_WAVE_POINTS) {
+      ptHistory.value.shift()
+      psHistory.value.shift()
+      maHistory.value.shift()
+      alphaHistory.value.shift()
+      waveLabels.value.shift()
+    }
+
+    scheduleWaveUpdate()
   }
 
-  scheduleWaveUpdate()
+  // 实时监控模式（未运行时）：持续添加数据，使用时间戳作为标签
+  if (!store.isRunning) {
+    const now = new Date()
+    const timeLabel = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
+
+    ptHistory.value.push(rt.interpResult.ptProbe)
+    psHistory.value.push(rt.interpResult.psProbe)
+    maHistory.value.push(rt.interpResult.machProbe)
+    alphaHistory.value.push(rt.interpResult.alphaProbe)
+    waveLabels.value.push(timeLabel)
+
+    // 限制数据点数量
+    if (ptHistory.value.length > MAX_WAVE_POINTS) {
+      ptHistory.value.shift()
+      psHistory.value.shift()
+      maHistory.value.shift()
+      alphaHistory.value.shift()
+      waveLabels.value.shift()
+    }
+
+    scheduleWaveUpdate()
+  }
 })
 
-// 测试停止时重置去重标记
+// 测试状态变化时的处理
 watch(() => store.isRunning, (running) => {
   if (!running) {
+    // 测试停止时不清除历史数据，保留波形
     lastWavePointId = ''
-  }
-  if (running) {
+  } else {
+    // 测试开始时清除历史数据
     ptHistory.value = []
     psHistory.value = []
     maHistory.value = []
     alphaHistory.value = []
     waveLabels.value = []
+    lastWavePointId = ''
   }
 })
 
@@ -771,19 +809,45 @@ function makeWaveOption(data: number[], color: string, unit?: string) {
       backgroundColor: 'rgba(10,10,26,0.9)',
       borderColor: `${color}44`,
       textStyle: { color: '#fff', fontSize: 11 },
+      formatter: function(params: any) {
+        const dataIndex = params[0].dataIndex
+        const label = waveLabels.value[dataIndex]
+        const value = params[0].value
+        return `${label}<br/>${unit ? value.toFixed(3) + unit : value.toFixed(4)}`
+      }
     },
-    grid: { left: 50, right: 10, top: 8, bottom: 24 },
+    grid: { left: 50, right: 10, top: 8, bottom: 40 },
     xAxis: {
       type: 'category',
       data: waveLabels.value,
       axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
-      axisLabel: { color: 'rgba(255,255,255,0.3)', fontSize: 9 },
+      axisLabel: {
+        color: 'rgba(255,255,255,0.3)',
+        fontSize: 9,
+        interval: 0,
+        rotate: 45,
+        formatter: function(value: string) {
+          // 如果是测试模式，显示简短的点位信息
+          if (value.includes('(')) {
+            const parts = value.split('(')
+            if (parts.length > 1) {
+              return `${parts[0]}(${parts[1].split(')')[0]})`
+            }
+          }
+          // 如果是监控模式，显示时间
+          return value
+        }
+      },
     },
     yAxis: {
       type: 'value',
       scale: true,
       axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
-      axisLabel: { color: 'rgba(255,255,255,0.3)', fontSize: 9 },
+      axisLabel: {
+        color: 'rgba(255,255,255,0.3)',
+        fontSize: 9,
+        formatter: unit ? `{value} ${unit}` : '{value}'
+      },
       splitLine: { lineStyle: { color: 'rgba(255,255,255,0.04)' } },
     },
     series: [{
@@ -813,29 +877,23 @@ function scheduleWaveUpdate() {
     waveUpdateTimer = null
     if (!waveDirty) return
     waveDirty = false
-    // 增量更新：只更新数据和 xAxis，不重建 tooltip/grid/yAxis 等静态配置
+
+    // 批量更新所有图表选项
     const labels = waveLabels.value
-    ptChartOption.value = {
-      ...ptChartOption.value,
-      xAxis: { ...ptChartOption.value.xAxis, data: labels },
-      series: [{ ...ptChartOption.value.series[0], data: ptHistory.value }]
+    const updateChart = (chartOption: any, data: number[]) => {
+      return {
+        ...chartOption.value,
+        xAxis: { ...chartOption.value.xAxis, data: labels },
+        series: [{ ...chartOption.value.series[0], data: data }]
+      }
     }
-    psChartOption.value = {
-      ...psChartOption.value,
-      xAxis: { ...psChartOption.value.xAxis, data: labels },
-      series: [{ ...psChartOption.value.series[0], data: psHistory.value }]
-    }
-    maChartOption.value = {
-      ...maChartOption.value,
-      xAxis: { ...maChartOption.value.xAxis, data: labels },
-      series: [{ ...maChartOption.value.series[0], data: maHistory.value }]
-    }
-    alphaChartOption.value = {
-      ...alphaChartOption.value,
-      xAxis: { ...alphaChartOption.value.xAxis, data: labels },
-      series: [{ ...alphaChartOption.value.series[0], data: alphaHistory.value }]
-    }
-  }, 200)
+
+    // 同时更新所有图表
+    ptChartOption.value = updateChart(ptChartOption, ptHistory.value)
+    psChartOption.value = updateChart(psChartOption, psHistory.value)
+    maChartOption.value = updateChart(maChartOption, maHistory.value)
+    alphaChartOption.value = updateChart(alphaChartOption, alphaHistory.value)
+  }, 100) // 减少延迟到100ms，提高响应速度
 }
 
 
@@ -1123,6 +1181,13 @@ watch(() => store.config, () => {
   font-size: 11px;
   color: rgba(255,255,255,0.4);
   margin-left: 4px;
+}
+
+.form-hint {
+  font-size: 10px;
+  color: rgba(255,255,255,0.3);
+  margin-top: 2px;
+  line-height: 1.2;
 }
 
 .compact-form :deep(.el-form-item) {

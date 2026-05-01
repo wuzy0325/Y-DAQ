@@ -23,6 +23,8 @@ type DataProcessor struct {
 	// 实时监控相关
 	monitorRunning atomic.Bool
 	monitorCancel  chan struct{}
+	// 标记是否正在执行测试，避免监控和测试数据冲突
+	testRunning    atomic.Bool
 }
 
 // NewDataProcessor 创建数据处理器
@@ -87,7 +89,10 @@ func (dp *DataProcessor) runRealtimeMonitor() {
 		case <-ticker.C:
 		}
 
-		// 允许实时监控与测试运行并行（测试期间也会显示监控数据）
+		// 如果正在执行测试，监控不推送数据（避免重复）
+		if dp.testRunning.Load() {
+			continue
+		}
 
 		// 读取原始数据
 		rawData := dp.readRawData()
@@ -124,6 +129,9 @@ func (dp *DataProcessor) RunSinglePoint(point types.TraversalPoint, cancelCh cha
 	if err := dp.testManager.CheckCancelled(cancelCh); err != nil {
 		return types.ThreeHoleTraversalDataPoint{}, err
 	}
+
+	// 执行驻留等待（这是实际的驻留时间！）
+	dp.DwellWithRealtimeUpdate(point, cancelCh)
 
 	// 数据采集与插值
 	return dp.AcquireAndInterpolate(point, cancelCh)

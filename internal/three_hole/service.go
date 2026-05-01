@@ -127,6 +127,9 @@ func (s *ThreeHoleTraversalService) Start(config types.ThreeHoleTraversalConfig)
 		return "", fmt.Errorf("calibration files not loaded")
 	}
 
+	// 标记测试开始
+	s.dataProcessor.testRunning.Store(true)
+
 	// 初始化CSV写入器
 	if err := s.eventHandler.OnTestStart(config); err != nil {
 		return "", err
@@ -158,6 +161,9 @@ func (s *ThreeHoleTraversalService) Resume() {
 // Stop 停止测试
 func (s *ThreeHoleTraversalService) Stop() {
 	s.testManager.Stop()
+
+	// 标记测试结束
+	s.dataProcessor.testRunning.Store(false)
 
 	// 清理监控资源
 	if s.monitorCancel != nil {
