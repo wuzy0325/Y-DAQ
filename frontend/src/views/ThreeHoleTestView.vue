@@ -726,7 +726,7 @@ const ptHistory = ref<number[]>([])
 const psHistory = ref<number[]>([])
 const maHistory = ref<number[]>([])
 const alphaHistory = ref<number[]>([])
-const waveLabels = ref<number[]>([])
+const waveLabels = ref<string[]>([])
 
 // 记录已追加到波形的pointId，防止同一布点重复追加
 let lastWavePointId = ''
@@ -747,7 +747,7 @@ watch(() => store.realtime, (rt) => {
     maHistory.value.push(rt.interpResult.machProbe)
     alphaHistory.value.push(rt.interpResult.alphaProbe)
     // 使用点位坐标作为x轴标签
-    waveLabels.value.push(`${rt.pointId}(${progress.value?.currentX?.toFixed(1) || '0'},${progress.value?.currentY?.toFixed(1) || '0'})`)
+    waveLabels.value.push(rt.pointId || '')
 
     // 限制数据点数量
     if (ptHistory.value.length > MAX_WAVE_POINTS) {
@@ -761,28 +761,7 @@ watch(() => store.realtime, (rt) => {
     scheduleWaveUpdate()
   }
 
-  // 实时监控模式（未运行时）：持续添加数据，使用时间戳作为标签
-  if (!store.isRunning) {
-    const now = new Date()
-    const timeLabel = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
 
-    ptHistory.value.push(rt.interpResult.ptProbe)
-    psHistory.value.push(rt.interpResult.psProbe)
-    maHistory.value.push(rt.interpResult.machProbe)
-    alphaHistory.value.push(rt.interpResult.alphaProbe)
-    waveLabels.value.push(timeLabel)
-
-    // 限制数据点数量
-    if (ptHistory.value.length > MAX_WAVE_POINTS) {
-      ptHistory.value.shift()
-      psHistory.value.shift()
-      maHistory.value.shift()
-      alphaHistory.value.shift()
-      waveLabels.value.shift()
-    }
-
-    scheduleWaveUpdate()
-  }
 })
 
 // 测试状态变化时的处理
@@ -823,20 +802,8 @@ function makeWaveOption(data: number[], color: string, unit?: string) {
       axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
       axisLabel: {
         color: 'rgba(255,255,255,0.3)',
-        fontSize: 9,
-        interval: 0,
+        fontSize: 10,
         rotate: 45,
-        formatter: function(value: string) {
-          // 如果是测试模式，显示简短的点位信息
-          if (value.includes('(')) {
-            const parts = value.split('(')
-            if (parts.length > 1) {
-              return `${parts[0]}(${parts[1].split(')')[0]})`
-            }
-          }
-          // 如果是监控模式，显示时间
-          return value
-        }
       },
     },
     yAxis: {

@@ -128,12 +128,13 @@ function open(axisName?: string) {
   visible.value = true
 }
 
-function onAxisChange(name: string) {
-  selectedAxisName.value = name
+function onAxisChange(name: string | number | boolean | undefined) {
+  if (typeof name === 'string') selectedAxisName.value = name
 }
 
-function onKindChange(newKind: string) {
-  axisKind.value = newKind as any
+function onKindChange(newKind: string | number | boolean | undefined) {
+  if (typeof newKind !== 'string') return
+  axisKind.value = newKind as 'LINEAR' | 'ROTARY'
   if (newKind === 'LINEAR') {
     formData.value.lead = 5.0
     formData.value.maxSpeed = 50
