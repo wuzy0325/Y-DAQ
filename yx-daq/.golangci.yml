@@ -1,0 +1,59 @@
+linters:
+  enable:
+    - gofmt
+    - goimports
+    - govet
+    - errcheck
+    - staticcheck
+    - ineffassign
+    - gocyclo
+    - misspell
+    - unconvert
+    - goconst
+    - whitespace
+    - gocritic
+  disable:
+    - depguard
+
+linters-settings:
+  gocyclo:
+    min-complexity: 25
+  goconst:
+    min-len: 3
+    min-occurrences: 3
+  misspell:
+    locale: US
+  lll:
+    line-length: 140
+  nestif:
+    min-complexity: 6
+  funlen:
+    lines: -1
+    statements: 50
+  goimports:
+    local-prefixes: yx-daq
+
+run:
+  timeout: 3m
+
+issues:
+  exclude-dirs:
+    - frontend
+    - build
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck
+        - gocyclo
+        - funlen
+    - path: internal/driver/
+      linters:
+        - errcheck
+    - linters:
+        - errcheck
+      source: "// ignore error"
+    - linters:
+        - gosimple
+      source: "S1000"
+    - path: internal/scanner/
+      text: "Error return value of `conn.Write|listener.SetReadDeadline|fmt.Sscanf`"
