@@ -21,107 +21,19 @@ import { EventsOn, EventsOff } from '../../wailsjs/runtime/runtime'
 import {
   ThreeHoleChannelRole,
   TraversalPattern,
-  type ThreeHoleChannelRoleValue,
-  type TraversalPatternValue,
 } from '../api/enums'
 import { useMotionStore } from './motion'
-
-// ==================== 类型定义 ====================
-
-interface ThreeHoleRawData {
-  p1: number; p2: number; p3: number; pAtm: number; tAtm: number
-}
-
-interface ThreeHoleInterpolationResult {
-  ptProbe: number; psProbe: number; machProbe: number; alphaProbe: number
-  iterationCount: number; converged: boolean; valid: boolean; errorMsg?: string
-}
-
-interface ThreeHoleTraversalDataPoint {
-  pointId: string; x: number; y: number
-  rawData: ThreeHoleRawData; interpResult: ThreeHoleInterpolationResult
-  sampleCount: number; timestamp: number
-}
-
-interface ThreeHoleTraversalTaskStatus {
-  taskId: string; status: string
-  totalPoints: number; completedPoints: number; progress: number
-  currentPoint: { id: string; x: number; y: number } | null
-  dataPoints: ThreeHoleTraversalDataPoint[]
-  lastError: string
-}
-
-interface ThreeHoleTraversalProgressEvent {
-  taskId: string; totalPoints: number; completedPoints: number
-  progress: number; currentX: number; currentY: number
-  phase?: string
-}
-
-interface ThreeHoleTraversalRealtimeEvent {
-  taskId: string; pointId: string
-  rawData: ThreeHoleRawData; interpResult: ThreeHoleInterpolationResult
-}
-
-interface ThreeHoleTraversalCompleteEvent {
-  taskId: string; status: string
-  dataPoints: ThreeHoleTraversalDataPoint[]
-}
-
-interface ThreeHoleTraversalErrorEvent {
-  taskId: string; error: string; isFatal: boolean
-}
-
-// ==================== 配置类型 ====================
-
-interface StepSegment {
-  start: number; end: number; step: number
-}
-
-interface LineLayout {
-  startX: number; startY: number; endX: number; endY: number
-  xSteps: StepSegment[]; ySteps: StepSegment[]
-}
-
-interface RectangleLayout {
-  xMin: number; xMax: number; yMin: number; yMax: number
-  xSteps: StepSegment[]; ySteps: StepSegment[]
-}
-
-interface TraversalLayout {
-  pattern: TraversalPatternValue
-  line?: LineLayout
-  rectangle?: RectangleLayout
-  customPoints?: { id: string; x: number; y: number }[]
-}
-
-interface ThreeHoleProbeChannelConfig {
-  name: string; role: ThreeHoleChannelRoleValue; channel: number; enabled: boolean
-}
-
-interface MotionAxisMapping {
-  axis: string
-}
-
-interface ThreeHoleCalibFileInfo {
-  filePath: string; fileName: string; cMa: number
-}
-
-interface ThreeHoleTraversalConfig {
-  name: string
-  deviceId: string
-  motionControllerId: string
-  layout: TraversalLayout
-  probeChannels: ThreeHoleProbeChannelConfig[]
-  motionAlpha: MotionAxisMapping
-  motionBeta: MotionAxisMapping
-  calibFiles: ThreeHoleCalibFileInfo[]
-  dwellTimeMs: number
-  samplesPerPoint: number
-  sampleIntervalMs: number
-  motionTimeoutMs: number
-  savePath: string
-  saveFileName: string
-}
+import type {
+  ThreeHoleRawData,
+  ThreeHoleInterpolationResult,
+  ThreeHoleTraversalDataPoint,
+  ThreeHoleTraversalTaskStatus,
+  ThreeHoleTraversalProgressEvent,
+  ThreeHoleTraversalRealtimeEvent,
+  ThreeHoleTraversalCompleteEvent,
+  ThreeHoleTraversalErrorEvent,
+  ThreeHoleTraversalConfig,
+} from './threeHoleTest/types'
 
 // ==================== Store ====================
 

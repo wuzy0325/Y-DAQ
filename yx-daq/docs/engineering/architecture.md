@@ -54,14 +54,26 @@ Go 后端与 Vue 前端职责明确，通过 Wails 绑定层通信。
 
 ```
 yx-daq/
-├── main.go                   # Wails 入口
-├── app.go                    # App 结构体 + startup/shutdown + DI
-├── handlers_device.go        # Wails 绑定：设备管理
-├── handlers_motion.go        # Wails 绑定：运动控制
-├── handlers_calib.go         # Wails 绑定：五孔校准
-├── handlers_3h.go            # Wails 绑定：三孔测试
-├── handlers_data.go          # Wails 绑定：录制/回放/数据
-├── handlers_config.go        # Wails 绑定：配置/路径
+├── main.go                   # Wails 入口（唯一 root Go 文件）
+├── CONTEXT.md                # 领域语言（共享术语表）
+├── AGENTS.md                 # Agent 指令（AI 开发用）
+├── CLAUDE.md                 # AI 行为准则 + 规范引用
+├── wails.json                # Wails v2 项目配置
+├── go.mod / go.sum           # Go 模块依赖
+├── build.bat                 # Windows 构建（exe / nsis / clean）
+├── dev.bat                   # Windows 开发（wails dev / build+run）
+├── .gitignore
+│
+├── internal/                 # Go 后端（业务逻辑、驱动、存储）
+│   └── app/                  # App 结构体 + DI + Wails 绑定
+│       ├── app.go                    # App struct + startup/shutdown + DI
+│       ├── event_publishers.go       # 事件发布器实现（Wails EventsEmit 封装）
+│       ├── handlers_device.go        # Wails 绑定：设备管理
+│       ├── handlers_motion.go        # Wails 绑定：运动控制
+│       ├── handlers_calib.go         # Wails 绑定：五孔校准
+│       ├── handlers_3h.go            # Wails 绑定：三孔测试
+│       ├── handlers_data.go          # Wails 绑定：录制/回放/数据
+│       └── handlers_config.go        # Wails 绑定：配置/路径
 ├── AGENTS.md                 # Agent 指令（AI 开发用）
 ├── CLAUDE.md                 # AI 行为准则 + 规范引用
 ├── wails.json                # Wails v2 项目配置
@@ -103,6 +115,16 @@ internal/
 │   ├── three_hole_traversal.go
 │   └── constants.go
 │
+├── app/                      # 应用层（DI 汇聚 + Wails 绑定）
+│   ├── app.go                # App struct + startup/shutdown + DI 注入
+│   ├── event_publishers.go   # 事件发布器实现
+│   ├── handlers_device.go    # Wails 绑定：设备管理
+│   ├── handlers_motion.go    # Wails 绑定：运动控制
+│   ├── handlers_calib.go     # Wails 绑定：五孔校准
+│   ├── handlers_3h.go        # Wails 绑定：三孔测试
+│   ├── handlers_data.go      # Wails 绑定：录制/回放/数据
+│   └── handlers_config.go    # Wails 绑定：配置/路径
+│
 ├── driver/                   # 硬件驱动（采集设备 + 运动控制器）
 │   ├── xy_daq16.go            # DAQ-16 TCP 驱动
 │   ├── b140.go                # B140 运动控制器 TCP 驱动
@@ -117,6 +139,9 @@ internal/
 ├── scanner/                  # UDP 设备扫描发现
 │   └── daq_scanner.go
 │
+├── logger/                   # 日志服务（JSON 格式 + 30 天轮转）
+│   └── logger.go
+│
 ├── storage/                  # 数据持久化（配置、记录、报表）
 │   ├── config_store.go        # JSON 配置读写
 │   ├── data_storage.go        # CSV 实时记录
@@ -130,8 +155,12 @@ internal/
 │
 └── three_hole/               # 三孔探针移位测试业务
     ├── service.go             # 测试生命周期 + 主循环
+    ├── test_manager.go        # 测试管理器
+    ├── data_processor.go      # 数据采集 + 3-sigma 滤波
     ├── interpolator.go        # 插值算法
-    └── csv_writer.go          # CSV 导出
+    ├── event_handler.go       # 事件与 CSV 处理
+    ├── csv_writer.go          # CSV 导出
+    └── point_generator.go     # 布点生成
 ```
 
 - `types/` 是唯一无内部依赖的包
@@ -146,15 +175,21 @@ types ← driver
 types ← scanner
 types ← manager
       │
+types ← logger
+      │
 types ← storage ← manager
       │
 types ← calibration ← manager
       │
 types ← three_hole  ← manager
       │
-app.go → 所有 internal 包（注入依赖）
+app → 所有 internal 包（注入依赖）
 ```
 
+- `types/` 是唯一无内部依赖的包
+- `driver/` 依赖 `types/` 用于 `DataPayload` 等类型
+- `manager/` 依赖 `driver/`（工厂模式创建驱动实例）+ `storage/`（配置持久化）
+- `app/` 是唯一的依赖注入汇聚点，依赖所有 internal 包
 - 不允许循环依赖
 
 ### 3.3 每包最大行数
@@ -176,13 +211,13 @@ app.go → 所有 internal 包（注入依赖）
 ```
 frontend/src/
 ├── api/                      # 枚举、常量、API 类型（与 Wails 无关的）
-│   └── enums.ts
+│   └── enums.ts              # ThreeHoleChannelRole, TraversalPattern 等
 │
 ├── stores/                   # Pinia 状态管理
-│   ├── device.ts              # 采集设备 store
-│   ├── motion.ts              # 运动控制器 store
-│   ├── calibration.ts         # 五孔校准 store
-│   └── threeHoleTest.ts       # 三孔测试 store
+│   ├── device.ts              # 采集设备 store（161 行）
+│   ├── motion.ts              # 运动控制器 store（586 行 → 待拆分）
+│   ├── calibration.ts         # 五孔校准 store（121 行）
+│   └── threeHoleTest.ts       # 三孔测试 store（507 行 → 待拆分）
 │
 ├── views/                    # 页面级组件（对应路由）
 │   ├── DashboardView.vue      # 仪表盘
@@ -204,11 +239,12 @@ frontend/src/
 │       └── AxisControlCard.vue
 │
 ├── composables/              # 逻辑复用（不引用 store，不含 UI）
+│   └── usePlayback.ts        # CSV 数据回放
 │
 ├── layouts/                  # 布局组件
 │   └── MainLayout.vue         # 主导航 + 页面容器
 │
-├── router/                   # 路由配置
+├── router/                   # 路由配置（6 条：dashboard、device、motion、calibration、3h、settings）
 │   └── index.ts
 │
 ├── utils/                    # 工具函数

@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -126,7 +127,9 @@ func (a *App) LoadCSVFile() (string, error) {
 // ListRecordingFiles 列出录制文件
 func (a *App) ListRecordingFiles() []string {
 	dataDir := a.GetDataDir()
-	os.MkdirAll(dataDir, 0755) // ignore error: 目录已存在或后续ReadDir会报错
+	if err := os.MkdirAll(dataDir, 0755); err != nil {
+		log.Printf("mkdir for data dir failed: %v", err)
+	}
 
 	entries, err := os.ReadDir(dataDir)
 	if err != nil {

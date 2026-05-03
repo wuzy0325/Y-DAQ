@@ -12,7 +12,7 @@ import (
 // SimulatedDevice 模拟设备（用于无硬件调试）
 type SimulatedDevice struct {
 	acquiring     atomic.Bool
-	onData        DataCallback
+	onData        types.DataCallback
 	channels      []types.ChannelConfig
 	pressureCount int // 压力通道数
 	stopCh        chan struct{}
@@ -33,7 +33,7 @@ func NewSimulatedDevice(channels []types.ChannelConfig) *SimulatedDevice {
 }
 
 // SetDataCallback 设置数据回调
-func (s *SimulatedDevice) SetDataCallback(cb DataCallback) {
+func (s *SimulatedDevice) SetDataCallback(cb types.DataCallback) {
 	s.onData = cb
 }
 
@@ -73,11 +73,6 @@ func (s *SimulatedDevice) StartAcquisition(periodMs int) error {
 func (s *SimulatedDevice) StopAcquisition() error {
 	s.acquiring.Store(false)
 	return nil
-}
-
-// SendRawCommand 模拟命令
-func (s *SimulatedDevice) SendRawCommand(command string) (string, error) {
-	return "OK", nil
 }
 
 // UpdateChannels 更新通道配置

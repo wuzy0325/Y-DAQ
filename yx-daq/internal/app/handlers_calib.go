@@ -4,8 +4,6 @@ import (
 	"fmt"
 
 	"yx-daq/internal/types"
-
-	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // ==================== 校准 API ====================
@@ -50,20 +48,4 @@ func (a *App) GetCalibrationStatus() types.CalibrationTaskStatus {
 	return a.calibService.GetStatus()
 }
 
-// ==================== Wails 事件发布器（校准） ====================
 
-type wailsEventPublisher struct {
-	app *App
-}
-
-func (p *wailsEventPublisher) EmitProgress(event types.CalibrationProgressEvent) {
-	wailsRuntime.EventsEmit(p.app.ctx, "calibration:progress", event)
-}
-
-func (p *wailsEventPublisher) EmitRealtime(event types.CalibrationRealtimeEvent) {
-	wailsRuntime.EventsEmit(p.app.ctx, "calibration:realtime", event)
-}
-
-func (p *wailsEventPublisher) EmitComplete(event types.CalibrationCompleteEvent) {
-	wailsRuntime.EventsEmit(p.app.ctx, "calibration:complete", event)
-}

@@ -13,9 +13,6 @@ import (
 	"yx-daq/internal/types"
 )
 
-// DataCallback 数据回调函数类型
-type DataCallback func(payload types.DataPayload)
-
 // XYDAQDriver XY-DAQ TCP驱动（支持DAQ8/DAQ16）
 type XYDAQDriver struct {
 	mu             sync.Mutex
@@ -25,7 +22,7 @@ type XYDAQDriver struct {
 	conn           net.Conn
 	connected      atomic.Bool
 	acquiring      atomic.Bool
-	onData         DataCallback
+	onData         types.DataCallback
 	recvBuffer     []byte
 	reconnectCount int
 	stopReconnect  chan struct{}
@@ -56,7 +53,7 @@ func NewXYDAQDriver(host string, port, streamID int, channels []types.ChannelCon
 }
 
 // SetDataCallback 设置数据回调
-func (d *XYDAQDriver) SetDataCallback(cb DataCallback) {
+func (d *XYDAQDriver) SetDataCallback(cb types.DataCallback) {
 	d.onData = cb
 }
 
@@ -171,22 +168,6 @@ func (d *XYDAQDriver) StopAcquisition() error {
 
 	d.acquiring.Store(false)
 	return nil
-}
-
-// SendRawCommand 发送原始命令
-func (d *XYDAQDriver) SendRawCommand(command string) (string, error) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	if !d.connected.Load() {
-		return "", fmt.Errorf("device not connected")
-	}
-
-	if _, err := d.conn.Write([]byte(command + "\r")); err != nil {
-		return "", err
-	}
-
-	return "", nil
 }
 
 // UpdateChannels 热更新通道配置

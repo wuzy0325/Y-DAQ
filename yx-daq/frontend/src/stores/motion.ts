@@ -2,142 +2,20 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import {
   GetMotionProfiles, GetMotionStatusAll, ConnectMotion, DisconnectMotion,
-  MotionMoveTo, MotionMoveBy, MotionJog, MotionStop, MotionEmergencyStop,
+  MotionMoveTo, MotionMoveBy, MotionJog, MotionStop, MotionStopAll, MotionEmergencyStop,
   MotionHome, MotionDefinePosition, MotionIsAxisMoving, MotionMotorOff,
   AddMotionProfile,
 } from '../../wailsjs/go/main/App'
 import { types } from '../../wailsjs/go/models'
 import { EventsOn } from '../../wailsjs/runtime/runtime'
-
-// 轴类型
-type AxisKind = 'LINEAR' | 'ROTARY'
-
-// 轴运行状态
-type AxisRunState = 'idle' | 'running' | 'jogging_minus' | 'jogging_plus' | 'error'
-
-interface AxisStatus {
-  name: string
-  position: number
-  moving: boolean
-  homed: boolean
-  posLimit: boolean
-  negLimit: boolean
-  compensating: boolean
-}
-
-interface MotionControllerStatus {
-  id: string
-  name: string
-  type: string
-  status: string
-  axes: AxisStatus[]
-  lastError: string
-}
-
-interface AxisConfig {
-  name: string
-  enabled: boolean
-  kind: AxisKind
-  inverted: boolean
-  stepAngleDeg: number
-  microSteps: number
-  lead: number
-  maxSpeed: number
-  encoderScale: number
-  encoderCompensation: {
-    enabled: boolean
-    tolerance: number
-    maxCycles: number
-    settleMs: number
-    minStep: number
-    timeoutMs: number
-  }
-}
-
-interface MotionControllerProfile {
-  id: string
-  name: string
-  type: string
-  address: string
-  port: number
-  timeoutMs: number
-  axes: AxisConfig[]
-}
-
-// 轴扩展状态（前端本地维护）
-interface AxisUIState {
-  name: string
-  kind: AxisKind
-  currentPosition: number
-  targetPosition: number
-  relativeDistance: number
-  runState: AxisRunState
-  isHomed: boolean
-  posLimitActive: boolean
-  negLimitActive: boolean
-  config: AxisConfig
-}
-
-// 轴单位
-function getAxisUnit(kind: AxisKind): string {
-  return kind === 'LINEAR' ? 'mm' : '°'
-}
-
-// 轴类型中文
-function getAxisKindText(kind: AxisKind): string {
-  return kind === 'LINEAR' ? '平移轴' : '旋转轴'
-}
-
-// 运行状态中文
-function getRunStateText(state: AxisRunState): string {
-  const map: Record<AxisRunState, string> = {
-    idle: '空闲',
-    running: '运行中',
-    jogging_minus: '反向点动',
-    jogging_plus: '正向点动',
-    error: '错误'
-  }
-  return map[state]
-}
-
-// 创建默认轴配置
-function createDefaultAxisConfig(name: string, kind: AxisKind): AxisConfig {
-  return {
-    name,
-    enabled: true,
-    kind,
-    inverted: false,
-    stepAngleDeg: 1.8,
-    microSteps: 16,
-    lead: kind === 'LINEAR' ? 5.0 : 4,
-    maxSpeed: kind === 'LINEAR' ? 50 : 30,
-    encoderScale: 0.005,
-    encoderCompensation: {
-      enabled: false,
-      tolerance: 0.01,
-      maxCycles: 3,
-      settleMs: 100,
-      minStep: 0,
-      timeoutMs: 5000
-    }
-  }
-}
-
-// 创建默认轴UI状态
-function createDefaultAxisUIState(name: string, kind: AxisKind): AxisUIState {
-  return {
-    name,
-    kind,
-    currentPosition: 0,
-    targetPosition: 0,
-    relativeDistance: kind === 'LINEAR' ? 10 : 5,
-    runState: 'idle',
-    isHomed: false,
-    posLimitActive: false,
-    negLimitActive: false,
-    config: createDefaultAxisConfig(name, kind)
-  }
-}
+import type {
+  AxisKind, AxisRunState, AxisStatus, MotionControllerStatus,
+  AxisConfig, MotionControllerProfile, AxisUIState, ConnectionStatus,
+} from './motion/types'
+import {
+  getAxisUnit, getAxisKindText, getRunStateText,
+  createDefaultAxisConfig, createDefaultAxisUIState,
+} from './motion/helpers'
 
 // 本地存储key前缀
 const MOTION_CONFIG_STORAGE_PREFIX = 'motionControllerConfig:'
@@ -162,8 +40,7 @@ export const useMotionStore = defineStore('motion', () => {
   // 运行日志
   const logs = ref<string[]>([])
 
-  // 连接状态
-  const connectionStatus = ref<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected')
+  const connectionStatus = ref<ConnectionStatus>('disconnected')
 
   // 计算属性
   const isConnected = computed(() => connectionStatus.value === 'connected')
@@ -412,7 +289,7 @@ export const useMotionStore = defineStore('motion', () => {
   async function stopAllAxes(): Promise<{ success: boolean; error?: string }> {
     if (!activeControllerId.value) return { success: true }
     try {
-      await MotionEmergencyStop(activeControllerId.value)
+      await MotionStopAll(activeControllerId.value)
       for (const state of Object.values(axisUIStates.value)) {
         state.runState = 'idle'
       }
@@ -508,10 +385,10 @@ export const useMotionStore = defineStore('motion', () => {
     const id = `mc-${Date.now()}`
     try {
       const defaultAxes = [
-        types.AxisConfig.createFrom({ name: 'X', enabled: true, kind: 'LINEAR', inverted: false, stepAngleDeg: 1.8, microSteps: 16, lead: 5, maxSpeed: 50, encoderScale: 0.005, encoderCompensation: types.EncoderCompensationConfig.createFrom({ enabled: false, tolerance: 0.01, maxCycles: 3, settleMs: 100, minStep: 0, timeoutMs: 5000 }) }),
-        types.AxisConfig.createFrom({ name: 'Y', enabled: true, kind: 'LINEAR', inverted: false, stepAngleDeg: 1.8, microSteps: 16, lead: 5, maxSpeed: 50, encoderScale: 0.005, encoderCompensation: types.EncoderCompensationConfig.createFrom({ enabled: false, tolerance: 0.01, maxCycles: 3, settleMs: 100, minStep: 0, timeoutMs: 5000 }) }),
-        types.AxisConfig.createFrom({ name: 'Z', enabled: true, kind: 'LINEAR', inverted: false, stepAngleDeg: 1.8, microSteps: 16, lead: 5, maxSpeed: 50, encoderScale: 0.005, encoderCompensation: types.EncoderCompensationConfig.createFrom({ enabled: false, tolerance: 0.01, maxCycles: 3, settleMs: 100, minStep: 0, timeoutMs: 5000 }) }),
-        types.AxisConfig.createFrom({ name: 'U', enabled: true, kind: 'ROTARY', inverted: false, stepAngleDeg: 1.8, microSteps: 16, lead: 4, maxSpeed: 30, encoderScale: 0.005, encoderCompensation: types.EncoderCompensationConfig.createFrom({ enabled: false, tolerance: 0.01, maxCycles: 3, settleMs: 100, minStep: 0, timeoutMs: 5000 }) }),
+        types.AxisConfig.createFrom({ name: 'X', enabled: true, kind: 'LINEAR', inverted: false, stepAngleDeg: 1.8, microSteps: 16, lead: 5, gearRatio: 1, maxSpeed: 50, encoderScale: 0.005, encoderCompensation: types.EncoderCompensationConfig.createFrom({ enabled: false, tolerance: 0.01, maxCycles: 3, settleMs: 100, minStep: 0, timeoutMs: 5000 }) }),
+        types.AxisConfig.createFrom({ name: 'Y', enabled: true, kind: 'LINEAR', inverted: false, stepAngleDeg: 1.8, microSteps: 16, lead: 5, gearRatio: 1, maxSpeed: 50, encoderScale: 0.005, encoderCompensation: types.EncoderCompensationConfig.createFrom({ enabled: false, tolerance: 0.01, maxCycles: 3, settleMs: 100, minStep: 0, timeoutMs: 5000 }) }),
+        types.AxisConfig.createFrom({ name: 'Z', enabled: true, kind: 'LINEAR', inverted: false, stepAngleDeg: 1.8, microSteps: 16, lead: 5, gearRatio: 1, maxSpeed: 50, encoderScale: 0.005, encoderCompensation: types.EncoderCompensationConfig.createFrom({ enabled: false, tolerance: 0.01, maxCycles: 3, settleMs: 100, minStep: 0, timeoutMs: 5000 }) }),
+        types.AxisConfig.createFrom({ name: 'U', enabled: true, kind: 'ROTARY', inverted: false, stepAngleDeg: 1.8, microSteps: 16, lead: 0, gearRatio: 1, maxSpeed: 30, encoderScale: 0.005, encoderCompensation: types.EncoderCompensationConfig.createFrom({ enabled: false, tolerance: 0.01, maxCycles: 3, settleMs: 100, minStep: 0, timeoutMs: 5000 }) }),
       ]
       const profile = types.MotionControllerProfile.createFrom({
         id,

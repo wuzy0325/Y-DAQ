@@ -31,13 +31,10 @@ type ThreeHoleEventPublisher interface {
 
 // ThreeHoleTraversalService 三孔移位测试服务（重构后版本）
 type ThreeHoleTraversalService struct {
-	interpolator   *ThreeHoleInterpolator
-	testManager    *TestManager
-	dataProcessor  *DataProcessor
-	eventHandler   *EventHandler
-
-	// 实时监控取消通道
-	monitorCancel chan struct{}
+	interpolator  *ThreeHoleInterpolator
+	testManager   *TestManager
+	dataProcessor *DataProcessor
+	eventHandler  *EventHandler
 }
 
 // NewThreeHoleTraversalService 创建三孔移位测试服务（重构后版本）
@@ -46,9 +43,8 @@ func NewThreeHoleTraversalService(publisher ThreeHoleEventPublisher) *ThreeHoleT
 	testManager := NewTestManager(publisher)
 
 	service := &ThreeHoleTraversalService{
-		interpolator:   interpolator,
-		testManager:    testManager,
-		monitorCancel: make(chan struct{}),
+		interpolator: interpolator,
+		testManager:  testManager,
 	}
 
 	// 初始化数据处理器
@@ -97,12 +93,6 @@ func (s *ThreeHoleTraversalService) GetCalibInfo() []types.ThreeHoleCalibFileInf
 
 // StartRealtimeMonitor 启动实时数据监控
 func (s *ThreeHoleTraversalService) StartRealtimeMonitor(config types.ThreeHoleTraversalConfig) {
-	if s.monitorCancel != nil {
-		select {
-		case s.monitorCancel <- struct{}{}:
-		default:
-		}
-	}
 	s.dataProcessor.StartRealtimeMonitor(config)
 }
 
@@ -169,22 +159,12 @@ func (s *ThreeHoleTraversalService) Resume() {
 
 // Stop 停止测试
 func (s *ThreeHoleTraversalService) Stop() {
-	// 先停止测试管理器
 	s.testManager.Stop()
 
-	// 等待一小段时间确保测试循环已退出
 	time.Sleep(100 * time.Millisecond)
 
-	// 标记测试结束
 	s.dataProcessor.testRunning.Store(false)
-
-	// 清理监控资源
-	if s.monitorCancel != nil {
-		select {
-		case s.monitorCancel <- struct{}{}:
-		default:
-		}
-	}
+	s.dataProcessor.StopRealtimeMonitor()
 }
 
 // GetStatus 获取测试状态
@@ -212,10 +192,8 @@ func (s *ThreeHoleTraversalService) runTestLoop(taskID string, config types.Thre
 	myGen := s.testManager.testGen.Load()
 
 	for _, point := range points {
-		select {
-		case <-s.testManager.cancelCh:
+		if s.testManager.ctx.Err() != nil {
 			return
-		default:
 		}
 
 		// 检测是否已被新 Start() 取代
@@ -225,7 +203,11 @@ func (s *ThreeHoleTraversalService) runTestLoop(taskID string, config types.Thre
 
 		// 处理暂停状态
 		for s.testManager.paused.Load() {
-			time.Sleep(100 * time.Millisecond)
+			select {
+			case <-s.testManager.ctx.Done():
+				return
+			case <-time.After(100 * time.Millisecond):
+			}
 		}
 
 		// 更新当前点位信息
@@ -234,7 +216,7 @@ func (s *ThreeHoleTraversalService) runTestLoop(taskID string, config types.Thre
 		s.testManager.mu.Unlock()
 
 		// 执行单点测试
-		dataPoint, err := s.dataProcessor.RunSinglePoint(point, s.testManager.cancelCh)
+		dataPoint, err := s.dataProcessor.RunSinglePoint(point)
 		if err != nil {
 			if !s.testManager.running.Load() {
 				return

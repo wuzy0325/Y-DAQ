@@ -35,9 +35,9 @@ func (a *App) SetDataSavePath(path string) error {
 	if a.configManager == nil {
 		return fmt.Errorf("config manager not initialized")
 	}
-	data := a.configManager.Storage.Get()
-	data["dataSavePath"] = path
-	return a.configManager.Storage.Set(data)
+	cfg := a.configManager.Storage.Get()
+	cfg.DataSavePath = path
+	return a.configManager.Storage.Set(cfg)
 }
 
 // SelectDataSavePath 弹出文件夹选择对话框选择数据保存路径

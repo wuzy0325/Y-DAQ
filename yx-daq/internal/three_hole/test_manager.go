@@ -1,6 +1,7 @@
 package three_hole
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"sync/atomic"
@@ -16,9 +17,8 @@ type TestManager struct {
 	running    atomic.Bool
 	paused     atomic.Bool
 	testGen    atomic.Int64
-	cancelCh   chan struct{}
-	pauseCh    chan struct{}
-	resumeCh   chan struct{}
+	ctx        context.Context
+	cancel     context.CancelFunc
 	doneCh     chan struct{}
 
 	config         types.ThreeHoleTraversalConfig
@@ -27,11 +27,12 @@ type TestManager struct {
 
 // NewTestManager 创建测试管理器
 func NewTestManager(publisher ThreeHoleEventPublisher) *TestManager {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // 初始状态为已取消，Start 时重新创建
 	return &TestManager{
 		eventPublisher: publisher,
-		cancelCh:      make(chan struct{}, 1),
-		pauseCh:       make(chan struct{}),
-		resumeCh:      make(chan struct{}),
+		ctx:            ctx,
+		cancel:         cancel,
 		status: types.ThreeHoleTraversalTaskStatus{
 			Status:      types.TraversalStatusIdle,
 			TotalPoints: 0,
@@ -52,9 +53,7 @@ func (tm *TestManager) Start(config types.ThreeHoleTraversalConfig) (string, err
 
 	taskID := fmt.Sprintf("3h-traversal-%d", time.Now().UnixMilli())
 	tm.config = config
-	tm.cancelCh = make(chan struct{}, 1)
-	tm.pauseCh = make(chan struct{})
-	tm.resumeCh = make(chan struct{})
+	tm.ctx, tm.cancel = context.WithCancel(context.Background())
 	doneCh := make(chan struct{})
 	tm.doneCh = doneCh
 
@@ -105,10 +104,6 @@ func (tm *TestManager) Resume() {
 	tm.status.Status = types.TraversalStatusRunning
 	tm.mu.Unlock()
 	tm.paused.Store(false)
-	select {
-	case tm.resumeCh <- struct{}{}:
-	default:
-	}
 }
 
 // Stop 停止测试
@@ -120,20 +115,16 @@ func (tm *TestManager) Stop() {
 		tm.mu.Unlock()
 		return
 	}
-	cancelCh := tm.cancelCh
 	tm.mu.Unlock()
 
-	// 先置 running=false 让 goroutine 的 error 路径能立即退出
 	tm.running.Store(false)
 	tm.paused.Store(false)
 
-	// buffered cancelCh 保底：即使 goroutine 正在阻塞调用，信号也不会丢失
-	select {
-	case cancelCh <- struct{}{}:
-	default:
+	if tm.cancel != nil {
+		tm.cancel()
 	}
 
-	// 立即返回，不等待 goroutine 退出。goroutine 通过 cancelCh / running 标志退出，
+	// 立即返回，不等待 goroutine 退出。
 	// 代际计数器 testGen 防止残留 goroutine 干扰新测试。
 	tm.mu.Lock()
 	tm.status.Status = types.TraversalStatusIdle
@@ -272,20 +263,18 @@ func (tm *TestManager) EmitFatalError(errMsg string) {
 
 
 // CheckCancelled 检查是否已被取消
-func (tm *TestManager) CheckCancelled(cancelCh chan struct{}) error {
-	select {
-	case <-cancelCh:
+func (tm *TestManager) CheckCancelled() error {
+	if tm.ctx.Err() != nil {
 		return fmt.Errorf("canceled")
-	default:
-		return nil
 	}
+	return nil
 }
 
 // WaitForResume 阻塞等待直到暂停解除
-func (tm *TestManager) WaitForResume(cancelCh chan struct{}) {
+func (tm *TestManager) WaitForResume() {
 	for tm.paused.Load() {
 		select {
-		case <-cancelCh:
+		case <-tm.ctx.Done():
 			return
 		case <-time.After(100 * time.Millisecond):
 		}

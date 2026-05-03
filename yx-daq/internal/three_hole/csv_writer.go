@@ -3,6 +3,7 @@ package three_hole
 import (
 	"encoding/csv"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -43,7 +44,9 @@ func (w *ThreeHoleCsvWriter) Initialize(savePath string, fileName string) error 
 	}
 
 	// 写入 UTF-8 BOM
-	file.Write([]byte{0xEF, 0xBB, 0xBF}) // ignore error: BOM写入失败不影响后续CSV写入
+	if _, err := file.Write([]byte{0xEF, 0xBB, 0xBF}); err != nil {
+		log.Printf("write BOM to csv file failed: %v", err)
+	}
 
 	w.file = file
 	w.writer = csv.NewWriter(file)

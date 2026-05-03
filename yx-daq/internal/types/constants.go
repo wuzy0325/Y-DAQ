@@ -50,3 +50,11 @@ var AxisNameToB140 = map[AxisName]string{
 	AxisZ: "C",
 	AxisU: "D",
 }
+
+// AxisNameToTSIndex 轴名 → TS 响应中的索引 (A=0, B=1, C=2, D=3)
+var AxisNameToTSIndex = map[AxisName]int{
+	AxisX: 0,
+	AxisY: 1,
+	AxisZ: 2,
+	AxisU: 3,
+}

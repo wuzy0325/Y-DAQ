@@ -113,9 +113,9 @@ func tryFixCorruptedJson(raw []byte) []byte {
 type ConfigManager struct {
 	Devices     *ConfigStore[[]types.DeviceProfile]
 	Motion      *ConfigStore[[]types.MotionControllerProfile]
-	Acquisition *ConfigStore[map[string]any] // TODO: 替换为具体类型如 ConfigStore[AcquisitionConfig]
-	Calibration *ConfigStore[map[string]any] // TODO: 替换为具体类型如 ConfigStore[CalibrationConfig]
-	Storage     *ConfigStore[map[string]any] // TODO: 替换为具体类型如 ConfigStore[StorageConfig]
+	Acquisition *ConfigStore[types.AcquisitionConfig]
+	Calibration *ConfigStore[types.CalibrationConfig] // 五孔校准配置
+	Storage     *ConfigStore[types.StorageConfig]
 	ThreeHole   *ConfigStore[types.ThreeHoleTraversalConfig]
 }
 
@@ -124,9 +124,9 @@ func NewConfigManager(configDir string) *ConfigManager {
 	return &ConfigManager{
 		Devices:     NewConfigStore(filepath.Join(configDir, "devices.json"), []types.DeviceProfile{}),
 		Motion:      NewConfigStore(filepath.Join(configDir, "motion.json"), []types.MotionControllerProfile{}),
-		Acquisition: NewConfigStore(filepath.Join(configDir, "acquisition.json"), map[string]any{}),
-		Calibration: NewConfigStore(filepath.Join(configDir, "calibration.json"), map[string]any{}),
-		Storage:     NewConfigStore(filepath.Join(configDir, "storage.json"), map[string]any{}),
+		Acquisition: NewConfigStore(filepath.Join(configDir, "acquisition.json"), types.AcquisitionConfig{}),
+		Calibration: NewConfigStore(filepath.Join(configDir, "calibration.json"), types.CalibrationConfig{}),
+		Storage:     NewConfigStore(filepath.Join(configDir, "storage.json"), types.StorageConfig{}),
 		ThreeHole:   NewConfigStore(filepath.Join(configDir, "three_hole.json"), types.ThreeHoleTraversalConfig{}),
 	}
 }

@@ -409,20 +409,13 @@ func TestCheckCancelled(t *testing.T) {
 	publisher := &MockEventPublisher{}
 	testManager := NewTestManager(publisher)
 
-	cancelCh := make(chan struct{})
-
-	// 未取消状态
-	err := testManager.CheckCancelled(cancelCh)
-	if err != nil {
+	if err := testManager.CheckCancelled(); err != nil {
 		t.Errorf("Unexpected error when not cancelled: %v", err)
 	}
 
-	// 发送取消信号
-	close(cancelCh)
+	testManager.cancel()
 
-	// 已取消状态
-	err = testManager.CheckCancelled(cancelCh)
-	if err == nil {
+	if err := testManager.CheckCancelled(); err == nil {
 		t.Error("Expected error when cancelled")
 	}
 }
@@ -432,15 +425,13 @@ func TestWaitForResume(t *testing.T) {
 	publisher := &MockEventPublisher{}
 	testManager := NewTestManager(publisher)
 
-	cancelCh := make(chan struct{})
-
 	// 设置暂停状态
 	testManager.paused.Store(true)
 
 	// 在另一个goroutine中等待恢复
 	done := make(chan bool)
 	go func() {
-		testManager.WaitForResume(cancelCh)
+		testManager.WaitForResume()
 		done <- true
 	}()
 

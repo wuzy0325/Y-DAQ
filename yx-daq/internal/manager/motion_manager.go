@@ -180,6 +180,17 @@ func (m *MotionControllerManager) Stop(id string, axis types.AxisName) error {
 	return ctrl.Stop(axis)
 }
 
+// StopAll 停止所有轴
+func (m *MotionControllerManager) StopAll(id string) error {
+	m.mu.RLock()
+	ctrl, ok := m.instances[id]
+	m.mu.RUnlock()
+	if !ok {
+		return fmt.Errorf("motion controller not connected: %s", id)
+	}
+	return ctrl.StopAll()
+}
+
 // EmergencyStop 急停
 func (m *MotionControllerManager) EmergencyStop(id string) error {
 	m.mu.RLock()
@@ -230,7 +241,46 @@ func (m *MotionControllerManager) GetStatusAll() []types.MotionControllerStatus 
 			status.Status = types.StatusConnected
 			if axes, err := ctrl.GetAllAxisStatus(); err == nil {
 				status.Axes = axes
+			} else if axes, ok := cachedStatuses[id]; ok {
+				status.Axes = axes
 			}
+		} else {
+			status.Status = types.StatusDisconnected
+			if axes, ok := cachedStatuses[id]; ok {
+				status.Axes = axes
+			}
+		}
+		statuses = append(statuses, status)
+	}
+	return statuses
+}
+
+// GetCachedStatusAll 获取所有控制器的缓存状态（无实时查询）
+func (m *MotionControllerManager) GetCachedStatusAll() []types.MotionControllerStatus {
+	m.mu.RLock()
+	profiles := make(map[string]types.MotionControllerProfile, len(m.profiles))
+	for id, p := range m.profiles {
+		profiles[id] = p
+	}
+	instances := make(map[string]MotionController, len(m.instances))
+	for id, ctrl := range m.instances {
+		instances[id] = ctrl
+	}
+	cachedStatuses := make(map[string][]types.AxisStatus, len(m.statuses))
+	for id, axes := range m.statuses {
+		cachedStatuses[id] = axes
+	}
+	m.mu.RUnlock()
+
+	statuses := []types.MotionControllerStatus{}
+	for id, profile := range profiles {
+		status := types.MotionControllerStatus{
+			ID:   id,
+			Name: profile.Name,
+			Type: profile.Type,
+		}
+		if _, ok := instances[id]; ok {
+			status.Status = types.StatusConnected
 		} else {
 			status.Status = types.StatusDisconnected
 		}
@@ -301,12 +351,7 @@ func (m *MotionControllerManager) pollStatus() {
 
 // Init 初始化（创建默认模拟控制器）
 func (m *MotionControllerManager) Init() {
-	defaultAxes := []types.AxisConfig{
-		{Name: types.AxisX, Enabled: true, Kind: types.AxisKindLinear, Inverted: false, StepAngleDeg: 1.8, MicroSteps: 16, Lead: 5, MaxSpeed: 50, EncoderScale: 0.005},
-		{Name: types.AxisY, Enabled: true, Kind: types.AxisKindLinear, Inverted: false, StepAngleDeg: 1.8, MicroSteps: 16, Lead: 5, MaxSpeed: 50, EncoderScale: 0.005},
-		{Name: types.AxisZ, Enabled: true, Kind: types.AxisKindLinear, Inverted: false, StepAngleDeg: 1.8, MicroSteps: 16, Lead: 5, MaxSpeed: 50, EncoderScale: 0.005},
-		{Name: types.AxisU, Enabled: true, Kind: types.AxisKindRotary, Inverted: false, StepAngleDeg: 1.8, MicroSteps: 16, Lead: 4, MaxSpeed: 30, EncoderScale: 0.005},
-	}
+	axes := types.DefaultAxisConfigs()
 
 	// B140 运动控制器（真实硬件）
 	b140Profile := types.MotionControllerProfile{
@@ -316,7 +361,7 @@ func (m *MotionControllerManager) Init() {
 		Address:   "192.168.1.101",
 		Port:      5000,
 		TimeoutMs: 5000,
-		Axes:      defaultAxes,
+		Axes:      axes,
 	}
 
 	simProfile := types.MotionControllerProfile{
@@ -326,13 +371,18 @@ func (m *MotionControllerManager) Init() {
 		Address:   "127.0.0.1",
 		Port:      5000,
 		TimeoutMs: 5000,
-		Axes:      defaultAxes,
+		Axes:      axes,
 	}
 
 	m.AddProfile(b140Profile)
 	m.AddProfile(simProfile)
+
+	// 启动时自动连接一次（失败不重试，用户可通过 UI 手动连接）
 	if err := m.Connect(simProfile.ID); err != nil {
 		slog.Error("connect simulated motion controller failed", "err", err)
+	}
+	if err := m.Connect(b140Profile.ID); err != nil {
+		slog.Warn("auto-connect B140 failed (manual connect available)", "id", b140Profile.ID, "address", b140Profile.Address, "err", err)
 	}
 
 	go m.StartPolling()

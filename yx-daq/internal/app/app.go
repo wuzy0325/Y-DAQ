@@ -239,31 +239,30 @@ func (a *App) initMotionFromConfig() {
 					break
 				}
 			}
-			if !hasB140 {
-				defaultAxes := []types.AxisConfig{
-					{Name: types.AxisX, Enabled: true, Kind: types.AxisKindLinear, Inverted: false, StepAngleDeg: 1.8, MicroSteps: 16, Lead: 5, MaxSpeed: 50, EncoderScale: 0.005},
-					{Name: types.AxisY, Enabled: true, Kind: types.AxisKindLinear, Inverted: false, StepAngleDeg: 1.8, MicroSteps: 16, Lead: 5, MaxSpeed: 50, EncoderScale: 0.005},
-					{Name: types.AxisZ, Enabled: true, Kind: types.AxisKindLinear, Inverted: false, StepAngleDeg: 1.8, MicroSteps: 16, Lead: 5, MaxSpeed: 50, EncoderScale: 0.005},
-					{Name: types.AxisU, Enabled: true, Kind: types.AxisKindRotary, Inverted: false, StepAngleDeg: 1.8, MicroSteps: 16, Lead: 4, MaxSpeed: 30, EncoderScale: 0.005},
-				}
-				b140Profile := types.MotionControllerProfile{
-					ID:        "b140-mc-1",
-					Name:      "B140 运动控制器",
-					Type:      types.MotionTypeB140,
-					Address:   "192.168.1.101",
-					Port:      5000,
-					TimeoutMs: 5000,
-					Axes:      defaultAxes,
-				}
+		if !hasB140 {
+			b140Profile := types.MotionControllerProfile{
+				ID:        "b140-mc-1",
+				Name:      "B140 运动控制器",
+				Type:      types.MotionTypeB140,
+				Address:   "192.168.1.101",
+				Port:      5000,
+				TimeoutMs: 5000,
+				Axes:      types.DefaultAxisConfigs(),
+			}
 				a.motionManager.AddProfile(b140Profile)
 				slog.Info("added default B140 motion controller profile")
 			}
 
 			go a.motionManager.StartPolling()
 			for _, p := range a.motionManager.GetProfiles() {
-				if p.Type == types.MotionTypeSimulated {
+				switch p.Type {
+				case types.MotionTypeSimulated:
 					if err := a.motionManager.Connect(p.ID); err != nil {
 						slog.Error("auto-connect simulated motion controller failed", "err", err)
+					}
+				case types.MotionTypeB140:
+					if err := a.motionManager.Connect(p.ID); err != nil {
+						slog.Warn("auto-connect B140 failed (manual connect available)", "id", p.ID, "address", p.Address, "err", err)
 					}
 				}
 			}
@@ -295,7 +294,7 @@ func (a *App) broadcastMotionStatus() {
 		case <-a.publishCancel:
 			return
 		case <-ticker.C:
-			statuses := a.motionManager.GetStatusAll()
+			statuses := a.motionManager.GetCachedStatusAll()
 			wailsRuntime.EventsEmit(a.ctx, "motion:status-updated", statuses) // TODO: 抽取为 EventPublisher 接口以解耦 Wails Runtime 依赖
 		}
 	}
@@ -313,9 +312,9 @@ func (a *App) getConfigDir() string {
 // GetDataDir 获取数据存储目录路径
 func (a *App) GetDataDir() string {
 	if a.configManager != nil {
-		data := a.configManager.Storage.Get()
-		if path, ok := data["dataSavePath"].(string); ok && path != "" {
-			return path
+		cfg := a.configManager.Storage.Get()
+		if cfg.DataSavePath != "" {
+			return cfg.DataSavePath
 		}
 	}
 	dataDir, err := os.UserConfigDir()

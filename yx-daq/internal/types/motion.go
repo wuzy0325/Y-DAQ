@@ -45,6 +45,7 @@ type AxisConfig struct {
 	StepAngleDeg        float64                   `json:"stepAngleDeg"`
 	MicroSteps          int                       `json:"microSteps"`
 	Lead                float64                   `json:"lead"`
+	GearRatio           float64                   `json:"gearRatio"`
 	MaxSpeed            float64                   `json:"maxSpeed"`
 	EncoderScale        float64                   `json:"encoderScale"`
 	EncoderCompensation EncoderCompensationConfig `json:"encoderCompensation"`
@@ -86,4 +87,14 @@ type MotionControllerStatus struct {
 type LimitStatus struct {
 	PosLimit bool `json:"posLimit"`
 	NegLimit bool `json:"negLimit"`
+}
+
+// DefaultAxisConfigs 返回默认的四轴配置
+func DefaultAxisConfigs() []AxisConfig {
+	return []AxisConfig{
+		{Name: AxisX, Enabled: true, Kind: AxisKindLinear, Inverted: false, StepAngleDeg: 1.8, MicroSteps: 16, Lead: 5, GearRatio: 1, MaxSpeed: 50, EncoderScale: 0.005},
+		{Name: AxisY, Enabled: true, Kind: AxisKindLinear, Inverted: false, StepAngleDeg: 1.8, MicroSteps: 16, Lead: 5, GearRatio: 1, MaxSpeed: 50, EncoderScale: 0.005},
+		{Name: AxisZ, Enabled: true, Kind: AxisKindLinear, Inverted: false, StepAngleDeg: 1.8, MicroSteps: 16, Lead: 5, GearRatio: 1, MaxSpeed: 50, EncoderScale: 0.005},
+		{Name: AxisU, Enabled: true, Kind: AxisKindRotary, Inverted: false, StepAngleDeg: 1.8, MicroSteps: 16, Lead: 0, GearRatio: 1, MaxSpeed: 30, EncoderScale: 0.005},
+	}
 }

@@ -81,6 +81,14 @@ func (a *App) MotionStop(id string, axis types.AxisName) error {
 	return a.motionManager.Stop(id, axis)
 }
 
+// MotionStopAll 停止所有轴
+func (a *App) MotionStopAll(id string) error {
+	if a.motionManager == nil {
+		return fmt.Errorf("motion manager not initialized")
+	}
+	return a.motionManager.StopAll(id)
+}
+
 // MotionEmergencyStop 急停
 func (a *App) MotionEmergencyStop(id string) error {
 	if a.motionManager == nil {

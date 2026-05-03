@@ -1,6 +1,7 @@
 package calibration
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"sync"
@@ -32,9 +33,8 @@ type CalibrationService struct {
 	status   types.CalibrationTaskStatus
 	running  atomic.Bool
 	paused   atomic.Bool
-	cancelCh chan struct{}
-	pauseCh  chan struct{}
-	resumeCh chan struct{}
+	ctx      context.Context
+	cancel   context.CancelFunc
 
 	config         types.CalibrationConfig
 	dataGetter     DataGetter
@@ -47,9 +47,6 @@ type CalibrationService struct {
 func NewCalibrationService(publisher EventPublisher) *CalibrationService {
 	return &CalibrationService{
 		eventPublisher: publisher,
-		cancelCh:       make(chan struct{}),
-		pauseCh:        make(chan struct{}),
-		resumeCh:       make(chan struct{}),
 	}
 }
 
@@ -79,9 +76,7 @@ func (s *CalibrationService) Start(config types.CalibrationConfig) (string, erro
 
 	taskID := fmt.Sprintf("cal-%d", time.Now().UnixMilli())
 	s.config = config
-	s.cancelCh = make(chan struct{}, 1)
-	s.pauseCh = make(chan struct{})
-	s.resumeCh = make(chan struct{})
+	s.ctx, s.cancel = context.WithCancel(context.Background())
 
 	s.status = types.CalibrationTaskStatus{
 		TaskID:      taskID,
@@ -107,24 +102,20 @@ func (s *CalibrationService) Pause() {
 }
 
 // Resume 恢复校准
+
 func (s *CalibrationService) Resume() {
 	s.paused.Store(false)
 	s.mu.Lock()
 	s.status.Status = types.CalibStatusRunning
 	s.mu.Unlock()
-	select {
-	case s.resumeCh <- struct{}{}:
-	default:
-	}
 }
 
 // Stop 停止校准
 func (s *CalibrationService) Stop() {
-	s.running.Store(false)
-	select {
-	case s.cancelCh <- struct{}{}:
-	default:
+	if s.cancel != nil {
+		s.cancel()
 	}
+	s.running.Store(false)
 	s.mu.Lock()
 	s.status.Status = types.CalibStatusIdle
 	s.mu.Unlock()
@@ -145,10 +136,8 @@ func (s *CalibrationService) runCalibrationLoop() {
 
 	for i, point := range s.config.Points {
 		// 检查取消
-		select {
-		case <-s.cancelCh:
+		if s.ctx.Err() != nil {
 			return
-		default:
 		}
 
 		// 暂停期间持续推送实时数据，让用户能看到传感器当前读数
@@ -164,10 +153,8 @@ func (s *CalibrationService) runCalibrationLoop() {
 				})
 			}
 			select {
-			case <-s.cancelCh:
+			case <-s.ctx.Done():
 				return
-			case <-s.resumeCh:
-				continue
 			case <-time.After(100 * time.Millisecond):
 			}
 		}

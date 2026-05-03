@@ -1,6 +1,7 @@
 package three_hole
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"math"
@@ -22,18 +23,22 @@ type DataProcessor struct {
 
 	// 实时监控相关
 	monitorRunning atomic.Bool
-	monitorCancel  chan struct{}
+	monitorCtx     context.Context
+	monitorCancel  context.CancelFunc
 	// 标记是否正在执行测试，避免监控和测试数据冲突
 	testRunning    atomic.Bool
 }
 
 // NewDataProcessor 创建数据处理器
 func NewDataProcessor(testManager *TestManager, interpolator *ThreeHoleInterpolator, publisher ThreeHoleEventPublisher) *DataProcessor {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // 初始状态为已取消，StartRealtimeMonitor 时重新创建
 	return &DataProcessor{
 		testManager:    testManager,
 		interpolator:   interpolator,
 		eventPublisher: publisher,
-		monitorCancel:  make(chan struct{}),
+		monitorCtx:     ctx,
+		monitorCancel:  cancel,
 	}
 }
 
@@ -58,20 +63,16 @@ func (dp *DataProcessor) StartRealtimeMonitor(config types.ThreeHoleTraversalCon
 		return
 	}
 	dp.testManager.config = config
-	dp.monitorCancel = make(chan struct{})
+	dp.monitorCtx, dp.monitorCancel = context.WithCancel(context.Background())
 	dp.monitorRunning.Store(true)
+
 	go dp.runRealtimeMonitor()
 }
 
 // StopRealtimeMonitor 停止实时数据监控
 func (dp *DataProcessor) StopRealtimeMonitor() {
-	if !dp.monitorRunning.Load() {
-		return
-	}
-	dp.monitorRunning.Store(false)
-	select {
-	case dp.monitorCancel <- struct{}{}:
-	default:
+	if dp.monitorRunning.Load() && dp.monitorCancel != nil {
+		dp.monitorCancel()
 	}
 }
 
@@ -84,7 +85,7 @@ func (dp *DataProcessor) runRealtimeMonitor() {
 
 	for {
 		select {
-		case <-dp.monitorCancel:
+		case <-dp.monitorCtx.Done():
 			return
 		case <-ticker.C:
 		}
@@ -113,32 +114,27 @@ func (dp *DataProcessor) runRealtimeMonitor() {
 }
 
 // RunSinglePoint 执行单点测试
-func (dp *DataProcessor) RunSinglePoint(point types.TraversalPoint, cancelCh chan struct{}) (types.ThreeHoleTraversalDataPoint, error) {
-	// 检查是否已被取消
-	if err := dp.testManager.CheckCancelled(cancelCh); err != nil {
+func (dp *DataProcessor) RunSinglePoint(point types.TraversalPoint) (types.ThreeHoleTraversalDataPoint, error) {
+	if err := dp.testManager.CheckCancelled(); err != nil {
 		return types.ThreeHoleTraversalDataPoint{}, err
 	}
 
-	// 运动定位
-	if err := dp.MoveToPoint(point, cancelCh); err != nil {
+	if err := dp.MoveToPoint(point); err != nil {
 		return types.ThreeHoleTraversalDataPoint{}, err
 	}
 
-	// 驻留等待
-	dp.testManager.WaitForResume(cancelCh)
-	if err := dp.testManager.CheckCancelled(cancelCh); err != nil {
+	dp.testManager.WaitForResume()
+	if err := dp.testManager.CheckCancelled(); err != nil {
 		return types.ThreeHoleTraversalDataPoint{}, err
 	}
 
-	// 执行驻留等待（这是实际的驻留时间！）
-	dp.DwellWithRealtimeUpdate(point, cancelCh)
+	dp.DwellWithRealtimeUpdate(point)
 
-	// 数据采集与插值
-	return dp.AcquireAndInterpolate(point, cancelCh)
+	return dp.AcquireAndInterpolate(point)
 }
 
 // MoveToPoint 运动到指定点位
-func (dp *DataProcessor) MoveToPoint(point types.TraversalPoint, cancelCh chan struct{}) error {
+func (dp *DataProcessor) MoveToPoint(point types.TraversalPoint) error {
 	if dp.testManager == nil {
 		return fmt.Errorf("test manager not initialized")
 	}
@@ -216,7 +212,7 @@ func (dp *DataProcessor) MoveToPoint(point types.TraversalPoint, cancelCh chan s
 }
 
 // DwellWithRealtimeUpdate 在驻留等待期间持续推送实时数据
-func (dp *DataProcessor) DwellWithRealtimeUpdate(point types.TraversalPoint, cancelCh chan struct{}) {
+func (dp *DataProcessor) DwellWithRealtimeUpdate(point types.TraversalPoint) {
 	dwellDuration := time.Duration(dp.testManager.config.DwellTimeMs) * time.Millisecond
 	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
@@ -225,19 +221,18 @@ func (dp *DataProcessor) DwellWithRealtimeUpdate(point types.TraversalPoint, can
 
 	for {
 		select {
-		case <-cancelCh:
+		case <-dp.testManager.ctx.Done():
 			return
 		case <-ticker.C:
 		}
 
-		// 处理暂停状态
 		pauseStart := time.Time{}
 		for dp.testManager.paused.Load() {
 			if pauseStart.IsZero() {
 				pauseStart = time.Now()
 			}
 			select {
-			case <-cancelCh:
+			case <-dp.testManager.ctx.Done():
 				return
 			case <-time.After(100 * time.Millisecond):
 			}
@@ -246,7 +241,7 @@ func (dp *DataProcessor) DwellWithRealtimeUpdate(point types.TraversalPoint, can
 		// 如果暂停过，调整deadline
 		if !pauseStart.IsZero() {
 			pausedDuration := time.Since(pauseStart)
-								deadline = deadline.Add(pausedDuration)  // 补偿暂停时间
+			deadline = deadline.Add(pausedDuration)
 			pauseStart = time.Time{}
 		}
 
@@ -271,7 +266,7 @@ func (dp *DataProcessor) DwellWithRealtimeUpdate(point types.TraversalPoint, can
 }
 
 // AcquireAndInterpolate 采集数据并执行插值
-func (dp *DataProcessor) AcquireAndInterpolate(point types.TraversalPoint, cancelCh chan struct{}) (types.ThreeHoleTraversalDataPoint, error) {
+func (dp *DataProcessor) AcquireAndInterpolate(point types.TraversalPoint) (types.ThreeHoleTraversalDataPoint, error) {
 	samples := []types.ThreeHoleRawData{}
 
 	// 发送采集开始事件
@@ -279,14 +274,12 @@ func (dp *DataProcessor) AcquireAndInterpolate(point types.TraversalPoint, cance
 		dp.testManager.status.CompletedPoints, dp.testManager.status.Progress, point.X, point.Y, "acquiring")
 
 	for i := 0; i < dp.testManager.config.SamplesPerPoint; i++ {
-		// 检查是否已被取消
-		if err := dp.testManager.CheckCancelled(cancelCh); err != nil {
+		if err := dp.testManager.CheckCancelled(); err != nil {
 			return types.ThreeHoleTraversalDataPoint{}, err
 		}
 
-		// 处理暂停状态
-		dp.testManager.WaitForResume(cancelCh)
-		if err := dp.testManager.CheckCancelled(cancelCh); err != nil {
+		dp.testManager.WaitForResume()
+		if err := dp.testManager.CheckCancelled(); err != nil {
 			return types.ThreeHoleTraversalDataPoint{}, err
 		}
 

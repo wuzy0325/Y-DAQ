@@ -2,6 +2,8 @@ package storage
 
 import (
 	"fmt"
+	"log"
+	"math"
 	"os"
 	"path/filepath"
 	"time"
@@ -25,7 +27,9 @@ func (s *PdfReportService) ExportCalibrationReport(
 	config types.CalibrationConfig,
 	outputPath string,
 ) error {
-	os.MkdirAll(filepath.Dir(outputPath), 0755) // ignore error: 目录已存在或后续pdf.OutputFileAndClose会报错
+	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
+		log.Printf("mkdir for pdf output failed: %v", err)
+	}
 
 	pdf := fpdf.New("P", "mm", "A4", "")
 	pdf.SetAutoPageBreak(true, 15)
@@ -154,12 +158,6 @@ func (s *PdfReportService) drawDataTable(pdf *fpdf.Fpdf, dataPoints []types.Cali
 		}
 		pdf.SetTextColor(30, 30, 30)
 
-		pTotalStr := ""
-		if dp.RawData.PTotal != nil {
-			pTotalStr = fmt.Sprintf("%.2f", *dp.RawData.PTotal)
-		}
-		_ = pTotalStr // PTotal暂不显示在表格中
-
 		cells := []string{
 			fmt.Sprintf("%d", rowIdx+1),
 			fmt.Sprintf("%.2f", dp.Alpha),
@@ -217,10 +215,10 @@ func (s *PdfReportService) drawSummary(pdf *fpdf.Fpdf, dataPoints []types.Calibr
 		varCPT += (dp.Coefficients.CPT - avgCPT) * (dp.Coefficients.CPT - avgCPT)
 		varCPS += (dp.Coefficients.CPS - avgCPS) * (dp.Coefficients.CPS - avgCPS)
 	}
-	stdKa := sqrt(varKa / float64(n))
-	stdKb := sqrt(varKb / float64(n))
-	stdCPT := sqrt(varCPT / float64(n))
-	stdCPS := sqrt(varCPS / float64(n))
+	stdKa := math.Sqrt(varKa / float64(n))
+	stdKb := math.Sqrt(varKb / float64(n))
+	stdCPT := math.Sqrt(varCPT / float64(n))
+	stdCPS := math.Sqrt(varCPS / float64(n))
 
 	pdf.SetFont("Helvetica", "", 10)
 	pdf.SetTextColor(60, 60, 60)
@@ -245,10 +243,10 @@ func (s *PdfReportService) drawSummary(pdf *fpdf.Fpdf, dataPoints []types.Calibr
 	minCPT, maxCPT := dataPoints[0].Coefficients.CPT, dataPoints[0].Coefficients.CPT
 	minCPS, maxCPS := dataPoints[0].Coefficients.CPS, dataPoints[0].Coefficients.CPS
 	for _, dp := range dataPoints {
-		minKa, maxKa = fmin(minKa, dp.Coefficients.Kalpha), fmax(maxKa, dp.Coefficients.Kalpha)
-		minKb, maxKb = fmin(minKb, dp.Coefficients.Kbeta), fmax(maxKb, dp.Coefficients.Kbeta)
-		minCPT, maxCPT = fmin(minCPT, dp.Coefficients.CPT), fmax(maxCPT, dp.Coefficients.CPT)
-		minCPS, maxCPS = fmin(minCPS, dp.Coefficients.CPS), fmax(maxCPS, dp.Coefficients.CPS)
+		minKa, maxKa = math.Min(minKa, dp.Coefficients.Kalpha), math.Max(maxKa, dp.Coefficients.Kalpha)
+		minKb, maxKb = math.Min(minKb, dp.Coefficients.Kbeta), math.Max(maxKb, dp.Coefficients.Kbeta)
+		minCPT, maxCPT = math.Min(minCPT, dp.Coefficients.CPT), math.Max(maxCPT, dp.Coefficients.CPT)
+		minCPS, maxCPS = math.Min(minCPS, dp.Coefficients.CPS), math.Max(maxCPS, dp.Coefficients.CPS)
 	}
 
 	summaryRows := [][]string{
@@ -276,28 +274,4 @@ func (s *PdfReportService) drawSummary(pdf *fpdf.Fpdf, dataPoints []types.Calibr
 	s.infoRow(pdf, "Average Std Dev:", fmt.Sprintf("%.6f", avgStdDev))
 }
 
-func sqrt(x float64) float64 {
-	if x < 0 {
-		return 0
-	}
-	// Newton's method
-	z := 1.0
-	for i := 0; i < 20; i++ {
-		z -= (z*z - x) / (2 * z)
-	}
-	return z
-}
 
-func fmin(a, b float64) float64 {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func fmax(a, b float64) float64 {
-	if a > b {
-		return a
-	}
-	return b
-}

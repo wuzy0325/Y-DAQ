@@ -63,7 +63,7 @@ Always verify with `go build ./...` and `cd frontend && npm run build` before cl
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **y-daq** (3494 symbols, 6905 relationships, 154 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **Y-DAQ** (3038 symbols, 6448 relationships, 154 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
@@ -86,10 +86,10 @@ This project is indexed by GitNexus as **y-daq** (3494 symbols, 6905 relationshi
 
 | Resource | Use for |
 |----------|---------|
-| `gitnexus://repo/y-daq/context` | Codebase overview, check index freshness |
-| `gitnexus://repo/y-daq/clusters` | All functional areas |
-| `gitnexus://repo/y-daq/processes` | All execution flows |
-| `gitnexus://repo/y-daq/process/{name}` | Step-by-step execution trace |
+| `gitnexus://repo/Y-DAQ/context` | Codebase overview, check index freshness |
+| `gitnexus://repo/Y-DAQ/clusters` | All functional areas |
+| `gitnexus://repo/Y-DAQ/processes` | All execution flows |
+| `gitnexus://repo/Y-DAQ/process/{name}` | Step-by-step execution trace |
 
 ## CLI
 
@@ -101,20 +101,5 @@ This project is indexed by GitNexus as **y-daq** (3494 symbols, 6905 relationshi
 | Rename / extract / split / refactor | `.claude/skills/gitnexus/gitnexus-refactoring/SKILL.md` |
 | Tools, resources, schema reference | `.claude/skills/gitnexus/gitnexus-guide/SKILL.md` |
 | Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
-| Work in the Three_hole area (156 symbols) | `.claude/skills/generated/three-hole/SKILL.md` |
-| Work in the Go area (90 symbols) | `.claude/skills/generated/go/SKILL.md` |
-| Work in the Stores area (82 symbols) | `.claude/skills/generated/stores/SKILL.md` |
-| Work in the Manager area (74 symbols) | `.claude/skills/generated/manager/SKILL.md` |
-| Work in the Views area (60 symbols) | `.claude/skills/generated/views/SKILL.md` |
-| Work in the Driver area (48 symbols) | `.claude/skills/generated/driver/SKILL.md` |
-| Work in the Calibration area (29 symbols) | `.claude/skills/generated/calibration/SKILL.md` |
-| Work in the Storage area (18 symbols) | `.claude/skills/generated/storage/SKILL.md` |
-| Work in the App area (16 symbols) | `.claude/skills/generated/app/SKILL.md` |
-| Work in the Components area (14 symbols) | `.claude/skills/generated/components/SKILL.md` |
-| Work in the Types area (7 symbols) | `.claude/skills/generated/types/SKILL.md` |
-| Work in the Main area (7 symbols) | `.claude/skills/generated/main/SKILL.md` |
-| Work in the Scanner area (4 symbols) | `.claude/skills/generated/scanner/SKILL.md` |
-| Work in the Runtime area (4 symbols) | `.claude/skills/generated/runtime/SKILL.md` |
-| Work in the Composables area (4 symbols) | `.claude/skills/generated/composables/SKILL.md` |
 
 <!-- gitnexus:end -->

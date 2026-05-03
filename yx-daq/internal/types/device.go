@@ -97,6 +97,9 @@ type DiscoveredDevice struct {
 	Gateway  string `json:"gateway"`
 }
 
+// DataCallback 数据回调函数类型
+type DataCallback func(payload DataPayload)
+
 // DeviceStatus 设备状态摘要
 type DeviceStatus struct {
 	ID        string           `json:"id"`

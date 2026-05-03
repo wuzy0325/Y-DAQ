@@ -6,7 +6,6 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"yx-daq/internal/driver"
 	"yx-daq/internal/types"
 )
 
@@ -16,7 +15,7 @@ type mockDeviceDriver struct {
 	connected  atomic.Bool
 	acquiring  atomic.Bool
 	channels   []types.ChannelConfig
-	onData     driver.DataCallback
+	onData     types.DataCallback
 	unit       string
 	connectErr error
 }
@@ -36,7 +35,7 @@ func (m *mockDeviceDriver) Disconnect() {
 
 func (m *mockDeviceDriver) IsConnected() bool    { return m.connected.Load() }
 func (m *mockDeviceDriver) IsAcquiring() bool     { return m.acquiring.Load() }
-func (m *mockDeviceDriver) SetDataCallback(cb driver.DataCallback) { m.onData = cb }
+func (m *mockDeviceDriver) SetDataCallback(cb types.DataCallback) { m.onData = cb }
 func (m *mockDeviceDriver) UpdateChannels(ch []types.ChannelConfig) { m.channels = ch }
 
 func (m *mockDeviceDriver) StartAcquisition(_ int) error {

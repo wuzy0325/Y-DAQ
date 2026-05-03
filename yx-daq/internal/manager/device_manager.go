@@ -18,7 +18,7 @@ type DeviceDriver interface {
 	IsAcquiring() bool
 	StartAcquisition(periodMs int) error
 	StopAcquisition() error
-	SetDataCallback(cb driver.DataCallback)
+	SetDataCallback(cb types.DataCallback)
 	UpdateChannels(channels []types.ChannelConfig)
 }
 

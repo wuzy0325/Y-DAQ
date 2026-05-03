@@ -269,21 +269,11 @@ function openConfigDialog(axisName?: string) {
 }
 
 onMounted(async () => {
-  // 确保profiles已加载
   await motionStore.fetchProfiles()
-  // 如果存在B140控制器，优先选中它
-  if (motionStore.profiles.length > 0) {
-    const b140Profile = motionStore.profiles.find(p => p.type === 'B140-MC')
-    if (b140Profile) {
-      // 设置activeControllerId为B140
-      if (motionStore.activeControllerId !== b140Profile.id) {
-        motionStore.activeControllerId = b140Profile.id
-      }
-      // 如果未连接，尝试连接B140
-      if (!motionStore.isConnected) {
-        motionStore.connectController(b140Profile.id)
-      }
-    }
+  // 优先选中B140控制器（连接状态由后端启动时的自动连接决定）
+  const b140Profile = motionStore.profiles.find(p => p.type === 'B140-MC')
+  if (b140Profile) {
+    motionStore.activeControllerId = b140Profile.id
   }
 })
 </script>

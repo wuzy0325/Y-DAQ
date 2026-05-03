@@ -30,7 +30,6 @@ const (
 // ThreeHoleInterpolator 三孔探针插值器
 type ThreeHoleInterpolator struct {
 	calibData []types.ThreeHoleCalibData // 所有校准数据
-	alphaOri  []float64                  // 攻角序列（共用）
 	initMa    float64                    // 初始马赫数（所有CMa平均值）
 	minMa     float64                    // 马赫数下限
 	maxMa     float64                    // 马赫数上限
@@ -82,12 +81,6 @@ func (i *ThreeHoleInterpolator) LoadCalibFiles(filePaths []string) error {
 	}
 
 	i.calibData = allData
-
-	// 提取攻角序列（所有文件共用，已校验一致）
-	i.alphaOri = make([]float64, len(refEntries))
-	for idx, e := range refEntries {
-		i.alphaOri[idx] = e.Alpha
-	}
 
 	// 计算初始马赫数和范围
 	sumMa := 0.0
