@@ -239,6 +239,12 @@ func (d *XYDAQDriver) handleStreamFrame(frame []byte) {
 		values[i] = float64(math.Float32frombits(bits))
 	}
 
+	// 反转压力通道顺序：硬件按 CHn→CH1 逆序发送，需反转为 CH1→CHn
+	for i := 0; i < d.pressureCount/2; i++ {
+		j := d.pressureCount - 1 - i
+		values[i], values[j] = values[j], values[i]
+	}
+
 	// 映射到已启用通道
 	enabledValues := []float64{}
 	enabledIndices := []int{}

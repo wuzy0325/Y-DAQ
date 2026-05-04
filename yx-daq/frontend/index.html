@@ -4,10 +4,20 @@
     <meta charset="UTF-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <link rel="icon" type="image/svg+xml" href="/favicon.ico"/>
-    <title>YX-DAQ 五孔探针校准系统</title>
+    <title>YX-DAQ数据采集系统</title>
 </head>
 <body>
-<div id="app"></div>
+<div id="app"><div id="boot" style="color:#ff0;padding:20px;font-size:16px;">Boot: waiting for JS...</div></div>
+<script>
+window.onerror = function(msg, src, line, col, err) {
+  var el = document.getElementById('boot');
+  if (el) el.innerHTML = '<b style="color:red">JS Error:</b> ' + msg + ' at ' + src + ':' + line;
+};
+window.addEventListener('unhandledrejection', function(e) {
+  var el = document.getElementById('boot');
+  if (el) el.innerHTML += '<br><b style="color:red">Promise Error:</b> ' + e.reason;
+});
+</script>
 <script src="./src/main.ts" type="module"></script>
 </body>
 </html>

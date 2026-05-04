@@ -26,7 +26,7 @@ func main() {
 	appInstance := NewApp()
 
 	err := wails.Run(&options.App{
-		Title:     "YX-DAQ 五孔探针校准系统",
+		Title:     "YX-DAQ数据采集系统",
 		Width:     1440,
 		Height:    900,
 		MinWidth:  1280,
@@ -34,7 +34,7 @@ func main() {
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
-		BackgroundColour: &options.RGBA{R: 10, G: 10, B: 26, A: 1},
+		BackgroundColour: &options.RGBA{R: 10, G: 10, B: 26, A: 255},
 		OnStartup: func(ctx context.Context) {
 			appInstance.Startup(ctx)
 		},

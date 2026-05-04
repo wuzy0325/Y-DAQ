@@ -182,3 +182,19 @@ This project is indexed by GitNexus as **Y-DAQ** (3038 symbols, 6448 relationshi
 | Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
 
 <!-- gitnexus:end -->
+
+<!-- DESIGN_SYSTEM_START -->
+## Design System
+
+- **Name:** YX-DAQ Neon
+- **Primary Color:** `#b829ff` (neon purple)
+- **Accent Color:** `#00f5ff` (neon cyan)
+- **Background:** `#0a0a1a` (deep space)
+- **Typography:** Microsoft YaHei for UI, mono for data values
+- **Spacing Scale:** 4px base (xs 4px → 3xl 48px)
+- **Corner Radius:** 8px (sm) for interactive, 12px (md) for cards
+- **Component patterns:** Glass-morphism cards, neon text on dark backgrounds, 4-colour chart rotation (purple → cyan → green → orange)
+- **Full tokens:** See [DESIGN.md](./DESIGN.md)
+
+AI agents: always apply this design system when generating UI. Do not invent new colors or spacing; refer to `DESIGN.md`.
+<!-- DESIGN_SYSTEM_END -->

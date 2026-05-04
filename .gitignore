@@ -5,3 +5,5 @@ build/bin/
 .codeartsdoer/
 .claude/
 .gitnexus
+# Added by code-review-graph
+.code-review-graph/

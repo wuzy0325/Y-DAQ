@@ -72,14 +72,14 @@
 
       <div v-if="newDevice.type !== 'SIMULATED'" class="dialog-section">
         <div class="section-title">🔗 网络配置</div>
-        <div class="form-row">
+        <div class="form-row two-col">
           <div class="form-group">
             <label class="group-label">IP地址</label>
-            <el-input v-model="newDevice.host" placeholder="192.168.3.101" size="small" style="width: 140px" />
+            <el-input v-model="newDevice.host" placeholder="192.168.3.101" size="small" />
           </div>
           <div class="form-group">
             <label class="group-label">端口</label>
-            <el-input-number v-model="newDevice.port" :min="1" :max="65535" size="small" style="width: 100px" controls-position="right" />
+            <el-input-number v-model="newDevice.port" :min="1" :max="65535" size="small" controls-position="right" class="num-md" />
           </div>
         </div>
       </div>
@@ -99,18 +99,20 @@
         <div class="form-row three-col">
           <div class="form-group">
             <label class="group-label">采样频率</label>
-            <el-input-number v-model="newDevice.publishRate" :min="1" :max="100" :step="1" size="small" style="width: 90px" controls-position="right" />
-            <span class="unit">Hz</span>
+            <div class="input-with-unit">
+              <el-input-number v-model="newDevice.publishRate" :min="1" :max="100" :step="1" size="small" controls-position="right" class="num-sm" />
+              <span class="unit">Hz</span>
+            </div>
           </div>
           <div class="form-group">
             <label class="group-label">单位</label>
-            <el-select v-model="newDevice.unit" filterable allow-create size="small" style="width: 90px">
+            <el-select v-model="newDevice.unit" filterable allow-create size="small" class="sel-sm">
               <el-option v-for="u in unitOptions" :key="u" :label="u" :value="u" />
             </el-select>
           </div>
           <div class="form-group">
             <label class="group-label">精度</label>
-            <el-input-number v-model="newDevice.precision" :min="0" :max="6" size="small" style="width: 70px" controls-position="right" />
+            <el-input-number v-model="newDevice.precision" :min="0" :max="6" size="small" controls-position="right" class="num-xs" />
           </div>
         </div>
         <div class="param-hint">
@@ -128,28 +130,28 @@
     <el-dialog v-model="showEditDialog" title="编辑设备" width="720px" :append-to-body="true" class="device-dialog">
       <div class="dialog-section">
         <div class="section-title">📡 基础信息</div>
-        <div class="form-row">
+        <div class="form-row three-col">
           <div class="form-group">
             <label class="group-label">设备名</label>
-            <el-input v-model="editForm.name" size="small" style="width: 160px" />
+            <el-input v-model="editForm.name" size="small" />
           </div>
           <div class="form-group">
             <label class="group-label">IP地址</label>
-            <el-input v-model="editForm.host" size="small" style="width: 140px" />
+            <el-input v-model="editForm.host" size="small" />
           </div>
           <div class="form-group">
             <label class="group-label">端口</label>
-            <el-input-number v-model="editForm.port" :min="1" :max="65535" size="small" style="width: 90px" controls-position="right" />
+            <el-input-number v-model="editForm.port" :min="1" :max="65535" size="small" controls-position="right" class="num-md" />
           </div>
+        </div>
+        <div class="form-row two-col-top">
           <div class="form-group">
             <label class="group-label">采样频率</label>
             <div class="input-with-unit">
-              <el-input-number v-model="editForm.publishRate" :min="1" :max="100" :step="1" size="small" style="width: 90px" controls-position="right" />
+              <el-input-number v-model="editForm.publishRate" :min="1" :max="100" :step="1" size="small" controls-position="right" class="num-sm" />
               <span class="unit">Hz</span>
             </div>
           </div>
-        </div>
-        <div class="form-row" style="margin-top: 12px">
           <div class="form-group auto-connect-row">
             <span class="auto-connect-label">自动连接</span>
             <el-switch v-model="editForm.autoConnect" size="small" />
@@ -159,18 +161,22 @@
 
       <div class="dialog-section">
         <div class="section-title">⚙️ 通道参数</div>
-        <div class="form-row">
+        <div class="form-row three-col">
           <div class="form-group">
             <label class="group-label">压力单位</label>
-            <el-select v-model="editForm.unit" filterable allow-create size="small" style="width: 100px">
-              <el-option v-for="u in unitOptions" :key="u" :label="u" :value="u" />
-            </el-select>
-            <span class="hint-text">CH1-CH{{ editPressureCount }}</span>
+            <div class="input-with-unit">
+              <el-select v-model="editForm.unit" filterable allow-create size="small" class="sel-sm">
+                <el-option v-for="u in unitOptions" :key="u" :label="u" :value="u" />
+              </el-select>
+              <span class="hint-text">CH1-CH{{ editPressureCount }}</span>
+            </div>
           </div>
           <div class="form-group">
             <label class="group-label">精度</label>
-            <el-input-number v-model="editForm.precision" :min="0" :max="6" size="small" style="width: 70px" controls-position="right" />
-            <span class="hint-text">所有通道</span>
+            <div class="input-with-unit">
+              <el-input-number v-model="editForm.precision" :min="0" :max="6" size="small" controls-position="right" class="num-xs" />
+              <span class="hint-text">所有通道</span>
+            </div>
           </div>
           <div class="form-group">
             <label class="group-label">特殊通道</label>
@@ -180,7 +186,7 @@
       </div>
 
       <!-- 通道编辑表格 -->
-      <div class="channel-section">
+      <div class="dialog-section">
         <div class="section-title">📋 通道配置</div>
         <el-table :data="editChannels" size="small" class="channel-table" :max-height="320">
           <el-table-column prop="index" label="#" width="45" align="center">
@@ -241,13 +247,11 @@ import GlassCard from '../components/GlassCard.vue'
 
 const deviceStore = useDeviceStore()
 
-// 根据设备类型获取压力通道数
 function getPressureCount(type: string): number {
   if (type === 'XY-DAQ8') return 8
-  return 16 // DAQ16 或 SIMULATED 默认
+  return 16
 }
 
-// 根据设备类型获取总通道数（压力+大气压+大气温度）
 function getTotalChannels(type: string): number {
   return getPressureCount(type) + 2
 }
@@ -319,7 +323,6 @@ async function addDevice() {
 
     await AddDeviceProfile(profile)
 
-    // 设置发布频率
     try {
       const { SetPublishRate } = await import('../../wailsjs/go/main/App')
       await SetPublishRate(newDevice.value.publishRate)
@@ -360,7 +363,6 @@ const editForm = ref({
   autoConnect: true,
 })
 
-// 通道编辑数据（深拷贝，独立编辑）
 interface EditChannel {
   index: number
   name: string
@@ -372,13 +374,10 @@ interface EditChannel {
 }
 const editChannels = ref<EditChannel[]>([])
 
-// 编辑中的设备压力通道数（从通道配置推断）
 const editPressureCount = computed(() => {
-  // 总通道数-2 = 压力通道数
   return Math.max(editChannels.value.length - 2, 8)
 })
 
-// 常用单位选项
 const unitOptions = ['kPa', 'Pa', 'MPa', 'bar', 'mbar', 'mmHg', 'psi', '°C', '°F']
 
 function openEditDialog(id: string) {
@@ -387,10 +386,8 @@ function openEditDialog(id: string) {
     ElMessage.warning('未找到设备配置')
     return
   }
-  // 从 CH0 提取统一单位，从任意通道提取统一精度
   const ch0Unit = profile.channels.length > 0 ? profile.channels[0].unit : 'kPa'
   const ch0Precision = profile.channels.length > 0 ? profile.channels[0].precision : 3
-  // 从 periodMs 反推采样频率
   const publishRate = profile.periodMs > 0 ? Math.round(1000 / profile.periodMs) : 20
   editForm.value = {
     id: profile.id,
@@ -402,10 +399,8 @@ function openEditDialog(id: string) {
     precision: ch0Precision,
     autoConnect: (profile as any).autoConnect !== false,
   }
-  // 深拷贝通道配置
   editChannels.value = profile.channels.map(c => ({ ...c }))
 
-  // 异步加载当前发布频率
   import('../../wailsjs/go/main/App').then(({ GetPublishRate }) => {
     GetPublishRate().then((rate: number) => {
       editForm.value.publishRate = rate
@@ -415,14 +410,12 @@ function openEditDialog(id: string) {
   showEditDialog.value = true
 }
 
-// 当统一单位或精度变化时，同步到通道表格
 function syncUnitToChannels() {
   const pc = editPressureCount.value
   for (const ch of editChannels.value) {
     if (ch.index < pc) {
       ch.unit = editForm.value.unit
     }
-    // 大气压通道固定 kPa, 大气温度通道固定 °C
   }
 }
 function syncPrecisionToChannels() {
@@ -431,7 +424,6 @@ function syncPrecisionToChannels() {
   }
 }
 
-// 监听 editForm.unit 和 editForm.precision 变化，同步到通道
 watch(() => editForm.value.unit, () => syncUnitToChannels())
 watch(() => editForm.value.precision, () => syncPrecisionToChannels())
 
@@ -445,7 +437,6 @@ async function saveEdit() {
     }
 
     const { types } = await import('../../wailsjs/go/models')
-    // 按规则构建通道配置：压力通道用统一单位，大气压固定kPa，大气温度固定°C，精度统一
     const pc = editPressureCount.value
     const updatedChannels = editChannels.value.map(c => ({
       index: c.index,
@@ -473,13 +464,11 @@ async function saveEdit() {
     if (err) {
       ElMessage.error(`更新失败: ${err}`)
     } else {
-      // 更新发布频率
       try {
         const { SetPublishRate } = await import('../../wailsjs/go/main/App')
         await SetPublishRate(editForm.value.publishRate)
       } catch {}
 
-      // 根据 autoConnect 自动连接或断开
       const { ConnectDevice, DisconnectDevice } = await import('../../wailsjs/go/main/App')
       if (editForm.value.autoConnect) {
         const oldStatus = deviceStore.statuses.find(s => s.id === editForm.value.id)
@@ -703,13 +692,21 @@ async function removeDevice(id: string) {
   margin-bottom: 12px;
 }
 
+// ==================== 表单布局 — 统一对齐 ====================
 .form-row {
   display: flex;
-  gap: 16px;
-  align-items: flex-end;
+  gap: 12px;
+
+  &.two-col {
+    > .form-group { flex: 1; }
+  }
+
+  &.two-col-top {
+    > .form-group { flex: 1; }
+  }
 
   &.three-col {
-    gap: 12px;
+    > .form-group { flex: 1; }
   }
 }
 
@@ -740,6 +737,7 @@ async function removeDevice(id: string) {
   font-size: 10px;
   color: rgba(255,255,255,0.35);
   margin-left: 6px;
+  white-space: nowrap;
 }
 
 .param-hint {
@@ -751,27 +749,28 @@ async function removeDevice(id: string) {
 .special-channels {
   font-size: 10px;
   color: rgba(255,255,255,0.45);
+  line-height: 28px;
 }
 
 .auto-connect-row {
-  display: flex;
-  flex-direction: row !important;
+  flex-direction: row;
   align-items: center;
   gap: 8px;
 }
+
 .auto-connect-label {
   font-size: 12px;
   color: rgba(255,255,255,0.75);
   font-weight: 500;
 }
 
-// ==================== 通道表格 ====================
-.channel-section {
-  .section-title {
-    margin-bottom: 10px;
-  }
-}
+// ==================== 控件尺寸 ====================
+.num-xs { width: 70px; }
+.num-sm { width: 90px; }
+.num-md { width: 100px; }
+.sel-sm { width: 90px; }
 
+// ==================== 通道表格 ====================
 .channel-table {
   width: 100%;
   border-radius: 6px;
@@ -817,7 +816,6 @@ async function removeDevice(id: string) {
   color: rgba(255,255,255,0.55);
 }
 
-// 表格内输入框样式统一
 .channel-table {
   :deep(.el-input__wrapper) {
     background-color: rgba(0, 0, 0, 0.3) !important;
@@ -833,8 +831,8 @@ async function removeDevice(id: string) {
     border-color: rgba(255,255,255,0.1) !important;
   }
   :deep(.el-switch.is-checked .el-switch__core) {
-    background-color: var(--accent-color) !important;
-    border-color: var(--accent-color) !important;
+    background-color: var(--color-accent) !important;
+    border-color: var(--color-accent) !important;
   }
 }
 </style>
