@@ -43,13 +43,11 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          // 将 Element Plus 单独打包
-          'element-plus': ['element-plus'],
-          // 将 ECharts 单独打包
-          'echarts': ['echarts'],
-          // 将 Vue 相关库单独打包
-          'vue-vendor': ['vue', 'vue-router', 'pinia'],
+        manualChunks(id) {
+          if (id.includes('node_modules/element-plus')) return 'element-plus'
+          if (id.includes('node_modules/echarts')) return 'echarts'
+          if (id.includes('node_modules/vue/') || id.includes('node_modules/@vue/')) return 'vue'
+          if (id.includes('node_modules/vue-router') || id.includes('node_modules/pinia')) return 'vue-vendor'
         },
       },
     },
