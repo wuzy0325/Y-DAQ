@@ -9,73 +9,77 @@ import (
 
 	"yx-daq/internal/types"
 
-	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
-// ==================== 数据发布 API ====================
+// DataService 数据录制与导出服务
+type DataService struct {
+	Core *Core
+}
+
+// GetDataDir 获取数据存储目录路径
+func (s *DataService) GetDataDir() string {
+	return s.Core.GetDataDir()
+}
 
 // SetPublishRate 设置数据发布频率
-func (a *App) SetPublishRate(hz int) {
-	if a.acquisitionHub == nil {
+func (s *DataService) SetPublishRate(hz int) {
+	if s.Core.AcquisitionHub == nil {
 		return
 	}
-	a.acquisitionHub.SetPublishHz(hz)
+	s.Core.AcquisitionHub.SetPublishHz(hz)
 }
 
 // GetPublishRate 获取数据发布频率
-func (a *App) GetPublishRate() int {
-	if a.acquisitionHub == nil {
+func (s *DataService) GetPublishRate() int {
+	if s.Core.AcquisitionHub == nil {
 		return 0
 	}
-	return a.acquisitionHub.GetPublishHz()
+	return s.Core.AcquisitionHub.GetPublishHz()
 }
 
-// ==================== 录制 API ====================
-
 // StartRecording 开始录制
-func (a *App) StartRecording() error {
-	if a.dataStorage == nil {
+func (s *DataService) StartRecording() error {
+	if s.Core.DataStorage == nil {
 		return fmt.Errorf("data storage not initialized")
 	}
-	a.dataStorage.SetOutputDir(a.GetDataDir())
-	return a.dataStorage.StartRecording()
+	s.Core.DataStorage.SetOutputDir(s.Core.GetDataDir())
+	return s.Core.DataStorage.StartRecording()
 }
 
 // StopRecording 停止录制
-func (a *App) StopRecording() {
-	if a.dataStorage == nil {
+func (s *DataService) StopRecording() {
+	if s.Core.DataStorage == nil {
 		return
 	}
-	a.dataStorage.StopRecording()
+	s.Core.DataStorage.StopRecording()
 }
 
 // IsRecording 是否正在录制
-func (a *App) IsRecording() bool {
-	if a.dataStorage == nil {
+func (s *DataService) IsRecording() bool {
+	if s.Core.DataStorage == nil {
 		return false
 	}
-	return a.dataStorage.IsRecording()
+	return s.Core.DataStorage.IsRecording()
 }
 
-// ==================== 报告导出 API ====================
-
 // ExportCalibrationPDF 导出校准PDF报告
-func (a *App) ExportCalibrationPDF() error {
-	if a.calibService == nil {
+func (s *DataService) ExportCalibrationPDF() error {
+	if s.Core.CalibService == nil {
 		return fmt.Errorf("calibration service not initialized")
 	}
-	status := a.calibService.GetStatus()
+	status := s.Core.CalibService.GetStatus()
 	if len(status.DataPoints) == 0 {
 		return fmt.Errorf("no calibration data to export")
 	}
 
-	filePath, err := wailsRuntime.SaveFileDialog(a.ctx, wailsRuntime.SaveDialogOptions{
-		DefaultFilename: fmt.Sprintf("calibration-report-%s.pdf", time.Now().Format("2006-01-02-15-04-05")),
-		Title:           "导出校准PDF报告",
-		Filters: []wailsRuntime.FileFilter{
-			{DisplayName: "PDF文件", Pattern: "*.pdf"},
-		},
+	dlg := s.Core.App.Dialog.SaveFile()
+	dlg.SetOptions(&application.SaveFileDialogOptions{
+		Title:    "导出校准PDF报告",
+		Filename: fmt.Sprintf("calibration-report-%s.pdf", time.Now().Format("2006-01-02-15-04-05")),
 	})
+	dlg.AddFilter("PDF文件", "*.pdf")
+	filePath, err := dlg.PromptForSingleSelection()
 	if err != nil {
 		return err
 	}
@@ -92,23 +96,19 @@ func (a *App) ExportCalibrationPDF() error {
 		SamplesPerPoint: 10,
 	}
 
-	if a.pdfReport == nil {
+	if s.Core.PdfReport == nil {
 		return fmt.Errorf("pdf report service not initialized")
 	}
-	return a.pdfReport.ExportCalibrationReport(status.DataPoints, config, filePath)
+	return s.Core.PdfReport.ExportCalibrationReport(status.DataPoints, config, filePath)
 }
 
-// ==================== 数据回放 API ====================
-
 // LoadCSVFile 加载CSV文件用于回放
-func (a *App) LoadCSVFile() (string, error) {
-	filePath, err := wailsRuntime.OpenFileDialog(a.ctx, wailsRuntime.OpenDialogOptions{
-		Title: "选择CSV数据文件",
-		Filters: []wailsRuntime.FileFilter{
-			{DisplayName: "CSV文件", Pattern: "*.csv"},
-			{DisplayName: "所有文件", Pattern: "*.*"},
-		},
-	})
+func (s *DataService) LoadCSVFile() (string, error) {
+	filePath, err := s.Core.App.Dialog.OpenFile().
+		SetTitle("选择CSV数据文件").
+		AddFilter("CSV文件", "*.csv").
+		AddFilter("所有文件", "*.*").
+		PromptForSingleSelection()
 	if err != nil {
 		return "", err
 	}
@@ -125,8 +125,8 @@ func (a *App) LoadCSVFile() (string, error) {
 }
 
 // ListRecordingFiles 列出录制文件
-func (a *App) ListRecordingFiles() []string {
-	dataDir := a.GetDataDir()
+func (s *DataService) ListRecordingFiles() []string {
+	dataDir := s.Core.GetDataDir()
 	if err := os.MkdirAll(dataDir, 0755); err != nil {
 		log.Printf("mkdir for data dir failed: %v", err)
 	}
@@ -146,12 +146,12 @@ func (a *App) ListRecordingFiles() []string {
 }
 
 // ReadRecordingFile 按文件名直接读取录制文件内容
-func (a *App) ReadRecordingFile(fileName string) (string, error) {
+func (s *DataService) ReadRecordingFile(fileName string) (string, error) {
 	if filepath.IsAbs(fileName) || !filepath.IsLocal(fileName) {
 		return "", fmt.Errorf("invalid file name: %s", fileName)
 	}
 
-	dataDir := a.GetDataDir()
+	dataDir := s.Core.GetDataDir()
 	filePath := filepath.Join(dataDir, fileName)
 
 	data, err := os.ReadFile(filePath)

@@ -1,5 +1,8 @@
 <template>
-  <div class="three-hole-test-view">
+  <div v-if="renderError" style="color:#f55;padding:20px;background:#300;margin:10px;border-radius:8px;white-space:pre-wrap;font-family:monospace;">
+    <b>渲染错误:</b> {{ renderError }}
+  </div>
+  <div v-else class="three-hole-test-view">
     <!-- 顶部工具栏 -->
     <div class="toolbar">
       <div class="toolbar-left">
@@ -111,7 +114,7 @@
     </div>
 
     <!-- ==================== 设置弹窗 ==================== -->
-    <el-dialog v-model="showSettingsDialog" title="测试设置" width="600px" :append-to-body="true" top="5vh" class="settings-dialog">
+    <el-dialog v-model="showSettingsDialog" title="测试设置" width="600px" top="5vh" class="settings-dialog">
       <el-tabs>
         <!-- 测试配置 -->
         <el-tab-pane label="测试配置">
@@ -339,12 +342,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, nextTick, shallowRef } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick, shallowRef, onErrorCaptured } from 'vue'
+import { useRoute } from 'vue-router'
 import { Setting, FolderOpened } from '@element-plus/icons-vue'
 import { useDeviceStore } from '../stores/device'
 import { useMotionStore } from '../stores/motion'
 import { useThreeHoleTestStore } from '../stores/threeHoleTest'
-import { SelectDataSavePath } from '../../wailsjs/go/main/App'
+import { ConfigService } from '../../bindings/yx-daq/internal/app'
 import {
   TraversalPattern,
   TraversalPatternLabels,
@@ -358,13 +362,23 @@ import ChartPanel from '../components/ChartPanel.vue'
 import GlassCard from '../components/GlassCard.vue'
 import ValueDisplay from '../components/ValueDisplay.vue'
 
-const store = useThreeHoleTestStore()
+const route = useRoute()
+const probeID = (route.query.probe as string) || 'probe1'
+const store = useThreeHoleTestStore(probeID)
 const deviceStore = useDeviceStore()
 const motionStore = useMotionStore()
 
+const renderError = ref('')
+
+onErrorCaptured((err: Error) => {
+  renderError.value = err.message + '\n' + (err.stack || '')
+  console.error('ThreeHoleTestView error:', err)
+  return false
+})
+
 async function browseSavePath() {
   try {
-    const dir = await SelectDataSavePath() as string
+    const dir = await ConfigService.SelectDataSavePath() as string
     if (dir) {
       store.config.savePath = dir
     }
@@ -899,6 +913,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   store.stopRealtimeMonitor()
+  store.stopListening()
 })
 
 // 配置变更时自动保存（防抖500ms，避免输入时频繁写后端）

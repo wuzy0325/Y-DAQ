@@ -27,16 +27,17 @@ const routes = [
         component: () => import('../views/CalibrationView.vue')
       },
       {
-        path: 'three-hole-test',
-        name: 'three-hole-test',
-        component: () => import('../views/ThreeHoleTestView.vue')
-      },
-      {
         path: 'settings',
         name: 'settings',
         component: () => import('../views/SettingsView.vue')
       },
     ],
+  },
+  // 探针测试窗口独立路由（无 MainLayout 导航栏）
+  {
+    path: '/three-hole-test',
+    name: 'three-hole-test',
+    component: () => import('../views/ThreeHoleTestView.vue'),
   },
 ]
 

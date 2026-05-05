@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="dashboard">
     <!-- 左侧：设备列表 -->
     <aside class="device-sidebar">
@@ -138,6 +138,7 @@ import { NEON_COLORS } from '../constants/colors'
 import ChartPanel from '../components/ChartPanel.vue'
 import GlassCard from '../components/GlassCard.vue'
 import ValueDisplay from '../components/ValueDisplay.vue'
+import { DeviceService, DataService } from '../../bindings/yx-daq/internal/app'
 
 // keep-alive 需要组件名匹配
 defineOptions({ name: 'DashboardView' })
@@ -149,8 +150,7 @@ const hasConnectedDevice = computed(() => deviceStore.statuses.some(s => s.statu
 
 async function handleStartAcqAll() {
   try {
-    const { StartAcquisitionAll } = await import('../../wailsjs/go/main/App')
-    const count = await StartAcquisitionAll()
+    const count = await DeviceService.StartAcquisitionAll()
     await deviceStore.fetchStatuses()
     if (count > 0) {
       ElMessage.success(`已启动 ${count} 个设备采集`)
@@ -164,8 +164,7 @@ async function handleStartAcqAll() {
 
 async function handleStopAcqAll() {
   try {
-    const { StopAcquisitionAll } = await import('../../wailsjs/go/main/App')
-    await StopAcquisitionAll()
+    await DeviceService.StopAcquisitionAll()
     await deviceStore.fetchStatuses()
     ElMessage.success('已停止所有设备采集')
   } catch (e: any) {
@@ -190,8 +189,7 @@ const isRecording = ref(false)
 
 async function handleStartRecording() {
   try {
-    const { StartRecording } = await import('../../wailsjs/go/main/App')
-    await StartRecording()
+    await DataService.StartRecording()
     isRecording.value = true
     ElMessage.success('已开始记录数据')
   } catch (e: any) {
@@ -201,8 +199,7 @@ async function handleStartRecording() {
 
 async function handleStopRecording() {
   try {
-    const { StopRecording } = await import('../../wailsjs/go/main/App')
-    await StopRecording()
+    await DataService.StopRecording()
     isRecording.value = false
     ElMessage.success('已停止记录')
   } catch (e: any) {

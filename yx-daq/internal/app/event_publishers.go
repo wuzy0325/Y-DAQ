@@ -1,52 +1,54 @@
 package app
 
 import (
-	"context"
 	"yx-daq/internal/types"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
+
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 // CalibrationEventPublisher 校准事件发布器实现
 type CalibrationEventPublisher struct {
-	ctx context.Context // Wails context
+	app *application.App
 }
 
-// EmitProgress 发送进度事件
 func (p *CalibrationEventPublisher) EmitProgress(event types.CalibrationProgressEvent) {
-	runtime.EventsEmit(p.ctx, "calibration:progress", event)
+	p.app.Event.Emit("calibration:progress", event)
 }
 
-// EmitRealtime 发送实时数据事件
 func (p *CalibrationEventPublisher) EmitRealtime(event types.CalibrationRealtimeEvent) {
-	runtime.EventsEmit(p.ctx, "calibration:realtime", event)
+	p.app.Event.Emit("calibration:realtime", event)
 }
 
-// EmitComplete 发送完成事件
 func (p *CalibrationEventPublisher) EmitComplete(event types.CalibrationCompleteEvent) {
-	runtime.EventsEmit(p.ctx, "calibration:complete", event)
+	p.app.Event.Emit("calibration:complete", event)
 }
 
-// ThreeHoleEventPublisher 三孔测试事件发布器实现
+// ThreeHoleEventPublisher 三孔测试事件发布器实现（支持多探针）
 type ThreeHoleEventPublisher struct {
-	ctx context.Context // Wails context
+	app     *application.App
+	probeID string
 }
 
-// EmitProgress 发送进度事件
+func NewThreeHoleEventPublisher(app *application.App, probeID string) *ThreeHoleEventPublisher {
+	return &ThreeHoleEventPublisher{app: app, probeID: probeID}
+}
+
+func (p *ThreeHoleEventPublisher) channel(name string) string {
+	return "three-hole:" + p.probeID + ":" + name
+}
+
 func (p *ThreeHoleEventPublisher) EmitProgress(event types.ThreeHoleTraversalProgressEvent) {
-	runtime.EventsEmit(p.ctx, "three-hole:progress", event)
+	p.app.Event.Emit(p.channel("progress"), event)
 }
 
-// EmitRealtime 发送实时数据事件
 func (p *ThreeHoleEventPublisher) EmitRealtime(event types.ThreeHoleTraversalRealtimeEvent) {
-	runtime.EventsEmit(p.ctx, "three-hole:realtime", event)
+	p.app.Event.Emit(p.channel("realtime"), event)
 }
 
-// EmitComplete 发送完成事件
 func (p *ThreeHoleEventPublisher) EmitComplete(event types.ThreeHoleTraversalCompleteEvent) {
-	runtime.EventsEmit(p.ctx, "three-hole:complete", event)
+	p.app.Event.Emit(p.channel("complete"), event)
 }
 
-// EmitError 发送错误事件
 func (p *ThreeHoleEventPublisher) EmitError(event types.ThreeHoleTraversalErrorEvent) {
-	runtime.EventsEmit(p.ctx, "three-hole:error", event)
+	p.app.Event.Emit(p.channel("error"), event)
 }

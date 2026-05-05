@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="calibration-view">
     <div class="grid-row">
       <GlassCard title="校准配置" icon="🔬" class="left-panel">
@@ -140,6 +140,7 @@ import CalibPointEditor from '../components/CalibPointEditor.vue'
 import ChartPanel from '../components/ChartPanel.vue'
 import GlassCard from '../components/GlassCard.vue'
 import ValueDisplay from '../components/ValueDisplay.vue'
+import { CalibrationService, DataService } from '../../bindings/yx-daq/internal/app'
 
 const calibStore = useCalibrationStore()
 
@@ -295,8 +296,7 @@ function exportCSV() {
 // PDF 导出
 async function exportPDF() {
   try {
-    const { ExportCalibrationPDF } = await import('../../wailsjs/go/main/App')
-    await ExportCalibrationPDF()
+    await DataService.ExportCalibrationPDF()
   } catch (e) {
     console.error('exportPDF failed:', e)
   }

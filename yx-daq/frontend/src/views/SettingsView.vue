@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="settings-view">
     <!-- 数据保存路径 -->
     <div class="settings-section">
@@ -109,7 +109,7 @@ import { Folder, Refresh, Upload, Document, VideoPlay, FolderOpened, RefreshLeft
 import { ElMessage } from 'element-plus'
 import { usePlayback } from '../composables/usePlayback'
 import ChartPanel from '../components/ChartPanel.vue'
-import { GetDataDir, SetDataSavePath, SelectDataSavePath, ListRecordingFiles, LoadCSVFile, ReadRecordingFile } from '../../wailsjs/go/main/App'
+import { ConfigService, DataService } from '../../bindings/yx-daq/internal/app'
 
 const {
   playbackData, playbackIndex, isPlaying, playbackSpeed,
@@ -122,7 +122,7 @@ const recordingFiles = ref<{ name: string }[]>([])
 
 async function loadDataSavePath() {
   try {
-    dataSavePath.value = await GetDataDir() as string
+    dataSavePath.value = await DataService.GetDataDir() as string
   } catch (e) {
     console.error('loadDataSavePath failed:', e)
   }
@@ -130,9 +130,9 @@ async function loadDataSavePath() {
 
 async function selectPath() {
   try {
-    const dir = await SelectDataSavePath() as string
+    const dir = await ConfigService.SelectDataSavePath() as string
     if (dir) {
-      await SetDataSavePath(dir)
+      await ConfigService.SetDataSavePath(dir)
       dataSavePath.value = dir
     }
   } catch (e) {
@@ -142,8 +142,8 @@ async function selectPath() {
 
 async function resetPath() {
   try {
-    await SetDataSavePath('')
-    dataSavePath.value = await GetDataDir() as string
+    await ConfigService.SetDataSavePath('')
+    dataSavePath.value = await DataService.GetDataDir() as string
   } catch (e) {
     console.error('resetPath failed:', e)
   }
@@ -151,7 +151,7 @@ async function resetPath() {
 
 async function refreshFiles() {
   try {
-    const files = await ListRecordingFiles() as string[] | null
+    const files = await DataService.ListRecordingFiles() as string[] | null
     recordingFiles.value = (files ?? []).map(f => ({ name: f }))
   } catch (e) {
     console.error('refreshFiles failed:', e)
@@ -160,7 +160,7 @@ async function refreshFiles() {
 
 async function loadExternalCSV() {
   try {
-    const content = await LoadCSVFile() as string
+    const content = await DataService.LoadCSVFile() as string
     if (content) {
       parseAndLoadCSV(content)
     }
@@ -171,7 +171,7 @@ async function loadExternalCSV() {
 
 async function loadFileForPlayback(fileName: string) {
   try {
-    const content = await ReadRecordingFile(fileName) as string
+    const content = await DataService.ReadRecordingFile(fileName) as string
     if (content) {
       parseAndLoadCSV(content)
     } else {

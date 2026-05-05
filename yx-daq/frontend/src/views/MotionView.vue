@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="motion-view">
     <!-- 页面头部 -->
     <div class="page-header">
@@ -153,6 +153,8 @@ import { useMotionStore } from '../stores/motion'
 import GlassCard from '../components/GlassCard.vue'
 import AxisConfigDialog from '../components/MotionControl/AxisConfigDialog.vue'
 import AxisControlCard from '../components/MotionControl/AxisControlCard.vue'
+import { MotionService } from '../../bindings/yx-daq/internal/app'
+import * as models from '../../bindings/yx-daq/internal/types'
 
 const motionStore = useMotionStore()
 const configDialog = ref<InstanceType<typeof AxisConfigDialog>>()
@@ -193,10 +195,8 @@ async function onConnectionInfoChange() {
   if (editableAddress.value === profile.address && editablePort.value === profile.port) return
 
   try {
-    const { UpdateMotionProfile } = await import('../../wailsjs/go/main/App')
-    const { types } = await import('../../wailsjs/go/models')
-    const updated = types.MotionControllerProfile.createFrom({ ...profile, address: editableAddress.value, port: editablePort.value })
-    await UpdateMotionProfile(updated)
+    const updated = models.MotionControllerProfile.createFrom({ ...profile, address: editableAddress.value, port: editablePort.value })
+    await MotionService.UpdateMotionProfile(updated)
     await motionStore.fetchProfiles()
     ElMessage.success('连接信息已保存')
   } catch (e: any) {
@@ -231,10 +231,8 @@ async function connectController() {
   // 连接前先同步最新的IP/端口到后端profile，确保连接使用最新地址
   if (editableAddress.value !== profile.address || editablePort.value !== profile.port) {
     try {
-      const { UpdateMotionProfile } = await import('../../wailsjs/go/main/App')
-      const { types } = await import('../../wailsjs/go/models')
-      const updated = types.MotionControllerProfile.createFrom({ ...profile, address: editableAddress.value, port: editablePort.value })
-      await UpdateMotionProfile(updated)
+      const updated = models.MotionControllerProfile.createFrom({ ...profile, address: editableAddress.value, port: editablePort.value })
+      await MotionService.UpdateMotionProfile(updated)
       await motionStore.fetchProfiles()
     } catch (e: any) {
       ElMessage.error(`保存连接信息失败: ${e?.message || e}`)

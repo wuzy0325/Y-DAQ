@@ -1,13 +1,7 @@
-import { ref, computed, shallowRef } from 'vue'
+﻿import { ref, computed, shallowRef } from 'vue'
 import { defineStore } from 'pinia'
-import {
-  GetDeviceProfiles, UpdateDeviceProfile,
-  ConnectDevice, DisconnectDevice,
-  StartAcquisition, StopAcquisition,
-  StartAcquisitionAll, StopAcquisitionAll,
-  GetDeviceStatusAll, ScanDevices,
-} from '../../wailsjs/go/main/App'
-import { EventsOn } from '../../wailsjs/runtime/runtime'
+import { DeviceService } from '../../bindings/yx-daq/internal/app'
+import { Events } from '@wailsio/runtime'
 
 interface ChannelConfig {
   index: number
@@ -57,7 +51,7 @@ export const useDeviceStore = defineStore('device', () => {
 
   async function fetchProfiles() {
     try {
-      profiles.value = await GetDeviceProfiles() as DeviceProfile[]
+      profiles.value = await DeviceService.GetDeviceProfiles() as DeviceProfile[]
     } catch (e) {
       console.warn('fetchProfiles failed:', e)
     }
@@ -65,7 +59,7 @@ export const useDeviceStore = defineStore('device', () => {
 
   async function updateProfile(profile: DeviceProfile): Promise<string | null> {
     try {
-      await UpdateDeviceProfile(profile as any)
+      await DeviceService.UpdateDeviceProfile(profile as any)
       await fetchProfiles()
       return null
     } catch (e: any) {
@@ -77,7 +71,7 @@ export const useDeviceStore = defineStore('device', () => {
 
   async function fetchStatuses() {
     try {
-      statuses.value = await GetDeviceStatusAll() as DeviceStatus[]
+      statuses.value = await DeviceService.GetDeviceStatusAll() as DeviceStatus[]
     } catch (e) {
       console.warn('fetchStatuses failed:', e)
     }
@@ -85,7 +79,7 @@ export const useDeviceStore = defineStore('device', () => {
 
   async function connectDevice(id: string): Promise<string | null> {
     try {
-      await ConnectDevice(id)
+      await DeviceService.ConnectDevice(id)
       await fetchStatuses()
       return null
     } catch (e: any) {
@@ -97,7 +91,7 @@ export const useDeviceStore = defineStore('device', () => {
 
   async function disconnectDevice(id: string): Promise<string | null> {
     try {
-      await DisconnectDevice(id)
+      await DeviceService.DisconnectDevice(id)
       await fetchStatuses()
       return null
     } catch (e: any) {
@@ -109,7 +103,7 @@ export const useDeviceStore = defineStore('device', () => {
 
   async function startAcquisition(id: string): Promise<string | null> {
     try {
-      await StartAcquisition(id)
+      await DeviceService.StartAcquisition(id)
       await fetchStatuses()
       return null
     } catch (e: any) {
@@ -121,7 +115,7 @@ export const useDeviceStore = defineStore('device', () => {
 
   async function stopAcquisition(id: string): Promise<string | null> {
     try {
-      await StopAcquisition(id)
+      await DeviceService.StopAcquisition(id)
       await fetchStatuses()
       return null
     } catch (e: any) {
@@ -133,14 +127,15 @@ export const useDeviceStore = defineStore('device', () => {
 
   function startListening() {
     try {
-      EventsOn('daq:data-snapshot', (data: DataPayload[]) => {
+      Events.On('daq:data-snapshot', (event: { data: DataPayload[] }) => {
+        const data = event.data
         snapshots.value = data
         for (const payload of data) {
           latestData.value.set(payload.deviceId, payload)
         }
       })
-      EventsOn('device:status-updated', (data: DeviceStatus[]) => {
-        statuses.value = data
+      Events.On('device:status-updated', (event: { data: DeviceStatus[] }) => {
+        statuses.value = event.data
       })
     } catch (e) {
       console.warn('startListening failed:', e)

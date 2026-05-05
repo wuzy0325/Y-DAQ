@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="device-view">
     <GlassCard title="设备管理" icon="📡">
       <template #actions>
@@ -53,7 +53,7 @@
     </GlassCard>
 
     <!-- 添加设备对话框 -->
-    <el-dialog v-model="showAddDialog" title="添加设备" width="420px" :append-to-body="true" class="device-dialog">
+    <el-dialog v-model="showAddDialog" title="添加设备" width="420px" class="device-dialog">
       <div class="dialog-section">
         <div class="section-title">📡 基础信息</div>
         <el-form :model="newDevice" label-width="60px" size="small">
@@ -127,7 +127,7 @@
     </el-dialog>
 
     <!-- 编辑设备对话框 -->
-    <el-dialog v-model="showEditDialog" title="编辑设备" width="720px" :append-to-body="true" class="device-dialog">
+    <el-dialog v-model="showEditDialog" title="编辑设备" width="720px" class="device-dialog">
       <div class="dialog-section">
         <div class="section-title">📡 基础信息</div>
         <div class="form-row three-col">
@@ -244,6 +244,8 @@ import { Edit, Link, CircleClose, Delete } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { useDeviceStore } from '../stores/device'
 import GlassCard from '../components/GlassCard.vue'
+import { DeviceService, DataService } from '../../bindings/yx-daq/internal/app'
+import * as models from '../../bindings/yx-daq/internal/types'
 
 const deviceStore = useDeviceStore()
 
@@ -289,9 +291,6 @@ async function addDevice() {
   const id = `dev-${Date.now()}`
   const deviceName = newDevice.value.name || '新设备'
   try {
-    const { AddDeviceProfile, ConnectDevice } = await import('../../wailsjs/go/main/App')
-    const { types } = await import('../../wailsjs/go/models')
-
     const channels = []
     const pressureCount = getPressureCount(newDevice.value.type)
     const totalCh = getTotalChannels(newDevice.value.type)
@@ -309,7 +308,7 @@ async function addDevice() {
       })
     }
 
-    const profile = new types.DeviceProfile({
+    const profile = new models.DeviceProfile({
       id,
       name: deviceName,
       type: newDevice.value.type,
@@ -321,11 +320,10 @@ async function addDevice() {
       channels,
     })
 
-    await AddDeviceProfile(profile)
+    await DeviceService.AddDeviceProfile(profile)
 
     try {
-      const { SetPublishRate } = await import('../../wailsjs/go/main/App')
-      await SetPublishRate(newDevice.value.publishRate)
+      await DataService.SetPublishRate(newDevice.value.publishRate)
     } catch {}
 
     showAddDialog.value = false
@@ -333,7 +331,7 @@ async function addDevice() {
 
     if (newDevice.value.autoConnect) {
       try {
-        await ConnectDevice(id)
+        await DeviceService.ConnectDevice(id)
         ElMessage.success(`设备 "${deviceName}" 已连接`)
       } catch (connErr: any) {
         ElMessage.warning(`设备已添加，但连接失败: ${connErr?.message || connErr}`)
@@ -401,11 +399,9 @@ function openEditDialog(id: string) {
   }
   editChannels.value = profile.channels.map(c => ({ ...c }))
 
-  import('../../wailsjs/go/main/App').then(({ GetPublishRate }) => {
-    GetPublishRate().then((rate: number) => {
+    DataService.GetPublishRate().then((rate: number) => {
       editForm.value.publishRate = rate
     }).catch(() => {})
-  })
 
   showEditDialog.value = true
 }
@@ -436,7 +432,6 @@ async function saveEdit() {
       return
     }
 
-    const { types } = await import('../../wailsjs/go/models')
     const pc = editPressureCount.value
     const updatedChannels = editChannels.value.map(c => ({
       index: c.index,
@@ -448,7 +443,7 @@ async function saveEdit() {
       rangeMax: c.rangeMax,
     }))
 
-    const updatedProfile = new types.DeviceProfile({
+    const updatedProfile = new models.DeviceProfile({
       id: profile.id,
       name: editForm.value.name,
       type: profile.type,
@@ -465,16 +460,14 @@ async function saveEdit() {
       ElMessage.error(`更新失败: ${err}`)
     } else {
       try {
-        const { SetPublishRate } = await import('../../wailsjs/go/main/App')
-        await SetPublishRate(editForm.value.publishRate)
+        await DataService.SetPublishRate(editForm.value.publishRate)
       } catch {}
 
-      const { ConnectDevice, DisconnectDevice } = await import('../../wailsjs/go/main/App')
       if (editForm.value.autoConnect) {
         const oldStatus = deviceStore.statuses.find(s => s.id === editForm.value.id)
         if (!oldStatus || oldStatus.status !== 'Connected') {
           try {
-            await ConnectDevice(editForm.value.id)
+            await DeviceService.ConnectDevice(editForm.value.id)
             ElMessage.success('设备已自动连接')
           } catch (connErr: any) {
             ElMessage.warning(`自动连接失败: ${connErr?.message || connErr}`)
@@ -482,7 +475,7 @@ async function saveEdit() {
         }
       } else {
         try {
-          await DisconnectDevice(editForm.value.id)
+          await DeviceService.DisconnectDevice(editForm.value.id)
         } catch {}
       }
 
@@ -518,8 +511,7 @@ async function handleDisconnect(id: string) {
 
 async function scanDevices() {
   try {
-    const { ScanDevices } = await import('../../wailsjs/go/main/App')
-    const devices = await ScanDevices()
+    const devices = await DeviceService.ScanDevices()
     if (devices && devices.length > 0) {
       ElMessage.success(`发现 ${devices.length} 个设备`)
     } else {
@@ -532,8 +524,7 @@ async function scanDevices() {
 
 async function removeDevice(id: string) {
   try {
-    const { RemoveDeviceProfile } = await import('../../wailsjs/go/main/App')
-    await RemoveDeviceProfile(id)
+    await DeviceService.RemoveDeviceProfile(id)
     await deviceStore.fetchProfiles()
     await deviceStore.fetchStatuses()
     ElMessage.success('设备已删除')

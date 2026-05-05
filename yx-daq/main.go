@@ -1,52 +1,51 @@
 package main
 
 import (
-	"context"
 	"embed"
 
-	"github.com/wailsapp/wails/v2"
-	"github.com/wailsapp/wails/v2/pkg/options"
-	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
-
 	"yx-daq/internal/app"
+
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 //go:embed all:frontend/dist
 var assets embed.FS
 
-type App struct {
-	*app.App
-}
-
-func NewApp() *App {
-	return &App{App: app.NewApp()}
-}
-
 func main() {
-	appInstance := NewApp()
+	core := app.NewCore()
 
-	err := wails.Run(&options.App{
-		Title:     "YX-DAQ数据采集系统",
-		Width:     1440,
-		Height:    900,
-		MinWidth:  1280,
-		MinHeight: 720,
-		AssetServer: &assetserver.Options{
-			Assets: assets,
+	a := application.New(application.Options{
+		Name:        "YX-DAQ",
+		Description: "YX-DAQ数据采集系统",
+		Services: []application.Service{
+			application.NewService(&app.CoreService{Core: core}),
+			application.NewService(&app.DeviceService{Core: core}),
+			application.NewService(&app.MotionService{Core: core}),
+			application.NewService(&app.ThreeHoleService{Core: core}),
+			application.NewService(&app.CalibrationService{Core: core}),
+			application.NewService(&app.DataService{Core: core}),
+			application.NewService(&app.ConfigService{Core: core}),
 		},
-		BackgroundColour: &options.RGBA{R: 10, G: 10, B: 26, A: 255},
-		OnStartup: func(ctx context.Context) {
-			appInstance.Startup(ctx)
+		Assets: application.AssetOptions{
+			Handler: application.AssetFileServerFS(assets),
 		},
-		OnShutdown: func(ctx context.Context) {
-			appInstance.Shutdown(ctx)
-		},
-		Bind: []any{
-			appInstance,
+		Mac: application.MacOptions{
+			ApplicationShouldTerminateAfterLastWindowClosed: false,
 		},
 	})
 
-	if err != nil {
+	a.Window.NewWithOptions(application.WebviewWindowOptions{
+		Name:             "main",
+		Title:            "YX-DAQ数据采集系统",
+		Width:            1440,
+		Height:           900,
+		MinWidth:         1280,
+		MinHeight:        720,
+		BackgroundColour: application.NewRGB(10, 10, 26),
+		URL:              "/",
+	})
+
+	if err := a.Run(); err != nil {
 		println("Error:", err.Error())
 	}
 }
