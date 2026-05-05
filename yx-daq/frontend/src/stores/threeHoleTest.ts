@@ -217,8 +217,8 @@ function createThreeHoleStore(probeID: string) {
 }
 
 // 预定义两个探针的 store
-export const useThreeHoleTestStoreProbe1 = createThreeHoleStore('probe1')()
-export const useThreeHoleTestStoreProbe2 = createThreeHoleStore('probe2')()
+export const useThreeHoleTestStoreProbe1 = createThreeHoleStore('probe1')
+export const useThreeHoleTestStoreProbe2 = createThreeHoleStore('probe2')
 
 // 根据 probeID 获取对应 store
 export function useThreeHoleTestStore(probeID: string) {

@@ -20,14 +20,15 @@ func (s *ThreeHoleService) OpenTestWindow(probeID string) string {
 	winName := "three-hole-" + probeID
 	title := "三孔移位插值测试 - 探针" + string(probeID[len(probeID)-1])
 
-	s.Core.App.Window.NewWithOptions(application.WebviewWindowOptions{
+	win := s.Core.App.Window.NewWithOptions(application.WebviewWindowOptions{
 		Name:  winName,
 		Title: title,
 		Width: 1280, Height: 800,
 		MinWidth: 960, MinHeight: 640,
 		BackgroundColour: application.NewRGB(10, 10, 26),
 		URL:  "/#/three-hole-test?probe=" + probeID,
-	}).Show()
+	})
+	win.Show()
 	return "opened"
 }
 
