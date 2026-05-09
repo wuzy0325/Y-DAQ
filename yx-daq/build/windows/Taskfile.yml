@@ -1,0 +1,17 @@
+version: '3'
+
+includes:
+  common: ../Taskfile.yml
+
+tasks:
+  build:
+    summary: Builds the Windows application
+    cmds:
+      - task: common:build
+        vars:
+          DEV: '{{.DEV}}'
+
+  run:
+    summary: Runs the Windows application
+    cmds:
+      - task: common:run

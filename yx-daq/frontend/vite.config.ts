@@ -1,9 +1,9 @@
 import {defineConfig} from 'vite'
 import vue from '@vitejs/plugin-vue'
-import wails from '@wailsio/runtime/plugins/vite'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import {ElementPlusResolver} from 'unplugin-vue-components/resolvers'
+import path from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -14,7 +14,6 @@ export default defineConfig({
   },
   plugins: [
     vue(),
-    wails('./bindings'),
     AutoImport({
       resolvers: [ElementPlusResolver()],
       imports: ['vue', 'vue-router', 'pinia'],
@@ -35,6 +34,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': '/src',
+      '../../wailsjs/go/main/App': path.resolve(__dirname, 'src/wails-compat/app.ts'),
+      '../../wailsjs/go/models': path.resolve(__dirname, 'src/wails-compat/models.ts'),
+      '../../wailsjs/runtime/runtime': path.resolve(__dirname, 'src/wails-compat/runtime.ts'),
     },
   },
   test: {
@@ -43,16 +45,6 @@ export default defineConfig({
     include: ['src/**/*.{test,spec}.{js,ts}'],
   },
   build: {
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes('node_modules/element-plus')) return 'element-plus'
-          if (id.includes('node_modules/echarts')) return 'echarts'
-          if (id.includes('node_modules/vue/') || id.includes('node_modules/@vue/')) return 'vue'
-          if (id.includes('node_modules/vue-router') || id.includes('node_modules/pinia')) return 'vue-vendor'
-        },
-      },
-    },
     // 启用代码压缩
     minify: 'terser',
   },
