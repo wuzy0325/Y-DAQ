@@ -131,6 +131,7 @@ type ThreeHoleInterpolationResult struct {
 	PsProbe        float64 `json:"psProbe"`            // 探针计算静压（表压 Pa）
 	MachProbe      float64 `json:"machProbe"`          // 计算马赫数
 	AlphaProbe     float64 `json:"alphaProbe"`         // 计算攻角（度）
+	VelocityProbe  float64 `json:"velocityProbe"`      // 计算速度（m/s）
 	IterationCount int     `json:"iterationCount"`     // 迭代收敛次数
 	Converged      bool    `json:"converged"`          // 迭代是否收敛
 	Valid          bool    `json:"valid"`              // 结果是否有效

@@ -409,7 +409,7 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
     const BOM = '﻿'
     const headers = [
       '点号', 'X', 'Y', 'P1', 'P2', 'P3', 'P∞', 'T∞',
-      '总压Pt', '静压Ps', '马赫数Ma', '攻角Alpha', '迭代次数', '采样数', '时间戳',
+      '总压Pt', '静压Ps', '马赫数Ma', '攻角Alpha', '速度V', '迭代次数', '采样数', '时间戳',
     ]
     const rows = dataPoints.map(p => [
       p.pointId, p.x.toFixed(4), p.y.toFixed(4),
@@ -417,6 +417,7 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
       p.rawData.pAtm.toFixed(6), p.rawData.tAtm.toFixed(6),
       p.interpResult.ptProbe.toFixed(6), p.interpResult.psProbe.toFixed(6),
       p.interpResult.machProbe.toFixed(6), p.interpResult.alphaProbe.toFixed(4),
+      p.interpResult.velocityProbe.toFixed(4),
       p.interpResult.iterationCount.toString(), p.sampleCount.toString(),
       p.timestamp.toString(),
     ].join(','))

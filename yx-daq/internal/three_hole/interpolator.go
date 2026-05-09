@@ -23,6 +23,7 @@ const (
 	gamma               = 1.4                 // 比热比
 	gammaRatio          = (gamma - 1) / gamma // 0.2857
 	machCoeff           = 2 / (gamma - 1)     // 5
+	airGasConst         = 287.05              // 空气气体常数 R (J/(kg·K))
 )
 
 // ==================== 插值器 ====================
@@ -213,6 +214,7 @@ func (i *ThreeHoleInterpolator) Calculate(rawData types.ThreeHoleRawData) types.
 	ptProbe := P2 + ktFinal*deltaP
 	psProbe := ptProbe - sbFinal*deltaP
 	machProbe := calculateMachNumber(ptProbe, psProbe, Pa)
+	velocityProbe := calculateVelocity(machProbe, rawData.TAtm)
 
 	// 构建警告信息
 	var warnings []string
@@ -224,10 +226,11 @@ func (i *ThreeHoleInterpolator) Calculate(rawData types.ThreeHoleRawData) types.
 	}
 
 	result := types.ThreeHoleInterpolationResult{
-		PtProbe:        ptProbe,
-		PsProbe:        psProbe,
-		MachProbe:      machProbe,
-		AlphaProbe:     alphaFinal,
+		PtProbe:       ptProbe,
+		PsProbe:       psProbe,
+		MachProbe:     machProbe,
+		AlphaProbe:    alphaFinal,
+		VelocityProbe: velocityProbe,
 		IterationCount: iterationCount,
 		Converged:      converged,
 		Valid:          true,
@@ -404,6 +407,17 @@ func calculateMachNumber(pt, ps, pa float64) float64 {
 		return 0
 	}
 	return math.Sqrt(maSq)
+}
+
+// calculateVelocity 根据马赫数和大气温度计算速度
+// V = Ma × a, a = √(γRT), T 为开尔文温度
+func calculateVelocity(ma, tCelsius float64) float64 {
+	tKelvin := tCelsius + 273.15
+	if tKelvin <= 0 {
+		return 0
+	}
+	speedOfSound := math.Sqrt(gamma * airGasConst * tKelvin)
+	return ma * speedOfSound
 }
 
 // clampMa 将马赫数限制在校准范围内

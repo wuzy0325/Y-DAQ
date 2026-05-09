@@ -104,6 +104,7 @@
             <div class="data-item"><span class="label">静压 Ps</span><ValueDisplay :value="store.realtime?.interpResult.psProbe" :precision="3" color="#00ff88" unit="Pa" /></div>
             <div class="data-item"><span class="label">马赫数 Ma</span><ValueDisplay :value="store.realtime?.interpResult.machProbe" :precision="4" color="#b829ff" /></div>
             <div class="data-item"><span class="label">攻角 α</span><ValueDisplay :value="store.realtime?.interpResult.alphaProbe" :precision="2" color="#00f5ff" unit="°" /></div>
+            <div class="data-item"><span class="label">速度 V</span><ValueDisplay :value="store.realtime?.interpResult.velocityProbe" :precision="2" color="#ff6b6b" unit="m/s" /></div>
             <div class="data-item"><span class="label">迭代次数</span><ValueDisplay :value="store.realtime?.interpResult.iterationCount" :precision="0" color="rgba(255,255,255,0.6)" /></div>
           </div>
         </GlassCard>

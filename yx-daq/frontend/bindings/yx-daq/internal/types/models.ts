@@ -1290,6 +1290,11 @@ export class ThreeHoleInterpolationResult {
     "alphaProbe": number;
 
     /**
+     * 计算速度（m/s）
+     */
+    "velocityProbe": number;
+
+    /**
      * 迭代收敛次数
      */
     "iterationCount": number;
@@ -1322,6 +1327,9 @@ export class ThreeHoleInterpolationResult {
         }
         if (!("alphaProbe" in $$source)) {
             this["alphaProbe"] = 0;
+        }
+        if (!("velocityProbe" in $$source)) {
+            this["velocityProbe"] = 0;
         }
         if (!("iterationCount" in $$source)) {
             this["iterationCount"] = 0;

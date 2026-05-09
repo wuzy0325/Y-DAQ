@@ -690,6 +690,7 @@ export namespace types {
 	    psProbe: number;
 	    machProbe: number;
 	    alphaProbe: number;
+	    velocityProbe: number;
 	    iterationCount: number;
 	    converged: boolean;
 	    valid: boolean;
@@ -705,6 +706,7 @@ export namespace types {
 	        this.psProbe = source["psProbe"];
 	        this.machProbe = source["machProbe"];
 	        this.alphaProbe = source["alphaProbe"];
+	        this.velocityProbe = source["velocityProbe"];
 	        this.iterationCount = source["iterationCount"];
 	        this.converged = source["converged"];
 	        this.valid = source["valid"];

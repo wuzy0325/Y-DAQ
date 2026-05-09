@@ -55,7 +55,7 @@ func (w *ThreeHoleCsvWriter) Initialize(savePath string, fileName string) error 
 	header := []string{
 		"点号", "X", "Y",
 		"P1", "P2", "P3", "P∞", "T∞",
-		"总压Pt", "静压Ps", "马赫数Ma", "攻角Alpha",
+		"总压Pt", "静压Ps", "马赫数Ma", "攻角Alpha", "速度V",
 		"迭代次数", "采样数", "时间戳",
 	}
 	if err := w.writer.Write(header); err != nil {
@@ -85,6 +85,7 @@ func (w *ThreeHoleCsvWriter) AppendPoint(dp types.ThreeHoleTraversalDataPoint) e
 		fmt.Sprintf("%.6f", dp.InterpResult.PsProbe),
 		fmt.Sprintf("%.6f", dp.InterpResult.MachProbe),
 		fmt.Sprintf("%.4f", dp.InterpResult.AlphaProbe),
+		fmt.Sprintf("%.4f", dp.InterpResult.VelocityProbe),
 		fmt.Sprintf("%d", dp.InterpResult.IterationCount),
 		fmt.Sprintf("%d", dp.SampleCount),
 		fmt.Sprintf("%d", dp.Timestamp),
