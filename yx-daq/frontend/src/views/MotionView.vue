@@ -210,7 +210,9 @@ function openConfigDialog(axisName?: string) {
 }
 
 onMounted(async () => {
+  motionStore.startListening()
   await motionStore.fetchProfiles()
+  await motionStore.fetchStatuses()
   const b140Profile = motionStore.profiles.find(p => p.type === 'B140-MC')
   if (b140Profile) {
     motionStore.activeControllerId = b140Profile.id

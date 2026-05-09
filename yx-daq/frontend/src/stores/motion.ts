@@ -338,7 +338,7 @@ export const useMotionStore = defineStore('motion', () => {
       statuses.value = allStatuses
       syncConnectionFromStatuses(allStatuses)
       for (const ctrl of allStatuses) {
-        if (ctrl.status === 'Connected') {
+        if (ctrl.status === 'Connected' && ctrl.id === activeControllerId.value) {
           for (const ax of ctrl.axes) {
             const uiState = axisUIStates.value[ax.name]
             if (uiState) {
@@ -595,7 +595,7 @@ export const useMotionStore = defineStore('motion', () => {
         statuses.value = data
         syncConnectionFromStatuses(data)
         for (const ctrl of data) {
-          if (ctrl.status === 'Connected') {
+          if (ctrl.status === 'Connected' && ctrl.id === activeControllerId.value) {
             for (const ax of ctrl.axes) {
               const uiState = axisUIStates.value[ax.name]
               if (uiState) {

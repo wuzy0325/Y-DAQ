@@ -102,7 +102,7 @@ func (s *SimulatedDevice) simulateData(periodMs int) {
 	ticker := time.NewTicker(time.Duration(periodMs) * time.Millisecond)
 	defer ticker.Stop()
 
-	basePressure := 101.325 // kPa 大气压基准
+	basePressure := 101325.0 // Pa 大气压基准
 	for {
 		select {
 		case <-s.stopCh:
@@ -131,11 +131,18 @@ func (s *SimulatedDevice) simulateData(periodMs int) {
 				}
 			}
 
+			units := make([]string, len(indices))
+			for j, idx := range indices {
+				if idx < len(s.channels) {
+					units[j] = s.channels[idx].Unit
+				}
+			}
 			payload := types.DataPayload{
 				DeviceID:       "simulated",
 				Timestamp:      time.Now().UnixMilli(),
 				Channels:       values,
 				ChannelIndices: indices,
+				ChannelUnits:   units,
 			}
 
 			if s.onData != nil {

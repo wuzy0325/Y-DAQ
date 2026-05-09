@@ -95,13 +95,17 @@ func (s *DataStorageService) HandlePayload(payload types.DataPayload) error {
 		if i < len(payload.ChannelIndices) {
 			chIdx = payload.ChannelIndices[i]
 		}
+		unit := "Pa"
+		if i < len(payload.ChannelUnits) && payload.ChannelUnits[i] != "" {
+			unit = payload.ChannelUnits[i]
+		}
 		record := []string{
 			timestamp,
 			payload.DeviceID,
 			fmt.Sprintf("%d", chIdx),
 			fmt.Sprintf("CH%d", chIdx+1),
 			fmt.Sprintf("%.6f", val),
-			"kPa",
+			unit,
 		}
 		if err := s.writer.Write(record); err != nil {
 			return err

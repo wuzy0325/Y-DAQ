@@ -165,7 +165,7 @@ export function usePlayback() {
       yAxis: {
         type: 'value',
         scale: true,
-        name: 'kPa',
+        name: 'Pa',
         nameTextStyle: { color: 'rgba(255,255,255,0.5)' },
         axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
         axisLabel: { color: 'rgba(255,255,255,0.4)' },

@@ -171,7 +171,7 @@ func TestDeviceManager_Connect_SyncsDriverChannelsToProfile(t *testing.T) {
 	p.Channels = []types.ChannelConfig{
 		{Index: 0, Name: "CH1", Enabled: true, Unit: "kPa"},
 		{Index: 1, Name: "CH2", Enabled: true, Unit: "kPa"},
-		{Index: 2, Name: "大气压", Enabled: true, Unit: "kPa"},
+		{Index: 2, Name: "大气压", Enabled: true, Unit: "Pa"},
 		{Index: 3, Name: "大气温度", Enabled: true, Unit: "°C"},
 	}
 	m.AddProfile(p)

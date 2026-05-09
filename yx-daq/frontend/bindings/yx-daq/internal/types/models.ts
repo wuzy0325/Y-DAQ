@@ -463,6 +463,7 @@ export class DataPayload {
     "timestamp": number;
     "channels": number[];
     "channelIndices": number[];
+    "channelUnits": string[];
 
     /** Creates a new DataPayload instance. */
     constructor($$source: Partial<DataPayload> = {}) {
@@ -478,6 +479,9 @@ export class DataPayload {
         if (!("channelIndices" in $$source)) {
             this["channelIndices"] = [];
         }
+        if (!("channelUnits" in $$source)) {
+            this["channelUnits"] = [];
+        }
 
         Object.assign(this, $$source);
     }
@@ -488,12 +492,16 @@ export class DataPayload {
     static createFrom($$source: any = {}): DataPayload {
         const $$createField2_0 = $$createType11;
         const $$createField3_0 = $$createType12;
+        const $$createField4_0 = $$createType13;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("channels" in $$parsedSource) {
             $$parsedSource["channels"] = $$createField2_0($$parsedSource["channels"]);
         }
         if ("channelIndices" in $$parsedSource) {
             $$parsedSource["channelIndices"] = $$createField3_0($$parsedSource["channelIndices"]);
+        }
+        if ("channelUnits" in $$parsedSource) {
+            $$parsedSource["channelUnits"] = $$createField4_0($$parsedSource["channelUnits"]);
         }
         return new DataPayload($$parsedSource as Partial<DataPayload>);
     }
@@ -558,7 +566,7 @@ export class DeviceProfile {
      * Creates a new DeviceProfile instance from a string or object.
      */
     static createFrom($$source: any = {}): DeviceProfile {
-        const $$createField8_0 = $$createType14;
+        const $$createField8_0 = $$createType15;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("channels" in $$parsedSource) {
             $$parsedSource["channels"] = $$createField8_0($$parsedSource["channels"]);
@@ -869,8 +877,8 @@ export class LineLayout {
      * Creates a new LineLayout instance from a string or object.
      */
     static createFrom($$source: any = {}): LineLayout {
-        const $$createField4_0 = $$createType16;
-        const $$createField5_0 = $$createType16;
+        const $$createField4_0 = $$createType17;
+        const $$createField5_0 = $$createType17;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("xSteps" in $$parsedSource) {
             $$parsedSource["xSteps"] = $$createField4_0($$parsedSource["xSteps"]);
@@ -949,7 +957,7 @@ export class MotionControllerProfile {
      * Creates a new MotionControllerProfile instance from a string or object.
      */
     static createFrom($$source: any = {}): MotionControllerProfile {
-        const $$createField6_0 = $$createType18;
+        const $$createField6_0 = $$createType19;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("axes" in $$parsedSource) {
             $$parsedSource["axes"] = $$createField6_0($$parsedSource["axes"]);
@@ -997,7 +1005,7 @@ export class MotionControllerStatus {
      * Creates a new MotionControllerStatus instance from a string or object.
      */
     static createFrom($$source: any = {}): MotionControllerStatus {
-        const $$createField4_0 = $$createType20;
+        const $$createField4_0 = $$createType21;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("axes" in $$parsedSource) {
             $$parsedSource["axes"] = $$createField4_0($$parsedSource["axes"]);
@@ -1113,8 +1121,8 @@ export class RectangleLayout {
      * Creates a new RectangleLayout instance from a string or object.
      */
     static createFrom($$source: any = {}): RectangleLayout {
-        const $$createField4_0 = $$createType16;
-        const $$createField5_0 = $$createType16;
+        const $$createField4_0 = $$createType17;
+        const $$createField5_0 = $$createType17;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("xSteps" in $$parsedSource) {
             $$parsedSource["xSteps"] = $$createField4_0($$parsedSource["xSteps"]);
@@ -1516,11 +1524,11 @@ export class ThreeHoleTraversalConfig {
      * Creates a new ThreeHoleTraversalConfig instance from a string or object.
      */
     static createFrom($$source: any = {}): ThreeHoleTraversalConfig {
-        const $$createField3_0 = $$createType21;
-        const $$createField4_0 = $$createType23;
-        const $$createField5_0 = $$createType24;
-        const $$createField6_0 = $$createType24;
-        const $$createField7_0 = $$createType26;
+        const $$createField3_0 = $$createType22;
+        const $$createField4_0 = $$createType24;
+        const $$createField5_0 = $$createType25;
+        const $$createField6_0 = $$createType25;
+        const $$createField7_0 = $$createType27;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("layout" in $$parsedSource) {
             $$parsedSource["layout"] = $$createField3_0($$parsedSource["layout"]);
@@ -1584,8 +1592,8 @@ export class ThreeHoleTraversalDataPoint {
      * Creates a new ThreeHoleTraversalDataPoint instance from a string or object.
      */
     static createFrom($$source: any = {}): ThreeHoleTraversalDataPoint {
-        const $$createField3_0 = $$createType27;
-        const $$createField4_0 = $$createType28;
+        const $$createField3_0 = $$createType28;
+        const $$createField4_0 = $$createType29;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("rawData" in $$parsedSource) {
             $$parsedSource["rawData"] = $$createField3_0($$parsedSource["rawData"]);
@@ -1638,8 +1646,8 @@ export class ThreeHoleTraversalTaskStatus {
      * Creates a new ThreeHoleTraversalTaskStatus instance from a string or object.
      */
     static createFrom($$source: any = {}): ThreeHoleTraversalTaskStatus {
-        const $$createField5_0 = $$createType30;
-        const $$createField6_0 = $$createType32;
+        const $$createField5_0 = $$createType31;
+        const $$createField6_0 = $$createType33;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("currentPoint" in $$parsedSource) {
             $$parsedSource["currentPoint"] = $$createField5_0($$parsedSource["currentPoint"]);
@@ -1673,9 +1681,9 @@ export class TraversalLayout {
      * Creates a new TraversalLayout instance from a string or object.
      */
     static createFrom($$source: any = {}): TraversalLayout {
-        const $$createField1_0 = $$createType34;
-        const $$createField2_0 = $$createType36;
-        const $$createField3_0 = $$createType37;
+        const $$createField1_0 = $$createType35;
+        const $$createField2_0 = $$createType37;
+        const $$createField3_0 = $$createType38;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("line" in $$parsedSource) {
             $$parsedSource["line"] = $$createField1_0($$parsedSource["line"]);
@@ -1766,28 +1774,29 @@ const $$createType9 = CalibrationDataPoint.createFrom;
 const $$createType10 = $Create.Array($$createType9);
 const $$createType11 = $Create.Array($Create.Any);
 const $$createType12 = $Create.Array($Create.Any);
-const $$createType13 = ChannelConfig.createFrom;
-const $$createType14 = $Create.Array($$createType13);
-const $$createType15 = StepSegment.createFrom;
-const $$createType16 = $Create.Array($$createType15);
-const $$createType17 = AxisConfig.createFrom;
-const $$createType18 = $Create.Array($$createType17);
-const $$createType19 = AxisStatus.createFrom;
-const $$createType20 = $Create.Array($$createType19);
-const $$createType21 = TraversalLayout.createFrom;
-const $$createType22 = ThreeHoleProbeChannelConfig.createFrom;
-const $$createType23 = $Create.Array($$createType22);
-const $$createType24 = MotionAxisMapping.createFrom;
-const $$createType25 = ThreeHoleCalibFileInfo.createFrom;
-const $$createType26 = $Create.Array($$createType25);
-const $$createType27 = ThreeHoleRawData.createFrom;
-const $$createType28 = ThreeHoleInterpolationResult.createFrom;
-const $$createType29 = TraversalPoint.createFrom;
-const $$createType30 = $Create.Nullable($$createType29);
-const $$createType31 = ThreeHoleTraversalDataPoint.createFrom;
-const $$createType32 = $Create.Array($$createType31);
-const $$createType33 = LineLayout.createFrom;
-const $$createType34 = $Create.Nullable($$createType33);
-const $$createType35 = RectangleLayout.createFrom;
-const $$createType36 = $Create.Nullable($$createType35);
-const $$createType37 = $Create.Array($$createType29);
+const $$createType13 = $Create.Array($Create.Any);
+const $$createType14 = ChannelConfig.createFrom;
+const $$createType15 = $Create.Array($$createType14);
+const $$createType16 = StepSegment.createFrom;
+const $$createType17 = $Create.Array($$createType16);
+const $$createType18 = AxisConfig.createFrom;
+const $$createType19 = $Create.Array($$createType18);
+const $$createType20 = AxisStatus.createFrom;
+const $$createType21 = $Create.Array($$createType20);
+const $$createType22 = TraversalLayout.createFrom;
+const $$createType23 = ThreeHoleProbeChannelConfig.createFrom;
+const $$createType24 = $Create.Array($$createType23);
+const $$createType25 = MotionAxisMapping.createFrom;
+const $$createType26 = ThreeHoleCalibFileInfo.createFrom;
+const $$createType27 = $Create.Array($$createType26);
+const $$createType28 = ThreeHoleRawData.createFrom;
+const $$createType29 = ThreeHoleInterpolationResult.createFrom;
+const $$createType30 = TraversalPoint.createFrom;
+const $$createType31 = $Create.Nullable($$createType30);
+const $$createType32 = ThreeHoleTraversalDataPoint.createFrom;
+const $$createType33 = $Create.Array($$createType32);
+const $$createType34 = LineLayout.createFrom;
+const $$createType35 = $Create.Nullable($$createType34);
+const $$createType36 = RectangleLayout.createFrom;
+const $$createType37 = $Create.Nullable($$createType36);
+const $$createType38 = $Create.Array($$createType30);

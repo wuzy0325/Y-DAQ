@@ -277,10 +277,12 @@ func (d *XYDAQDriver) handleStreamFrame(frame []byte) {
 	// 映射到已启用通道
 	enabledValues := []float64{}
 	enabledIndices := []int{}
+	enabledUnits := []string{}
 	for i, ch := range d.channels {
 		if ch.Enabled && i < len(values) {
 			enabledValues = append(enabledValues, values[i])
 			enabledIndices = append(enabledIndices, i)
+			enabledUnits = append(enabledUnits, ch.Unit)
 		}
 	}
 
@@ -289,6 +291,7 @@ func (d *XYDAQDriver) handleStreamFrame(frame []byte) {
 		Timestamp:      time.Now().UnixMilli(),
 		Channels:       enabledValues,
 		ChannelIndices: enabledIndices,
+		ChannelUnits:   enabledUnits,
 	}
 
 	if d.onData != nil {

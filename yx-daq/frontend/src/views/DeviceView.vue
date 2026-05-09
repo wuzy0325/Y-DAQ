@@ -298,7 +298,7 @@ async function addDevice() {
         index: i,
         name: i < pressureCount ? `CH${i+1}` : (isAtmPressure ? '大气压' : '大气温度'),
         enabled: true,
-        unit: isAtmPressure ? 'kPa' : (isAtmTemp ? '°C' : newDevice.value.unit),
+        unit: isAtmPressure ? 'Pa' : (isAtmTemp ? '°C' : newDevice.value.unit),
         precision: newDevice.value.precision,
         rangeMin: 0,
         rangeMax: 200,
@@ -388,7 +388,7 @@ function openEditDialog(id: string) {
     return
   }
   // 从 CH0 提取统一单位，从任意通道提取统一精度
-  const ch0Unit = profile.channels.length > 0 ? profile.channels[0].unit : 'kPa'
+  const ch0Unit = profile.channels.length > 0 ? profile.channels[0].unit : 'Pa'
   const ch0Precision = profile.channels.length > 0 ? profile.channels[0].precision : 3
   // 从 periodMs 反推采样频率
   const publishRate = profile.periodMs > 0 ? Math.round(1000 / profile.periodMs) : 20
@@ -422,7 +422,7 @@ function syncUnitToChannels() {
     if (ch.index < pc) {
       ch.unit = editForm.value.unit
     }
-    // 大气压通道固定 kPa, 大气温度通道固定 °C
+    // 大气压通道固定 Pa, 大气温度通道固定 °C
   }
 }
 function syncPrecisionToChannels() {
@@ -445,13 +445,13 @@ async function saveEdit() {
     }
 
     const { types } = await import('../../wailsjs/go/models')
-    // 按规则构建通道配置：压力通道用统一单位，大气压固定kPa，大气温度固定°C，精度统一
+    // 按规则构建通道配置：压力通道用统一单位，大气压固定Pa，大气温度固定°C，精度统一
     const pc = editPressureCount.value
     const updatedChannels = editChannels.value.map(c => ({
       index: c.index,
       name: c.name,
       enabled: c.enabled,
-      unit: c.index === pc ? 'kPa' : (c.index === pc + 1 ? '°C' : editForm.value.unit),
+      unit: c.index === pc ? 'Pa' : (c.index === pc + 1 ? '°C' : editForm.value.unit),
       precision: editForm.value.precision,
       rangeMin: c.rangeMin,
       rangeMax: c.rangeMax,
@@ -473,7 +473,7 @@ async function saveEdit() {
     if (err) {
       ElMessage.error(`更新失败: ${err}`)
     } else {
-      const oldUnit = profile.channels.length > 0 ? profile.channels[0].unit : 'kPa'
+      const oldUnit = profile.channels.length > 0 ? profile.channels[0].unit : 'Pa'
       const oldStatus = deviceStore.statuses.find(s => s.id === editForm.value.id)
 
       if (oldStatus?.status === 'Connected' && editForm.value.unit !== oldUnit) {

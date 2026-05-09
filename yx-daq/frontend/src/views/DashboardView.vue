@@ -286,7 +286,7 @@ function getChannelName(deviceId: string, channelIndex: number): string {
 }
 function getChannelUnit(deviceId: string, channelIndex: number): string {
   const ch = getChannelConfig(deviceId, channelIndex)
-  return ch ? ch.unit : 'kPa'
+  return ch ? ch.unit : 'Pa'
 }
 function getChannelPrecision(deviceId: string, channelIndex: number): number {
   const ch = getChannelConfig(deviceId, channelIndex)

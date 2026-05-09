@@ -84,6 +84,7 @@ type DataPayload struct {
 	Timestamp      int64     `json:"timestamp"`
 	Channels       []float64 `json:"channels"`
 	ChannelIndices []int     `json:"channelIndices"`
+	ChannelUnits   []string  `json:"channelUnits"`
 }
 
 // DiscoveredDevice UDP扫描发现的设备

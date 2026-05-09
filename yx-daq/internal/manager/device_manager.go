@@ -396,11 +396,17 @@ func (m *DeviceManager) Init() {
 			} else if i == pressureCount+1 {
 				name = "大气温度"
 			}
-			defaultChannels[i] = types.ChannelConfig{
-				Index:     i,
-				Name:      name,
-				Enabled:   true,
-				Unit:      "kPa",
+		unit := "kPa"
+		if i == pressureCount {
+			unit = "Pa"
+		} else if i == pressureCount+1 {
+			unit = "°C"
+		}
+		defaultChannels[i] = types.ChannelConfig{
+			Index:     i,
+			Name:      name,
+			Enabled:   true,
+			Unit:      unit,
 				Precision: 3,
 			}
 		}
