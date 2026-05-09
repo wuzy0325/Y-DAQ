@@ -37,6 +37,7 @@ func (m *mockDeviceDriver) IsConnected() bool    { return m.connected.Load() }
 func (m *mockDeviceDriver) IsAcquiring() bool     { return m.acquiring.Load() }
 func (m *mockDeviceDriver) SetDataCallback(cb types.DataCallback) { m.onData = cb }
 func (m *mockDeviceDriver) UpdateChannels(ch []types.ChannelConfig) { m.channels = ch }
+func (m *mockDeviceDriver) GetChannels() []types.ChannelConfig { return m.channels }
 
 func (m *mockDeviceDriver) StartAcquisition(_ int) error {
 	if !m.connected.Load() {
@@ -161,6 +162,34 @@ func TestDeviceManager_Connect_ProfileNotFound(t *testing.T) {
 func TestDeviceManager_Disconnect_Idempotent(t *testing.T) {
 	m := newTestManager()
 	m.Disconnect("nonexistent") // should not panic
+}
+
+func TestDeviceManager_Connect_SyncsDriverChannelsToProfile(t *testing.T) {
+	m := newTestManager()
+	p := newSimProfile("dev-1")
+	p.Type = types.DeviceTypeSimulated
+	p.Channels = []types.ChannelConfig{
+		{Index: 0, Name: "CH1", Enabled: true, Unit: "kPa"},
+		{Index: 1, Name: "CH2", Enabled: true, Unit: "kPa"},
+		{Index: 2, Name: "大气压", Enabled: true, Unit: "kPa"},
+		{Index: 3, Name: "大气温度", Enabled: true, Unit: "°C"},
+	}
+	m.AddProfile(p)
+
+	if err := m.Connect("dev-1"); err != nil {
+		t.Fatalf("Connect failed: %v", err)
+	}
+
+	profile := m.GetProfileByID("dev-1")
+	if profile == nil {
+		t.Fatal("expected profile after connect")
+	}
+	if len(profile.Channels) != len(p.Channels) {
+		t.Fatalf("expected %d channels, got %d", len(p.Channels), len(profile.Channels))
+	}
+	if profile.Channels[0].Unit != "kPa" {
+		t.Errorf("expected connected driver channel unit kPa, got %s", profile.Channels[0].Unit)
+	}
 }
 
 // ==================== Acquisition ====================

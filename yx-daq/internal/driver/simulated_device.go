@@ -64,6 +64,9 @@ func (s *SimulatedDevice) IsAcquiring() bool {
 
 // StartAcquisition 启动模拟采集
 func (s *SimulatedDevice) StartAcquisition(periodMs int) error {
+	if s.acquiring.Load() {
+		return nil
+	}
 	s.acquiring.Store(true)
 	go s.simulateData(periodMs)
 	return nil
@@ -71,7 +74,14 @@ func (s *SimulatedDevice) StartAcquisition(periodMs int) error {
 
 // StopAcquisition 停止模拟采集
 func (s *SimulatedDevice) StopAcquisition() error {
+	if !s.acquiring.Load() {
+		return nil
+	}
 	s.acquiring.Store(false)
+	select {
+	case s.stopCh <- struct{}{}:
+	default:
+	}
 	return nil
 }
 
@@ -80,9 +90,15 @@ func (s *SimulatedDevice) UpdateChannels(channels []types.ChannelConfig) {
 	s.channels = channels
 }
 
+// GetChannels 返回当前通道配置副本。
+func (s *SimulatedDevice) GetChannels() []types.ChannelConfig {
+	channels := make([]types.ChannelConfig, len(s.channels))
+	copy(channels, s.channels)
+	return channels
+}
+
 // simulateData 模拟数据生成
 func (s *SimulatedDevice) simulateData(periodMs int) {
-	defer s.acquiring.Store(false)
 	ticker := time.NewTicker(time.Duration(periodMs) * time.Millisecond)
 	defer ticker.Stop()
 

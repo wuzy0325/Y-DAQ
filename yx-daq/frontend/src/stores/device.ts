@@ -1,7 +1,14 @@
-﻿import { ref, computed, shallowRef } from 'vue'
+import { ref, computed, shallowRef } from 'vue'
 import { defineStore } from 'pinia'
-import { DeviceService } from '../../bindings/yx-daq/internal/app'
-import { Events } from '@wailsio/runtime'
+import {
+  GetDeviceProfiles, UpdateDeviceProfile,
+  ConnectDevice, DisconnectDevice,
+  StartAcquisition, StopAcquisition,
+  StartAcquisitionAll, StopAcquisitionAll,
+  GetDeviceStatusAll, ScanDevices,
+  SetUnit,
+} from '../../wailsjs/go/main/App'
+import { EventsOn } from '../../wailsjs/runtime/runtime'
 
 interface ChannelConfig {
   index: number
@@ -51,7 +58,7 @@ export const useDeviceStore = defineStore('device', () => {
 
   async function fetchProfiles() {
     try {
-      profiles.value = await DeviceService.GetDeviceProfiles() as DeviceProfile[]
+      profiles.value = await GetDeviceProfiles() as DeviceProfile[]
     } catch (e) {
       console.warn('fetchProfiles failed:', e)
     }
@@ -59,7 +66,7 @@ export const useDeviceStore = defineStore('device', () => {
 
   async function updateProfile(profile: DeviceProfile): Promise<string | null> {
     try {
-      await DeviceService.UpdateDeviceProfile(profile as any)
+      await UpdateDeviceProfile(profile as any)
       await fetchProfiles()
       return null
     } catch (e: any) {
@@ -69,9 +76,21 @@ export const useDeviceStore = defineStore('device', () => {
     }
   }
 
+  async function setUnit(id: string, unit: string): Promise<string | null> {
+    try {
+      await SetUnit(id, unit)
+      await fetchProfiles()
+      return null
+    } catch (e: any) {
+      const msg = e?.message || String(e)
+      console.error('setUnit failed:', msg)
+      return msg
+    }
+  }
+
   async function fetchStatuses() {
     try {
-      statuses.value = await DeviceService.GetDeviceStatusAll() as DeviceStatus[]
+      statuses.value = await GetDeviceStatusAll() as DeviceStatus[]
     } catch (e) {
       console.warn('fetchStatuses failed:', e)
     }
@@ -79,7 +98,7 @@ export const useDeviceStore = defineStore('device', () => {
 
   async function connectDevice(id: string): Promise<string | null> {
     try {
-      await DeviceService.ConnectDevice(id)
+      await ConnectDevice(id)
       await fetchStatuses()
       return null
     } catch (e: any) {
@@ -91,7 +110,7 @@ export const useDeviceStore = defineStore('device', () => {
 
   async function disconnectDevice(id: string): Promise<string | null> {
     try {
-      await DeviceService.DisconnectDevice(id)
+      await DisconnectDevice(id)
       await fetchStatuses()
       return null
     } catch (e: any) {
@@ -103,7 +122,7 @@ export const useDeviceStore = defineStore('device', () => {
 
   async function startAcquisition(id: string): Promise<string | null> {
     try {
-      await DeviceService.StartAcquisition(id)
+      await StartAcquisition(id)
       await fetchStatuses()
       return null
     } catch (e: any) {
@@ -115,7 +134,7 @@ export const useDeviceStore = defineStore('device', () => {
 
   async function stopAcquisition(id: string): Promise<string | null> {
     try {
-      await DeviceService.StopAcquisition(id)
+      await StopAcquisition(id)
       await fetchStatuses()
       return null
     } catch (e: any) {
@@ -127,15 +146,14 @@ export const useDeviceStore = defineStore('device', () => {
 
   function startListening() {
     try {
-      Events.On('daq:data-snapshot', (event: { data: DataPayload[] }) => {
-        const data = event.data
+      EventsOn('daq:data-snapshot', (data: DataPayload[]) => {
         snapshots.value = data
         for (const payload of data) {
           latestData.value.set(payload.deviceId, payload)
         }
       })
-      Events.On('device:status-updated', (event: { data: DeviceStatus[] }) => {
-        statuses.value = event.data
+      EventsOn('device:status-updated', (data: DeviceStatus[]) => {
+        statuses.value = data
       })
     } catch (e) {
       console.warn('startListening failed:', e)
@@ -148,7 +166,7 @@ export const useDeviceStore = defineStore('device', () => {
   return {
     profiles, statuses, snapshots, latestData,
     isConnected, isAcquiring,
-    fetchProfiles, fetchStatuses, updateProfile,
+    fetchProfiles, fetchStatuses, updateProfile, setUnit,
     connectDevice, disconnectDevice,
     startAcquisition, stopAcquisition,
     startListening,

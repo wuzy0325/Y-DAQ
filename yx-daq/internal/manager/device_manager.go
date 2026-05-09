@@ -20,6 +20,7 @@ type DeviceDriver interface {
 	StopAcquisition() error
 	SetDataCallback(cb types.DataCallback)
 	UpdateChannels(channels []types.ChannelConfig)
+	GetChannels() []types.ChannelConfig
 }
 
 // DeviceManager 设备管理器
@@ -155,7 +156,10 @@ func (m *DeviceManager) Connect(id string) error {
 
 	m.mu.Lock()
 	m.instances[id] = drv
+	profile.Channels = drv.GetChannels()
+	m.profiles[id] = profile
 	m.mu.Unlock()
+	m.saveProfiles()
 	return nil
 }
 
@@ -191,14 +195,28 @@ func (m *DeviceManager) StopAcquisition(id string) error {
 	return drv.StopAcquisition()
 }
 
-// StartAcquisitionAll 批量启动采集
-func (m *DeviceManager) StartAcquisitionAll(periodMs int) int {
+// StartAcquisitionAll 批量启动采集（使用各设备配置的periodMs）
+func (m *DeviceManager) StartAcquisitionAll() int {
 	m.mu.RLock()
-	defer m.mu.RUnlock()
-	count := 0
+	type instanceInfo struct {
+		id       string
+		drv      DeviceDriver
+		periodMs int
+	}
+	items := make([]instanceInfo, 0, len(m.instances))
 	for id, drv := range m.instances {
-		if err := drv.StartAcquisition(periodMs); err != nil {
-			slog.Error("start acquisition failed", "id", id, "err", err)
+		periodMs := 50
+		if p, ok := m.profiles[id]; ok && p.PeriodMs > 0 {
+			periodMs = p.PeriodMs
+		}
+		items = append(items, instanceInfo{id, drv, periodMs})
+	}
+	m.mu.RUnlock()
+
+	count := 0
+	for _, item := range items {
+		if err := item.drv.StartAcquisition(item.periodMs); err != nil {
+			slog.Error("start acquisition failed", "id", item.id, "err", err)
 		} else {
 			count++
 		}
@@ -209,8 +227,13 @@ func (m *DeviceManager) StartAcquisitionAll(periodMs int) int {
 // StopAcquisitionAll 批量停止采集
 func (m *DeviceManager) StopAcquisitionAll() {
 	m.mu.RLock()
-	defer m.mu.RUnlock()
+	instances := make(map[string]DeviceDriver, len(m.instances))
 	for id, drv := range m.instances {
+		instances[id] = drv
+	}
+	m.mu.RUnlock()
+
+	for id, drv := range instances {
 		if err := drv.StopAcquisition(); err != nil {
 			slog.Error("stop acquisition failed", "id", id, "err", err)
 		}

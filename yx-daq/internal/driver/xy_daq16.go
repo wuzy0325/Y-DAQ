@@ -22,6 +22,7 @@ type XYDAQDriver struct {
 	conn           net.Conn
 	connected      atomic.Bool
 	acquiring      atomic.Bool
+	draining       atomic.Bool
 	onData         types.DataCallback
 	recvBuffer     []byte
 	reconnectCount int
@@ -125,6 +126,10 @@ func (d *XYDAQDriver) StartAcquisition(periodMs int) error {
 		return fmt.Errorf("device not connected")
 	}
 
+	if d.acquiring.Load() {
+		return nil
+	}
+
 	streamTag := fmt.Sprintf("%d", d.streamID)
 
 	// 配置数据流参数: 内部时钟/大端/连续
@@ -160,6 +165,10 @@ func (d *XYDAQDriver) StopAcquisition() error {
 		return fmt.Errorf("device not connected")
 	}
 
+	if !d.acquiring.Load() {
+		return nil
+	}
+
 	streamTag := fmt.Sprintf("%d", d.streamID)
 	cmd := fmt.Sprintf("c 02 %s\r", streamTag)
 	if _, err := d.conn.Write([]byte(cmd)); err != nil {
@@ -167,6 +176,11 @@ func (d *XYDAQDriver) StopAcquisition() error {
 	}
 
 	d.acquiring.Store(false)
+	d.draining.Store(true)
+	go func() {
+		time.Sleep(200 * time.Millisecond)
+		d.draining.Store(false)
+	}()
 	return nil
 }
 
@@ -175,6 +189,15 @@ func (d *XYDAQDriver) UpdateChannels(channels []types.ChannelConfig) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.channels = channels
+}
+
+// GetChannels 返回当前通道配置副本。
+func (d *XYDAQDriver) GetChannels() []types.ChannelConfig {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	channels := make([]types.ChannelConfig, len(d.channels))
+	copy(channels, d.channels)
+	return channels
 }
 
 // receiveLoop 数据接收循环
@@ -227,6 +250,12 @@ func (d *XYDAQDriver) processBuffer() {
 
 // handleStreamFrame 处理二进制数据流帧
 func (d *XYDAQDriver) handleStreamFrame(frame []byte) {
+	if d.draining.Load() {
+		return
+	}
+	if !d.acquiring.Load() {
+		return
+	}
 	// 帧结构: 头(5B) + CH1(4B float32 BE) + ... + CHn(4B)
 	if len(frame) < d.frameSize {
 		return
