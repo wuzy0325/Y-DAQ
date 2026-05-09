@@ -1,6 +1,6 @@
 # YX-DAQ —— Agent instructions
 
-Windows-only Wails v2 desktop app (Go 1.23 + Vue 3 + TypeScript + Vite 3 + Element Plus + ECharts 6).
+Windows-only Wails v3 desktop app (Go 1.23 + Vue 3 + TypeScript + Vite 3 + Element Plus + ECharts 6).
 多采集设备数据采集、显示、保存，设备管理与配置；连接运动控制器结合采集设备进行五孔探针、三孔探针等移位布点插值测试及数据导出。
 
 ## Prerequisites
@@ -9,41 +9,43 @@ Windows-only Wails v2 desktop app (Go 1.23 + Vue 3 + TypeScript + Vite 3 + Eleme
 |------------|---------|--------|
 | Go 1.23+ | https://go.dev/dl/ | `go version` |
 | Node.js 18+ | https://nodejs.org/ | `node --version` |
-| Wails CLI v2 | `go install github.com/wailsapp/wails/v2/cmd/wails@latest` | `wails doctor` |
+| Wails CLI v3 alpha | `go install github.com/wailsapp/wails/v3/cmd/wails3@latest` | `wails3 version` |
 | NSIS 3.x | https://nsis.sourceforge.io/Download → 安装后将 `C:\Program Files (x86)\NSIS` 加入系统 PATH | `makensis /VERSION` |
 
-> **NSIS PATH 注意**: NSIS 默认装到 `C:\Program Files (x86)\NSIS`，`makensis` 必须在系统 PATH 中，否则 `wails build -nsis` 会报 "makensis not found"。可在系统环境变量中添加，或临时 `set PATH=%PATH%;C:\Program Files (x86)\NSIS`。
+> **Wails v3 注意**: 本项目使用 Wails v3（`wails3`），不是 PATH 中的 `wails`(v2)。用错命令会报 `Unable to find Wails in go.mod`。
+> **NSIS PATH 注意**: NSIS 默认装到 `C:\Program Files (x86)\NSIS`，`makensis` 必须在系统 PATH 中，否则打包会报错。
 
 ## Build Procedure
 
-### 1. 仅构建 exe
+### 1. 仅构建 exe（生产版）
 ```bat
 cd yx-daq
-build.bat
+wails3 task build
 ```
 产物: `build\bin\yx-daq.exe`（直接运行，需目标机已装 WebView2）
 
-### 2. 构建 exe + NSIS 安装包
+### 2. 构建 exe（调试版，含 DevTools）
+```bat
+cd yx-daq
+wails3 task build DEV=true
+```
+
+### 3. 开发模式（热重载）
+```bat
+cd yx-daq
+wails3 dev -config ./build/config.yml -port 9245
+```
+
+### 4. 构建 exe + NSIS 安装包
 ```bat
 cd yx-daq
 build.bat nsis
 ```
 产物:
 - `build\bin\yx-daq.exe` — 程序本体
-- `build\bin\yx-daq-amd64-installer.exe` — NSIS 安装包（自动装 WebView2、创建快捷方式、注册卸载程序）
+- `build\bin\yx-daq-amd64-installer.exe` — NSIS 安装包
 
-> **分发到其他电脑用 `yx-daq-amd64-installer.exe`**，安装包会自动处理依赖。
-
-### 3. Wails 命令行直接构建
-```bat
-wails build                          # 仅 exe
-wails build -platform windows/amd64 -nsis   # exe + NSIS 安装包
-wails build -s                       # 跳过前端编译（前端已构建时）
-```
-
-> **注意**: Wails v2 用 `-platform` 而非 `--target` 指定目标平台。
-
-### 4. 清理
+### 5. 清理
 ```bat
 build.bat clean
 ```
@@ -52,10 +54,12 @@ build.bat clean
 
 | What | How |
 |------|------|
-| Dev mode (hot reload) | `wails dev` |
-| Build exe | `build.bat` (runs `go build ./...` then `wails build`) |
+| Dev mode (hot reload) | `wails3 dev -config ./build/config.yml -port 9245` |
+| Build exe (production) | `wails3 task build` |
+| Build exe (debug) | `wails3 task build DEV=true` |
 | Build + installer | `build.bat nsis` |
 | Clean artifacts | `build.bat clean` |
+| Build bindings | `wails3 generate bindings -clean=true -ts` |
 | Go compile check | `go build ./...` |
 | Go linter | `golangci-lint run ./internal/...` |
 | Frontend typecheck + build | `cd frontend && npm run build` (vue-tsc --noEmit then vite build) |
@@ -98,8 +102,8 @@ ECC agents and skills installed at system level (in `~/.claude/` and `~/.opencod
 
 ## Architecture
 
-- `main.go` — entrypoint, creates `App`, embeds `frontend/dist` via `//go:embed`
-- `app.go` — Wails bindings (~50 methods), event publishing (`daq:data-snapshot`, `motion:status-updated`, `calibration:*`, `three-hole:*`)
+- `main.go` — entrypoint, creates `Core`, embeds `frontend/dist` via `//go:embed`, Wails v3 `application.New()` with Services
+- `internal/app/` — Wails v3 service layer: `Core` (lifecycle/DI), `CoreService`, `DeviceService`, `MotionService`, `ThreeHoleService`, `CalibrationService`, `DataService`, `ConfigService`. Events: `daq:data-snapshot`, `motion:status-updated`, `calibration:*`, `three-hole:*`
 - `internal/types/` — shared types and constants (包括五孔和三孔探针类型)
 - `internal/driver/` — hardware drivers: `xy_daq16.go` (TCP), `b140.go` (motion TCP), `simulated_device.go`, `simulated_motion.go`
 - `internal/manager/` — `DeviceManager`, `MotionControllerManager` (10 Hz poll), `AcquisitionHub` (20 Hz publish)
@@ -121,7 +125,8 @@ ECC agents and skills installed at system level (in `~/.claude/` and `~/.opencod
 - SCSS: Vite auto-injects `@use "@/assets/styles/variables.scss" as *;` globally
 - TS path alias: `@` → `/src` (configured in `vite.config.ts`)
 - Vitest uses `happy-dom` environment (not jsdom)
-- Wails auto-generates `frontend/wailsjs/` bindings (**禁止手动编辑**)
+- Wails v3 auto-generates `frontend/bindings/` (TypeScript, `@wailsio/runtime`) — **禁止手动编辑**
+- 旧版 `frontend/wailsjs/` (Wails v2) 已废弃，通过 `frontend/src/wails-compat/` 兼容层映射到 v3 bindings
 - All external strings in Chinese (UI labels, error messages, file dialogs)
 - Axes: X=purple, Y=cyan, Z=green, U=orange (UI convention)
 - Go 错误包装用 `%w`，日志用 `log.Printf`
@@ -137,12 +142,13 @@ ECC agents and skills installed at system level (in `~/.claude/` and `~/.opencod
 - Go 文件小写加下划线，Vue 组件 PascalCase，store 文件 camelCase
 - 所有 `.md` 文档放入 `docs/`，根目录不新增
 - 事件通道命名 `<domain>:<action>`
-- Wails 绑定文件 `frontend/wailsjs/` 为自动生成，**禁止手动编辑**
+- Wails 绑定文件 `frontend/bindings/` 为 Wails v3 自动生成，**禁止手动编辑**
+- `frontend/wailsjs/` 为 Wails v2 旧绑定，通过 `frontend/src/wails-compat/` 兼容层映射到 v3
 
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **Y-DAQ** (3038 symbols, 6448 relationships, 154 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **y-daq** (3494 symbols, 6905 relationships, 154 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
@@ -165,10 +171,10 @@ This project is indexed by GitNexus as **Y-DAQ** (3038 symbols, 6448 relationshi
 
 | Resource | Use for |
 |----------|---------|
-| `gitnexus://repo/Y-DAQ/context` | Codebase overview, check index freshness |
-| `gitnexus://repo/Y-DAQ/clusters` | All functional areas |
-| `gitnexus://repo/Y-DAQ/processes` | All execution flows |
-| `gitnexus://repo/Y-DAQ/process/{name}` | Step-by-step execution trace |
+| `gitnexus://repo/y-daq/context` | Codebase overview, check index freshness |
+| `gitnexus://repo/y-daq/clusters` | All functional areas |
+| `gitnexus://repo/y-daq/processes` | All execution flows |
+| `gitnexus://repo/y-daq/process/{name}` | Step-by-step execution trace |
 
 ## CLI
 
@@ -180,21 +186,20 @@ This project is indexed by GitNexus as **Y-DAQ** (3038 symbols, 6448 relationshi
 | Rename / extract / split / refactor | `.claude/skills/gitnexus/gitnexus-refactoring/SKILL.md` |
 | Tools, resources, schema reference | `.claude/skills/gitnexus/gitnexus-guide/SKILL.md` |
 | Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
+| Work in the Three_hole area (156 symbols) | `.claude/skills/generated/three-hole/SKILL.md` |
+| Work in the Go area (90 symbols) | `.claude/skills/generated/go/SKILL.md` |
+| Work in the Stores area (82 symbols) | `.claude/skills/generated/stores/SKILL.md` |
+| Work in the Manager area (74 symbols) | `.claude/skills/generated/manager/SKILL.md` |
+| Work in the Views area (60 symbols) | `.claude/skills/generated/views/SKILL.md` |
+| Work in the Driver area (48 symbols) | `.claude/skills/generated/driver/SKILL.md` |
+| Work in the Calibration area (29 symbols) | `.claude/skills/generated/calibration/SKILL.md` |
+| Work in the Storage area (18 symbols) | `.claude/skills/generated/storage/SKILL.md` |
+| Work in the App area (16 symbols) | `.claude/skills/generated/app/SKILL.md` |
+| Work in the Components area (14 symbols) | `.claude/skills/generated/components/SKILL.md` |
+| Work in the Types area (7 symbols) | `.claude/skills/generated/types/SKILL.md` |
+| Work in the Main area (7 symbols) | `.claude/skills/generated/main/SKILL.md` |
+| Work in the Scanner area (4 symbols) | `.claude/skills/generated/scanner/SKILL.md` |
+| Work in the Runtime area (4 symbols) | `.claude/skills/generated/runtime/SKILL.md` |
+| Work in the Composables area (4 symbols) | `.claude/skills/generated/composables/SKILL.md` |
 
 <!-- gitnexus:end -->
-
-<!-- DESIGN_SYSTEM_START -->
-## Design System
-
-- **Name:** YX-DAQ Neon
-- **Primary Color:** `#b829ff` (neon purple)
-- **Accent Color:** `#00f5ff` (neon cyan)
-- **Background:** `#0a0a1a` (deep space)
-- **Typography:** Microsoft YaHei for UI, mono for data values
-- **Spacing Scale:** 4px base (xs 4px → 3xl 48px)
-- **Corner Radius:** 8px (sm) for interactive, 12px (md) for cards
-- **Component patterns:** Glass-morphism cards, neon text on dark backgrounds, 4-colour chart rotation (purple → cyan → green → orange)
-- **Full tokens:** See [DESIGN.md](./DESIGN.md)
-
-AI agents: always apply this design system when generating UI. Do not invent new colors or spacing; refer to `DESIGN.md`.
-<!-- DESIGN_SYSTEM_END -->

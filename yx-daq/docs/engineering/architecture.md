@@ -46,7 +46,7 @@ Go 后端与 Vue 前端职责明确，通过 Wails 绑定层通信。
 
 - 后端通过 `EventsEmit` 推送数据，前端通过 `EventsOn` 监听
 - 事件通道命名：`<domain>:<action>`（如 `daq:data-snapshot`、`three-hole:progress`）
-- 前端不假设后端内部结构，只依赖 Wails 生成的类型（`wailsjs/go/models`）
+- 前端不假设后端内部结构，只依赖 Wails 生成的类型（`bindings/yx-daq/internal/types`，或通过 `wails-compat/models.ts` 兼容旧导入）
 
 ---
 
@@ -54,37 +54,18 @@ Go 后端与 Vue 前端职责明确，通过 Wails 绑定层通信。
 
 ```
 yx-daq/
-├── main.go                   # Wails 入口（唯一 root Go 文件）
-├── CONTEXT.md                # 领域语言（共享术语表）
+├── main.go                   # Wails v3 入口，Core + Services + application.New()
+├── Taskfile.yml              # Wails v3 构建任务（build/dev/run）
 ├── AGENTS.md                 # Agent 指令（AI 开发用）
 ├── CLAUDE.md                 # AI 行为准则 + 规范引用
-├── wails.json                # Wails v2 项目配置
+├── wails.json                # Wails 项目信息（名称、版本等）
 ├── go.mod / go.sum           # Go 模块依赖
 ├── build.bat                 # Windows 构建（exe / nsis / clean）
-├── dev.bat                   # Windows 开发（wails dev / build+run）
-├── .gitignore
-│
-├── internal/                 # Go 后端（业务逻辑、驱动、存储）
-│   └── app/                  # App 结构体 + DI + Wails 绑定
-│       ├── app.go                    # App struct + startup/shutdown + DI
-│       ├── event_publishers.go       # 事件发布器实现（Wails EventsEmit 封装）
-│       ├── handlers_device.go        # Wails 绑定：设备管理
-│       ├── handlers_motion.go        # Wails 绑定：运动控制
-│       ├── handlers_calib.go         # Wails 绑定：五孔校准
-│       ├── handlers_3h.go            # Wails 绑定：三孔测试
-│       ├── handlers_data.go          # Wails 绑定：录制/回放/数据
-│       └── handlers_config.go        # Wails 绑定：配置/路径
-├── AGENTS.md                 # Agent 指令（AI 开发用）
-├── CLAUDE.md                 # AI 行为准则 + 规范引用
-├── wails.json                # Wails v2 项目配置
-├── go.mod / go.sum           # Go 模块依赖
-├── build.bat                 # Windows 构建（exe / nsis / clean）
-├── dev.bat                   # Windows 开发（wails dev / build+run）
 ├── .gitignore
 │
 ├── internal/                 # Go 后端（业务逻辑、驱动、存储）
 ├── frontend/                 # Vue 3 前端
-├── build/                    # Wails 构建资源（图标、安装脚本等）
+├── build/                    # Wails v3 构建资源 + Taskfile 子任务
 └── docs/                     # 所有 .md 文档（设计文档、审查报告、规范）
 ```
 
@@ -108,22 +89,23 @@ yx-daq/
 
 ```
 internal/
+├── app/                      # Wails v3 服务层（依赖注入、绑定方法）
+│   ├── core.go               # Core 生命周期 + DI（Startup/Shutdown）
+│   ├── core_service.go       # CoreService → 调用 Core.Startup/Shutdown
+│   ├── service_device.go     # DeviceService → 设备管理绑定
+│   ├── service_motion.go     # MotionService → 运动控制绑定
+│   ├── service_three_hole.go # ThreeHoleService → 三孔测试绑定
+│   ├── service_calibration.go# CalibrationService → 五孔校准绑定
+│   ├── service_data.go       # DataService → 录制/回放绑定
+│   ├── service_config.go     # ConfigService → 配置/路径绑定
+│   └── event_publishers.go   # 校准/三孔事件发布器
+│
 ├── types/                    # 共享类型、常量、枚举（纯定义，无业务逻辑，零依赖）
 │   ├── device.go
 │   ├── motion.go
 │   ├── calibration.go
 │   ├── three_hole_traversal.go
 │   └── constants.go
-│
-├── app/                      # 应用层（DI 汇聚 + Wails 绑定）
-│   ├── app.go                # App struct + startup/shutdown + DI 注入
-│   ├── event_publishers.go   # 事件发布器实现
-│   ├── handlers_device.go    # Wails 绑定：设备管理
-│   ├── handlers_motion.go    # Wails 绑定：运动控制
-│   ├── handlers_calib.go     # Wails 绑定：五孔校准
-│   ├── handlers_3h.go        # Wails 绑定：三孔测试
-│   ├── handlers_data.go      # Wails 绑定：录制/回放/数据
-│   └── handlers_config.go    # Wails 绑定：配置/路径
 │
 ├── driver/                   # 硬件驱动（采集设备 + 运动控制器）
 │   ├── xy_daq16.go            # DAQ-16 TCP 驱动
@@ -139,9 +121,6 @@ internal/
 ├── scanner/                  # UDP 设备扫描发现
 │   └── daq_scanner.go
 │
-├── logger/                   # 日志服务（JSON 格式 + 30 天轮转）
-│   └── logger.go
-│
 ├── storage/                  # 数据持久化（配置、记录、报表）
 │   ├── config_store.go        # JSON 配置读写
 │   ├── data_storage.go        # CSV 实时记录
@@ -155,12 +134,8 @@ internal/
 │
 └── three_hole/               # 三孔探针移位测试业务
     ├── service.go             # 测试生命周期 + 主循环
-    ├── test_manager.go        # 测试管理器
-    ├── data_processor.go      # 数据采集 + 3-sigma 滤波
     ├── interpolator.go        # 插值算法
-    ├── event_handler.go       # 事件与 CSV 处理
-    ├── csv_writer.go          # CSV 导出
-    └── point_generator.go     # 布点生成
+    └── csv_writer.go          # CSV 导出
 ```
 
 - `types/` 是唯一无内部依赖的包
@@ -175,21 +150,15 @@ types ← driver
 types ← scanner
 types ← manager
       │
-types ← logger
-      │
 types ← storage ← manager
       │
 types ← calibration ← manager
       │
 types ← three_hole  ← manager
       │
-app → 所有 internal 包（注入依赖）
+internal/app/ → 所有 internal 包（依赖注入 + 服务注册）
 ```
 
-- `types/` 是唯一无内部依赖的包
-- `driver/` 依赖 `types/` 用于 `DataPayload` 等类型
-- `manager/` 依赖 `driver/`（工厂模式创建驱动实例）+ `storage/`（配置持久化）
-- `app/` 是唯一的依赖注入汇聚点，依赖所有 internal 包
 - 不允许循环依赖
 
 ### 3.3 每包最大行数
@@ -200,7 +169,7 @@ app → 所有 internal 包（注入依赖）
 | `driver/` 单文件 | 500 行 | 按协议版本/功能拆 |
 | `three_hole/service.go` | 800 行 | 拆为 `controller.go` / `planner.go` |
 | 其他 service | 500 行 | 拆辅助逻辑到子文件 |
-| `package main` 单文件 | 500 行 | 拆为 `handlers_xxx.go` |
+| `internal/app/service_*.go` | 500 行 | 拆为子文件 |
 
 ---
 
@@ -211,13 +180,13 @@ app → 所有 internal 包（注入依赖）
 ```
 frontend/src/
 ├── api/                      # 枚举、常量、API 类型（与 Wails 无关的）
-│   └── enums.ts              # ThreeHoleChannelRole, TraversalPattern 等
+│   └── enums.ts
 │
 ├── stores/                   # Pinia 状态管理
-│   ├── device.ts              # 采集设备 store（161 行）
-│   ├── motion.ts              # 运动控制器 store（586 行 → 待拆分）
-│   ├── calibration.ts         # 五孔校准 store（121 行）
-│   └── threeHoleTest.ts       # 三孔测试 store（507 行 → 待拆分）
+│   ├── device.ts              # 采集设备 store
+│   ├── motion.ts              # 运动控制器 store
+│   ├── calibration.ts         # 五孔校准 store
+│   └── threeHoleTest.ts       # 三孔测试 store
 │
 ├── views/                    # 页面级组件（对应路由）
 │   ├── DashboardView.vue      # 仪表盘
@@ -239,12 +208,11 @@ frontend/src/
 │       └── AxisControlCard.vue
 │
 ├── composables/              # 逻辑复用（不引用 store，不含 UI）
-│   └── usePlayback.ts        # CSV 数据回放
 │
 ├── layouts/                  # 布局组件
 │   └── MainLayout.vue         # 主导航 + 页面容器
 │
-├── router/                   # 路由配置（6 条：dashboard、device、motion、calibration、3h、settings）
+├── router/                   # 路由配置
 │   └── index.ts
 │
 ├── utils/                    # 工具函数
@@ -258,6 +226,13 @@ frontend/src/
 │   │       └── theme-variables.scss
 │   ├── fonts/
 │   └── images/
+│
+├── wails-compat/             # Wails v2→v3 兼容层
+│   ├── app.ts                #   wailsjs/go/main/App → bindings 映射
+│   ├── models.ts             #   wailsjs/go/models → bindings 映射
+│   └── runtime.ts            #   wailsjs/runtime/runtime → @wailsio/runtime 映射
+│
+├── bindings/                 # Wails v3 自动生成的 TS 绑定（禁止手动编辑）
 │
 ├── main.ts                   # Vue 应用入口
 ├── App.vue
@@ -277,7 +252,8 @@ api/            → 纯定义，无运行时依赖
 - `views/` 中的组件可以引用 `stores/`、`components/`、`composables/`、`api/`
 - `components/` 中的组件可以引用 `stores/`、`api/`，但**不引用** `views/`
 - `composables/` 不引用 `stores/`，不包含 UI 逻辑
-- `node_modules` 和 `wailsjs/` 不提交 git（已在 `.gitignore`）
+- `node_modules` 不提交 git（已在 `.gitignore`）
+- `frontend/bindings/` 为 Wails v3 自动生成，必要时提交（前端构建需其存在）
 
 ### 4.3 Wails 事件命名
 
@@ -441,7 +417,7 @@ Go 测试约定：
 | 在 `main.ts` 中写大量路由配置 | 模块不清晰 | 抽离到 `router/index.ts` |
 | 前端类型定义分散在各 `.vue` 中 | 类型不可复用 | 提取到 store 或就地声明 |
 | `internal/` 外的 Go 文件（非 `package main`） | 违反 Go 惯例 | 放入 `internal/` |
-| 手动编辑 `frontend/wailsjs/` | 自动生成，下次构建覆盖 | 通过 wails 命令重新生成 |
+| 手动编辑 `frontend/bindings/` | 自动生成，下次构建覆盖 | 通过 `wails3 generate bindings` 重新生成 |
 | 超过 2 层间接调用 | 难追踪、难调试 | 扁平化调用链 |
 | `fmt.Errorf("...: %v", err)` | 断错误链 | 用 `%w` |
 | `interface{}` 替代泛型 | 类型不安全 | 用 `ConfigStore[T]` 泛型 |
