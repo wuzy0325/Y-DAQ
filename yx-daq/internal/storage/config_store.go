@@ -111,23 +111,23 @@ func tryFixCorruptedJson(raw []byte) []byte {
 
 // ConfigManager 管理所有配置存储
 type ConfigManager struct {
-	Devices          *ConfigStore[[]types.DeviceProfile]
-	Motion           *ConfigStore[[]types.MotionControllerProfile]
-	Acquisition      *ConfigStore[types.AcquisitionConfig]
-	Calibration      *ConfigStore[types.CalibrationConfig] // 五孔校准配置
-	Storage          *ConfigStore[types.StorageConfig]
-	ThreeHoleProbe1  *ConfigStore[types.ThreeHoleTraversalConfig]
-	ThreeHoleProbe2  *ConfigStore[types.ThreeHoleTraversalConfig]
+	Devices         *ConfigStore[[]types.DeviceProfile]
+	Motion          *ConfigStore[[]types.MotionControllerProfile]
+	Acquisition     *ConfigStore[types.AcquisitionConfig]
+	Calibration     *ConfigStore[types.CalibrationConfig] // 五孔校准配置
+	Storage         *ConfigStore[types.StorageConfig]
+	ThreeHoleProbe1 *ConfigStore[types.ThreeHoleTraversalConfig]
+	ThreeHoleProbe2 *ConfigStore[types.ThreeHoleTraversalConfig]
 }
 
 // NewConfigManager 创建配置管理器
 func NewConfigManager(configDir string) *ConfigManager {
 	return &ConfigManager{
-		Devices:     NewConfigStore(filepath.Join(configDir, "devices.json"), []types.DeviceProfile{}),
-		Motion:      NewConfigStore(filepath.Join(configDir, "motion.json"), []types.MotionControllerProfile{}),
-		Acquisition: NewConfigStore(filepath.Join(configDir, "acquisition.json"), types.AcquisitionConfig{}),
-		Calibration: NewConfigStore(filepath.Join(configDir, "calibration.json"), types.CalibrationConfig{}),
-		Storage:     NewConfigStore(filepath.Join(configDir, "storage.json"), types.StorageConfig{}),
+		Devices:         NewConfigStore(filepath.Join(configDir, "devices.json"), []types.DeviceProfile{}),
+		Motion:          NewConfigStore(filepath.Join(configDir, "motion.json"), []types.MotionControllerProfile{}),
+		Acquisition:     NewConfigStore(filepath.Join(configDir, "acquisition.json"), types.AcquisitionConfig{}),
+		Calibration:     NewConfigStore(filepath.Join(configDir, "calibration.json"), types.CalibrationConfig{}),
+		Storage:         NewConfigStore(filepath.Join(configDir, "storage.json"), types.StorageConfig{}),
 		ThreeHoleProbe1: NewConfigStore(filepath.Join(configDir, "three_hole_probe1.json"), types.ThreeHoleTraversalConfig{}),
 		ThreeHoleProbe2: NewConfigStore(filepath.Join(configDir, "three_hole_probe2.json"), types.ThreeHoleTraversalConfig{}),
 	}

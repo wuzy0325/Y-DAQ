@@ -89,18 +89,31 @@ func (d *B140Driver) SendCommand(cmd string) (string, error) {
 		return "", fmt.Errorf("send command %q failed: %w", cmd, err)
 	}
 
-	// 读取响应（以\r结尾）
-	resp, err := d.reader.ReadString('\r')
+	// B140/Galil responses terminate with ':' on success or '?' on error.
+	resp, err := d.readResponse()
 	if err != nil {
 		return "", fmt.Errorf("read response for %q failed: %w", cmd, err)
 	}
 
-	// 检查B140响应格式: ':'成功, '?'错误
-	if len(resp) > 0 && resp[0] == '?' {
+	if strings.HasSuffix(resp, "?") {
 		return resp, fmt.Errorf("B140 command error: %s", cmd)
 	}
 
 	return resp, nil
+}
+
+func (d *B140Driver) readResponse() (string, error) {
+	var b strings.Builder
+	buf := make([]byte, 1)
+	for {
+		if _, err := d.conn.Read(buf); err != nil {
+			return b.String(), err
+		}
+		b.WriteByte(buf[0])
+		if buf[0] == ':' || buf[0] == '?' {
+			return b.String(), nil
+		}
+	}
 }
 
 // B140MotionController B140运动控制器（高层接口）
@@ -142,6 +155,12 @@ func (c *B140MotionController) Connect() error {
 func (c *B140MotionController) Disconnect() {
 	c.directionSignature = ""
 	c.driver.Disconnect()
+}
+
+// UpdateAxes applies edited axis parameters to an already connected controller.
+func (c *B140MotionController) UpdateAxes(axes []types.AxisConfig) {
+	c.axes = axes
+	c.directionSignature = ""
 }
 
 // IsConnected 是否已连接
@@ -353,8 +372,7 @@ func (c *B140MotionController) GetAllAxisStatus() ([]types.AxisStatus, error) {
 	// 批量读取寄存器位置 (TD, 一次命令)
 	tdPositions, err := c.readTD()
 	if err != nil {
-		slog.Warn("read TD failed", "err", err)
-		tdPositions = map[string]float64{}
+		return nil, fmt.Errorf("read TD failed: %w", err)
 	}
 
 	// 批量读取运动状态 (TS, 一次命令)
@@ -375,6 +393,8 @@ func (c *B140MotionController) GetAllAxisStatus() ([]types.AxisStatus, error) {
 			}
 			tsMoving[axes[i]] = val&0x80 != 0
 		}
+	} else {
+		return nil, fmt.Errorf("read TS failed: %w", tsErr)
 	}
 
 	// 批量读取所有轴限位 (8 条 MG 命令)

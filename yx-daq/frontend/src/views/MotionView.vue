@@ -1,144 +1,100 @@
-﻿<template>
+<template>
   <div class="motion-view">
-    <!-- 页面头部 -->
-    <div class="page-header">
-      <div class="header-left">
-        <h2 class="page-title">运动控制器</h2>
-        <span v-if="activeProfile" class="controller-name">{{ activeProfile.name }}</span>
+    <!-- 顶部状态栏 -->
+    <div class="status-bar">
+      <div class="status-left">
+        <div class="page-brand">
+          <div class="brand-icon">
+            <el-icon :size="22"><Cpu /></el-icon>
+          </div>
+          <div class="brand-text">
+            <h2 class="page-title">运动控制</h2>
+            <span v-if="activeProfile" class="controller-name">{{ activeProfile.name }}</span>
+          </div>
+        </div>
+        <div class="connection-pill" :class="connectionStatus">
+          <span class="pulse-dot" />
+          <span class="conn-text">{{ connectionStatusText }}</span>
+        </div>
       </div>
-      <div class="header-right">
-        <!-- 连接状态 -->
-        <el-tag :type="connectionStatusType" size="large" effect="dark">
-          {{ connectionStatusText }}
-        </el-tag>
 
-        <!-- 连接/断开按钮 -->
-        <div class="header-action-group">
+      <div class="status-center">
+        <div class="conn-group-title">
+          <span class="field-label">控制器连接</span>
+          <span class="field-hint">修改后自动保存</span>
+        </div>
+        <div class="conn-field">
+          <span class="field-label">IP 地址</span>
+          <el-input
+            v-model="editableAddress"
+            size="small"
+            class="ip-input"
+            :disabled="motionStore.isConnected"
+            @change="onConnectionInfoChange"
+          />
+        </div>
+        <div class="conn-field">
+          <span class="field-label">端口</span>
+          <el-input-number
+            v-model="editablePort"
+            size="small"
+            :min="1"
+            :max="65535"
+            class="port-input"
+            :disabled="motionStore.isConnected"
+            @change="onConnectionInfoChange"
+          />
+        </div>
+        <div class="conn-field type-field">
+          <span class="field-label">类型</span>
+          <span class="type-badge">{{ activeProfile?.type === 'B140-MC' ? 'B140' : (activeProfile?.type || 'B140') }}</span>
+        </div>
+      </div>
+
+      <div class="status-right">
+        <div class="connection-actions">
           <el-button
             v-if="!motionStore.isConnected"
             type="success"
+            class="conn-btn"
             :loading="motionStore.connectionStatus === 'connecting'"
             @click="connectController"
           >
-            连接
+            <el-icon><Link /></el-icon>
+            连接控制器
           </el-button>
           <el-button
             v-else
-            type="danger"
+            type="info"
+            class="conn-btn disconnect"
             plain
             @click="disconnectController"
           >
-            断开
+            <el-icon><CircleClose /></el-icon>
+            断开连接
           </el-button>
         </div>
-
-        <!-- 紧急停止 -->
         <el-button
           type="danger"
           class="estop-btn"
-          :disabled="!motionStore.isAnyAxisRunning"
+          :disabled="!motionStore.isConnected"
           @click="onEmergencyStop"
         >
-          紧急停止
+          <el-icon><WarningFilled /></el-icon>
+          急停
         </el-button>
       </div>
     </div>
 
-    <!-- 主内容区 -->
-    <div class="main-content">
-      <!-- 左侧：轴控制面板 -->
-      <GlassCard title="轴控制面板" icon="🎮" class="control-panel">
-        <div class="axes-grid">
-          <AxisControlCard
-            v-for="axis in motionStore.allAxes"
-            :key="axis.name"
-            :axis="axis"
-            @configure="onConfigureAxis"
-          />
-        </div>
-      </GlassCard>
-
-      <!-- 右侧：系统状态 -->
-      <div class="status-panel">
-        <!-- 连接信息 -->
-        <div class="status-section">
-          <div class="section-title">连接信息</div>
-          <div class="info-list">
-            <div class="info-item">
-              <span class="label">IP地址</span>
-              <el-input
-                v-model="editableAddress"
-                size="small"
-                style="width: 140px"
-                :disabled="motionStore.isConnected"
-                @change="onConnectionInfoChange"
-              />
-            </div>
-            <div class="info-item">
-              <span class="label">端口号</span>
-              <el-input-number
-                v-model="editablePort"
-                size="small"
-                :min="1"
-                :max="65535"
-                style="width: 120px"
-                :disabled="motionStore.isConnected"
-                @change="onConnectionInfoChange"
-              />
-            </div>
-            <div class="info-item">
-              <span class="label">控制器类型</span>
-              <span class="value">{{ activeProfile?.type === 'B140-MC' ? 'B140' : (activeProfile?.type || 'B140') }}</span>
-            </div>
-            <div class="info-item">
-              <span class="label">连接状态</span>
-              <span class="value" :class="motionStore.connectionStatus">{{ connectionStatusText }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 各轴位置 -->
-        <div class="status-section">
-          <div class="section-title">各轴位置</div>
-          <div class="position-list">
-            <div
-              v-for="axis in motionStore.allAxes"
-              :key="axis.name"
-              class="position-item"
-              :class="{ 'is-selected': motionStore.selectedAxis === axis.name }"
-              @click="motionStore.selectAxis(axis.name)"
-            >
-              <div class="axis-info">
-                <span class="axis-name">{{ axis.name }}轴</span>
-                <el-tag :type="axis.kind === 'LINEAR' ? 'primary' : 'success'" size="small">
-                  {{ axis.kind === 'LINEAR' ? '平移' : '旋转' }}
-                </el-tag>
-              </div>
-              <div class="position-value">
-                <span class="value" :class="{ 'is-homed': axis.isHomed }">
-                  {{ axis.currentPosition.toFixed(2) }}
-                </span>
-                <span class="unit">{{ motionStore.getAxisUnit(axis.kind as any) }}</span>
-              </div>
-              <div class="state-badge" :class="axis.runState">
-                {{ motionStore.getRunStateText(axis.runState as any) }}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 运行日志 -->
-        <div class="status-section log-section">
-          <div class="section-title-row">
-            <div class="section-title">运行日志</div>
-            <el-button type="primary" link size="small" @click="motionStore.clearLogs">清空</el-button>
-          </div>
-          <div class="log-container">
-            <div v-for="(log, index) in motionStore.logs" :key="index" class="log-item">{{ log }}</div>
-            <div v-if="motionStore.logs.length === 0" class="log-empty">暂无日志</div>
-          </div>
-        </div>
-      </div>
+    <!-- 轴控制区 2x2 -->
+    <div class="axes-grid">
+      <AxisControlCard
+        v-for="(axis, index) in motionStore.allAxes"
+        :key="axis.name"
+        :axis="axis"
+        :axis-color="AXIS_COLORS[index]"
+        @configure="onConfigureAxis"
+      />
     </div>
 
     <!-- 轴配置对话框 -->
@@ -148,39 +104,35 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
+import { Cpu, Link, CircleClose, WarningFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { useMotionStore } from '../stores/motion'
-import GlassCard from '../components/GlassCard.vue'
+import { UpdateMotionProfile } from '../wails-compat/app'
+import { types } from '../wails-compat/models'
 import AxisConfigDialog from '../components/MotionControl/AxisConfigDialog.vue'
 import AxisControlCard from '../components/MotionControl/AxisControlCard.vue'
-import { MotionService } from '../../bindings/yx-daq/internal/app'
-import * as models from '../../bindings/yx-daq/internal/types'
+
+const AXIS_COLORS = ['#b829ff', '#00f5ff', '#00ff88', '#ffaa00'] as const
 
 const motionStore = useMotionStore()
 const configDialog = ref<InstanceType<typeof AxisConfigDialog>>()
 
 const activeProfile = computed(() => {
-  // 优先选择B140控制器（真实硬件）
   const b140 = motionStore.profiles.find(p => p.type === 'B140-MC')
   const id = motionStore.activeControllerId
   if (id) {
     const found = motionStore.profiles.find(p => p.id === id)
-    // 如果当前选中的是B140，直接返回
     if (found && found.type === 'B140-MC') return found
-    // 如果当前选中的是模拟控制器，但存在B140，优先返回B140
     if (b140) return b140
     if (found) return found
   }
-  // 没有activeControllerId时，优先B140
   if (b140) return b140
   return motionStore.profiles[0] || null
 })
 
-// 可编辑的连接信息（默认值对应B140控制器）
 const editableAddress = ref('192.168.1.101')
-const editablePort = ref(5000)
+const editablePort = ref(23)
 
-// 同步 profile 的 address/port 到可编辑字段
 watch(activeProfile, (profile) => {
   if (profile) {
     editableAddress.value = profile.address
@@ -188,15 +140,14 @@ watch(activeProfile, (profile) => {
   }
 }, { immediate: true })
 
-// 修改 IP/端口后保存到后端
 async function onConnectionInfoChange() {
   const profile = activeProfile.value
   if (!profile) return
   if (editableAddress.value === profile.address && editablePort.value === profile.port) return
 
   try {
-    const updated = models.MotionControllerProfile.createFrom({ ...profile, address: editableAddress.value, port: editablePort.value })
-    await MotionService.UpdateMotionProfile(updated)
+    const updated = types.MotionControllerProfile.createFrom({ ...profile, address: editableAddress.value, port: editablePort.value })
+    await UpdateMotionProfile(updated)
     await motionStore.fetchProfiles()
     ElMessage.success('连接信息已保存')
   } catch (e: any) {
@@ -213,14 +164,7 @@ const connectionStatusText = computed(() => {
   }
 })
 
-const connectionStatusType = computed(() => {
-  switch (motionStore.connectionStatus) {
-    case 'connected': return 'success'
-    case 'connecting': return 'warning'
-    case 'error': return 'danger'
-    default: return 'info'
-  }
-})
+const connectionStatus = computed(() => motionStore.connectionStatus)
 
 async function connectController() {
   const profile = activeProfile.value
@@ -228,11 +172,10 @@ async function connectController() {
     ElMessage.warning('请先添加控制器')
     return
   }
-  // 连接前先同步最新的IP/端口到后端profile，确保连接使用最新地址
   if (editableAddress.value !== profile.address || editablePort.value !== profile.port) {
     try {
-      const updated = models.MotionControllerProfile.createFrom({ ...profile, address: editableAddress.value, port: editablePort.value })
-      await MotionService.UpdateMotionProfile(updated)
+      const updated = types.MotionControllerProfile.createFrom({ ...profile, address: editableAddress.value, port: editablePort.value })
+      await UpdateMotionProfile(updated)
       await motionStore.fetchProfiles()
     } catch (e: any) {
       ElMessage.error(`保存连接信息失败: ${e?.message || e}`)
@@ -268,7 +211,6 @@ function openConfigDialog(axisName?: string) {
 
 onMounted(async () => {
   await motionStore.fetchProfiles()
-  // 优先选中B140控制器（连接状态由后端启动时的自动连接决定）
   const b140Profile = motionStore.profiles.find(p => p.type === 'B140-MC')
   if (b140Profile) {
     motionStore.activeControllerId = b140Profile.id
@@ -278,277 +220,298 @@ onMounted(async () => {
 
 <style lang="scss" scoped>
 .motion-view {
-  padding: 12px 16px;
+  padding: 16px 20px 14px;
   height: 100%;
   display: flex;
   flex-direction: column;
+  gap: 14px;
   overflow: hidden;
 }
 
-.page-header {
+/* ========== 顶部状态栏 ========== */
+.status-bar {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.9fr) minmax(360px, 1.35fr) minmax(260px, auto);
+  align-items: stretch;
+  gap: 14px;
+  padding: 14px 16px;
+  background: $glass-bg;
+  border: 1px solid $glass-border;
+  border-radius: $border-radius-md;
+  flex-shrink: 0;
+  backdrop-filter: blur(16px);
+}
+
+.status-left {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid $glass-border-light;
-  flex-shrink: 0;
+  gap: 14px;
+  min-width: 0;
 }
 
-.header-left {
+.page-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
-  .page-title {
-    font-size: 20px;
-    font-weight: 600;
-    color: $color-accent;
-    margin: 0;
-  }
-  .controller-name {
-    font-size: 13px;
-    color: rgba(255,255,255,0.4);
-    padding: 3px 10px;
-    background: $glass-bg;
-    border-radius: 4px;
-  }
-}
+  gap: 10px;
 
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-
-  .header-action-group {
+  .brand-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba($color-primary, 0.15), rgba($color-accent, 0.1));
+    border: 1px solid rgba($color-primary, 0.2);
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 0 12px;
-    border-left: 1px solid $glass-border-light;
-    border-right: 1px solid $glass-border-light;
+    justify-content: center;
+    color: $color-primary;
+    box-shadow: 0 0 15px rgba($color-primary, 0.15);
   }
 
-  .estop-btn {
-    font-weight: 700;
-    letter-spacing: 1px;
-    box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
-    animation: estop-pulse 2s infinite;
-    &:hover { box-shadow: 0 0 25px rgba(239, 68, 68, 0.6); }
+  .brand-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    .page-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: $text-primary;
+      margin: 0;
+      line-height: 1.2;
+    }
+
+    .controller-name {
+      font-size: 12px;
+      color: $text-muted;
+    }
+  }
+}
+
+.connection-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.3s;
+  white-space: nowrap;
+
+  .pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: $text-muted;
+    transition: all 0.3s;
+  }
+
+  .conn-text {
+    color: $text-muted;
+    transition: color 0.3s;
+  }
+
+  &.connected {
+    background: rgba($color-success, 0.08);
+    border-color: rgba($color-success, 0.25);
+
+    .pulse-dot {
+      background: $color-success;
+      box-shadow: 0 0 8px rgba($color-success, 0.6);
+      animation: pulse-glow 2s infinite;
+    }
+
+    .conn-text {
+      color: $color-success;
+    }
+  }
+
+  &.connecting {
+    background: rgba($color-warning, 0.08);
+    border-color: rgba($color-warning, 0.25);
+
+    .pulse-dot {
+      background: $color-warning;
+      animation: pulse-glow 1s infinite;
+    }
+
+    .conn-text {
+      color: $color-warning;
+    }
+  }
+
+  &.error {
+    background: rgba($color-danger, 0.08);
+    border-color: rgba($color-danger, 0.25);
+
+    .pulse-dot {
+      background: $color-danger;
+      box-shadow: 0 0 8px rgba($color-danger, 0.5);
+    }
+
+    .conn-text {
+      color: $color-danger;
+    }
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.2); }
+}
+
+.status-center {
+  display: grid;
+  grid-template-columns: auto minmax(140px, 1fr) minmax(100px, 0.65fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  border-left: 1px solid $glass-border-light;
+  border-right: 1px solid $glass-border-light;
+}
+
+.conn-group-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-right: 4px;
+
+  .field-label {
+    color: $text-secondary;
+    font-weight: 600;
+  }
+
+  .field-hint {
+    font-size: 11px;
+    color: $text-muted;
+    white-space: nowrap;
+  }
+}
+
+.conn-field {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+
+  .field-label {
+    font-size: 12px;
+    color: $text-muted;
+    white-space: nowrap;
+  }
+}
+
+.ip-input {
+  width: 100%;
+  min-width: 128px;
+}
+
+.port-input {
+  width: 100%;
+  min-width: 96px;
+}
+
+.type-field {
+  .type-badge {
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: $color-accent;
+    background: rgba($color-accent, 0.1);
+    border: 1px solid rgba($color-accent, 0.2);
+  }
+}
+
+.status-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.connection-actions {
+  display: flex;
+  align-items: center;
+}
+
+.conn-btn {
+  font-weight: 500;
+  min-width: 112px;
+
+  &.disconnect {
+    opacity: 0.7;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+.estop-btn {
+  font-weight: 700;
+  letter-spacing: 1px;
+  font-size: 13px;
+  min-width: 92px;
+  height: 40px;
+  padding: 8px 20px;
+  box-shadow: 0 0 15px rgba($color-danger, 0.3);
+  animation: estop-pulse 2.5s infinite;
+
+  &:hover {
+    box-shadow: 0 0 25px rgba($color-danger, 0.5);
+  }
+
+  &:disabled {
+    animation: none;
+    box-shadow: none;
+    opacity: 0.4;
   }
 }
 
 @keyframes estop-pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.02); box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); }
-  100% { transform: scale(1); }
+  0%, 100% { transform: scale(1); box-shadow: 0 0 15px rgba($color-danger, 0.3); }
+  50% { transform: scale(1.02); box-shadow: 0 0 22px rgba($color-danger, 0.5); }
 }
 
-.main-content {
-  flex: 1;
-  display: grid;
-  grid-template-columns: 1fr 260px;
-  gap: 12px;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.control-panel {
-  :deep(.card-body) {
-    flex: 1;
-    min-height: 0;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
-}
-
+/* ========== 轴控制网格 ========== */
 .axes-grid {
+  flex: 1;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(2, 1fr);
-  gap: 12px;
-  flex: 1;
+  grid-template-rows: repeat(2, minmax(300px, 1fr));
+  gap: 14px;
   min-height: 0;
-  overflow-y: auto;
+  overflow: auto;
+  padding-right: 2px;
 }
 
-.status-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-height: 0;
-  overflow-y: auto;
-}
-
-.status-section {
-  background: $glass-bg;
-  border: 1px solid $glass-border;
-  border-radius: 8px;
-  padding: 10px;
-  flex-shrink: 0;
-
-  .section-title {
-    font-size: 12px;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.8);
-    margin-bottom: 8px;
-    padding-left: 6px;
-    border-left: 2px solid rgba($color-accent, 0.5);
-  }
-
-  .section-title-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 8px;
-    .section-title { margin-bottom: 0; }
-  }
-}
-
-.info-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  .info-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 6px 10px;
-    background: rgba(255,255,255,0.03);
-    border-radius: 6px;
-
-    .label { 
-      font-size: 11px; 
-      color: rgba(255,255,255,0.4);
-    }
-    .value {
-      font-size: 12px;
-      font-weight: 500;
-      color: rgba(255,255,255,0.8);
-
-      &.connected { color: $color-success; }
-      &.disconnected { color: rgba(255,255,255,0.3); }
-      &.error { color: $color-danger; }
-    }
-  }
-}
-
-.position-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  .position-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 10px;
-    background: rgba(255,255,255,0.03);
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: 1px solid transparent;
-
-    &:hover { 
-      background: rgba(255,255,255,0.05);
-    }
-
-    &.is-selected {
-      border-color: rgba($color-accent, 0.3);
-      background: rgba($color-accent, 0.05);
-    }
-
-    .axis-info {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      .axis-name { 
-        font-size: 13px; 
-        font-weight: 600; 
-        color: rgba(255,255,255,0.85);
-        width: 24px;
-      }
-    }
-
-    .position-value {
-      display: flex;
-      align-items: baseline;
-      gap: 3px;
-      .value {
-        font-size: 14px;
-        font-weight: 600;
-        color: $color-accent;
-        font-family: 'Courier New', monospace;
-
-        &.is-homed { color: $color-success; }
-      }
-      .unit { font-size: 11px; color: rgba(255,255,255,0.4); }
-    }
-
-    .state-badge {
-      font-size: 10px;
-      padding: 2px 6px;
-      border-radius: 9px;
-      font-weight: 500;
-
-      &.idle { 
-        background: rgba(255,255,255,0.05); 
-        color: rgba(255,255,255,0.4); 
-      }
-      &.running {
-        background: rgba($color-success, 0.1);
-        color: $color-success;
-      }
-      &.jogging_minus, &.jogging_plus {
-        background: rgba($color-warning, 0.1);
-        color: $color-warning;
-      }
-      &.error {
-        background: rgba($color-danger, 0.1);
-        color: $color-danger;
-      }
-    }
-  }
-}
-
-.log-section {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-
-  .log-container {
-    flex: 1;
-    overflow-y: auto;
-    background: rgba(255,255,255,0.02);
-    border-radius: 6px;
-    padding: 8px;
-    font-family: 'Courier New', monospace;
-    font-size: 11px;
-    line-height: 1.5;
-
-    .log-item {
-      color: rgba(255,255,255,0.4);
-      padding: 1px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.03);
-    }
-
-    .log-empty {
-      color: rgba(255,255,255,0.2);
-      text-align: center;
-      padding: 12px;
-    }
-  }
-}
-
-@media (max-width: 1200px) {
-  .main-content {
+@media (max-width: 900px) {
+  .status-bar {
     grid-template-columns: 1fr;
-    .control-panel { min-height: 400px; }
   }
-}
 
-@media (max-width: 768px) {
-  .axes-grid { grid-template-columns: 1fr; }
-  .header-right { flex-wrap: wrap; justify-content: flex-end; }
+  .status-center {
+    grid-template-columns: 1fr 1fr;
+    border: none;
+    padding: 10px 0 0;
+  }
+
+  .conn-group-title,
+  .type-field {
+    grid-column: 1 / -1;
+  }
+
+  .status-right {
+    justify-content: space-between;
+  }
+
+  .axes-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+  }
 }
 </style>

@@ -1,16 +1,146 @@
-﻿import { ref, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import { MotionService } from '../../bindings/yx-daq/internal/app'
-import * as models from '../../bindings/yx-daq/internal/types'
-import { Events } from '@wailsio/runtime'
-import type {
-  AxisKind, AxisRunState, AxisStatus, MotionControllerStatus,
-  AxisConfig, MotionControllerProfile, AxisUIState, ConnectionStatus,
-} from './motion/types'
 import {
-  getAxisUnit, getAxisKindText, getRunStateText,
-  createDefaultAxisConfig, createDefaultAxisUIState,
-} from './motion/helpers'
+  GetMotionProfiles, GetMotionStatusAll, ConnectMotion, DisconnectMotion,
+  MotionMoveTo, MotionMoveBy, MotionJog, MotionStop, MotionEmergencyStop,
+  MotionHome, MotionDefinePosition, MotionIsAxisMoving, MotionMotorOff,
+  AddMotionProfile, UpdateMotionProfile, MotionStopAll,
+} from '../wails-compat/app'
+import { types } from '../wails-compat/models'
+import { EventsOn } from '../../wailsjs/runtime/runtime'
+
+  // 轴类型
+type AxisKind = 'LINEAR' | 'ROTARY'
+type AxisName = 'X' | 'Y' | 'Z' | 'U'
+
+// 轴运行状态
+type AxisRunState = 'idle' | 'running' | 'jogging_minus' | 'jogging_plus' | 'error'
+
+interface AxisStatus {
+  name: string
+  position: number
+  moving: boolean
+  homed: boolean
+  posLimit: boolean
+  negLimit: boolean
+  compensating: boolean
+}
+
+interface MotionControllerStatus {
+  id: string
+  name: string
+  type: string
+  status: string
+  axes: AxisStatus[]
+  lastError: string
+}
+
+interface AxisConfig {
+  name: string
+  enabled: boolean
+  kind: AxisKind
+  inverted: boolean
+  stepAngleDeg: number
+  microSteps: number
+    lead: number
+    gearRatio: number
+    maxSpeed: number
+  encoderScale: number
+  encoderCompensation: {
+    enabled: boolean
+    tolerance: number
+    maxCycles: number
+    settleMs: number
+    minStep: number
+    timeoutMs: number
+  }
+}
+
+interface MotionControllerProfile {
+  id: string
+  name: string
+  type: string
+  address: string
+  port: number
+  timeoutMs: number
+  axes: AxisConfig[]
+}
+
+// 轴扩展状态（前端本地维护）
+interface AxisUIState {
+  name: string
+  kind: AxisKind
+  currentPosition: number
+  targetPosition: number
+  relativeDistance: number
+  runState: AxisRunState
+  isHomed: boolean
+  posLimitActive: boolean
+  negLimitActive: boolean
+  config: AxisConfig
+}
+
+// 轴单位
+function getAxisUnit(kind: AxisKind): string {
+  return kind === 'LINEAR' ? 'mm' : '°'
+}
+
+// 轴类型中文
+function getAxisKindText(kind: AxisKind): string {
+  return kind === 'LINEAR' ? '平移轴' : '旋转轴'
+}
+
+// 运行状态中文
+function getRunStateText(state: AxisRunState): string {
+  const map: Record<AxisRunState, string> = {
+    idle: '空闲',
+    running: '运行中',
+    jogging_minus: '反向点动',
+    jogging_plus: '正向点动',
+    error: '错误'
+  }
+  return map[state]
+}
+
+// 创建默认轴配置
+function createDefaultAxisConfig(name: string, kind: AxisKind): AxisConfig {
+  return {
+    name,
+    enabled: true,
+    kind,
+    inverted: false,
+    stepAngleDeg: 1.8,
+    microSteps: 16,
+    lead: kind === 'LINEAR' ? 5.0 : 4,
+    gearRatio: 1,
+    maxSpeed: kind === 'LINEAR' ? 50 : 30,
+    encoderScale: 0.005,
+    encoderCompensation: {
+      enabled: false,
+      tolerance: 0.01,
+      maxCycles: 3,
+      settleMs: 100,
+      minStep: 0,
+      timeoutMs: 5000
+    }
+  }
+}
+
+// 创建默认轴UI状态
+function createDefaultAxisUIState(name: string, kind: AxisKind): AxisUIState {
+  return {
+    name,
+    kind,
+    currentPosition: 0,
+    targetPosition: 0,
+    relativeDistance: kind === 'LINEAR' ? 10 : 5,
+    runState: 'idle',
+    isHomed: false,
+    posLimitActive: false,
+    negLimitActive: false,
+    config: createDefaultAxisConfig(name, kind)
+  }
+}
 
 // 本地存储key前缀
 const MOTION_CONFIG_STORAGE_PREFIX = 'motionControllerConfig:'
@@ -35,7 +165,8 @@ export const useMotionStore = defineStore('motion', () => {
   // 运行日志
   const logs = ref<string[]>([])
 
-  const connectionStatus = ref<ConnectionStatus>('disconnected')
+  // 连接状态
+  const connectionStatus = ref<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected')
 
   // 计算属性
   const isConnected = computed(() => connectionStatus.value === 'connected')
@@ -124,7 +255,7 @@ export const useMotionStore = defineStore('motion', () => {
   // 基础API
   async function fetchProfiles() {
     try {
-      profiles.value = await MotionService.GetMotionProfiles() as MotionControllerProfile[]
+      profiles.value = await GetMotionProfiles() as MotionControllerProfile[]
     } catch (e) {
       console.warn('fetchMotionProfiles failed:', e)
     }
@@ -132,10 +263,35 @@ export const useMotionStore = defineStore('motion', () => {
 
   async function fetchStatuses() {
     try {
-      statuses.value = await MotionService.GetMotionStatusAll() as MotionControllerStatus[]
+      statuses.value = await GetMotionStatusAll() as MotionControllerStatus[]
+      syncConnectionFromStatuses(statuses.value)
     } catch (e) {
       console.warn('fetchMotionStatuses failed:', e)
     }
+  }
+
+  function syncConnectionFromStatuses(allStatuses: MotionControllerStatus[]) {
+    const active = allStatuses.find(s => s.status === 'Connected' && (!activeControllerId.value || s.id === activeControllerId.value))
+      || allStatuses.find(s => s.status === 'Connected')
+    if (active) {
+      activeControllerId.value = active.id
+      connectionStatus.value = 'connected'
+      return
+    }
+    if (connectionStatus.value !== 'connecting') {
+      connectionStatus.value = 'disconnected'
+    }
+  }
+
+  async function persistActiveProfileAxes() {
+    const profile = profiles.value.find(p => p.id === activeControllerId.value)
+    if (!profile) return
+    const axes = profile.axes.map(axis => {
+      const state = axisUIStates.value[axis.name]
+      return state ? types.AxisConfig.createFrom({ ...axis, ...state.config, kind: state.kind }) : axis
+    })
+    await UpdateMotionProfile(types.MotionControllerProfile.createFrom({ ...profile, axes }))
+    await fetchProfiles()
   }
 
   // 连接/断开
@@ -143,7 +299,7 @@ export const useMotionStore = defineStore('motion', () => {
     connectionStatus.value = 'connecting'
     addLog('正在连接运动控制器...')
     try {
-      await MotionService.ConnectMotion(id)
+      await ConnectMotion(id)
       activeControllerId.value = id
       connectionStatus.value = 'connected'
       addLog('运动控制器连接成功')
@@ -160,11 +316,14 @@ export const useMotionStore = defineStore('motion', () => {
   async function disconnectController(): Promise<{ success: boolean; error?: string }> {
     if (!activeControllerId.value) return { success: true }
     try {
-      await stopAllAxes()
+      await MotionStopAll(activeControllerId.value)
+      for (const state of Object.values(axisUIStates.value)) {
+        state.runState = 'idle'
+      }
       try {
-        await MotionService.MotionMotorOff(activeControllerId.value)
+        await MotionMotorOff(activeControllerId.value)
       } catch (_) { /* ignore */ }
-      await MotionService.DisconnectMotion(activeControllerId.value)
+      await DisconnectMotion(activeControllerId.value)
       connectionStatus.value = 'disconnected'
       addLog('运动控制器已断开')
       return { success: true }
@@ -175,8 +334,9 @@ export const useMotionStore = defineStore('motion', () => {
 
   async function syncPositionsFromStatus() {
     try {
-      const allStatuses = await MotionService.GetMotionStatusAll() as MotionControllerStatus[]
+      const allStatuses = await GetMotionStatusAll() as MotionControllerStatus[]
       statuses.value = allStatuses
+      syncConnectionFromStatuses(allStatuses)
       for (const ctrl of allStatuses) {
         if (ctrl.status === 'Connected') {
           for (const ax of ctrl.axes) {
@@ -199,14 +359,29 @@ export const useMotionStore = defineStore('motion', () => {
   }
 
   // 运动控制
+  function isAxisName(axis: string): axis is AxisName {
+    return axis === 'X' || axis === 'Y' || axis === 'Z' || axis === 'U'
+  }
+
+  function toBindingAxisName(axis: AxisName): types.AxisName {
+    const map: Record<AxisName, types.AxisName> = {
+      X: types.AxisName.AxisX,
+      Y: types.AxisName.AxisY,
+      Z: types.AxisName.AxisZ,
+      U: types.AxisName.AxisU,
+    }
+    return map[axis]
+  }
+
   async function moveTo(axis: string, position: number): Promise<{ success: boolean; error?: string }> {
     if (!activeControllerId.value) return { success: false, error: '控制器未连接' }
+    if (!isAxisName(axis)) return { success: false, error: '未知轴' }
     const uiState = axisUIStates.value[axis]
     if (!uiState) return { success: false, error: '未知轴' }
 
     if (uiState.runState !== 'idle') {
       try {
-        const moving = await MotionService.MotionIsAxisMoving(activeControllerId.value, axis)
+          const moving = await MotionIsAxisMoving(activeControllerId.value, toBindingAxisName(axis))
         if (!moving) {
           uiState.runState = 'idle'
         } else {
@@ -218,7 +393,7 @@ export const useMotionStore = defineStore('motion', () => {
     }
 
     try {
-      await MotionService.MotionMoveTo(activeControllerId.value, axis, position)
+      await MotionMoveTo(activeControllerId.value, toBindingAxisName(axis), position)
       uiState.runState = 'running'
       addLog(`${axis}轴运动到目标位置 ${position}${getAxisUnit(uiState.kind)}`)
       return { success: true }
@@ -232,8 +407,9 @@ export const useMotionStore = defineStore('motion', () => {
 
   async function moveBy(axis: string, delta: number): Promise<{ success: boolean; error?: string }> {
     if (!activeControllerId.value) return { success: false, error: '控制器未连接' }
+    if (!isAxisName(axis)) return { success: false, error: '未知轴' }
     try {
-      await MotionService.MotionMoveBy(activeControllerId.value, axis, delta)
+      await MotionMoveBy(activeControllerId.value, toBindingAxisName(axis), delta)
       addLog(`${axis}轴相对移动 ${delta}`)
       return { success: true }
     } catch (e: any) {
@@ -243,13 +419,14 @@ export const useMotionStore = defineStore('motion', () => {
 
   async function startJog(axis: string, direction: 'minus' | 'plus'): Promise<{ success: boolean; error?: string }> {
     if (!activeControllerId.value) return { success: false, error: '控制器未连接' }
+    if (!isAxisName(axis)) return { success: false, error: '未知轴' }
     const uiState = axisUIStates.value[axis]
     if (!uiState) return { success: false, error: '未知轴' }
     if (uiState.runState !== 'idle') return { success: false, error: '轴当前不在空闲状态' }
 
     try {
       const dir = direction === 'plus' ? 1 : -1
-      await MotionService.MotionJog(activeControllerId.value, axis, dir, uiState.config.maxSpeed)
+      await MotionJog(activeControllerId.value, toBindingAxisName(axis), dir, uiState.config.maxSpeed)
       uiState.runState = direction === 'minus' ? 'jogging_minus' : 'jogging_plus'
       addLog(`${axis}轴开始${direction === 'minus' ? '反向' : '正向'}点动`)
       return { success: true }
@@ -270,8 +447,9 @@ export const useMotionStore = defineStore('motion', () => {
 
   async function stopAxis(axis: string): Promise<{ success: boolean; error?: string }> {
     if (!activeControllerId.value) return { success: false, error: '控制器未连接' }
+    if (!isAxisName(axis)) return { success: false, error: '未知轴' }
     try {
-      await MotionService.MotionStop(activeControllerId.value, axis)
+      await MotionStop(activeControllerId.value, toBindingAxisName(axis))
       const uiState = axisUIStates.value[axis]
       if (uiState) uiState.runState = 'idle'
       addLog(`${axis}轴已停止`)
@@ -284,7 +462,7 @@ export const useMotionStore = defineStore('motion', () => {
   async function stopAllAxes(): Promise<{ success: boolean; error?: string }> {
     if (!activeControllerId.value) return { success: true }
     try {
-      await MotionService.MotionStopAll(activeControllerId.value)
+      await MotionStopAll(activeControllerId.value)
       for (const state of Object.values(axisUIStates.value)) {
         state.runState = 'idle'
       }
@@ -297,8 +475,9 @@ export const useMotionStore = defineStore('motion', () => {
 
   async function home(axis: string): Promise<{ success: boolean; error?: string }> {
     if (!activeControllerId.value) return { success: false, error: '控制器未连接' }
+    if (!isAxisName(axis)) return { success: false, error: '未知轴' }
     try {
-      await MotionService.MotionHome(activeControllerId.value, axis)
+      await MotionHome(activeControllerId.value, toBindingAxisName(axis))
       addLog(`${axis}轴回零`)
       return { success: true }
     } catch (e: any) {
@@ -308,8 +487,9 @@ export const useMotionStore = defineStore('motion', () => {
 
   async function definePosition(axis: string, position: number): Promise<{ success: boolean; error?: string }> {
     if (!activeControllerId.value) return { success: false, error: '控制器未连接' }
+    if (!isAxisName(axis)) return { success: false, error: '未知轴' }
     try {
-      await MotionService.MotionDefinePosition(activeControllerId.value, axis, position)
+      await MotionDefinePosition(activeControllerId.value, toBindingAxisName(axis), position)
       const uiState = axisUIStates.value[axis]
       if (uiState) {
         uiState.currentPosition = position
@@ -326,7 +506,7 @@ export const useMotionStore = defineStore('motion', () => {
   async function emergencyStop(): Promise<{ success: boolean; error?: string }> {
     if (!activeControllerId.value) return { success: true }
     try {
-      await MotionService.MotionEmergencyStop(activeControllerId.value)
+      await MotionEmergencyStop(activeControllerId.value)
       for (const state of Object.values(axisUIStates.value)) {
         state.runState = 'idle'
       }
@@ -346,16 +526,18 @@ export const useMotionStore = defineStore('motion', () => {
     state.relativeDistance = newKind === 'LINEAR' ? 10 : 5
     state.config.maxSpeed = newKind === 'LINEAR' ? 50 : 30
     state.config.lead = newKind === 'LINEAR' ? 5.0 : 4
+    state.config.gearRatio = newKind === 'LINEAR' ? 1 : 4
     addLog(`${axisName}轴类型切换为${getAxisKindText(newKind)}`)
     saveConfigToLocal()
   }
 
-  function updateAxisConfig(axisName: string, config: Partial<AxisConfig>) {
+  async function updateAxisConfig(axisName: string, config: Partial<AxisConfig>) {
     const state = axisUIStates.value[axisName]
     if (!state) return
     Object.assign(state.config, config)
     addLog(`${axisName}轴配置已更新`)
     saveConfigToLocal()
+    await persistActiveProfileAxes()
   }
 
   function updateAxisTarget(axisName: string, target: number) {
@@ -380,12 +562,12 @@ export const useMotionStore = defineStore('motion', () => {
     const id = `mc-${Date.now()}`
     try {
       const defaultAxes = [
-        models.AxisConfig.createFrom({ name: 'X', enabled: true, kind: 'LINEAR', inverted: false, stepAngleDeg: 1.8, microSteps: 16, lead: 5, gearRatio: 1, maxSpeed: 50, encoderScale: 0.005, encoderCompensation: models.EncoderCompensationConfig.createFrom({ enabled: false, tolerance: 0.01, maxCycles: 3, settleMs: 100, minStep: 0, timeoutMs: 5000 }) }),
-        models.AxisConfig.createFrom({ name: 'Y', enabled: true, kind: 'LINEAR', inverted: false, stepAngleDeg: 1.8, microSteps: 16, lead: 5, gearRatio: 1, maxSpeed: 50, encoderScale: 0.005, encoderCompensation: models.EncoderCompensationConfig.createFrom({ enabled: false, tolerance: 0.01, maxCycles: 3, settleMs: 100, minStep: 0, timeoutMs: 5000 }) }),
-        models.AxisConfig.createFrom({ name: 'Z', enabled: true, kind: 'LINEAR', inverted: false, stepAngleDeg: 1.8, microSteps: 16, lead: 5, gearRatio: 1, maxSpeed: 50, encoderScale: 0.005, encoderCompensation: models.EncoderCompensationConfig.createFrom({ enabled: false, tolerance: 0.01, maxCycles: 3, settleMs: 100, minStep: 0, timeoutMs: 5000 }) }),
-        models.AxisConfig.createFrom({ name: 'U', enabled: true, kind: 'ROTARY', inverted: false, stepAngleDeg: 1.8, microSteps: 16, lead: 0, gearRatio: 1, maxSpeed: 30, encoderScale: 0.005, encoderCompensation: models.EncoderCompensationConfig.createFrom({ enabled: false, tolerance: 0.01, maxCycles: 3, settleMs: 100, minStep: 0, timeoutMs: 5000 }) }),
+        types.AxisConfig.createFrom({ name: 'X', enabled: true, kind: 'LINEAR', inverted: false, stepAngleDeg: 1.8, microSteps: 16, lead: 5, gearRatio: 1, maxSpeed: 50, encoderScale: 0.005, encoderCompensation: types.EncoderCompensationConfig.createFrom({ enabled: false, tolerance: 0.01, maxCycles: 3, settleMs: 100, minStep: 0, timeoutMs: 5000 }) }),
+        types.AxisConfig.createFrom({ name: 'Y', enabled: true, kind: 'LINEAR', inverted: false, stepAngleDeg: 1.8, microSteps: 16, lead: 5, gearRatio: 1, maxSpeed: 50, encoderScale: 0.005, encoderCompensation: types.EncoderCompensationConfig.createFrom({ enabled: false, tolerance: 0.01, maxCycles: 3, settleMs: 100, minStep: 0, timeoutMs: 5000 }) }),
+        types.AxisConfig.createFrom({ name: 'Z', enabled: true, kind: 'LINEAR', inverted: false, stepAngleDeg: 1.8, microSteps: 16, lead: 5, gearRatio: 1, maxSpeed: 50, encoderScale: 0.005, encoderCompensation: types.EncoderCompensationConfig.createFrom({ enabled: false, tolerance: 0.01, maxCycles: 3, settleMs: 100, minStep: 0, timeoutMs: 5000 }) }),
+        types.AxisConfig.createFrom({ name: 'U', enabled: true, kind: 'ROTARY', inverted: false, stepAngleDeg: 1.8, microSteps: 16, lead: 0, gearRatio: 4, maxSpeed: 30, encoderScale: 0.005, encoderCompensation: types.EncoderCompensationConfig.createFrom({ enabled: false, tolerance: 0.01, maxCycles: 3, settleMs: 100, minStep: 0, timeoutMs: 5000 }) }),
       ]
-      const profile = models.MotionControllerProfile.createFrom({
+      const profile = types.MotionControllerProfile.createFrom({
         id,
         name: name || '新控制器',
         type,
@@ -394,8 +576,8 @@ export const useMotionStore = defineStore('motion', () => {
         timeoutMs: 5000,
         axes: defaultAxes,
       })
-      await MotionService.AddMotionProfile(profile)
-      await MotionService.ConnectMotion(id)
+      await AddMotionProfile(profile)
+      await ConnectMotion(id)
       activeControllerId.value = id
       connectionStatus.value = 'connected'
       await fetchProfiles()
@@ -409,9 +591,9 @@ export const useMotionStore = defineStore('motion', () => {
   // 事件监听
   function startListening() {
     try {
-      Events.On('motion:status-updated', (event: { data: MotionControllerStatus[] }) => {
-        const data = event.data
+      EventsOn('motion:status-updated', (data: MotionControllerStatus[]) => {
         statuses.value = data
+        syncConnectionFromStatuses(data)
         for (const ctrl of data) {
           if (ctrl.status === 'Connected') {
             for (const ax of ctrl.axes) {

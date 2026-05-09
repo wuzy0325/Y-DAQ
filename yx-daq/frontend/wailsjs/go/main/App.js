@@ -150,10 +150,6 @@ export function MotionStop(arg1, arg2) {
   return window['go']['main']['App']['MotionStop'](arg1, arg2);
 }
 
-export function MotionStopAll(arg1) {
-  return window['go']['main']['App']['MotionStopAll'](arg1);
-}
-
 export function MotionWaitForComplete(arg1, arg2, arg3) {
   return window['go']['main']['App']['MotionWaitForComplete'](arg1, arg2, arg3);
 }

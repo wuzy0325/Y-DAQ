@@ -4,6 +4,7 @@ import (
 	"sync"
 	"testing"
 
+	"yx-daq/internal/driver"
 	"yx-daq/internal/types"
 )
 
@@ -144,6 +145,51 @@ func TestMotionManager_UpdateProfile(t *testing.T) {
 	profiles := m.GetProfiles()
 	if len(profiles) != 1 || profiles[0].Name != "更新后" {
 		t.Error("expected profile name updated")
+	}
+}
+
+func TestMotionManager_UpdateProfileSyncsConnectedSimulatedInstance(t *testing.T) {
+	m := newTestMotionManager()
+	profile := newMCProfile("mc-1")
+	profile.Axes = []types.AxisConfig{{Name: types.AxisU, Enabled: true, Kind: types.AxisKindRotary, StepAngleDeg: 1.8, MicroSteps: 16, GearRatio: 1}}
+	m.AddProfile(profile)
+	if err := m.Connect("mc-1"); err != nil {
+		t.Fatalf("Connect failed: %v", err)
+	}
+
+	updated := profile
+	updated.Axes = []types.AxisConfig{{Name: types.AxisU, Enabled: true, Kind: types.AxisKindRotary, StepAngleDeg: 1.8, MicroSteps: 16, GearRatio: 10}}
+	m.UpdateProfile(updated)
+
+	m.mu.RLock()
+	ctrl := m.instances["mc-1"]
+	m.mu.RUnlock()
+	sim, ok := ctrl.(*driver.SimulatedMotionController)
+	if !ok {
+		t.Fatalf("expected simulated controller, got %T", ctrl)
+	}
+	statuses, err := sim.GetAllAxisStatus()
+	if err != nil {
+		t.Fatalf("GetAllAxisStatus failed: %v", err)
+	}
+	if len(statuses) != 1 || statuses[0].Name != types.AxisU {
+		t.Fatalf("expected updated U axis only, got %+v", statuses)
+	}
+}
+
+func TestMotionManager_ConnectDisconnectsExistingInstance(t *testing.T) {
+	m := newTestMotionManager()
+	m.AddProfile(newMCProfile("mc-1"))
+
+	old := newMockMotionController()
+	old.connected = true
+	injectMockMC(m, "mc-1", old)
+
+	if err := m.Connect("mc-1"); err != nil {
+		t.Fatalf("Connect failed: %v", err)
+	}
+	if old.IsConnected() {
+		t.Fatal("expected previous instance to be disconnected before replacement")
 	}
 }
 

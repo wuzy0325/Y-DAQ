@@ -37,6 +37,21 @@ func (s *SimulatedMotionController) Connect() error { return nil }
 // Disconnect 模拟断开
 func (s *SimulatedMotionController) Disconnect() {}
 
+// UpdateAxes applies edited axis parameters to the simulated controller.
+func (s *SimulatedMotionController) UpdateAxes(axes []types.AxisConfig) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.axes = axes
+	for _, ax := range axes {
+		if _, ok := s.positions[ax.Name]; !ok {
+			s.positions[ax.Name] = 0
+		}
+		if _, ok := s.moving[ax.Name]; !ok {
+			s.moving[ax.Name] = false
+		}
+	}
+}
+
 // IsConnected 始终连接
 func (s *SimulatedMotionController) IsConnected() bool { return true }
 

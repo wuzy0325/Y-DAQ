@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="dashboard">
     <!-- 左侧：设备列表 -->
     <aside class="device-sidebar">
@@ -10,7 +10,7 @@
         <el-button
           :type="deviceStore.isAcquiring ? 'warning' : 'success'"
           size="small"
-          :disabled="!hasConnectedDevice && !deviceStore.isAcquiring"
+          :disabled="(!hasConnectedDevice && !deviceStore.isAcquiring) || acqBusy"
           @click="deviceStore.isAcquiring ? handleStopAcqAll() : handleStartAcqAll()"
         >
           {{ deviceStore.isAcquiring ? '停止采集' : '开始采集' }}
@@ -138,7 +138,6 @@ import { NEON_COLORS } from '../constants/colors'
 import ChartPanel from '../components/ChartPanel.vue'
 import GlassCard from '../components/GlassCard.vue'
 import ValueDisplay from '../components/ValueDisplay.vue'
-import { DeviceService, DataService } from '../../bindings/yx-daq/internal/app'
 
 // keep-alive 需要组件名匹配
 defineOptions({ name: 'DashboardView' })
@@ -147,10 +146,14 @@ const deviceStore = useDeviceStore()
 
 // ==================== 采集控制（全局） ====================
 const hasConnectedDevice = computed(() => deviceStore.statuses.some(s => s.status === 'Connected'))
+const acqBusy = ref(false)
 
 async function handleStartAcqAll() {
+  if (acqBusy.value) return
+  acqBusy.value = true
   try {
-    const count = await DeviceService.StartAcquisitionAll()
+    const { StartAcquisitionAll } = await import('../../wailsjs/go/main/App')
+    const count = await StartAcquisitionAll()
     await deviceStore.fetchStatuses()
     if (count > 0) {
       ElMessage.success(`已启动 ${count} 个设备采集`)
@@ -159,16 +162,23 @@ async function handleStartAcqAll() {
     }
   } catch (e: any) {
     ElMessage.error(`启动采集失败: ${e?.message || e}`)
+  } finally {
+    acqBusy.value = false
   }
 }
 
 async function handleStopAcqAll() {
+  if (acqBusy.value) return
+  acqBusy.value = true
   try {
-    await DeviceService.StopAcquisitionAll()
+    const { StopAcquisitionAll } = await import('../../wailsjs/go/main/App')
+    await StopAcquisitionAll()
     await deviceStore.fetchStatuses()
     ElMessage.success('已停止所有设备采集')
   } catch (e: any) {
     ElMessage.error(`停止采集失败: ${e?.message || e}`)
+  } finally {
+    acqBusy.value = false
   }
 }
 
@@ -189,7 +199,8 @@ const isRecording = ref(false)
 
 async function handleStartRecording() {
   try {
-    await DataService.StartRecording()
+    const { StartRecording } = await import('../../wailsjs/go/main/App')
+    await StartRecording()
     isRecording.value = true
     ElMessage.success('已开始记录数据')
   } catch (e: any) {
@@ -199,7 +210,8 @@ async function handleStartRecording() {
 
 async function handleStopRecording() {
   try {
-    await DataService.StopRecording()
+    const { StopRecording } = await import('../../wailsjs/go/main/App')
+    await StopRecording()
     isRecording.value = false
     ElMessage.success('已停止记录')
   } catch (e: any) {

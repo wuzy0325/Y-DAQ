@@ -5,7 +5,7 @@ export interface ThreeHoleRawData {
 }
 
 export interface ThreeHoleInterpolationResult {
-  ptProbe: number; psProbe: number; machProbe: number; alphaProbe: number
+  ptProbe: number; psProbe: number; machProbe: number; alphaProbe: number; velocityProbe: number
   iterationCount: number; converged: boolean; valid: boolean; errorMsg?: string
 }
 

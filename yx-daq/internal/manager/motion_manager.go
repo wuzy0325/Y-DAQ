@@ -37,6 +37,10 @@ type MotionController interface {
 	SetAxisDirection(axis types.AxisName, reverse bool) error
 }
 
+type axisConfigUpdater interface {
+	UpdateAxes([]types.AxisConfig)
+}
+
 // MotionControllerManager 运动控制器管理器
 type MotionControllerManager struct {
 	mu          sync.RWMutex
@@ -94,6 +98,10 @@ func (m *MotionControllerManager) Connect(id string) error {
 	profile, ok := m.profiles[id]
 	if !ok {
 		return fmt.Errorf("motion controller profile not found: %s", id)
+	}
+	if existing, ok := m.instances[id]; ok {
+		existing.Disconnect()
+		delete(m.instances, id)
 	}
 
 	var ctrl MotionController
@@ -481,6 +489,11 @@ func (m *MotionControllerManager) UpdateProfile(profile types.MotionControllerPr
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.profiles[profile.ID] = profile
+	if ctrl, ok := m.instances[profile.ID]; ok {
+		if updater, canUpdate := ctrl.(axisConfigUpdater); canUpdate {
+			updater.UpdateAxes(profile.Axes)
+		}
+	}
 }
 
 // RemoveProfile 删除控制器配置

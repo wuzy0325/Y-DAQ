@@ -77,8 +77,6 @@ export function MotionSetDeceleration(arg1:string,arg2:types.AxisName,arg3:numbe
 
 export function MotionStop(arg1:string,arg2:types.AxisName):Promise<void>;
 
-export function MotionStopAll(arg1:string):Promise<void>;
-
 export function MotionWaitForComplete(arg1:string,arg2:types.AxisName,arg3:number):Promise<void>;
 
 export function PauseCalibration():Promise<void>;

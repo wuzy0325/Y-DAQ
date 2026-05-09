@@ -1,7 +1,10 @@
-﻿import { ref, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import { CalibrationService } from '../../bindings/yx-daq/internal/app'
-import { Events } from '@wailsio/runtime'
+import {
+  StartCalibration, PauseCalibration, ResumeCalibration,
+  StopCalibration, GetCalibrationStatus,
+} from '../../wailsjs/go/main/App'
+import { EventsOn, EventsOff } from '../../wailsjs/runtime/runtime'
 
 interface FiveHoleRawData {
   p1: number; p2: number; p3: number; p4: number; p5: number
@@ -44,7 +47,7 @@ export const useCalibrationStore = defineStore('calibration', () => {
 
   async function startCalibration(config: any) {
     try {
-      await CalibrationService.StartCalibration(config)
+      await StartCalibration(config)
       await fetchStatus()
     } catch (e) {
       console.error('startCalibration failed:', e)
@@ -53,7 +56,7 @@ export const useCalibrationStore = defineStore('calibration', () => {
 
   async function pauseCalibration() {
     try {
-      await CalibrationService.PauseCalibration()
+      await PauseCalibration()
     } catch (e) {
       console.error('pauseCalibration failed:', e)
     }
@@ -61,7 +64,7 @@ export const useCalibrationStore = defineStore('calibration', () => {
 
   async function resumeCalibration() {
     try {
-      await CalibrationService.ResumeCalibration()
+      await ResumeCalibration()
     } catch (e) {
       console.error('resumeCalibration failed:', e)
     }
@@ -69,7 +72,7 @@ export const useCalibrationStore = defineStore('calibration', () => {
 
   async function stopCalibration() {
     try {
-      await CalibrationService.StopCalibration()
+      await StopCalibration()
       await fetchStatus()
     } catch (e) {
       console.error('stopCalibration failed:', e)
@@ -78,7 +81,7 @@ export const useCalibrationStore = defineStore('calibration', () => {
 
   async function fetchStatus() {
     try {
-      taskStatus.value = await CalibrationService.GetCalibrationStatus() as CalibrationTaskStatus
+      taskStatus.value = await GetCalibrationStatus() as CalibrationTaskStatus
     } catch (e) {
       console.warn('fetchCalibStatus failed:', e)
     }
@@ -86,13 +89,13 @@ export const useCalibrationStore = defineStore('calibration', () => {
 
   function startListening() {
     try {
-      Events.On('calibration:progress', (event: { data: CalibrationProgressEvent }) => {
-        progress.value = event.data
+      EventsOn('calibration:progress', (data: CalibrationProgressEvent) => {
+        progress.value = data
       })
-      Events.On('calibration:realtime', (event: { data: CalibrationRealtimeEvent }) => {
-        realtime.value = event.data
+      EventsOn('calibration:realtime', (data: CalibrationRealtimeEvent) => {
+        realtime.value = data
       })
-      Events.On('calibration:complete', () => {
+      EventsOn('calibration:complete', () => {
         fetchStatus()
       })
     } catch (e) {
@@ -102,9 +105,9 @@ export const useCalibrationStore = defineStore('calibration', () => {
 
   function stopListening() {
     try {
-      Events.Off('calibration:progress')
-      Events.Off('calibration:realtime')
-      Events.Off('calibration:complete')
+      EventsOff('calibration:progress')
+      EventsOff('calibration:realtime')
+      EventsOff('calibration:complete')
     } catch (e) {
       console.warn('calibration stopListening failed:', e)
     }

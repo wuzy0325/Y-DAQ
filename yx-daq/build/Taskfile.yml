@@ -36,6 +36,24 @@ tasks:
     cmds:
       - npm run build
 
+  generate:icons:
+    internal: true
+    dir: build
+    sources:
+      - "appicon.png"
+    generates:
+      - "windows/icon.ico"
+    cmds:
+      - wails3 generate icons -input appicon.png -windowsfilename windows/icon.ico
+
+  generate:syso:
+    internal: true
+    dir: build
+    deps:
+      - task: generate:icons
+    cmds:
+      - wails3 generate syso -arch amd64 -icon windows/icon.ico -manifest windows/wails.exe.manifest -info windows/info.json -out ../wails_windows_amd64.syso
+
   build:
     summary: Builds the Windows application
     deps:
@@ -43,8 +61,10 @@ tasks:
         vars:
           BUILD_FLAGS:
             ref: .BUILD_FLAGS
+      - task: generate:syso
     cmds:
       - go build {{.BUILD_FLAGS}} -o "{{.BIN_DIR}}/{{.APP_NAME}}.exe"
+      - cmd: powershell -Command "Remove-Item -LiteralPath 'wails_windows_amd64.syso' -ErrorAction SilentlyContinue"
     vars:
       BUILD_FLAGS: '{{if eq .DEV "true"}}-buildvcs=false -gcflags=all="-l"{{else}}-tags production -trimpath -buildvcs=false -ldflags="-w -s -H windowsgui"{{end}}'
 

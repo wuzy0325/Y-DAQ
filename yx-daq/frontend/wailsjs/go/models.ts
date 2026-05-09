@@ -30,7 +30,6 @@ export namespace types {
 	    stepAngleDeg: number;
 	    microSteps: number;
 	    lead: number;
-	    gearRatio: number;
 	    maxSpeed: number;
 	    encoderScale: number;
 	    encoderCompensation: EncoderCompensationConfig;
@@ -48,7 +47,6 @@ export namespace types {
 	        this.stepAngleDeg = source["stepAngleDeg"];
 	        this.microSteps = source["microSteps"];
 	        this.lead = source["lead"];
-	        this.gearRatio = source["gearRatio"];
 	        this.maxSpeed = source["maxSpeed"];
 	        this.encoderScale = source["encoderScale"];
 	        this.encoderCompensation = this.convertValues(source["encoderCompensation"], EncoderCompensationConfig);

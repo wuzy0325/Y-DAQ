@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="main-layout">
     <header class="topbar">
       <div class="topbar-left">
@@ -16,19 +16,6 @@
           <span class="nav-icon">{{ item.icon }}</span>
           <span class="nav-label">{{ item.label }}</span>
         </router-link>
-        <el-dropdown trigger="click" class="nav-item nav-dropdown">
-          <span class="el-dropdown-link">
-            <span class="nav-icon">🔧</span>
-            <span class="nav-label">三孔插值移位测试</span>
-            <el-icon class="el-icon--right"><arrow-down /></el-icon>
-          </span>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item @click="openProbeWindow('probe1')">探针1 测试</el-dropdown-item>
-              <el-dropdown-item @click="openProbeWindow('probe2')">探针2 测试</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
       </nav>
       <div class="topbar-right">
         <span class="status-dot" :class="deviceConnected ? 'connected' : 'disconnected'" />
@@ -53,9 +40,6 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useDeviceStore } from '../stores/device'
-import { ConfigService, DataService } from '../../bindings/yx-daq/internal/app'
-import { ThreeHoleService } from '../../bindings/yx-daq/internal/app'
-import { ArrowDown } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const deviceStore = useDeviceStore()
@@ -65,21 +49,13 @@ const navItems = [
   { path: '/device', icon: '📡', label: '设备管理' },
   { path: '/motion', icon: '🎯', label: '运动控制' },
   // { path: '/calibration', icon: '🔬', label: '五孔校准' },
+  { path: '/three-hole-test', icon: '🔧', label: '三孔插值移位测试' },
   { path: '/settings', icon: '⚙️', label: '设置' },
 ]
 
 const deviceConnected = computed(() => deviceStore.isConnected)
 
 const dataSavePath = ref('')
-
-// 打开探针测试窗口
-async function openProbeWindow(probeID: string) {
-  try {
-    await ThreeHoleService.OpenTestWindow(probeID)
-  } catch (e) {
-    console.error('openProbeWindow failed:', e)
-  }
-}
 
 const currentTime = ref('')
 let timer: number | null = null
@@ -93,7 +69,8 @@ onMounted(async () => {
   updateTime()
   timer = window.setInterval(updateTime, 1000)
   try {
-    dataSavePath.value = await DataService.GetDataDir() as string
+    const { GetDataDir } = await import('../../wailsjs/go/main/App')
+    dataSavePath.value = await GetDataDir() as string
   } catch (e) {
     console.error('load data save path failed:', e)
   }
@@ -184,17 +161,6 @@ onUnmounted(() => {
     background: rgba($color-primary, 0.15);
     color: $color-primary;
     box-shadow: 0 0 10px rgba($color-primary, 0.2);
-  }
-
-  &.nav-dropdown {
-    cursor: pointer;
-
-    .el-dropdown-link {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      color: inherit;
-    }
   }
 }
 

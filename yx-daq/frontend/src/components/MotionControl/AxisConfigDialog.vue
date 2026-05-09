@@ -55,9 +55,9 @@
               <el-input-number v-model="formData.lead" :precision="2" :step="0.5" :min="0.1" :max="50" size="small" style="width: 100%" />
               <div class="form-hint">mm/转，电机转一圈移动距离</div>
             </el-form-item>
-            <el-form-item v-if="axisKind === 'ROTARY'" label="传动比">
-              <el-input-number v-model="formData.gearRatio" :precision="1" :step="1" :min="1" :max="1000" size="small" style="width: 100%" />
-              <div class="form-hint">减速比，如 10:1（10 圈电机 = 1 圈输出）</div>
+            <el-form-item v-else label="传动比">
+              <el-input-number v-model="formData.gearRatio" :precision="1" :step="1" :min="1" size="small" style="width: 100%" />
+              <div class="form-hint">减速比，如 10:1</div>
             </el-form-item>
             <el-form-item label="方向取反">
               <el-switch v-model="formData.inverted" size="small" active-text="是" inactive-text="否" />
@@ -102,7 +102,7 @@ const formData = ref({
   microSteps: 16,
   maxSpeed: 50,
   lead: 5.0,
-  gearRatio: 1,
+  gearRatio: 4,
   inverted: false,
 })
 
@@ -118,7 +118,7 @@ watch([() => selectedAxisName.value, () => store.axisUIStates], () => {
       microSteps: axis.config.microSteps,
       maxSpeed: axis.config.maxSpeed,
       lead: axis.config.lead,
-      gearRatio: axis.config.gearRatio,
+      gearRatio: axis.config.gearRatio || 1,
       inverted: axis.config.inverted,
     }
     applyToAxes.value = []
@@ -141,8 +141,7 @@ function onKindChange(newKind: string | number | boolean | undefined) {
     formData.value.lead = 5.0
     formData.value.maxSpeed = 50
   } else {
-    formData.value.lead = 0
-    formData.value.gearRatio = 1
+    formData.value.gearRatio = 4
     formData.value.maxSpeed = 30
   }
 }
@@ -154,21 +153,21 @@ async function saveConfig() {
       stepAngleDeg: formData.value.stepAngleDeg,
       microSteps: formData.value.microSteps,
       maxSpeed: formData.value.maxSpeed,
-      lead: formData.value.lead,
-      gearRatio: formData.value.gearRatio,
+      lead: axisKind.value === 'LINEAR' ? formData.value.lead : 0,
+      gearRatio: axisKind.value === 'ROTARY' ? formData.value.gearRatio : 1,
       inverted: formData.value.inverted,
       kind: axisKind.value,
     }
 
     // 保存当前轴
     store.updateAxisKind(selectedAxisName.value, axisKind.value)
-    store.updateAxisConfig(selectedAxisName.value, config)
+    await store.updateAxisConfig(selectedAxisName.value, config)
 
     // 批量应用
     for (const axisName of applyToAxes.value) {
       const targetAxis = store.axisUIStates[axisName]
       if (targetAxis && targetAxis.kind === axisKind.value) {
-        store.updateAxisConfig(axisName, config)
+        await store.updateAxisConfig(axisName, config)
       }
     }
 

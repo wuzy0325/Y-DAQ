@@ -89,7 +89,7 @@ func (s *DeviceService) StartAcquisitionAll() int {
 	if s.Core.DeviceManager == nil {
 		return 0
 	}
-	return s.Core.DeviceManager.StartAcquisitionAll(50)
+	return s.Core.DeviceManager.StartAcquisitionAll()
 }
 
 // StopAcquisitionAll 批量停止采集
