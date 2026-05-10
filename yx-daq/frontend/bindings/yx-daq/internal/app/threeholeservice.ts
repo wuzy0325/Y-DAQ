@@ -47,7 +47,7 @@ export function LoadThreeHoleCalibFiles(probeID: string, filePaths: string[]): $
 }
 
 /**
- * OpenTestWindow 打开探针测试窗口
+ * OpenTestWindow 打开探针测试窗口（复用已有窗口，不重复创建）
  */
 export function OpenTestWindow(probeID: string): $CancellablePromise<string> {
     return $Call.ByID(4229824122, probeID);

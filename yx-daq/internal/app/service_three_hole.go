@@ -15,10 +15,15 @@ type ThreeHoleService struct {
 	Core *Core
 }
 
-// OpenTestWindow 打开探针测试窗口
+// OpenTestWindow 打开探针测试窗口（复用已有窗口，不重复创建）
 func (s *ThreeHoleService) OpenTestWindow(probeID string) string {
 	winName := "three-hole-" + probeID
 	title := "三孔移位插值测试 - 探针" + string(probeID[len(probeID)-1])
+
+	if existing, ok := s.Core.App.Window.GetByName(winName); ok {
+		existing.Focus()
+		return "focused"
+	}
 
 	win := s.Core.App.Window.NewWithOptions(application.WebviewWindowOptions{
 		Name:  winName,
