@@ -157,6 +157,33 @@ func (s *ThreeHoleService) StopThreeHoleRealtimeMonitor(probeID string) {
 	svc.StopRealtimeMonitor()
 }
 
+// StartThreeHoleRealtimeRecording 开始三孔实时数据录制
+func (s *ThreeHoleService) StartThreeHoleRealtimeRecording(probeID string) error {
+	svc := s.Core.ThreeHoleServices[probeID]
+	if svc == nil {
+		return fmt.Errorf("probe %s not initialized", probeID)
+	}
+	return svc.StartRealtimeRecording(s.Core.GetDataDir())
+}
+
+// StopThreeHoleRealtimeRecording 停止三孔实时数据录制
+func (s *ThreeHoleService) StopThreeHoleRealtimeRecording(probeID string) {
+	svc := s.Core.ThreeHoleServices[probeID]
+	if svc == nil {
+		return
+	}
+	svc.StopRealtimeRecording()
+}
+
+// IsThreeHoleRealtimeRecording 三孔实时数据是否正在录制
+func (s *ThreeHoleService) IsThreeHoleRealtimeRecording(probeID string) bool {
+	svc := s.Core.ThreeHoleServices[probeID]
+	if svc == nil {
+		return false
+	}
+	return svc.IsRealtimeRecording()
+}
+
 // GetThreeHoleTraversalStatus 获取三孔移位测试状态
 func (s *ThreeHoleService) GetThreeHoleTraversalStatus(probeID string) types.ThreeHoleTraversalTaskStatus {
 	svc := s.Core.ThreeHoleServices[probeID]

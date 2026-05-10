@@ -27,6 +27,9 @@ type DataProcessor struct {
 	monitorCancel  context.CancelFunc
 	// 标记是否正在执行测试，避免监控和测试数据冲突
 	testRunning    atomic.Bool
+
+	// 实时数据录制
+	realtimeRecorder *RealtimeRecorder
 }
 
 // NewDataProcessor 创建数据处理器
@@ -34,11 +37,12 @@ func NewDataProcessor(testManager *TestManager, interpolator *ThreeHoleInterpola
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // 初始状态为已取消，StartRealtimeMonitor 时重新创建
 	return &DataProcessor{
-		testManager:    testManager,
-		interpolator:   interpolator,
-		eventPublisher: publisher,
-		monitorCtx:     ctx,
-		monitorCancel:  cancel,
+		testManager:      testManager,
+		interpolator:     interpolator,
+		eventPublisher:   publisher,
+		monitorCtx:       ctx,
+		monitorCancel:    cancel,
+		realtimeRecorder: NewRealtimeRecorder(),
 	}
 }
 
@@ -76,6 +80,21 @@ func (dp *DataProcessor) StopRealtimeMonitor() {
 	}
 }
 
+// StartRealtimeRecording 开始实时数据录制
+func (dp *DataProcessor) StartRealtimeRecording(savePath string) error {
+	return dp.realtimeRecorder.Start(savePath)
+}
+
+// StopRealtimeRecording 停止实时数据录制
+func (dp *DataProcessor) StopRealtimeRecording() {
+	dp.realtimeRecorder.Stop()
+}
+
+// IsRealtimeRecording 是否正在录制实时数据
+func (dp *DataProcessor) IsRealtimeRecording() bool {
+	return dp.realtimeRecorder.IsRecording()
+}
+
 // runRealtimeMonitor 实时监控协程
 func (dp *DataProcessor) runRealtimeMonitor() {
 	defer dp.monitorRunning.Store(false)
@@ -104,12 +123,14 @@ func (dp *DataProcessor) runRealtimeMonitor() {
 		// 计算插值（如果校准文件已加载）
 		interpResult := dp.interpolator.Calculate(*rawData)
 
-		dp.eventPublisher.EmitRealtime(types.ThreeHoleTraversalRealtimeEvent{
+		evt := types.ThreeHoleTraversalRealtimeEvent{
 			TaskID:       "monitor",
 			PointID:      "realtime",
 			RawData:      *rawData,
 			InterpResult: interpResult,
-		})
+		}
+		dp.eventPublisher.EmitRealtime(evt)
+		dp.realtimeRecorder.Record(evt)
 	}
 }
 
@@ -253,12 +274,14 @@ func (dp *DataProcessor) DwellWithRealtimeUpdate(point types.TraversalPoint) {
 			rawData := dp.readRawData()
 			if rawData != nil {
 				interpResult := dp.interpolator.Calculate(*rawData)
-				dp.eventPublisher.EmitRealtime(types.ThreeHoleTraversalRealtimeEvent{
+				evt := types.ThreeHoleTraversalRealtimeEvent{
 					TaskID:       dp.testManager.status.TaskID,
 					PointID:      point.ID,
 					RawData:      *rawData,
 					InterpResult: interpResult,
-				})
+				}
+				dp.eventPublisher.EmitRealtime(evt)
+				dp.realtimeRecorder.Record(evt)
 			}
 		}
 
@@ -296,12 +319,14 @@ func (dp *DataProcessor) AcquireAndInterpolate(point types.TraversalPoint) (type
 		// 推送实时数据
 		if dp.eventPublisher != nil {
 			interpResult := dp.interpolator.Calculate(*rawData)
-			dp.eventPublisher.EmitRealtime(types.ThreeHoleTraversalRealtimeEvent{
+			evt := types.ThreeHoleTraversalRealtimeEvent{
 				TaskID:       dp.testManager.status.TaskID,
 				PointID:      point.ID,
 				RawData:      *rawData,
 				InterpResult: interpResult,
-			})
+			}
+			dp.eventPublisher.EmitRealtime(evt)
+			dp.realtimeRecorder.Record(evt)
 		}
 
 		// 采样间隔

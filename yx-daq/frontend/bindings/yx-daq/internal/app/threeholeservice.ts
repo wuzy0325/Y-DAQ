@@ -40,6 +40,13 @@ export function IsThreeHoleCalibLoaded(probeID: string): $CancellablePromise<boo
 }
 
 /**
+ * IsThreeHoleRealtimeRecording 三孔实时数据是否正在录制
+ */
+export function IsThreeHoleRealtimeRecording(probeID: string): $CancellablePromise<boolean> {
+    return $Call.ByID(1821320876, probeID);
+}
+
+/**
  * LoadThreeHoleCalibFiles 加载三孔校准文件
  */
 export function LoadThreeHoleCalibFiles(probeID: string, filePaths: string[]): $CancellablePromise<void> {
@@ -84,6 +91,13 @@ export function StartThreeHoleRealtimeMonitor(probeID: string, config: types$0.T
 }
 
 /**
+ * StartThreeHoleRealtimeRecording 开始三孔实时数据录制
+ */
+export function StartThreeHoleRealtimeRecording(probeID: string): $CancellablePromise<void> {
+    return $Call.ByID(2207492968, probeID);
+}
+
+/**
  * StartThreeHoleTraversal 启动三孔移位测试
  */
 export function StartThreeHoleTraversal(probeID: string, config: types$0.ThreeHoleTraversalConfig): $CancellablePromise<string> {
@@ -95,6 +109,13 @@ export function StartThreeHoleTraversal(probeID: string, config: types$0.ThreeHo
  */
 export function StopThreeHoleRealtimeMonitor(probeID: string): $CancellablePromise<void> {
     return $Call.ByID(3094358397, probeID);
+}
+
+/**
+ * StopThreeHoleRealtimeRecording 停止三孔实时数据录制
+ */
+export function StopThreeHoleRealtimeRecording(probeID: string): $CancellablePromise<void> {
+    return $Call.ByID(355840688, probeID);
 }
 
 /**

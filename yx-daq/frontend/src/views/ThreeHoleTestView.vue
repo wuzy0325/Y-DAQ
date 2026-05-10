@@ -369,7 +369,7 @@ import {
 import ChartPanel from '../components/ChartPanel.vue'
 import GlassCard from '../components/GlassCard.vue'
 import ValueDisplay from '../components/ValueDisplay.vue'
-import { IsRecording, StartRecording, StopRecording } from '../wails-compat/app'
+import { IsThreeHoleRealtimeRecording, StartThreeHoleRealtimeRecording, StopThreeHoleRealtimeRecording } from '../wails-compat/app'
 
 const route = useRoute()
 const store = useThreeHoleTestStore()
@@ -384,7 +384,7 @@ const isRecording = ref(false)
 
 async function handleStartRecording() {
   try {
-    await StartRecording()
+    await StartThreeHoleRealtimeRecording(probeParam)
     isRecording.value = true
     ElMessage.success('已开始实时保存')
   } catch (e: any) {
@@ -394,7 +394,7 @@ async function handleStartRecording() {
 
 async function handleStopRecording() {
   try {
-    await StopRecording()
+    await StopThreeHoleRealtimeRecording(probeParam)
     isRecording.value = false
     ElMessage.success('已停止保存')
   } catch (e: any) {
@@ -929,7 +929,7 @@ function scheduleWaveUpdate() {
 }
 
 
-onMounted(() => {
+onMounted(async () => {
   store.startListening()
   store.loadConfig()
   store.startRealtimeMonitor()
@@ -938,6 +938,7 @@ onMounted(() => {
   motionStore.fetchProfiles()
   motionStore.fetchStatuses()
   nextTick(drawPointCanvas)
+  isRecording.value = await IsThreeHoleRealtimeRecording(probeParam)
 })
 
 onUnmounted(() => {

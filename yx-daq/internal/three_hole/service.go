@@ -104,6 +104,29 @@ func (s *ThreeHoleTraversalService) StopRealtimeMonitor() {
 	}
 }
 
+// StartRealtimeRecording 开始实时数据录制（保存当前实时刷新的原始压力 + 插值结果到 CSV）
+func (s *ThreeHoleTraversalService) StartRealtimeRecording(savePath string) error {
+	if s.dataProcessor == nil {
+		return fmt.Errorf("data processor not initialized")
+	}
+	return s.dataProcessor.StartRealtimeRecording(savePath)
+}
+
+// StopRealtimeRecording 停止实时数据录制
+func (s *ThreeHoleTraversalService) StopRealtimeRecording() {
+	if s.dataProcessor != nil {
+		s.dataProcessor.StopRealtimeRecording()
+	}
+}
+
+// IsRealtimeRecording 是否正在录制实时数据
+func (s *ThreeHoleTraversalService) IsRealtimeRecording() bool {
+	if s.dataProcessor == nil {
+		return false
+	}
+	return s.dataProcessor.IsRealtimeRecording()
+}
+
 // ==================== 测试生命周期 ====================
 
 // Start 启动测试
