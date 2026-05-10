@@ -157,13 +157,32 @@ func (s *ThreeHoleService) StopThreeHoleRealtimeMonitor(probeID string) {
 	svc.StopRealtimeMonitor()
 }
 
-// StartThreeHoleRealtimeRecording 开始三孔实时数据录制
-func (s *ThreeHoleService) StartThreeHoleRealtimeRecording(probeID string) error {
+// SelectAndStartThreeHoleRealtimeRecording 弹出保存对话框选择路径后开始三孔实时数据录制
+func (s *ThreeHoleService) SelectAndStartThreeHoleRealtimeRecording(probeID string) (string, error) {
 	svc := s.Core.ThreeHoleServices[probeID]
 	if svc == nil {
-		return fmt.Errorf("probe %s not initialized", probeID)
+		return "", fmt.Errorf("probe %s not initialized", probeID)
 	}
-	return svc.StartRealtimeRecording(s.Core.GetDataDir())
+
+	dlg := s.Core.App.Dialog.SaveFile()
+	dlg.SetOptions(&application.SaveFileDialogOptions{
+		Title:    "选择三孔实时数据保存位置",
+		Filename: fmt.Sprintf("threehole-realtime-%s.csv", time.Now().Format("2006-01-02-15-04-05")),
+	})
+	dlg.AddFilter("CSV文件", "*.csv")
+	dlg.AddFilter("所有文件", "*.*")
+	filePath, err := dlg.PromptForSingleSelection()
+	if err != nil {
+		return "", err
+	}
+	if filePath == "" {
+		return "", nil // 用户取消
+	}
+
+	if err := svc.StartRealtimeRecording(filePath); err != nil {
+		return "", err
+	}
+	return filePath, nil
 }
 
 // StopThreeHoleRealtimeRecording 停止三孔实时数据录制

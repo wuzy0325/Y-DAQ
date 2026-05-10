@@ -369,7 +369,7 @@ import {
 import ChartPanel from '../components/ChartPanel.vue'
 import GlassCard from '../components/GlassCard.vue'
 import ValueDisplay from '../components/ValueDisplay.vue'
-import { IsThreeHoleRealtimeRecording, StartThreeHoleRealtimeRecording, StopThreeHoleRealtimeRecording } from '../wails-compat/app'
+import { SelectAndStartThreeHoleRealtimeRecording, StopThreeHoleRealtimeRecording, IsThreeHoleRealtimeRecording } from '../wails-compat/app'
 
 const route = useRoute()
 const store = useThreeHoleTestStore()
@@ -384,9 +384,10 @@ const isRecording = ref(false)
 
 async function handleStartRecording() {
   try {
-    await StartThreeHoleRealtimeRecording(probeParam)
+    const filePath = await SelectAndStartThreeHoleRealtimeRecording(probeParam)
+    if (!filePath) return // 用户取消了对话框
     isRecording.value = true
-    ElMessage.success('已开始实时保存')
+    ElMessage.success(`已开始保存: ${filePath}`)
   } catch (e: any) {
     ElMessage.error(`开始保存失败: ${e?.message || e}`)
   }

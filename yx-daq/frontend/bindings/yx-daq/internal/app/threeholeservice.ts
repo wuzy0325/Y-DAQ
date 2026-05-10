@@ -75,6 +75,13 @@ export function ResumeThreeHoleTraversal(probeID: string): $CancellablePromise<v
 }
 
 /**
+ * SelectAndStartThreeHoleRealtimeRecording 弹出保存对话框选择路径后开始三孔实时数据录制
+ */
+export function SelectAndStartThreeHoleRealtimeRecording(probeID: string): $CancellablePromise<string> {
+    return $Call.ByID(3374758791, probeID);
+}
+
+/**
  * SelectThreeHoleCalibFiles 选择三孔校准文件
  */
 export function SelectThreeHoleCalibFiles(): $CancellablePromise<string[]> {
@@ -88,13 +95,6 @@ export function SelectThreeHoleCalibFiles(): $CancellablePromise<string[]> {
  */
 export function StartThreeHoleRealtimeMonitor(probeID: string, config: types$0.ThreeHoleTraversalConfig): $CancellablePromise<void> {
     return $Call.ByID(4134459093, probeID, config);
-}
-
-/**
- * StartThreeHoleRealtimeRecording 开始三孔实时数据录制
- */
-export function StartThreeHoleRealtimeRecording(probeID: string): $CancellablePromise<void> {
-    return $Call.ByID(2207492968, probeID);
 }
 
 /**

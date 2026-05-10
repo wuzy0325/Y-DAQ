@@ -25,8 +25,8 @@ func NewRealtimeRecorder() *RealtimeRecorder {
 	return &RealtimeRecorder{}
 }
 
-// Start 开始录制，在 savePath 目录下创建 CSV 文件
-func (r *RealtimeRecorder) Start(savePath string) error {
+// Start 开始录制到指定文件路径（含完整文件名）
+func (r *RealtimeRecorder) Start(filePath string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -34,12 +34,9 @@ func (r *RealtimeRecorder) Start(savePath string) error {
 		return fmt.Errorf("already recording")
 	}
 
-	if err := os.MkdirAll(savePath, 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
 		return fmt.Errorf("create directory failed: %w", err)
 	}
-
-	filename := fmt.Sprintf("threehole-realtime-%s.csv", time.Now().Format("2006-01-02-15-04-05"))
-	filePath := filepath.Join(savePath, filename)
 
 	file, err := os.Create(filePath)
 	if err != nil {
