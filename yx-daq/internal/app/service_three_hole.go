@@ -23,8 +23,8 @@ func (s *ThreeHoleService) OpenTestWindow(probeID string) string {
 	win := s.Core.App.Window.NewWithOptions(application.WebviewWindowOptions{
 		Name:  winName,
 		Title: title,
-		Width: 1280, Height: 800,
-		MinWidth: 960, MinHeight: 640,
+		Width: 1400, Height: 960,
+		MinWidth: 1100, MinHeight: 800,
 		BackgroundColour: application.NewRGB(10, 10, 26),
 		URL:  "/#/three-hole-test?probe=" + probeID,
 	})
