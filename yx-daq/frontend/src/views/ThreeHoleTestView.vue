@@ -31,6 +31,14 @@
       <div class="toolbar-right">
         <span v-if="store.calibLoaded" class="calib-ok">校准文件已加载 ({{ store.calibFiles.length }})</span>
         <span v-else class="calib-no">未加载校准文件</span>
+        <el-button
+          :type="isRecording ? 'danger' : 'primary'"
+          size="small"
+          :disabled="!store.config.deviceId"
+          @click="isRecording ? handleStopRecording() : handleStartRecording()"
+        >
+          {{ isRecording ? '停止保存' : '实时保存' }}
+        </el-button>
         <el-button v-if="store.hasResults" type="primary" size="small" @click="store.exportCSV()">导出CSV</el-button>
       </div>
     </div>
@@ -361,6 +369,7 @@ import {
 import ChartPanel from '../components/ChartPanel.vue'
 import GlassCard from '../components/GlassCard.vue'
 import ValueDisplay from '../components/ValueDisplay.vue'
+import { IsRecording, StartRecording, StopRecording } from '../wails-compat/app'
 
 const route = useRoute()
 const store = useThreeHoleTestStore()
@@ -369,6 +378,29 @@ const motionStore = useMotionStore()
 
 const probeParam = (route.query.probe as string) || 'probe1'
 store.init(probeParam)
+
+// ==================== 实时保存 ====================
+const isRecording = ref(false)
+
+async function handleStartRecording() {
+  try {
+    await StartRecording()
+    isRecording.value = true
+    ElMessage.success('已开始实时保存')
+  } catch (e: any) {
+    ElMessage.error(`开始保存失败: ${e?.message || e}`)
+  }
+}
+
+async function handleStopRecording() {
+  try {
+    await StopRecording()
+    isRecording.value = false
+    ElMessage.success('已停止保存')
+  } catch (e: any) {
+    ElMessage.error(`停止保存失败: ${e?.message || e}`)
+  }
+}
 
 async function browseSavePath() {
   try {
