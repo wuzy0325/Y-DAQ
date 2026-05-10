@@ -68,6 +68,12 @@ func (s *ThreeHoleService) StartThreeHoleTraversal(probeID string, config types.
 	if config.DeviceID == "" {
 		return "", fmt.Errorf("未选择采集设备")
 	}
+	if err := s.Core.CheckThreeHoleMotionConflict(probeID, config.MotionControllerID); err != nil {
+		return "", err
+	}
+	if warn := s.Core.CheckThreeHoleDeviceChannelOverlap(probeID, config.DeviceID, config.ProbeChannels); warn != "" {
+		slog.Warn(warn)
+	}
 	if !s.Core.DeviceManager.IsAcquiring(config.DeviceID) {
 		periodMs := 50
 		if profile := s.Core.DeviceManager.GetProfileByID(config.DeviceID); profile != nil && profile.PeriodMs > 0 {
@@ -121,18 +127,10 @@ func (s *ThreeHoleService) StopThreeHoleTraversal(probeID string) {
 	svc.Stop()
 	config := svc.GetConfig()
 	mcID := config.MotionControllerID
-	if mcID != "" {
-		if s.Core.MotionManager.IsConnected(mcID) {
-			s.Core.EmergencyStopWithRetry(mcID)
-		}
-	} else {
-		slog.Warn("三孔测试停止: 未指定运动控制器ID，将急停所有已连接控制器")
-		profiles := s.Core.MotionManager.GetProfiles()
-		for _, p := range profiles {
-			if s.Core.MotionManager.IsConnected(p.ID) {
-				s.Core.EmergencyStopWithRetry(p.ID)
-			}
-		}
+	if mcID != "" && s.Core.MotionManager.IsConnected(mcID) {
+		s.Core.EmergencyStopWithRetry(mcID)
+	} else if mcID == "" {
+		slog.Warn("三孔测试停止: 未指定运动控制器ID，跳过急停")
 	}
 }
 

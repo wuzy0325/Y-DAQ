@@ -16,7 +16,7 @@ import {
   ConnectDevice,
   StartAcquisition,
   GetDeviceStatusAll,
-} from '../../wailsjs/go/main/App'
+} from '../wails-compat/app'
 import { EventsOn, EventsOff } from '../../wailsjs/runtime/runtime'
 import {
   ThreeHoleChannelRole,
@@ -126,6 +126,8 @@ interface ThreeHoleTraversalConfig {
 // ==================== Store ====================
 
 export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
+  const probeID = ref('probe1')
+
   // 状态
   const taskStatus = ref<ThreeHoleTraversalTaskStatus | null>(null)
   const progress = ref<ThreeHoleTraversalProgressEvent | null>(null)
@@ -136,8 +138,8 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
   const calibFiles = ref<string[]>([])
   const lastError = ref<string>('')
 
-  // 配置持久化 key
-  const CONFIG_STORAGE_KEY = 'threeHoleTestConfig'
+  // 配置持久化 key（按 probeID 区分）
+  const configStorageKey = computed(() => `threeHoleTestConfig_${probeID.value}`)
 
   // 配置
   const config = ref<ThreeHoleTraversalConfig>({
@@ -182,6 +184,12 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
 
   const hasResults = computed(() => (taskStatus.value?.dataPoints?.length ?? 0) > 0)
 
+  // ==================== 初始化 ====================
+
+  function init(id: string) {
+    probeID.value = id
+  }
+
   // ==================== API 调用 ====================
 
   async function selectCalibFiles() {
@@ -189,8 +197,8 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
       const files = await SelectThreeHoleCalibFiles() as string[]
       if (files && files.length > 0) {
         calibFiles.value = files
-        await LoadThreeHoleCalibFiles(files)
-        const infos = await GetThreeHoleCalibInfo() as { cMa: number }[]
+        await LoadThreeHoleCalibFiles(probeID.value, files)
+        const infos = await GetThreeHoleCalibInfo(probeID.value) as { cMa: number }[]
         calibLoaded.value = true
         config.value.calibFiles = files.map((f, i) => ({
           filePath: f,
@@ -268,7 +276,7 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
     progress.value = null
 
     try {
-      await StartThreeHoleTraversal(config.value as any)
+      await StartThreeHoleTraversal(probeID.value, config.value as any)
       // 后端启动成功后，通过 fetchStatus 获取最新 taskStatus，isRunning/isPaused 自动派生
       await fetchStatus()
     } catch (e) {
@@ -283,7 +291,7 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
 
   async function pauseTest() {
     try {
-      await PauseThreeHoleTraversal()
+      await PauseThreeHoleTraversal(probeID.value)
       await fetchStatus()
     } catch (e) {
       console.error('pauseTest failed:', e)
@@ -292,7 +300,7 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
 
   async function resumeTest() {
     try {
-      await ResumeThreeHoleTraversal()
+      await ResumeThreeHoleTraversal(probeID.value)
       await fetchStatus()
     } catch (e) {
       console.error('resumeTest failed:', e)
@@ -301,7 +309,7 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
 
   async function stopTest() {
     try {
-      await StopThreeHoleTraversal()
+      await StopThreeHoleTraversal(probeID.value)
       // 轮询状态直到确认停止，最多等待2秒
       let retries = 0
       const maxRetries = 10
@@ -334,7 +342,7 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
 
   async function startRealtimeMonitor() {
     try {
-      await StartThreeHoleRealtimeMonitor(config.value as any)
+      await StartThreeHoleRealtimeMonitor(probeID.value, config.value as any)
     } catch (e) {
       console.error('startRealtimeMonitor failed:', e)
     }
@@ -342,7 +350,7 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
 
   async function stopRealtimeMonitor() {
     try {
-      await StopThreeHoleRealtimeMonitor()
+      await StopThreeHoleRealtimeMonitor(probeID.value)
     } catch (e) {
       console.error('stopRealtimeMonitor failed:', e)
     }
@@ -350,7 +358,7 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
 
   async function fetchStatus() {
     try {
-      taskStatus.value = await GetThreeHoleTraversalStatus() as ThreeHoleTraversalTaskStatus
+      taskStatus.value = await GetThreeHoleTraversalStatus(probeID.value) as ThreeHoleTraversalTaskStatus
     } catch (e) {
       console.warn('fetchStatus failed:', e)
     }
@@ -359,19 +367,19 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
   // ==================== 事件监听 ====================
 
   function startListening() {
-    const probeID = 'probe1'
+    const pid = probeID.value
     try {
-      EventsOn(`three-hole:${probeID}:progress`, (data: ThreeHoleTraversalProgressEvent) => {
+      EventsOn(`three-hole:${pid}:progress`, (data: ThreeHoleTraversalProgressEvent) => {
         progress.value = data
       })
-      EventsOn(`three-hole:${probeID}:realtime`, (data: ThreeHoleTraversalRealtimeEvent) => {
+      EventsOn(`three-hole:${pid}:realtime`, (data: ThreeHoleTraversalRealtimeEvent) => {
         realtime.value = data
       })
-      EventsOn(`three-hole:${probeID}:complete`, async (_data: ThreeHoleTraversalCompleteEvent) => {
+      EventsOn(`three-hole:${pid}:complete`, async (_data: ThreeHoleTraversalCompleteEvent) => {
         progress.value = null
         await fetchStatus()
       })
-      EventsOn(`three-hole:${probeID}:error`, (data: ThreeHoleTraversalErrorEvent) => {
+      EventsOn(`three-hole:${pid}:error`, (data: ThreeHoleTraversalErrorEvent) => {
         lastError.value = data.error
         if (data.isFatal) {
           progress.value = null
@@ -383,12 +391,12 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
   }
 
   function stopListening() {
-    const probeID = 'probe1'
+    const pid = probeID.value
     try {
-      EventsOff(`three-hole:${probeID}:progress`)
-      EventsOff(`three-hole:${probeID}:realtime`)
-      EventsOff(`three-hole:${probeID}:complete`)
-      EventsOff(`three-hole:${probeID}:error`)
+      EventsOff(`three-hole:${pid}:progress`)
+      EventsOff(`three-hole:${pid}:realtime`)
+      EventsOff(`three-hole:${pid}:complete`)
+      EventsOff(`three-hole:${pid}:error`)
     } catch (e) {
       console.warn('stopListening failed:', e)
     }
@@ -427,7 +435,7 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `three-hole-traversal-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.csv`
+    a.download = `three-hole-traversal-${probeID.value}-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.csv`
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -436,8 +444,8 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
 
   function saveConfig() {
     try {
-      localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(config.value))
-      SaveThreeHoleConfig(config.value as any).catch((e) => {
+      localStorage.setItem(configStorageKey.value, JSON.stringify(config.value))
+      SaveThreeHoleConfig(probeID.value, config.value as any).catch((e) => {
         console.error('保存三孔测试配置到后端失败:', e)
       })
     } catch (e) {
@@ -449,10 +457,10 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
     try {
       // 优先从后端加载
       try {
-        const loaded = await LoadThreeHoleConfig() as any
+        const loaded = await LoadThreeHoleConfig(probeID.value) as any
         if (loaded && loaded.probeChannels && loaded.probeChannels.length > 0) {
           config.value = loaded as ThreeHoleTraversalConfig
-          localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(loaded))
+          localStorage.setItem(configStorageKey.value, JSON.stringify(loaded))
         } else {
           loadConfigFromLocal()
         }
@@ -469,8 +477,8 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
       const filePaths = savedCalibFiles.map(f => f.filePath).filter(Boolean)
       if (filePaths.length > 0) {
         try {
-          await LoadThreeHoleCalibFiles(filePaths)
-          const infos = await GetThreeHoleCalibInfo() as { cMa: number }[]
+          await LoadThreeHoleCalibFiles(probeID.value, filePaths)
+          const infos = await GetThreeHoleCalibInfo(probeID.value) as { cMa: number }[]
           calibFiles.value = filePaths
           calibLoaded.value = true
           config.value.calibFiles = filePaths.map((f, i) => ({
@@ -487,7 +495,7 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
 
   function loadConfigFromLocal() {
     try {
-      const raw = localStorage.getItem(CONFIG_STORAGE_KEY)
+      const raw = localStorage.getItem(configStorageKey.value)
       if (!raw) return
       const data = JSON.parse(raw)
       if (data && data.probeChannels && data.probeChannels.length > 0) {
@@ -500,9 +508,11 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
 
   return {
     // 状态
+    probeID,
     taskStatus, progress, realtime, isRunning, isPaused, calibLoaded, calibFiles, lastError,
     config, statusText, hasResults,
     // 方法
+    init,
     selectCalibFiles, startTest, pauseTest, resumeTest, stopTest,
     ensureDeviceAcquiring,
     fetchStatus, startListening, stopListening, clearError, exportCSV,

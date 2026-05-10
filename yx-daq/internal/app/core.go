@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"yx-daq/internal/calibration"
@@ -31,6 +32,8 @@ type Core struct {
 	PdfReport         *storage.PdfReportService
 	DaqScanner        *scanner.DAQScanner
 	publishCancel     chan struct{}
+
+	threeHoleMotionMu sync.Mutex
 }
 
 // NewCore 创建核心业务管理器
@@ -192,6 +195,8 @@ func (c *Core) createThreeHoleService(probeID string) *three_hole.ThreeHoleTrave
 		return result, nil
 	})
 	svc.SetMotionController(func(axis types.AxisName, position float64) error {
+		c.threeHoleMotionMu.Lock()
+		defer c.threeHoleMotionMu.Unlock()
 		config := svc.GetConfig()
 		mcID := config.MotionControllerID
 		if mcID != "" && c.MotionManager.IsConnected(mcID) {
@@ -209,6 +214,8 @@ func (c *Core) createThreeHoleService(probeID string) *three_hole.ThreeHoleTrave
 		return fmt.Errorf("no motion controller connected")
 	})
 	svc.SetMotionWaiter(func(axis types.AxisName, timeoutMs int) error {
+		c.threeHoleMotionMu.Lock()
+		defer c.threeHoleMotionMu.Unlock()
 		config := svc.GetConfig()
 		mcID := config.MotionControllerID
 		if mcID != "" && c.MotionManager.IsConnected(mcID) {
@@ -324,6 +331,58 @@ func (c *Core) GetDataDir() string {
 // GetThreeHoleService 获取指定探针的服务
 func (c *Core) GetThreeHoleService(probeID string) *three_hole.ThreeHoleTraversalService {
 	return c.ThreeHoleServices[probeID]
+}
+
+// CheckThreeHoleMotionConflict 检查指定探针的运动控制器是否被其他正在运行的探针占用
+func (c *Core) CheckThreeHoleMotionConflict(probeID string, mcID string) error {
+	if mcID == "" {
+		return nil
+	}
+	for id, svc := range c.ThreeHoleServices {
+		if id == probeID {
+			continue
+		}
+		otherMcID := svc.GetConfig().MotionControllerID
+		if otherMcID == mcID && svc.GetStatus().Status == types.TraversalStatusRunning {
+			return fmt.Errorf("运动控制器 %s 正被探针 %s 使用中，不能同时启动", mcID, id)
+		}
+	}
+	return nil
+}
+
+// CheckThreeHoleDeviceChannelOverlap 检查同一采集设备上不同探针的通道映射是否冲突
+func (c *Core) CheckThreeHoleDeviceChannelOverlap(probeID string, deviceID string, channels []types.ThreeHoleProbeChannelConfig) string {
+	if deviceID == "" {
+		return ""
+	}
+	for id, svc := range c.ThreeHoleServices {
+		if id == probeID {
+			continue
+		}
+		otherCfg := svc.GetConfig()
+		if otherCfg.DeviceID != deviceID {
+			continue
+		}
+		if svc.GetStatus().Status != types.TraversalStatusRunning {
+			continue
+		}
+		myChannels := make(map[int]string)
+		for _, ch := range channels {
+			if ch.Enabled {
+				myChannels[ch.Channel] = string(ch.Role)
+			}
+		}
+		for _, otherCh := range otherCfg.ProbeChannels {
+			if !otherCh.Enabled {
+				continue
+			}
+			if myRole, ok := myChannels[otherCh.Channel]; ok && myRole != string(otherCh.Role) {
+				return fmt.Sprintf("警告: 采集设备 %s 的通道 %d 被探针 %s 映射为 %s，当前探针映射为 %s，数据可能冲突",
+					deviceID, otherCh.Channel, id, string(otherCh.Role), myRole)
+			}
+		}
+	}
+	return ""
 }
 
 // EmergencyStopWithRetry 急停运动控制器（重试1次）

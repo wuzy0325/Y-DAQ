@@ -28,7 +28,10 @@ export const LoadThreeHoleCalibFiles = (probeIDOrFiles: string | string[], maybe
   if (Array.isArray(probeIDOrFiles)) return ThreeHoleService.LoadThreeHoleCalibFiles(defaultProbeID, probeIDOrFiles)
   return ThreeHoleService.LoadThreeHoleCalibFiles(probeIDOrFiles, maybeFiles ?? [])
 }
-export const LoadThreeHoleConfig = () => ConfigService.LoadThreeHoleProbe1Config()
+export const LoadThreeHoleConfig = (probeID = defaultProbeID) => {
+  if (probeID === 'probe2') return ConfigService.LoadThreeHoleProbe2Config()
+  return ConfigService.LoadThreeHoleProbe1Config()
+}
 export const MotionDefinePosition = (id: string, axis: AxisName, position: number) => MotionService.MotionDefinePosition(id, axis, position)
 export const MotionEmergencyStop = (id: string) => MotionService.MotionEmergencyStop(id)
 export const MotionGetLimitStatus = (id: string, axis: AxisName) => MotionService.MotionGetLimitStatus(id, axis)
@@ -52,7 +55,14 @@ export const RemoveDeviceProfile = (id: string) => DeviceService.RemoveDevicePro
 export const RemoveMotionProfile = (id: string) => MotionService.RemoveMotionProfile(id)
 export const ResumeCalibration = () => CalibrationService.ResumeCalibration()
 export const ResumeThreeHoleTraversal = (probeID = defaultProbeID) => ThreeHoleService.ResumeThreeHoleTraversal(probeID)
-export const SaveThreeHoleConfig = (config: ThreeHoleTraversalConfig) => ConfigService.SaveThreeHoleProbe1Config(config)
+export const SaveThreeHoleConfig = (probeIDOrConfig: string | ThreeHoleTraversalConfig, maybeConfig?: ThreeHoleTraversalConfig) => {
+  if (typeof probeIDOrConfig === 'string') {
+    const cfg = maybeConfig!
+    if (probeIDOrConfig === 'probe2') return ConfigService.SaveThreeHoleProbe2Config(cfg)
+    return ConfigService.SaveThreeHoleProbe1Config(cfg)
+  }
+  return ConfigService.SaveThreeHoleProbe1Config(probeIDOrConfig)
+}
 export const ScanDevices = () => DeviceService.ScanDevices()
 export const SelectDataSavePath = () => ConfigService.SelectDataSavePath()
 export const SelectThreeHoleCalibFiles = () => ThreeHoleService.SelectThreeHoleCalibFiles()

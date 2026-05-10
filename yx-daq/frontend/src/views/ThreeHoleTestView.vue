@@ -343,6 +343,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick, shallowRef } from 'vue'
+import { useRoute } from 'vue-router'
 import { Setting, FolderOpened } from '@element-plus/icons-vue'
 import { useDeviceStore } from '../stores/device'
 import { useMotionStore } from '../stores/motion'
@@ -361,9 +362,13 @@ import ChartPanel from '../components/ChartPanel.vue'
 import GlassCard from '../components/GlassCard.vue'
 import ValueDisplay from '../components/ValueDisplay.vue'
 
+const route = useRoute()
 const store = useThreeHoleTestStore()
 const deviceStore = useDeviceStore()
 const motionStore = useMotionStore()
+
+const probeParam = (route.query.probe as string) || 'probe1'
+store.init(probeParam)
 
 async function browseSavePath() {
   try {

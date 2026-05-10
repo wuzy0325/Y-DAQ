@@ -3,6 +3,7 @@ package three_hole
 import (
 	"fmt"
 	"log/slog"
+	"sync"
 	"time"
 
 	"yx-daq/internal/types"
@@ -136,12 +137,14 @@ func (s *ThreeHoleTraversalService) Start(config types.ThreeHoleTraversalConfig)
 	}
 
 	// 启动测试协程
+	doneCloseOnce := &sync.Once{}
 	go func() {
 		s.runTestLoop(taskID, config)
-		// 确保关闭 doneCh
-		if s.testManager.doneCh != nil {
-			close(s.testManager.doneCh)
-		}
+		doneCloseOnce.Do(func() {
+			if s.testManager.doneCh != nil {
+				close(s.testManager.doneCh)
+			}
+		})
 	}()
 
 	return taskID, nil
