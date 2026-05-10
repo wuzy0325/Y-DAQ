@@ -3,7 +3,7 @@
     <!-- 顶部工具栏 -->
     <div class="toolbar">
       <div class="toolbar-left">
-        <el-button v-if="!isStandalone" type="primary" :disabled="store.isRunning" @click="showSettingsDialog = true">
+        <el-button type="primary" :disabled="store.isRunning" @click="showSettingsDialog = true">
           <el-icon><Setting /></el-icon> 设置
         </el-button>
         <el-tooltip v-if="!store.isRunning" :content="!store.calibLoaded ? '请先加载校准文件' : ''" :disabled="store.calibLoaded" placement="bottom">
@@ -368,7 +368,6 @@ const deviceStore = useDeviceStore()
 const motionStore = useMotionStore()
 
 const probeParam = (route.query.probe as string) || 'probe1'
-const isStandalone = computed(() => !!route.query.probe)
 store.init(probeParam)
 
 async function browseSavePath() {

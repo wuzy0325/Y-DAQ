@@ -1,6 +1,6 @@
 <template>
   <div class="main-layout">
-    <header class="topbar">
+    <header v-if="!isPopoutWindow" class="topbar">
       <div class="topbar-left">
         <div class="logo-icon">⚡</div>
         <div class="logo-text">YX-DAQ</div>
@@ -58,6 +58,9 @@ import { ArrowDown } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const deviceStore = useDeviceStore()
+
+// 独立弹窗（探针测试窗口）隐藏顶部导航栏
+const isPopoutWindow = computed(() => !!route.query.probe)
 
 const navItems = [
   { path: '/', icon: '📊', label: '仪表盘' },
