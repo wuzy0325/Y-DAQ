@@ -78,13 +78,23 @@ func (s *SimulatedMotionController) MoveBy(axis types.AxisName, delta float64) e
 	return nil
 }
 
-// Jog 模拟点动
-func (s *SimulatedMotionController) Jog(axis types.AxisName, direction int, speed float64) error {
-	delta := 1.0
-	if direction < 0 {
-		delta = -1.0
-	}
-	return s.MoveBy(axis, delta)
+// Jog 模拟点动（模拟运动过程，与 MoveTo 一致）
+func (s *SimulatedMotionController) Jog(axis types.AxisName, direction int, distance float64, speed float64) error {
+	s.mu.Lock()
+	s.moving[axis] = true
+	s.mu.Unlock()
+	go func() {
+		time.Sleep(time.Duration(200+rand.Intn(300)) * time.Millisecond)
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		delta := distance
+		if direction < 0 {
+			delta = -distance
+		}
+		s.positions[axis] += delta
+		s.moving[axis] = false
+	}()
+	return nil
 }
 
 // Home 模拟回零

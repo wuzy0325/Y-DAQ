@@ -1,10 +1,9 @@
 <template>
   <div
     class="axis-card"
-    :class="{ 'is-running': isRunning, 'is-error': isError, 'is-connected': store.isConnected }"
+    :class="cardClasses"
     :style="cardStyle"
   >
-    <!-- 头部：轴名 + 状态 -->
     <div class="axis-header">
       <div class="axis-brand">
         <div class="axis-icon" :style="iconStyle">
@@ -44,17 +43,25 @@
       </div>
     </div>
 
-    <!-- 位置显示区 -->
     <div class="position-section">
-      <div class="section-label">当前位置</div>
-      <div class="position-value">
-        <span class="number" :class="{ 'is-homed': axis.isHomed }">
-          {{ formatPosition(axis.currentPosition) }}
-        </span>
-        <span class="unit">{{ unit }}</span>
+      <div class="position-header">
+        <div class="position-value">
+          <span class="number" :class="{ 'is-homed': axis.isHomed }">
+            {{ formatPosition(axis.currentPosition) }}
+          </span>
+          <span class="unit">{{ unit }}</span>
+        </div>
+        <button
+          class="home-btn-inline"
+          :disabled="!store.isConnected"
+          @click="onHome"
+        >
+          <el-icon><Aim /></el-icon>
+          <span>置零</span>
+        </button>
       </div>
-      <!-- 位置进度条 -->
       <div class="position-track">
+        <span class="track-end">-{{ formatPosition(maxPosition) }}</span>
         <div class="track-bg">
           <div
             class="track-fill"
@@ -65,20 +72,18 @@
             :style="{ left: `${positionPercent}%`, borderColor: axisColor, background: axisColor }"
           />
         </div>
-        <div class="track-labels">
-          <span>-{{ formatPosition(maxPosition) }}</span>
-          <span class="center">0</span>
-          <span>+{{ formatPosition(maxPosition) }}</span>
-        </div>
+        <span class="track-end">+{{ formatPosition(maxPosition) }}</span>
+      </div>
+      <div v-if="axis.negLimitActive || axis.posLimitActive" class="limit-warning">
+        <el-icon><WarningFilled /></el-icon>
+        <span>{{ axis.posLimitActive ? '已触发正限位' : '已触发负限位' }}，请反向点动退出</span>
       </div>
     </div>
 
-    <!-- 控制输入区 -->
     <div class="control-section">
-      <div class="section-label">运动参数</div>
-      <div class="input-row">
-        <div class="input-group target-group">
-          <span class="input-label">目标位置</span>
+      <div class="control-group move-group">
+        <div class="group-input">
+          <span class="field-label">目标位置</span>
           <el-input-number
             v-model="localTarget"
             :precision="2"
@@ -91,66 +96,19 @@
             @change="onTargetChange"
           />
         </div>
-        <div class="input-group step-group">
-          <span class="input-label">步距</span>
-          <el-input-number
-            v-model="localRelative"
-            :precision="2"
-            :step="stepValue"
-            :min="0.01"
-            :max="maxPosition"
-            size="small"
-            controls-position="right"
-            class="motion-input"
-            @change="onRelativeChange"
-          />
-        </div>
-      </div>
-
-      <!-- 控制按钮区 -->
-      <div class="movement-section">
-        <div class="jog-pair">
+        <div class="group-actions">
           <button
-            class="jog-btn jog-minus"
-            :disabled="!canJog"
-            @mousedown="startJog('minus')"
-            @mouseup="stopJog('minus')"
-            @mouseleave="stopJog('minus')"
-            @touchstart.prevent="startJog('minus')"
-            @touchend.prevent="stopJog('minus')"
-          >
-            <el-icon><ArrowLeft /></el-icon>
-            <span class="jog-label">负向点动</span>
-          </button>
-
-          <button
-            class="jog-btn jog-plus"
-            :disabled="!canJog"
-            @mousedown="startJog('plus')"
-            @mouseup="stopJog('plus')"
-            @mouseleave="stopJog('plus')"
-            @touchstart.prevent="startJog('plus')"
-            @touchend.prevent="stopJog('plus')"
-          >
-            <span class="jog-label">正向点动</span>
-            <el-icon><ArrowRight /></el-icon>
-          </button>
-        </div>
-
-        <div class="action-pair">
-          <button
-            class="action-btn run-btn"
+            class="run-btn"
             :class="{ running: isRunning }"
             :disabled="!canRun"
             @click="onMoveToTarget"
           >
             <el-icon v-if="isRunning" class="spin-icon"><Loading /></el-icon>
             <el-icon v-else><VideoPlay /></el-icon>
-            <span>{{ isRunning ? '运行中' : '运行到目标' }}</span>
+            <span>运行</span>
           </button>
-
           <button
-            class="action-btn stop-btn"
+            class="stop-btn"
             :disabled="!isRunning && !isJogging"
             @click="onStop"
           >
@@ -160,14 +118,40 @@
         </div>
       </div>
 
-      <button
-        class="home-btn"
-        :disabled="!store.isConnected"
-        @click="onHome"
-      >
-        <el-icon><Aim /></el-icon>
-        <span>置零</span>
-      </button>
+      <div class="control-group jog-group">
+        <div class="group-input">
+          <span class="field-label">步距</span>
+          <el-input-number
+            v-model="localRelative"
+            :precision="2"
+            :step="stepValue"
+            :min="0.01"
+            :max="maxPosition"
+            size="small"
+            controls-position="right"
+            class="step-input"
+            @change="onRelativeChange"
+          />
+        </div>
+        <div class="jog-actions">
+          <button
+            class="jog-btn jog-minus"
+            :disabled="!canRun"
+            @click="onJogMove('minus')"
+          >
+            <el-icon><Minus /></el-icon>
+            <span>负向</span>
+          </button>
+          <button
+            class="jog-btn jog-plus"
+            :disabled="!canRun"
+            @click="onJogMove('plus')"
+          >
+            <el-icon><Plus /></el-icon>
+            <span>正向</span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -175,8 +159,9 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import {
-  Setting, ArrowLeft, ArrowRight, Aim,
-  VideoPlay, VideoPause, Loading,
+  Setting, Aim,
+  VideoPlay, VideoPause, Loading, WarningFilled,
+  Minus, Plus,
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { useMotionStore } from '../../stores/motion'
@@ -215,8 +200,15 @@ const stepValue = computed(() => props.axis.kind === 'LINEAR' ? 1 : 0.5)
 const isRunning = computed(() => props.axis.runState === 'running')
 const isJogging = computed(() => props.axis.runState === 'jogging_minus' || props.axis.runState === 'jogging_plus')
 const isError = computed(() => props.axis.runState === 'error')
-const canJog = computed(() => store.isConnected && (props.axis.runState === 'idle' || isJogging.value))
+const hasLimit = computed(() => props.axis.posLimitActive || props.axis.negLimitActive)
 const canRun = computed(() => store.isConnected && props.axis.runState === 'idle')
+
+const cardClasses = computed(() => ({
+  'is-running': isRunning.value,
+  'is-error': isError.value,
+  'is-connected': store.isConnected,
+  'has-limit': hasLimit.value,
+}))
 
 const runStateLabel = computed(() => store.getRunStateText(props.axis.runState as any))
 const runStateClass = computed(() => {
@@ -261,24 +253,10 @@ function onRelativeChange(val: number | undefined) {
   if (val !== undefined) store.updateAxisRelativeDistance(props.axis.name, val)
 }
 
-let jogDirection: 'minus' | 'plus' | null = null
-
-async function startJog(direction: 'minus' | 'plus') {
-  if (jogDirection) return
-  jogDirection = direction
-  const result = await store.startJog(props.axis.name, direction)
-  if (!result.success) {
-    ElMessage.warning(result.error || `${props.axis.name}轴点动失败`)
-    jogDirection = null
-  }
-}
-
-async function stopJog(direction: 'minus' | 'plus') {
-  if (jogDirection !== direction) return
-  jogDirection = null
-  if (props.axis.runState === 'jogging_minus' || props.axis.runState === 'jogging_plus') {
-    await store.stopJog(props.axis.name)
-  }
+async function onJogMove(direction: 'minus' | 'plus') {
+  const delta = direction === 'minus' ? -localRelative.value : localRelative.value
+  const result = await store.moveBy(props.axis.name, delta)
+  if (!result.success) ElMessage.warning(result.error || `${props.axis.name}轴移动失败`)
 }
 
 async function onMoveToTarget() {
@@ -309,7 +287,7 @@ async function onHome() {
   padding: 14px 16px 16px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
   transition: all 0.3s ease;
   min-height: 0;
   overflow: visible;
@@ -323,7 +301,7 @@ async function onHome() {
     right: 0;
     height: 2px;
     background: var(--axis-color);
-    opacity: 0.3;
+    opacity: 0.35;
     transition: opacity 0.3s;
   }
 
@@ -332,7 +310,7 @@ async function onHome() {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
     &::before {
-      opacity: 0.6;
+      opacity: 0.7;
     }
   }
 
@@ -343,7 +321,7 @@ async function onHome() {
     animation: card-breathe 3s ease-in-out infinite;
 
     &::before {
-      opacity: 0.8;
+      opacity: 0.9;
       box-shadow: 0 0 10px var(--axis-color);
     }
   }
@@ -358,6 +336,16 @@ async function onHome() {
     }
   }
 
+  &.has-limit {
+    border-color: rgba($color-danger, 0.4);
+    animation: limit-flash 1s ease-in-out infinite;
+
+    &::before {
+      background: $color-danger;
+      opacity: 0.7;
+    }
+  }
+
   &:not(.is-connected) {
     opacity: 0.7;
   }
@@ -368,23 +356,28 @@ async function onHome() {
   50% { box-shadow: 0 0 35px var(--axis-color-glow), inset 0 1px 0 rgba(255, 255, 255, 0.08); }
 }
 
+@keyframes limit-flash {
+  0%, 100% { border-color: rgba($color-danger, 0.4); }
+  50% { border-color: rgba($color-danger, 0.7); }
+}
+
 /* ========== 头部 ========== */
 .axis-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
 }
 
 .axis-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .axis-icon {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -393,7 +386,7 @@ async function onHome() {
   transition: all 0.3s;
 
   .axis-letter {
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 700;
     line-height: 1;
   }
@@ -402,7 +395,7 @@ async function onHome() {
 .axis-meta {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 
   .axis-name {
     font-size: 15px;
@@ -420,7 +413,7 @@ async function onHome() {
 .axis-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
   justify-content: flex-end;
 }
@@ -444,21 +437,27 @@ async function onHome() {
     transition: all 0.2s;
 
     &.active {
-      background: rgba($color-danger, 0.15);
-      border-color: rgba($color-danger, 0.4);
+      background: rgba($color-danger, 0.2);
+      border-color: rgba($color-danger, 0.5);
       color: $color-danger;
-      box-shadow: 0 0 8px rgba($color-danger, 0.3);
+      box-shadow: 0 0 10px rgba($color-danger, 0.4);
+      animation: limit-dot-pulse 0.8s ease-in-out infinite;
     }
   }
+}
+
+@keyframes limit-dot-pulse {
+  0%, 100% { box-shadow: 0 0 10px rgba($color-danger, 0.4); }
+  50% { box-shadow: 0 0 18px rgba($color-danger, 0.7); }
 }
 
 .state-badge {
   display: flex;
   align-items: center;
   gap: 5px;
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -531,33 +530,27 @@ async function onHome() {
   }
 }
 
-/* ========== 位置显示 ========== */
+/* ========== 位置显示区 ========== */
 .position-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, var(--axis-color-dim), rgba(255, 255, 255, 0.025));
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  gap: 10px;
 }
 
-.section-label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  color: $text-muted;
-  line-height: 1;
+.position-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .position-value {
   display: flex;
   align-items: baseline;
-  justify-content: flex-start;
-  gap: 6px;
+  gap: 8px;
 
   .number {
-    font-size: clamp(26px, 2.8vw, 32px);
+    font-size: clamp(28px, 3vw, 36px);
     font-weight: 700;
     color: var(--axis-color);
     font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, 'Courier New', monospace;
@@ -578,9 +571,42 @@ async function onHome() {
   }
 }
 
+.home-btn-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba($color-primary, 0.2);
+  background: rgba($color-primary, 0.06);
+  color: $color-primary;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  margin-bottom: 4px;
+
+  &:hover:not(:disabled) {
+    background: rgba($color-primary, 0.12);
+    border-color: rgba($color-primary, 0.35);
+    box-shadow: 0 0 10px rgba($color-primary, 0.15);
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+}
+
 .position-track {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
   .track-bg {
     position: relative;
+    flex: 1;
     height: 6px;
     background: rgba(255, 255, 255, 0.04);
     border-radius: 4px;
@@ -611,46 +637,64 @@ async function onHome() {
     z-index: 2;
   }
 
-  .track-labels {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 6px;
+  .track-end {
     font-size: 10px;
     color: $text-muted;
     font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, 'Courier New', monospace;
-
-    .center {
-      color: rgba(255, 255, 255, 0.25);
-    }
+    white-space: nowrap;
   }
 }
 
-/* ========== 控制区 ========== */
+.limit-warning {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: rgba($color-danger, 0.08);
+  border: 1px solid rgba($color-danger, 0.2);
+  color: $color-danger;
+  font-size: 11px;
+  font-weight: 500;
+  animation: limit-warn-fade 2s ease-in-out infinite;
+}
+
+@keyframes limit-warn-fade {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* ========== 控制区（目标 + 步距） ========== */
 .control-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
-.input-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.input-group {
+.control-group {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
 
-  .input-label {
+.group-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+
+  .field-label {
     font-size: 11px;
+    font-weight: 600;
     color: $text-muted;
-    font-weight: 500;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
   }
 
-  :deep(.motion-input) {
-    width: 100%;
+  :deep(.motion-input),
+  :deep(.step-input) {
+    width: 110px;
 
     .el-input__wrapper {
       background: rgba(0, 0, 0, 0.25);
@@ -665,74 +709,34 @@ async function onHome() {
   }
 }
 
-/* ========== 操作按钮 ========== */
-.movement-section {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.jog-pair,
-.action-pair {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.jog-btn {
+.group-actions,
+.jog-actions {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
-  min-height: 34px;
-  padding: 7px 8px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
-  color: $text-secondary;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
-  user-select: none;
-
-  &:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: var(--axis-color-glow);
-    color: var(--axis-color);
-  }
-
-  &:active:not(:disabled) {
-    transform: scale(0.96);
-    background: var(--axis-color-dim);
-  }
-
-  &:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-  }
-
-  .jog-label {
-    font-weight: 700;
-    font-size: 12px;
-    white-space: nowrap;
-  }
+  gap: 8px;
+  flex-shrink: 0;
 }
 
-.action-btn {
+.run-btn,
+.stop-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 5px;
-  min-height: 34px;
-  padding: 7px 8px;
+  height: 32px;
+  padding: 0 14px;
   border-radius: 8px;
-  border: none;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
   user-select: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &:active:not(:disabled) {
+    transform: scale(0.96);
+  }
 
   &:disabled {
     opacity: 0.3;
@@ -741,41 +745,85 @@ async function onHome() {
 }
 
 .run-btn {
+  border: 1px solid rgba($color-success, 0.25);
   background: rgba($color-success, 0.12);
   color: $color-success;
-  border: 1px solid rgba($color-success, 0.2);
 
   &:hover:not(:disabled) {
-    background: rgba($color-success, 0.2);
-    border-color: rgba($color-success, 0.35);
-    box-shadow: 0 0 15px rgba($color-success, 0.15);
-  }
-
-  &:active:not(:disabled) {
-    transform: scale(0.96);
+    background: rgba($color-success, 0.22);
+    border-color: rgba($color-success, 0.4);
+    box-shadow: 0 0 18px rgba($color-success, 0.2);
   }
 
   &.running {
-    background: rgba($color-success, 0.2);
-    border-color: rgba($color-success, 0.4);
-    box-shadow: 0 0 20px rgba($color-success, 0.2);
+    background: rgba($color-success, 0.22);
+    border-color: rgba($color-success, 0.45);
+    box-shadow: 0 0 22px rgba($color-success, 0.25);
   }
 }
 
 .stop-btn {
-  background: rgba($color-danger, 0.12);
-  color: $color-danger;
   border: 1px solid rgba($color-danger, 0.2);
+  background: rgba($color-danger, 0.08);
+  color: $color-danger;
 
   &:hover:not(:disabled) {
-    background: rgba($color-danger, 0.2);
+    background: rgba($color-danger, 0.16);
     border-color: rgba($color-danger, 0.35);
     box-shadow: 0 0 15px rgba($color-danger, 0.15);
   }
+}
+
+.jog-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: $text-secondary;
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--axis-color-glow);
+    color: var(--axis-color);
+  }
+
+  .el-icon {
+    font-size: 13px;
+  }
 
   &:active:not(:disabled) {
-    transform: scale(0.96);
+    transform: scale(0.95);
+    background: var(--axis-color-dim);
   }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+}
+
+.jog-minus:hover:not(:disabled) {
+  border-color: rgba($color-danger, 0.3);
+  color: $color-danger;
+  background: rgba($color-danger, 0.08);
+}
+
+.jog-plus:hover:not(:disabled) {
+  border-color: rgba($color-success, 0.3);
+  color: $color-success;
+  background: rgba($color-success, 0.08);
 }
 
 .spin-icon {
@@ -787,49 +835,17 @@ async function onHome() {
   to { transform: rotate(360deg); }
 }
 
-.home-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  min-height: 32px;
-  padding: 6px 0;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
-  color: $text-muted;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
-
-  &:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.12);
-    color: $text-secondary;
-  }
-
-  &:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-  }
-}
-
-@media (max-width: 1180px) {
-  .movement-section {
-    grid-template-columns: 1fr;
-  }
-}
-
 @media (max-width: 560px) {
   .axis-header {
     align-items: flex-start;
   }
 
-  .input-row,
-  .jog-pair,
-  .action-pair {
-    grid-template-columns: 1fr;
+  .control-group {
+    flex-wrap: wrap;
+  }
+
+  .group-input {
+    flex: 1 1 100%;
   }
 }
 </style>

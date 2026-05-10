@@ -445,27 +445,28 @@ async function saveEdit() {
     }
 
     const { types } = await import('../../wailsjs/go/models')
-    // 按规则构建通道配置：压力通道用统一单位，大气压固定Pa，大气温度固定°C，精度统一
+    const formSnapshot = { ...editForm.value }
+    const channelsSnapshot = editChannels.value.map(c => ({ ...c }))
     const pc = editPressureCount.value
-    const updatedChannels = editChannels.value.map(c => ({
+    const updatedChannels = channelsSnapshot.map(c => ({
       index: c.index,
       name: c.name,
       enabled: c.enabled,
-      unit: c.index === pc ? 'Pa' : (c.index === pc + 1 ? '°C' : editForm.value.unit),
-      precision: editForm.value.precision,
+      unit: c.index === pc ? 'Pa' : (c.index === pc + 1 ? '°C' : formSnapshot.unit),
+      precision: formSnapshot.precision,
       rangeMin: c.rangeMin,
       rangeMax: c.rangeMax,
     }))
 
     const updatedProfile = new types.DeviceProfile({
       id: profile.id,
-      name: editForm.value.name,
+      name: formSnapshot.name,
       type: profile.type,
-      host: editForm.value.host,
-      port: editForm.value.port,
+      host: formSnapshot.host,
+      port: formSnapshot.port,
       streamId: profile.streamId,
-      periodMs: Math.round(1000 / editForm.value.publishRate),
-      autoConnect: editForm.value.autoConnect,
+      periodMs: Math.round(1000 / formSnapshot.publishRate),
+      autoConnect: formSnapshot.autoConnect,
       channels: updatedChannels,
     })
 
@@ -474,28 +475,26 @@ async function saveEdit() {
       ElMessage.error(`更新失败: ${err}`)
     } else {
       const oldUnit = profile.channels.length > 0 ? profile.channels[0].unit : 'Pa'
-      const oldStatus = deviceStore.statuses.find(s => s.id === editForm.value.id)
+      const oldStatus = deviceStore.statuses.find(s => s.id === formSnapshot.id)
 
-      if (oldStatus?.status === 'Connected' && editForm.value.unit !== oldUnit) {
-        const unitErr = await deviceStore.setUnit(editForm.value.id, editForm.value.unit)
+      if (oldStatus?.status === 'Connected' && formSnapshot.unit !== oldUnit) {
+        const unitErr = await deviceStore.setUnit(formSnapshot.id, formSnapshot.unit)
         if (unitErr) {
           ElMessage.error(`设置硬件单位失败: ${unitErr}`)
           return
         }
       }
 
-      // 更新发布频率
       try {
         const { SetPublishRate } = await import('../../wailsjs/go/main/App')
-        await SetPublishRate(editForm.value.publishRate)
+        await SetPublishRate(formSnapshot.publishRate)
       } catch {}
 
-      // 根据 autoConnect 自动连接或断开
       const { ConnectDevice, DisconnectDevice } = await import('../../wailsjs/go/main/App')
-      if (editForm.value.autoConnect) {
+      if (formSnapshot.autoConnect) {
         if (!oldStatus || oldStatus.status !== 'Connected') {
           try {
-            await ConnectDevice(editForm.value.id)
+            await ConnectDevice(formSnapshot.id)
             ElMessage.success('设备已自动连接')
           } catch (connErr: any) {
             ElMessage.warning(`自动连接失败: ${connErr?.message || connErr}`)
@@ -503,7 +502,7 @@ async function saveEdit() {
         }
       } else {
         try {
-          await DisconnectDevice(editForm.value.id)
+          await DisconnectDevice(formSnapshot.id)
         } catch {}
       }
 
@@ -679,10 +678,16 @@ async function removeDevice(id: string) {
 
 // ==================== 弹窗通用样式 ====================
 :deep(.device-dialog) {
+  .el-dialog {
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+  }
   .el-dialog__header {
     margin-right: 0;
     padding: 16px 20px;
     border-bottom: 1px solid rgba(255,255,255,0.08);
+    flex-shrink: 0;
   }
   .el-dialog__title {
     font-size: 14px;
@@ -691,6 +696,12 @@ async function removeDevice(id: string) {
   }
   .el-dialog__body {
     padding: 16px 20px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+  }
+  .el-dialog__footer {
+    flex-shrink: 0;
   }
 }
 

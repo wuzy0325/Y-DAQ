@@ -27,6 +27,9 @@ func NewEventHandler(testManager *TestManager, dataProcessor *DataProcessor, csv
 
 // OnTestStart 处理测试开始事件
 func (eh *EventHandler) OnTestStart(config types.ThreeHoleTraversalConfig) error {
+	// 确保之前的 CSV 已关闭（防御旧测试 goroutine 延迟清理）
+	eh.csvWriter.Close()
+
 	// 初始化CSV写入器
 	if err := eh.csvWriter.Initialize(config.SavePath, config.SaveFileName); err != nil {
 		slog.Error("csv init failed", "err", err)
@@ -71,7 +74,7 @@ func (eh *EventHandler) OnDataPointAcquired(dataPoint types.ThreeHoleTraversalDa
 		eh.testManager.EmitPointError(fmt.Sprintf("写入CSV失败: %v", err))
 	}
 
-	// 更新进度
+	// 更新进度（使用 DataPoint 中的坐标，避免无锁读取 status.CurrentPoint）
 	completed := len(eh.testManager.status.DataPoints)
 	total := eh.testManager.status.TotalPoints
 	progress := float64(completed) / float64(total) * 100
@@ -82,32 +85,10 @@ func (eh *EventHandler) OnDataPointAcquired(dataPoint types.ThreeHoleTraversalDa
 		total,
 		completed,
 		progress,
-		eh.testManager.status.CurrentPoint.X,
-		eh.testManager.status.CurrentPoint.Y,
+		dataPoint.X,
+		dataPoint.Y,
 		"acquired",
 	)
 
 	return nil
-}
-
-// emitPointPhase 推送点位阶段进度事件
-func (eh *EventHandler) EmitPointPhase(point types.TraversalPoint, phase string) {
-	if eh.eventPublisher == nil {
-		return
-	}
-
-	taskID := eh.testManager.status.TaskID
-	total := eh.testManager.status.TotalPoints
-	completed := eh.testManager.status.CompletedPoints
-	progress := eh.testManager.status.Progress
-
-	eh.eventPublisher.EmitProgress(types.ThreeHoleTraversalProgressEvent{
-		TaskID:          taskID,
-		TotalPoints:     total,
-		CompletedPoints: completed,
-		Progress:        progress,
-		CurrentX:        point.X,
-		CurrentY:        point.Y,
-		Phase:           phase,
-	})
 }

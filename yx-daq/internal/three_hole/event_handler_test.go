@@ -369,65 +369,6 @@ func TestOnDataPointAcquired_CsvError(t *testing.T) {
 	}
 }
 
-// TestEmitPointPhase 测试点位阶段事件发射
-func TestEmitPointPhase(t *testing.T) {
-	testManager := NewTestManager(&MockEventPublisher{})
-	dataProcessor := NewDataProcessor(testManager, NewThreeHoleInterpolator(), &MockEventPublisher{})
-	csvWriter := NewThreeHoleCsvWriter()
-	publisher := &MockEventPublisher{}
-	eventHandler := NewEventHandler(testManager, dataProcessor, csvWriter, publisher)
-
-	// 先启动测试以获取TaskID
-	config := types.ThreeHoleTraversalConfig{
-		Name: "TestEmitPointPhase",
-		Layout: types.TraversalLayout{
-			Pattern: types.TraversalPatternLine,
-			Line: &types.LineLayout{
-				StartX: 0,
-				EndX:   10,
-				YSteps: []types.StepSegment{{Start: 0, End: 5, Step: 5}},
-					StartY: 0,
-					EndY:   5,
-			},
-		},
-		SavePath: t.TempDir(),
-		SaveFileName: "test.csv",
-	}
-
-	taskID, err := testManager.Start(config)
-	if err != nil {
-		t.Fatalf("Start failed: %v", err)
-	}
-
-	point := types.TraversalPoint{
-		ID: "test-point",
-		X:  10.5,
-		Y:  20.3,
-	}
-
-	// 发射移动阶段事件
-	eventHandler.EmitPointPhase(point, "moving")
-
-	// 验证进度事件
-	events := publisher.GetProgressEvents()
-	if len(events) != 1 {
-		t.Errorf("Expected 1 progress event, got %d", len(events))
-	}
-
-	if events[0].TaskID != taskID {
-		t.Errorf("Expected task ID %s, got %s", taskID, events[0].TaskID)
-	}
-
-	if events[0].Phase != "moving" {
-		t.Errorf("Expected phase 'moving', got '%s'", events[0].Phase)
-	}
-
-	if events[0].CurrentX != 10.5 || events[0].CurrentY != 20.3 {
-		t.Errorf("Expected position (10.5, 20.3), got (%.1f, %.1f)",
-			events[0].CurrentX, events[0].CurrentY)
-	}
-}
-
 // TestEventHandlerIntegration 测试事件处理器集成测试
 func TestEventHandlerIntegration(t *testing.T) {
 	publisher := &MockEventPublisher{}

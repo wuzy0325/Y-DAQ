@@ -86,6 +86,23 @@
       </div>
     </div>
 
+    <!-- 轴位置概览 -->
+    <div class="axes-overview">
+      <div
+        v-for="(axis, index) in motionStore.allAxes"
+        :key="axis.name"
+        class="overview-item"
+        :class="{ 'has-limit': axis.posLimitActive || axis.negLimitActive }"
+      >
+        <span class="overview-dot" :style="{ background: AXIS_COLORS[index] }" />
+        <span class="overview-name">{{ axis.name }}</span>
+        <span class="overview-value" :style="{ color: AXIS_COLORS[index] }">
+          {{ axis.currentPosition.toFixed(2) }}
+        </span>
+        <span class="overview-unit">{{ getAxisUnit(axis.kind) }}</span>
+      </div>
+    </div>
+
     <!-- 轴控制区 2x2 -->
     <div class="axes-grid">
       <AxisControlCard
@@ -205,6 +222,10 @@ function onConfigureAxis(axisName: string) {
   openConfigDialog(axisName)
 }
 
+function getAxisUnit(kind: string): string {
+  return kind === 'LINEAR' ? 'mm' : '°'
+}
+
 function openConfigDialog(axisName?: string) {
   configDialog.value?.open(axisName)
 }
@@ -216,27 +237,28 @@ onMounted(async () => {
   const b140Profile = motionStore.profiles.find(p => p.type === 'B140-MC')
   if (b140Profile) {
     motionStore.activeControllerId = b140Profile.id
+    await motionStore.fetchStatuses()
   }
 })
 </script>
 
 <style lang="scss" scoped>
 .motion-view {
-  padding: 16px 20px 14px;
+  padding: 20px 24px 18px;
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
   overflow: hidden;
 }
 
 /* ========== 顶部状态栏 ========== */
 .status-bar {
   display: grid;
-  grid-template-columns: minmax(220px, 0.9fr) minmax(360px, 1.35fr) minmax(260px, auto);
+  grid-template-columns: minmax(200px, 0.85fr) minmax(380px, 1.4fr) minmax(240px, auto);
   align-items: stretch;
-  gap: 14px;
-  padding: 14px 16px;
+  gap: 20px;
+  padding: 16px 20px;
   background: $glass-bg;
   border: 1px solid $glass-border;
   border-radius: $border-radius-md;
@@ -248,7 +270,7 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
+  gap: 16px;
   min-width: 0;
 }
 
@@ -367,10 +389,10 @@ onMounted(async () => {
 
 .status-center {
   display: grid;
-  grid-template-columns: auto minmax(140px, 1fr) minmax(100px, 0.65fr) auto;
+  grid-template-columns: auto minmax(150px, 1fr) minmax(100px, 0.6fr) auto;
   align-items: center;
-  gap: 12px;
-  padding: 0 16px;
+  gap: 14px;
+  padding: 0 20px;
   border-left: 1px solid $glass-border-light;
   border-right: 1px solid $glass-border-light;
 }
@@ -432,7 +454,7 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 14px;
 }
 
 .connection-actions {
@@ -479,21 +501,79 @@ onMounted(async () => {
   50% { transform: scale(1.02); box-shadow: 0 0 22px rgba($color-danger, 0.5); }
 }
 
+/* ========== 轴位置概览 ========== */
+.axes-overview {
+  display: flex;
+  gap: 4px;
+  padding: 10px 18px;
+  background: $glass-bg;
+  border: 1px solid $glass-border;
+  border-radius: $border-radius-md;
+  flex-shrink: 0;
+  backdrop-filter: blur(16px);
+}
+
+.overview-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  transition: all 0.3s;
+
+  &.has-limit {
+    background: rgba($color-danger, 0.08);
+
+    .overview-value {
+      color: $color-danger !important;
+    }
+  }
+}
+
+.overview-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.overview-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: $text-muted;
+  min-width: 14px;
+}
+
+.overview-value {
+  font-size: 14px;
+  font-weight: 700;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, 'Courier New', monospace;
+  transition: color 0.3s;
+}
+
+.overview-unit {
+  font-size: 11px;
+  color: $text-muted;
+  font-weight: 500;
+}
+
 /* ========== 轴控制网格 ========== */
 .axes-grid {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(2, minmax(300px, 1fr));
-  gap: 14px;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-rows: 1fr;
+  align-content: stretch;
+  gap: 16px;
   min-height: 0;
-  overflow: auto;
-  padding-right: 2px;
+  overflow: hidden;
 }
 
 @media (max-width: 900px) {
   .status-bar {
     grid-template-columns: 1fr;
+    gap: 14px;
   }
 
   .status-center {
@@ -513,7 +593,9 @@ onMounted(async () => {
 
   .axes-grid {
     grid-template-columns: 1fr;
-    grid-template-rows: none;
+    grid-auto-rows: auto;
+    align-content: start;
+    overflow-y: auto;
   }
 }
 </style>

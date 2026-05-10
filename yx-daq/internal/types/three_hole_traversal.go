@@ -336,6 +336,9 @@ func (c *ThreeHoleTraversalConfig) Validate() error {
 	if !requiredRoles[Role3H_P1] || !requiredRoles[Role3H_P2] || !requiredRoles[Role3H_P3] {
 		return fmt.Errorf("必须启用P1、P2、P3三个压力通道")
 	}
+	if !requiredRoles[Role3H_PAtm] {
+		return fmt.Errorf("必须启用大气压(P∞)通道")
+	}
 
 	// 运动轴配置验证
 	if c.MotionAlpha.Axis == "" {

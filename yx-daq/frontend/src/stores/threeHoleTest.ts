@@ -362,7 +362,7 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
     const probeID = 'probe1'
     try {
       EventsOn(`three-hole:${probeID}:progress`, (data: ThreeHoleTraversalProgressEvent) => {
-        if (isRunning.value) progress.value = data
+        progress.value = data
       })
       EventsOn(`three-hole:${probeID}:realtime`, (data: ThreeHoleTraversalRealtimeEvent) => {
         realtime.value = data
@@ -437,7 +437,9 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
   function saveConfig() {
     try {
       localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(config.value))
-      SaveThreeHoleConfig(config.value as any).catch(() => {})
+      SaveThreeHoleConfig(config.value as any).catch((e) => {
+        console.error('保存三孔测试配置到后端失败:', e)
+      })
     } catch (e) {
       console.error('保存三孔测试配置失败:', e)
     }

@@ -4,7 +4,7 @@
 
 ## 项目概述
 
-基于 Wails v2 (Go + Vue 3) 的五孔探针校准系统桌面端 APP，目标平台 Windows。
+基于 Wails v3 (Go + Vue 3) 的五孔探针校准系统桌面端 APP，目标平台 Windows。
 
 ## 技术栈
 

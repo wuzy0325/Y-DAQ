@@ -18,7 +18,7 @@ type MotionController interface {
 	IsConnected() bool
 	MoveTo(axis types.AxisName, position float64) error
 	MoveBy(axis types.AxisName, delta float64) error
-	Jog(axis types.AxisName, direction int, speed float64) error
+	Jog(axis types.AxisName, direction int, distance float64, speed float64) error
 	Home(axis types.AxisName) error
 	Stop(axis types.AxisName) error
 	StopAll() error
@@ -156,14 +156,14 @@ func (m *MotionControllerManager) MoveBy(id string, axis types.AxisName, delta f
 }
 
 // Jog 点动
-func (m *MotionControllerManager) Jog(id string, axis types.AxisName, direction int, speed float64) error {
+func (m *MotionControllerManager) Jog(id string, axis types.AxisName, direction int, distance float64, speed float64) error {
 	m.mu.RLock()
 	ctrl, ok := m.instances[id]
 	m.mu.RUnlock()
 	if !ok {
 		return fmt.Errorf("motion controller not connected: %s", id)
 	}
-	return ctrl.Jog(axis, direction, speed)
+	return ctrl.Jog(axis, direction, distance, speed)
 }
 
 // Home 回零
@@ -246,7 +246,11 @@ func (m *MotionControllerManager) GetStatusAll() []types.MotionControllerStatus 
 			Type: profile.Type,
 		}
 		if ctrl, ok := instances[id]; ok {
-			status.Status = types.StatusConnected
+			if ctrl.IsConnected() {
+				status.Status = types.StatusConnected
+			} else {
+				status.Status = types.StatusDisconnected
+			}
 			if axes, err := ctrl.GetAllAxisStatus(); err == nil {
 				status.Axes = axes
 			} else if axes, ok := cachedStatuses[id]; ok {
@@ -287,8 +291,12 @@ func (m *MotionControllerManager) GetCachedStatusAll() []types.MotionControllerS
 			Name: profile.Name,
 			Type: profile.Type,
 		}
-		if _, ok := instances[id]; ok {
-			status.Status = types.StatusConnected
+		if ctrl, ok := instances[id]; ok {
+			if ctrl.IsConnected() {
+				status.Status = types.StatusConnected
+			} else {
+				status.Status = types.StatusDisconnected
+			}
 		} else {
 			status.Status = types.StatusDisconnected
 		}

@@ -234,9 +234,6 @@ export const useMotionStore = defineStore('motion', () => {
       const raw = localStorage.getItem(MOTION_CONFIG_STORAGE_PREFIX + 'default')
       if (!raw) return
       const data = JSON.parse(raw)
-      if (data.activeControllerId) {
-        activeControllerId.value = data.activeControllerId
-      }
       if (data.axes) {
         for (const [name, saved] of Object.entries(data.axes) as [string, any][]) {
           if (axisUIStates.value[name]) {
@@ -271,12 +268,12 @@ export const useMotionStore = defineStore('motion', () => {
   }
 
   function syncConnectionFromStatuses(allStatuses: MotionControllerStatus[]) {
-    const active = allStatuses.find(s => s.status === 'Connected' && (!activeControllerId.value || s.id === activeControllerId.value))
-      || allStatuses.find(s => s.status === 'Connected')
-    if (active) {
-      activeControllerId.value = active.id
-      connectionStatus.value = 'connected'
-      return
+    if (activeControllerId.value) {
+      const active = allStatuses.find(s => s.id === activeControllerId.value && s.status === 'Connected')
+      if (active) {
+        connectionStatus.value = 'connected'
+        return
+      }
     }
     if (connectionStatus.value !== 'connecting') {
       connectionStatus.value = 'disconnected'
@@ -426,7 +423,7 @@ export const useMotionStore = defineStore('motion', () => {
 
     try {
       const dir = direction === 'plus' ? 1 : -1
-      await MotionJog(activeControllerId.value, toBindingAxisName(axis), dir, uiState.config.maxSpeed)
+      await MotionJog(activeControllerId.value, toBindingAxisName(axis), dir, uiState.relativeDistance, uiState.config.maxSpeed)
       uiState.runState = direction === 'minus' ? 'jogging_minus' : 'jogging_plus'
       addLog(`${axis}轴开始${direction === 'minus' ? '反向' : '正向'}点动`)
       return { success: true }

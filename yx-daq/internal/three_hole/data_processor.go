@@ -213,6 +213,9 @@ func (dp *DataProcessor) MoveToPoint(point types.TraversalPoint) error {
 
 // DwellWithRealtimeUpdate 在驻留等待期间持续推送实时数据
 func (dp *DataProcessor) DwellWithRealtimeUpdate(point types.TraversalPoint) {
+	dp.testManager.EmitProgress(dp.testManager.status.TaskID, dp.testManager.status.TotalPoints,
+		dp.testManager.status.CompletedPoints, dp.testManager.status.Progress, point.X, point.Y, "waiting")
+
 	dwellDuration := time.Duration(dp.testManager.config.DwellTimeMs) * time.Millisecond
 	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
@@ -353,26 +356,37 @@ func (dp *DataProcessor) readRawData() *types.ThreeHoleRawData {
 	}
 
 	result := &types.ThreeHoleRawData{}
+	gotP1, gotP2, gotP3, gotPAtm := false, false, false, false
 	for _, ch := range dp.testManager.config.ProbeChannels {
 		if !ch.Enabled {
 			continue
 		}
 		val, ok := data[ch.Channel]
 		if !ok {
+			slog.Warn("readRawData: enabled channel has no data", "channel", ch.Channel, "role", ch.Role)
 			continue
 		}
 		switch ch.Role {
 		case types.Role3H_P1:
 			result.P1 = val
+			gotP1 = true
 		case types.Role3H_P2:
 			result.P2 = val
+			gotP2 = true
 		case types.Role3H_P3:
 			result.P3 = val
+			gotP3 = true
 		case types.Role3H_PAtm:
 			result.PAtm = val
+			gotPAtm = true
 		case types.Role3H_TAtm:
 			result.TAtm = val
 		}
+	}
+
+	if !gotP1 || !gotP2 || !gotP3 || !gotPAtm {
+		slog.Warn("readRawData: missing required channel data", "P1", gotP1, "P2", gotP2, "P3", gotP3, "PAtm", gotPAtm)
+		return nil
 	}
 
 	return result

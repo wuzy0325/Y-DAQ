@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Behavioral guidelines for working on YX-DAQ (Wails v2 + Go 1.23 + Vue 3 + TypeScript).
+Behavioral guidelines for working on YX-DAQ (Wails v3 + Go 1.23 + Vue 3 + TypeScript).
 
 ## 1. Think Before Coding
 

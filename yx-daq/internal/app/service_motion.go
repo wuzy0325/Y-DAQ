@@ -61,11 +61,11 @@ func (s *MotionService) MotionMoveBy(id string, axis types.AxisName, delta float
 }
 
 // MotionJog 点动
-func (s *MotionService) MotionJog(id string, axis types.AxisName, direction int, speed float64) error {
+func (s *MotionService) MotionJog(id string, axis types.AxisName, direction int, distance float64, speed float64) error {
 	if s.Core.MotionManager == nil {
 		return fmt.Errorf("motion manager not initialized")
 	}
-	return s.Core.MotionManager.Jog(id, axis, direction, speed)
+	return s.Core.MotionManager.Jog(id, axis, direction, distance, speed)
 }
 
 // MotionHome 回零

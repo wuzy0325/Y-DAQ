@@ -100,8 +100,8 @@ export function MotionIsMoving(id: string): $CancellablePromise<boolean> {
 /**
  * MotionJog 点动
  */
-export function MotionJog(id: string, axis: types$0.AxisName, direction: number, speed: number): $CancellablePromise<void> {
-    return $Call.ByID(2963648834, id, axis, direction, speed);
+export function MotionJog(id: string, axis: types$0.AxisName, direction: number, distance: number, speed: number): $CancellablePromise<void> {
+    return $Call.ByID(2963648834, id, axis, direction, distance, speed);
 }
 
 /**

@@ -215,7 +215,7 @@ func (c *B140MotionController) MoveBy(axis types.AxisName, delta float64) error 
 }
 
 // Jog 点动 (moves 1 engineering unit per call)
-func (c *B140MotionController) Jog(axis types.AxisName, direction int, speed float64) error {
+func (c *B140MotionController) Jog(axis types.AxisName, direction int, distance float64, speed float64) error {
 	bAxis, ok := types.AxisNameToB140[axis]
 	if !ok {
 		return fmt.Errorf("unknown axis: %s", axis)
@@ -242,9 +242,9 @@ func (c *B140MotionController) Jog(axis types.AxisName, direction int, speed flo
 		}
 	}
 
-	stepEngineering := 1.0
+	stepEngineering := distance
 	if direction < 0 {
-		stepEngineering = -1.0
+		stepEngineering = -distance
 	}
 	stepPulse := c.engineeringToPulse(axis, stepEngineering)
 	if _, err := c.driver.SendCommand(fmt.Sprintf("PR%s=%d", bAxis, int(math.Round(stepPulse)))); err != nil {

@@ -45,7 +45,7 @@ func (m *mockMotionController) MoveBy(axis types.AxisName, delta float64) error 
 	m.mu.Unlock()
 	return m.moveErr
 }
-func (m *mockMotionController) Jog(_ types.AxisName, _ int, _ float64) error { return nil }
+func (m *mockMotionController) Jog(_ types.AxisName, _ int, _ float64, _ float64) error { return nil }
 func (m *mockMotionController) Home(_ types.AxisName) error                   { return nil }
 func (m *mockMotionController) Stop(_ types.AxisName) error                   { return nil }
 func (m *mockMotionController) StopAll() error                                { return nil }

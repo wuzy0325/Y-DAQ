@@ -2,13 +2,13 @@
 
 多采集设备数据采集、显示、保存桌面应用；支持运动控制器结合采集设备进行五孔探针、三孔探针等移位布点插值测试及数据导出。
 
-基于 Wails v2（Go 1.23 + Vue 3 + TypeScript + Vite 3 + Element Plus + ECharts 6）。
+基于 Wails v3（Go 1.23 + Vue 3 + TypeScript + Vite 3 + Element Plus + ECharts 6）。
 
 ## 技术栈
 
 | 层 | 技术 |
 |---|------|
-| 桌面框架 | Wails v2.12.0 |
+| 桌面框架 | Wails v3.0.0-alpha.84 |
 | 后端 | Go 1.23+ |
 | 前端 | Vue 3 + TypeScript + Vite 3 |
 | UI | Element Plus + Sass |
@@ -22,7 +22,7 @@
 
 - Go 1.23+
 - Node.js 16+
-- Wails CLI v2：`go install github.com/wailsapp/wails/v2/cmd/wails@latest`
+- Wails CLI v3：`go install github.com/wailsapp/wails/v3/cmd/wails3@latest`
 - Windows 10/11（当前仅支持 Windows）
 
 ## 快速开始
@@ -104,7 +104,7 @@ yx-daq/
 ### 架构特点
 
 - **领域驱动设计** - 按业务功能分包，职责清晰
-- **Wails v2 最佳实践** - 所有处理器作为 App struct 的方法
+- **Wails v3 最佳实践** - 所有处理器作为 App struct 的方法
 - **低耦合高内聚** - 消除了跨包依赖，提高可维护性
 - **事件驱动架构** - 统一的事件发布机制，前后端解耦
 

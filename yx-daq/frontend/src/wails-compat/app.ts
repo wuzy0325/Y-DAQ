@@ -35,7 +35,7 @@ export const MotionGetLimitStatus = (id: string, axis: AxisName) => MotionServic
 export const MotionHome = (id: string, axis: AxisName) => MotionService.MotionHome(id, axis)
 export const MotionIsAxisMoving = (id: string, axis: AxisName) => MotionService.MotionIsAxisMoving(id, axis)
 export const MotionIsMoving = (id: string) => MotionService.MotionIsMoving(id)
-export const MotionJog = (id: string, axis: AxisName, direction: number, speed: number) => MotionService.MotionJog(id, axis, direction, speed)
+export const MotionJog = (id: string, axis: AxisName, direction: number, distance: number, speed: number) => MotionService.MotionJog(id, axis, direction, distance, speed)
 export const MotionMotorOff = (id: string) => MotionService.MotionMotorOff(id)
 export const MotionMoveBy = (id: string, axis: AxisName, delta: number) => MotionService.MotionMoveBy(id, axis, delta)
 export const MotionMoveTo = (id: string, axis: AxisName, position: number) => MotionService.MotionMoveTo(id, axis, position)

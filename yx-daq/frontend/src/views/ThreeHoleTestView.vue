@@ -413,9 +413,11 @@ const axisOptions = computed(() => {
 // 阶段标签
 const phaseLabel = computed(() => {
   const map: Record<string, string> = {
+    starting: '启动中',
     moving: '移动中',
     waiting: '等待中',
     acquiring: '采集中',
+    acquired: '已采集',
   }
   return map[store.progress?.phase || ''] || '采集中'
 })
@@ -520,14 +522,15 @@ const previewPoints = computed(() => {
 function expandSteps(steps: { start: number; end: number; step: number }[]): number[] {
   const values: number[] = []
   for (const seg of steps) {
-    // step=0 时只取起止点，与后端 expandStepSegments 行为保持一致
     if (seg.step === 0) {
       values.push(seg.start, seg.end)
       continue
     }
-    const step = seg.step
-    for (let v = seg.start; v <= seg.end + step * 0.01; v += step) {
-      values.push(Math.round(v * 10000) / 10000)
+    if (seg.start > seg.end || seg.step < 0) continue
+    // 使用整数步数计算，避免浮点累加精度问题（与后端 expandStepSegments 一致）
+    const n = Math.round((seg.end - seg.start) / seg.step)
+    for (let i = 0; i <= n; i++) {
+      values.push(Math.round((seg.start + i * seg.step) * 10000) / 10000)
     }
   }
   return values
@@ -901,6 +904,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  store.stopListening()
   store.stopRealtimeMonitor()
 })
 

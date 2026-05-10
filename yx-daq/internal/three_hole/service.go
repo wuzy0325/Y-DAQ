@@ -186,7 +186,7 @@ func (s *ThreeHoleTraversalService) runTestLoop(taskID string, config types.Thre
 
 	s.testManager.EmitProgress(taskID, totalPoints, 0, 0, 0, 0, "starting")
 
-	defer s.eventHandler.OnTestComplete(taskID, s.testManager.status.Status)
+	defer func() { s.eventHandler.OnTestComplete(taskID, s.testManager.GetStatus().Status) }()
 
 	// 保存当前代际号，用于检测是否被新测试取代
 	myGen := s.testManager.testGen.Load()

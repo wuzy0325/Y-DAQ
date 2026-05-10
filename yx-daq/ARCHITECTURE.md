@@ -7,7 +7,7 @@
 
 ## 概览
 
-YX-DAQ 是 Windows-only Wails v2 桌面应用（Go 1.23 + Vue 3 + TypeScript），用于多通道数据采集、运动控制、及探针校准测试。
+YX-DAQ 是 Windows-only Wails v3 桌面应用（Go 1.23 + Vue 3 + TypeScript），用于多通道数据采集、运动控制、及探针校准测试。
 
 **核心能力**:
 - 实时采集（DAQ-16 TCP, ~20Hz 推送）
