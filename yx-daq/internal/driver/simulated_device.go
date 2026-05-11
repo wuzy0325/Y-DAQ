@@ -116,15 +116,18 @@ func (s *SimulatedDevice) simulateData(periodMs int) {
 			indices := []int{}
 			for i, ch := range s.channels {
 				if ch.Enabled {
-					noise := rand.Float64()*2 - 1 // -1 ~ 1
 					var val float64
 					switch {
 					case i < s.pressureCount:
-						val = basePressure + float64(i)*5 + noise*2
+						if i < 8 {
+							val = float64(rand.Intn(100) + 1)
+						} else {
+							val = float64(rand.Intn(501) + 500)
+						}
 					case i == s.pressureCount:
-						val = basePressure + noise*0.3
+						val = basePressure + (rand.Float64()*2-1)*0.3
 					default:
-						val = 25.0 + noise*0.5
+						val = 25.0 + (rand.Float64()*2-1)*0.5
 					}
 					values = append(values, math.Round(val*1000)/1000)
 					indices = append(indices, i)
