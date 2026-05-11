@@ -72,11 +72,11 @@
           <div class="realtime-panel">
             <div class="section-label">原始压力</div>
             <div class="raw-data">
-              <div class="data-item"><span class="label">P1</span><ValueDisplay :value="store.realtime?.rawData.p1" :precision="3" color="#b829ff" /></div>
-              <div class="data-item"><span class="label">P2(中心)</span><ValueDisplay :value="store.realtime?.rawData.p2" :precision="3" color="#00f5ff" /></div>
-              <div class="data-item"><span class="label">P3</span><ValueDisplay :value="store.realtime?.rawData.p3" :precision="3" color="#00ff88" /></div>
-              <div class="data-item"><span class="label">P∞</span><ValueDisplay :value="store.realtime?.rawData.pAtm" :precision="3" /></div>
-              <div class="data-item"><span class="label">T∞</span><ValueDisplay :value="store.realtime?.rawData.tAtm" :precision="2" unit="°C" /></div>
+              <div class="data-item"><span class="label">P1</span><ValueDisplay :value="store.realtime?.rawData.p1" :precision="getChannelPrecision('threeHole.p1')" color="#b829ff" /></div>
+              <div class="data-item"><span class="label">P2(中心)</span><ValueDisplay :value="store.realtime?.rawData.p2" :precision="getChannelPrecision('threeHole.p2')" color="#00f5ff" /></div>
+              <div class="data-item"><span class="label">P3</span><ValueDisplay :value="store.realtime?.rawData.p3" :precision="getChannelPrecision('threeHole.p3')" color="#00ff88" /></div>
+              <div class="data-item"><span class="label">P∞</span><ValueDisplay :value="store.realtime?.rawData.pAtm" :precision="getChannelPrecision('threeHole.pAtm')" /></div>
+              <div class="data-item"><span class="label">T∞</span><ValueDisplay :value="store.realtime?.rawData.tAtm" :precision="getChannelPrecision('threeHole.tAtm')" unit="°C" /></div>
             </div>
           </div>
         </GlassCard>
@@ -378,6 +378,15 @@ const motionStore = useMotionStore()
 
 const probeParam = (route.query.probe as string) || 'probe1'
 store.init(probeParam)
+
+function getChannelPrecision(role: string): number {
+  const chConfig = store.config.probeChannels.find(c => c.role === role)
+  if (!chConfig) return 3
+  const profile = deviceStore.profiles.find(p => p.id === store.config.deviceId)
+  if (!profile) return 3
+  const ch = profile.channels[chConfig.channel]
+  return ch?.precision ?? 3
+}
 
 // ==================== 实时保存 ====================
 const isRecording = ref(false)

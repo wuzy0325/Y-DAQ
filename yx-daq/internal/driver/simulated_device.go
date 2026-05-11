@@ -120,9 +120,9 @@ func (s *SimulatedDevice) simulateData(periodMs int) {
 					switch {
 					case i < s.pressureCount:
 						if i < 8 {
-							val = float64(rand.Intn(100) + 1)
+							val = float64(rand.Intn(51) + 50)
 						} else {
-							val = float64(rand.Intn(501) + 500)
+							val = float64(rand.Intn(301) + 500)
 						}
 					case i == s.pressureCount:
 						val = basePressure + (rand.Float64()*2-1)*0.3
