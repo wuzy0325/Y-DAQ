@@ -939,10 +939,13 @@ function scheduleWaveUpdate() {
 }
 
 
+const isInitializing = ref(true)
+
 onMounted(async () => {
   store.startListening()
-  store.loadConfig()
-  store.startRealtimeMonitor()
+  await store.loadConfig()
+  isInitializing.value = false
+  await store.startRealtimeMonitor()
   deviceStore.fetchProfiles()
   deviceStore.fetchStatuses()
   motionStore.fetchProfiles()
@@ -960,6 +963,7 @@ onUnmounted(() => {
 // 同时重启实时监控以使用最新配置
 let configSaveTimer: number | null = null
 watch(() => store.config, () => {
+  if (isInitializing.value) return
   if (configSaveTimer) clearTimeout(configSaveTimer)
   configSaveTimer = window.setTimeout(() => {
     store.saveConfig()

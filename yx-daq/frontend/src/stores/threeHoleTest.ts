@@ -127,6 +127,7 @@ interface ThreeHoleTraversalConfig {
 
 export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
   const probeID = ref('probe1')
+  let listeningProbeID: string | null = null
 
   // 状态
   const taskStatus = ref<ThreeHoleTraversalTaskStatus | null>(null)
@@ -368,6 +369,10 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
 
   function startListening() {
     const pid = probeID.value
+    if (listeningProbeID === pid) return
+    if (listeningProbeID) {
+      stopListeningFor(listeningProbeID)
+    }
     try {
       EventsOn(`three-hole:${pid}:progress`, (data: ThreeHoleTraversalProgressEvent) => {
         progress.value = data
@@ -385,13 +390,19 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
           progress.value = null
         }
       })
+      listeningProbeID = pid
     } catch (e) {
       console.warn('startListening failed:', e)
     }
   }
 
   function stopListening() {
-    const pid = probeID.value
+    if (!listeningProbeID) return
+    stopListeningFor(listeningProbeID)
+    listeningProbeID = null
+  }
+
+  function stopListeningFor(pid: string) {
     try {
       EventsOff(`three-hole:${pid}:progress`)
       EventsOff(`three-hole:${pid}:realtime`)
