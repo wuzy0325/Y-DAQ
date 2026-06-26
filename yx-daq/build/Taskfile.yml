@@ -1,0 +1,88 @@
+version: '3'
+
+tasks:
+  go:mod:tidy:
+    internal: true
+    cmds:
+      - go mod tidy
+
+  install:frontend:deps:
+    internal: true
+    dir: frontend
+    sources:
+      - package.json
+      - package-lock.json
+    generates:
+      - node_modules
+    cmds:
+      - npm install
+
+  generate:bindings:
+    internal: true
+    deps:
+      - task: go:mod:tidy
+    cmds:
+      - wails3 generate bindings -f '{{.BUILD_FLAGS}}' -clean=true -ts
+
+  build:frontend:
+    internal: true
+    dir: frontend
+    deps:
+      - task: install:frontend:deps
+      - task: generate:bindings
+        vars:
+          BUILD_FLAGS:
+            ref: .BUILD_FLAGS
+    cmds:
+      - cmd: node -e "const fs=require('fs'),path=require('path');(function walk(d){for(const e of fs.readdirSync(d)){const p=path.join(d,e);fs.statSync(p).isDirectory()?walk(p):(e.endsWith('.ts')&&(c=fs.readFileSync(p,'utf-8'),r=c.replace(/(from\s+['\"])(\.\/[^'\"]+)\.js(['\"])/g,(_,a,b,c)=>a+b+c),r!==c&&(fs.writeFileSync(p,r),console.log('fix',p))))}})('bindings')"
+      - npm run build
+
+  generate:icons:
+    internal: true
+    dir: build
+    sources:
+      - "appicon.png"
+    generates:
+      - "windows/icon.ico"
+    cmds:
+      - wails3 generate icons -input appicon.png -windowsfilename windows/icon.ico
+
+  generate:syso:
+    internal: true
+    dir: build
+    deps:
+      - task: generate:icons
+    cmds:
+      - wails3 generate syso -arch amd64 -icon windows/icon.ico -manifest windows/wails.exe.manifest -info windows/info.json -out ../wails_windows_amd64.syso
+
+  build:
+    summary: Builds the Windows application
+    deps:
+      - task: build:frontend
+        vars:
+          BUILD_FLAGS:
+            ref: .BUILD_FLAGS
+      - task: generate:syso
+    cmds:
+      - go build {{.BUILD_FLAGS}} -o "{{.BIN_DIR}}/{{.APP_NAME}}.exe"
+      - cmd: powershell -Command "Remove-Item -LiteralPath 'wails_windows_amd64.syso' -ErrorAction SilentlyContinue"
+    vars:
+      BUILD_FLAGS: '{{if eq .DEV "true"}}-buildvcs=false -gcflags=all="-l"{{else}}-tags production -trimpath -buildvcs=false -ldflags="-w -s -H windowsgui"{{end}}'
+
+  dev:frontend:
+    summary: Runs the frontend in development mode
+    dir: frontend
+    deps:
+      - task: install:frontend:deps
+    cmds:
+      - npm run dev -- --host 127.0.0.1 --port 9245 --strictPort
+
+  run:
+    summary: Runs the built application
+    cmds:
+      - '{{.BIN_DIR}}/{{.APP_NAME}}.exe'
+
+  run:dev:
+    summary: Runs the built application with the Vite dev server URL
+    cmds:
+      - set FRONTEND_DEVSERVER_URL=http://127.0.0.1:9245&& {{.BIN_DIR}}/{{.APP_NAME}}.exe

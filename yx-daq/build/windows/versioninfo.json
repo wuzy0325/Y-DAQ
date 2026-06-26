@@ -1,0 +1,16 @@
+{
+  "fixed": {
+    "file_version": "1.0.0.0"
+  },
+  "info": {
+    "0409": {
+      "ProductVersion": "1.0.0",
+      "CompanyName": "YX",
+      "FileDescription": "YX-DAQ",
+      "LegalCopyright": "Copyright © 2026 YX",
+      "ProductName": "YX-DAQ",
+      "Comments": "YX-DAQ桌面端应用"
+    }
+  },
+  "iconPath": "build/windows/icon.ico"
+}

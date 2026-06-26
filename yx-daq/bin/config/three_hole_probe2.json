@@ -1,0 +1,22 @@
+{
+  "name": "",
+  "deviceId": "",
+  "motionControllerId": "",
+  "layout": {
+    "pattern": ""
+  },
+  "probeChannels": null,
+  "motionAlpha": {
+    "axis": ""
+  },
+  "motionBeta": {
+    "axis": ""
+  },
+  "calibFiles": null,
+  "dwellTimeMs": 0,
+  "samplesPerPoint": 0,
+  "sampleIntervalMs": 0,
+  "motionTimeoutMs": 0,
+  "savePath": "",
+  "saveFileName": ""
+}

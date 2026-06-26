@@ -1,0 +1,18 @@
+{
+  "npm": "@ai-sdk/openai-compatible",
+  "options": {
+    "baseURL": "https://api.deepseek.com/v1",
+    "apiKey": "sk-2c7ac4ad3f1b4214832d1952cc39a710",
+    "setCacheKey": true
+  },
+  "models": {
+    "deepseek-v4-pro": {
+      "name": "deepseek-v4-pro",
+      "maxTokens": 1048576
+    },
+    "deepseek-v4-flash": {
+      "name": "deepseek-v4-flash",
+      "maxTokens": 1048576
+    }
+  }
+}

@@ -1,0 +1,35 @@
+version: '3'
+
+includes:
+  common: ./build/Taskfile.yml
+  windows: ./build/windows/Taskfile.yml
+
+vars:
+  APP_NAME: "yx-daq"
+  BIN_DIR: "bin"
+  ROOT_DIR: '{{.USER_WORKING_DIR | default "."}}'
+  DEV_PORT: '9245'
+  VITE_PORT: '{{.WAILS_VITE_PORT | default 34115}}'
+
+tasks:
+  build:
+    summary: Builds the application
+    cmds:
+      - task: common:build
+        vars:
+          DEV: '{{.DEV}}'
+
+  package:
+    summary: Packages a production build as NSIS installer
+    cmds:
+      - task: "{{OS}}:package"
+
+  run:
+    summary: Runs the application
+    cmds:
+      - task: common:run
+
+  dev:
+    summary: Runs the application in development mode
+    cmds:
+      - wails3 dev

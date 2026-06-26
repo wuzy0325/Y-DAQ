@@ -1,0 +1,176 @@
+[
+  {
+    "id": "sim-1",
+    "name": "模拟设备",
+    "type": "SIMULATED",
+    "host": "127.0.0.1",
+    "port": 9000,
+    "streamId": 1,
+    "periodMs": 0,
+    "autoConnect": true,
+    "channels": [
+      {
+        "index": 0,
+        "name": "CH1",
+        "enabled": true,
+        "unit": "kPa",
+        "precision": 3,
+        "rangeMin": 0,
+        "rangeMax": 0
+      },
+      {
+        "index": 1,
+        "name": "CH2",
+        "enabled": true,
+        "unit": "kPa",
+        "precision": 3,
+        "rangeMin": 0,
+        "rangeMax": 0
+      },
+      {
+        "index": 2,
+        "name": "CH3",
+        "enabled": true,
+        "unit": "kPa",
+        "precision": 3,
+        "rangeMin": 0,
+        "rangeMax": 0
+      },
+      {
+        "index": 3,
+        "name": "CH4",
+        "enabled": true,
+        "unit": "kPa",
+        "precision": 3,
+        "rangeMin": 0,
+        "rangeMax": 0
+      },
+      {
+        "index": 4,
+        "name": "CH5",
+        "enabled": true,
+        "unit": "kPa",
+        "precision": 3,
+        "rangeMin": 0,
+        "rangeMax": 0
+      },
+      {
+        "index": 5,
+        "name": "CH6",
+        "enabled": true,
+        "unit": "kPa",
+        "precision": 3,
+        "rangeMin": 0,
+        "rangeMax": 0
+      },
+      {
+        "index": 6,
+        "name": "CH7",
+        "enabled": true,
+        "unit": "kPa",
+        "precision": 3,
+        "rangeMin": 0,
+        "rangeMax": 0
+      },
+      {
+        "index": 7,
+        "name": "CH8",
+        "enabled": true,
+        "unit": "kPa",
+        "precision": 3,
+        "rangeMin": 0,
+        "rangeMax": 0
+      },
+      {
+        "index": 8,
+        "name": "CH9",
+        "enabled": true,
+        "unit": "kPa",
+        "precision": 3,
+        "rangeMin": 0,
+        "rangeMax": 0
+      },
+      {
+        "index": 9,
+        "name": "CH10",
+        "enabled": true,
+        "unit": "kPa",
+        "precision": 3,
+        "rangeMin": 0,
+        "rangeMax": 0
+      },
+      {
+        "index": 10,
+        "name": "CH11",
+        "enabled": true,
+        "unit": "kPa",
+        "precision": 3,
+        "rangeMin": 0,
+        "rangeMax": 0
+      },
+      {
+        "index": 11,
+        "name": "CH12",
+        "enabled": true,
+        "unit": "kPa",
+        "precision": 3,
+        "rangeMin": 0,
+        "rangeMax": 0
+      },
+      {
+        "index": 12,
+        "name": "CH13",
+        "enabled": true,
+        "unit": "kPa",
+        "precision": 3,
+        "rangeMin": 0,
+        "rangeMax": 0
+      },
+      {
+        "index": 13,
+        "name": "CH14",
+        "enabled": true,
+        "unit": "kPa",
+        "precision": 3,
+        "rangeMin": 0,
+        "rangeMax": 0
+      },
+      {
+        "index": 14,
+        "name": "CH15",
+        "enabled": true,
+        "unit": "kPa",
+        "precision": 3,
+        "rangeMin": 0,
+        "rangeMax": 0
+      },
+      {
+        "index": 15,
+        "name": "CH16",
+        "enabled": true,
+        "unit": "kPa",
+        "precision": 3,
+        "rangeMin": 0,
+        "rangeMax": 0
+      },
+      {
+        "index": 16,
+        "name": "大气压",
+        "enabled": true,
+        "unit": "Pa",
+        "precision": 3,
+        "rangeMin": 0,
+        "rangeMax": 0
+      },
+      {
+        "index": 17,
+        "name": "大气温度",
+        "enabled": true,
+        "unit": "°C",
+        "precision": 3,
+        "rangeMin": 0,
+        "rangeMax": 0
+      }
+    ]
+  }
+]

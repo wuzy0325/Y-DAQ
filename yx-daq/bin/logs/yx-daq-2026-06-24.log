@@ -1,0 +1,1329 @@
+{"time":"2026-06-24T21:26:47.951705+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-24T21:26:47.9542924+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-24T21:26:47.9548085+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-24T21:26:52.955474+08:00","level":"WARN","msg":"auto-connect B140 failed","id":"b140-mc-1","address":"192.168.1.101","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-24T21:26:52.955474+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-24T21:26:52.9996477+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-24T21:27:04.8734678+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-24T21:27:08.9062408+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:08.9062408+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:08.9062408+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:08.9062408+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:08.9062408+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:08.9062408+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:09.0068992+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:09.0068992+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:09.0068992+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:09.0068992+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:09.0068992+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:09.0068992+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:09.1061925+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:09.1061925+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:09.1061925+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:09.1061925+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:09.1061925+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:09.1061925+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:09.2066148+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:09.2066148+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:09.2066148+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:09.2066148+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:09.2066148+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:09.2066148+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:09.3065853+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:09.3065853+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:09.3065853+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:09.3065853+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:09.3065853+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:09.3065853+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:09.4064258+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:09.4064258+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:09.4064258+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:09.4064258+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:09.4064258+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:09.4064258+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:09.5063666+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:09.5063666+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:09.5063666+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:09.5063666+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:09.5063666+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:09.5063666+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:09.6061982+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:09.6061982+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:09.6061982+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:09.6061982+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:09.6061982+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:09.6061982+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:09.706601+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:09.706601+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:09.706601+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:09.706601+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:09.706601+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:09.706601+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:09.8061683+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:09.8061683+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:09.8061683+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:09.8061683+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:09.8061683+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:09.8061683+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:09.9065414+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:09.9065414+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:09.9065414+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:09.9065414+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:09.9065414+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:09.9065414+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:10.0062168+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:10.0062168+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:10.0062168+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:10.0062168+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:10.0062168+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:10.0062168+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:10.1063756+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:10.1063756+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:10.1063756+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:10.1063756+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:10.1063756+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:10.1063756+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:10.2066328+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:10.2066328+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:10.2066328+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:10.2066328+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:10.2066328+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:10.2066328+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:10.3061669+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:10.3061669+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:10.3061669+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:10.3061669+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:10.3061669+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:10.3061669+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:10.406436+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:10.406436+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:10.406436+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:10.406436+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:10.406436+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:10.406436+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:10.5062982+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:10.5062982+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:10.5062982+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:10.5062982+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:10.5062982+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:10.5062982+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:10.6063947+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:10.6063947+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:10.6063947+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:10.6063947+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:10.6063947+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:10.6063947+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:10.7063559+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:10.7063559+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:10.7063559+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:10.7063559+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:10.7063559+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:10.7063559+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:10.8062715+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:10.8062715+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:10.8062715+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:10.8062715+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:10.8062715+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:10.8062715+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:10.9065873+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:10.9065873+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:10.9065873+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:10.9065873+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:10.9065873+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:10.9065873+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:11.0062237+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:11.0062237+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:11.0062237+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:11.0062237+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:11.0062237+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:11.0062237+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:11.1066094+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:11.1066094+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:11.1066094+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:11.1066094+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:11.1066094+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:11.1066094+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:11.2062003+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:11.2062003+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:11.2062003+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:11.2062003+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:11.2062003+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:11.2062003+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:11.3063306+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:11.3063306+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:11.3063306+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:11.3063306+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:11.3063306+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:11.3063306+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:11.4065164+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:11.4065164+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:11.4065164+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:11.4065164+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:11.4065164+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:11.4065164+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:11.506565+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:11.506565+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:11.506565+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:11.506565+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:11.506565+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:11.506565+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:11.6068298+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:11.6068298+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:11.6068298+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:11.6068298+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:11.6068298+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:11.6068298+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:11.7063954+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:11.7063954+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:11.7063954+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:11.7063954+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:11.7063954+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:11.7063954+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:11.8065523+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:11.8065523+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:11.8065523+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:11.8065523+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:11.8065523+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:11.8065523+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:11.9061994+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:11.9061994+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:11.9061994+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:11.9061994+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:11.9061994+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:11.9061994+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:12.0062771+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:12.0062771+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:12.0062771+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:12.0062771+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:12.0062771+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:12.0062771+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:12.1065965+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:12.1065965+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:12.1065965+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:12.1065965+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:12.1065965+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:12.1065965+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:12.2064197+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:12.2064197+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:12.2064197+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:12.2064197+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:12.2064197+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:12.2064197+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:12.3065889+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:12.3065889+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:12.3065889+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:12.3065889+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:12.3065889+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:12.3065889+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:12.4064416+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:12.4064416+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:12.4064416+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:12.4064416+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:12.4064416+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:12.4064416+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:12.5061789+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:12.5061789+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:12.5061789+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:12.5061789+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:12.5061789+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:12.5061789+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:12.606086+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:12.606086+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:12.606086+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:12.606086+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:12.606086+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:12.606086+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:12.7062298+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:12.7062298+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:12.7062298+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:12.7062298+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:12.7062298+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:12.7062298+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:12.8063945+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:12.8063945+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:12.8063945+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:12.8063945+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:12.8063945+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:12.8063945+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:12.9066181+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:12.9066181+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:12.9066181+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:12.9066181+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:12.9066181+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:12.9066181+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:13.0063593+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:13.0063593+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:13.0063593+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:13.0063593+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:13.0063593+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:13.0063593+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:13.106141+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:13.106141+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:13.106141+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:13.106141+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:13.106141+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:13.106141+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:13.2063183+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:13.2063183+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:13.2063183+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:13.2063183+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:13.2063183+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:13.2063183+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:13.3065763+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:13.3065763+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:13.3065763+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:13.3065763+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:13.3065763+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:13.3065763+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:13.4062772+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:13.4062772+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:13.4062772+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:13.4062772+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:13.4062772+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:13.4062772+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:13.5062185+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:13.5068476+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:13.5074098+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:13.5074098+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:13.5074098+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:13.5074098+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:13.6062959+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:13.6062959+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:13.6062959+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:13.6062959+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:13.6062959+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:13.6062959+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:13.7064333+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:13.7064333+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:13.7064333+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:13.7064333+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:13.7064333+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:13.7064333+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:13.8063058+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:13.8063058+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:13.8063058+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:13.8063058+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:13.8063058+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:13.8063058+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:13.9063512+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:13.9063512+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:13.9063512+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:13.9063512+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:13.9063512+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:13.9063512+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:14.0061597+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:14.0061597+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:14.0061597+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:14.0061597+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:14.0061597+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:14.0061597+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:14.1066052+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:14.1066052+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:14.1066052+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:14.1066052+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:14.1066052+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:14.1066052+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:14.2064326+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:14.2064326+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:14.2064326+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:14.2064326+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:14.2064326+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:14.2064326+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:14.3064085+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:14.3064085+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:14.3064085+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:14.3064085+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:14.3064085+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:14.3064085+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:14.4064112+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:14.4064112+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:14.4064112+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:14.4064112+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:14.4064112+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:14.4064112+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:14.5062456+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:14.5062456+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:14.5062456+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:14.5062456+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:14.5062456+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:14.5062456+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:14.6064678+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:14.6064678+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:14.6064678+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:14.6064678+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:14.6064678+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:14.6064678+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:14.7065062+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:14.7065062+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:14.7065062+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:14.7065062+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:14.7065062+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:14.7065062+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:14.8062993+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:14.8062993+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:14.8062993+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:14.8062993+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:14.8062993+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:14.8062993+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:14.9065924+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:14.9065924+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:14.9065924+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:14.9065924+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:14.9065924+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:14.9065924+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:15.0064624+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:15.0064624+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:15.0064624+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:15.0064624+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:15.0064624+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:15.0064624+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:15.1064005+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:15.1064005+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:15.1064005+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:15.1064005+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:15.1064005+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:15.1064005+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:15.2065094+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:15.2065094+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:15.2065094+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:15.2065094+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:15.2065094+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:15.2065094+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:15.3063008+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:15.3063008+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:15.3063008+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:15.3063008+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:15.3063008+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:15.3063008+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:15.4062749+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:15.4062749+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:15.4062749+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:15.4062749+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:15.4062749+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:15.4062749+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:15.5062398+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:15.5062398+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:15.5062398+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:15.5062398+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:15.5062398+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:15.5062398+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:15.6062611+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:15.6062611+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:15.6062611+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:15.6062611+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:15.6062611+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:15.6062611+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:15.706313+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:15.706313+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:15.706313+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:15.706313+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:15.706313+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:15.706313+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:15.8063038+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:15.8063038+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:15.8063038+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:15.8063038+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:15.8063038+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:15.8063038+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:15.9063009+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:15.9063009+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:15.9063009+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:15.9063009+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:15.9063009+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:15.9063009+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:16.0063629+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:16.0063629+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:16.0063629+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:16.0063629+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:16.0063629+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:16.0063629+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:16.1064232+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:16.1064232+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:16.1064232+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:16.1064232+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:16.1064232+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:16.1064232+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:16.2063023+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:16.2063023+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:16.2063023+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:16.2063023+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:16.2063023+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:16.2063023+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:16.3062819+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:16.3062819+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:16.3062819+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:16.3062819+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:16.3062819+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:16.3062819+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:16.4066403+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:16.4066403+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:16.4066403+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:16.4066403+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:16.4066403+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:16.4066403+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:16.506441+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:16.506441+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:16.506441+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:16.506441+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:16.506441+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:16.506441+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:16.6061903+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:16.6061903+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:16.6061903+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:16.6061903+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:16.6061903+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:16.6061903+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:16.7064389+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:16.7064389+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:16.7064389+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:16.7064389+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:16.7064389+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:16.7064389+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:16.8065796+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:16.8065796+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:16.8065796+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:16.8065796+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:16.8065796+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:16.8065796+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:16.9063666+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:16.9063666+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:16.9063666+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:16.9063666+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:16.9063666+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:16.9063666+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:17.0062821+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:17.0062821+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:17.0062821+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:17.0062821+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:17.0062821+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:17.0062821+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:17.1062734+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:17.1062734+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:17.1062734+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:17.1062734+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:17.1062734+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:17.1062734+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:17.2064079+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:17.2064079+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:17.2064079+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:17.2064079+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:17.2064079+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:17.2064079+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:17.3063553+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:17.3063553+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:17.3063553+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:17.3063553+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:17.3063553+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:17.3063553+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:17.4062931+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:17.4062931+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:17.4062931+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:17.4062931+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:17.4062931+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:17.4062931+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:17.5064086+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:17.5064086+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:17.5064086+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:17.5064086+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:17.5064086+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:17.5064086+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:17.6063189+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:17.6063189+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:17.6063189+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:17.6063189+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:17.6063189+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:17.6063189+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:17.7065873+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:17.7065873+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:17.7065873+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:17.7065873+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:17.7065873+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:17.7065873+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:17.8064888+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:17.8064888+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:17.8064888+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:17.8064888+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:17.8064888+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:17.8064888+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:17.9065842+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:17.9065842+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:17.9065842+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:17.9065842+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:17.9065842+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:17.9065842+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:18.0066215+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:18.0066215+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:18.0066215+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:18.0066215+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:18.0066215+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:18.0066215+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:18.1061443+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:18.1061443+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:18.1061443+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:18.1061443+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:18.1061443+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:18.1061443+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:18.2062619+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:27:18.2062619+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:27:18.2062619+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:27:18.2062619+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:27:18.2062619+08:00","level":"WARN","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:27:18.2062619+08:00","level":"WARN","msg":"readRawData: missing required channel data","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:27:18.3462949+08:00","level":"INFO","msg":"YX-DAQ application shutdown"}
+{"time":"2026-06-24T21:31:53.0974844+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-24T21:31:53.1001665+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-24T21:31:53.1006793+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-24T21:31:53.1011904+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-24T21:31:53.1079082+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-24T21:31:58.1011181+08:00","level":"WARN","msg":"auto-connect B140 failed (async)","id":"b140-mc-1","address":"192.168.1.101","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-24T21:32:18.8341022+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-24T21:32:18.836177+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-24T21:32:18.8367026+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-24T21:32:18.8372145+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-24T21:32:18.8419244+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-24T21:32:23.8373779+08:00","level":"WARN","msg":"auto-connect B140 failed (async)","id":"b140-mc-1","address":"192.168.1.101","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-24T21:32:42.8764204+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-24T21:32:42.8779649+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-24T21:32:42.8789898+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-24T21:32:42.8789898+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-24T21:32:42.8841212+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-24T21:32:47.8794656+08:00","level":"WARN","msg":"auto-connect B140 failed (async)","id":"b140-mc-1","address":"192.168.1.101","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-24T21:35:16.310504+08:00","level":"INFO","msg":"YX-DAQ application shutdown"}
+{"time":"2026-06-24T21:37:53.186617+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-24T21:37:53.1886811+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-24T21:37:53.189199+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-24T21:37:53.1897116+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-24T21:37:53.1943362+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-24T21:37:58.1900509+08:00","level":"WARN","msg":"auto-connect B140 failed (async)","id":"b140-mc-1","address":"192.168.1.101","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-24T21:38:10.6462043+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-24T21:38:14.9094124+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:14.9094124+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:14.9094124+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:14.9094124+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:14.9094124+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:14.9094124+08:00","level":"WARN","msg":"readRawData: missing required channel data (subsequent warnings suppressed until recovered)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:15.0094222+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:15.0094222+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:15.0094222+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:15.0094222+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:15.0094222+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:15.0094222+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:15.1095274+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:15.1095274+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:15.1095274+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:15.1095274+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:15.1095274+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:15.1095274+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:15.2096293+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:15.2096293+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:15.2096293+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:15.2096293+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:15.2096293+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:15.2101441+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:15.3095524+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:15.3095524+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:15.3095524+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:15.3095524+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:15.3095524+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:15.3095524+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:15.4096863+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:15.4096863+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:15.4096863+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:15.4096863+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:15.4096863+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:15.4096863+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:15.5092834+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:15.5092834+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:15.5092834+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:15.5092834+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:15.5092834+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:15.5092834+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:15.6093977+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:15.6093977+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:15.6093977+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:15.6093977+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:15.6093977+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:15.6093977+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:15.7093734+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:15.7093734+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:15.7093734+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:15.7093734+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:15.7093734+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:15.7093734+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:15.8096681+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:15.8096681+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:15.8096681+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:15.8096681+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:15.8096681+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:15.8096681+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:15.9093049+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:15.9093049+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:15.9093049+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:15.9093049+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:15.9093049+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:15.9093049+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:16.0096374+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:16.0096374+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:16.0096374+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:16.0096374+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:16.0096374+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:16.0096374+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:16.1096097+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:16.1096097+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:16.1096097+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:16.1096097+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:16.1096097+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:16.1096097+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:16.2097533+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:16.2097533+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:16.2097533+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:16.2097533+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:16.2097533+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:16.2097533+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:16.3094515+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:16.3094515+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:16.3094515+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:16.3094515+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:16.3094515+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:16.3094515+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:16.409745+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:16.409745+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:16.409745+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:16.409745+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:16.409745+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:16.409745+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:16.5099003+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:16.5099003+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:16.5099003+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:16.5099003+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:16.5099003+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:16.5099003+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:16.6092938+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:16.6092938+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:16.6092938+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:16.6092938+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:16.6092938+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:16.6092938+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:16.7096432+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:16.7096432+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:16.7096432+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:16.7096432+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:16.7096432+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:16.7096432+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:16.8099815+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:16.8099815+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:16.8099815+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:16.8099815+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:16.8099815+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:16.8099815+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:16.9092972+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:16.9092972+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:16.9092972+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:16.9092972+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:16.9092972+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:16.9092972+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:17.0095784+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:17.0095784+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:17.0095784+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:17.0095784+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:17.0095784+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:17.0095784+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:17.1095692+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:17.1095692+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:17.1095692+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:17.1095692+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:17.1095692+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:17.1095692+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:17.2093407+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:17.2093407+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:17.2093407+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:17.2093407+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:17.2093407+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:17.2093407+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:17.3093625+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:17.3093625+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:17.3093625+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:17.3093625+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:17.3093625+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:17.3093625+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:17.4096472+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:17.4096472+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:17.4096472+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:17.4096472+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:17.4096472+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:17.4096472+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:17.5093878+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:17.5093878+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:17.5093878+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:17.5093878+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:17.5093878+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:17.5093878+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:17.6093981+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:17.6093981+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:17.6093981+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:17.6093981+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:17.6093981+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:17.6093981+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:17.7095756+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:17.7095756+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:17.7095756+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:17.7095756+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:17.7095756+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:17.7095756+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:17.8096649+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:17.8096649+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:17.8096649+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:17.8096649+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:17.8096649+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:17.8096649+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:17.9093536+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:17.9093536+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:17.9093536+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:17.9093536+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:17.9093536+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:17.9093536+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:18.0094443+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:18.0094443+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:18.0094443+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:18.0094443+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:18.0094443+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:18.0094443+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:18.109646+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:18.109646+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:18.109646+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:18.109646+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:18.109646+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:18.109646+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:18.2096494+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:18.2096494+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:18.2096494+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:18.2096494+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:18.2096494+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:18.2096494+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:18.3093805+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:18.3093805+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:18.3093805+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:18.3093805+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:18.3093805+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:18.3093805+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:18.4096479+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:18.4096479+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:18.4096479+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:18.4096479+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:18.4096479+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:18.4096479+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:18.509345+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:18.509345+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:18.509345+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:18.509345+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:18.509345+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:18.509345+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:18.6097167+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:18.6097167+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:18.6097167+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:18.6097167+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:18.6097167+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:18.6097167+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:18.7093608+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:18.7093608+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:18.7093608+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:18.7093608+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:18.7093608+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:18.7093608+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:18.8096453+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:18.8096453+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:18.8096453+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:18.8096453+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:18.8096453+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:18.8096453+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:18.9097067+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:18.9097067+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:18.9097067+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:18.9097067+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:18.9097067+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:18.9097067+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:19.0096492+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:19.0096492+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:19.0096492+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:19.0096492+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:19.0096492+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:19.0096492+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:19.1093167+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:19.1093167+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:19.1093167+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:19.1093167+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:19.1093167+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:19.1093167+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:19.2095652+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:19.2095652+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:19.2095652+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:19.2095652+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:19.2095652+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:19.2095652+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:19.309464+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:19.309464+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:19.309464+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:19.309464+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:19.309464+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:19.309464+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:19.4096502+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:19.4096502+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:19.4096502+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:19.4096502+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:19.4096502+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:19.4096502+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:19.509633+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:19.509633+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:19.509633+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:19.509633+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:19.509633+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:19.509633+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:19.6095472+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:19.6095472+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:19.6095472+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:19.6095472+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:19.6095472+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:19.6095472+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:19.7095632+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:19.7095632+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:19.7095632+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:19.7095632+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:19.7095632+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:19.7095632+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:19.8095428+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:19.8095428+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:19.8095428+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:19.8095428+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:19.8095428+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:19.8095428+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:19.9097334+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:19.9097334+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:19.9097334+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:19.9097334+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:19.9097334+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:19.9097334+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:20.0096484+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:20.0096484+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:20.0096484+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:20.0096484+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:20.0096484+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:20.0096484+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:20.1096686+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:20.1096686+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:20.1096686+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:20.1096686+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:20.1096686+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:20.1096686+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:20.2096504+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:20.2096504+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:20.2096504+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:20.2096504+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:20.2096504+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:20.2096504+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:20.3095758+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:20.3095758+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:20.3095758+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:20.3095758+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:20.3095758+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:20.3095758+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:20.4096496+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:20.4096496+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:20.4096496+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:20.4096496+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:20.4096496+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:20.4096496+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:20.5096471+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:20.5096471+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:20.5096471+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:20.5096471+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:20.5096471+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:20.5096471+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:20.6096468+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:20.6096468+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:20.6096468+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:20.6096468+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:20.6096468+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:20.6096468+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:20.7099638+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:20.7099638+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:20.7099638+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:20.7099638+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:20.7099638+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:20.7099638+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:20.8093599+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:20.8093599+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:20.8093599+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:20.8093599+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:20.8093599+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:20.8093599+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:20.9096359+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:20.9096359+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:20.9096359+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:20.9096359+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:20.9096359+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:20.9096359+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:21.0097314+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:21.0097314+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:21.0097314+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:21.0097314+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:21.0097314+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:21.0097314+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:21.1094004+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:21.1094004+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:21.1094004+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:21.1094004+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:21.1094004+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:21.1094004+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:21.209743+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:21.209743+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:21.209743+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:21.209743+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:21.209743+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:21.209743+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:21.3096095+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:21.3096095+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:21.3096095+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:21.3096095+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:21.3096095+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:21.3096095+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:21.4096873+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:21.4096873+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:21.4096873+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:21.4096873+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:21.4096873+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:21.4096873+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:21.5094351+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:21.5094351+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:21.5094351+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:21.5094351+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:21.5094351+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:21.5094351+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:21.6094868+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:21.6094868+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:21.6094868+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:21.6094868+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:21.6099906+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:21.6099906+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:21.7094661+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:21.7094661+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:21.7094661+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:21.7094661+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:21.7094661+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:21.7094661+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:21.8095903+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:21.8095903+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:21.8095903+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:21.8095903+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:21.8095903+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:21.8095903+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:21.9096996+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:21.9096996+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:21.9096996+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:21.9096996+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:21.9096996+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:21.9096996+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:22.009651+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:22.009651+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:22.009651+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:22.009651+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:22.009651+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:22.009651+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:22.109463+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:22.109463+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:22.109463+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:22.109463+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:22.109463+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:22.109463+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:22.2093425+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:22.2093425+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:22.2093425+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:22.2093425+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:22.2093425+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:22.2093425+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:22.3093666+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:22.3093666+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:22.3093666+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:22.3093666+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:22.3093666+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:22.3093666+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:22.4096502+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:22.4096502+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:22.4096502+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:22.4096502+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:22.4096502+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:22.4096502+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:22.5094449+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:22.5094449+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:22.5094449+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:22.5094449+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:22.5094449+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:22.5094449+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:22.6095183+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:22.6095183+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:22.6095183+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:22.6095183+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:22.6095183+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:22.6095183+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:22.7094579+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:22.7094579+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:22.7094579+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:22.7094579+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:22.7094579+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:22.7094579+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:22.8094494+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:22.8094494+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:22.8094494+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:22.8094494+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:22.8094494+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:22.8094494+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:22.9095811+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:22.9095811+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:22.9095811+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:22.9095811+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:22.9095811+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:22.9095811+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:23.0096499+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:23.0096499+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:23.0096499+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:23.0096499+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:23.0096499+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:23.0096499+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:23.1094218+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:23.1094218+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:23.1094218+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:23.1094218+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:23.1094218+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:23.1094218+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:23.2095528+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:23.2095528+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:23.2095528+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:23.2095528+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:23.2095528+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:23.2095528+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:23.3095342+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:23.3095342+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:23.3095342+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:23.3095342+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:23.3095342+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:23.3095342+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:23.4094343+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:23.4094343+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:23.4094343+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:23.4094343+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:23.4094343+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:23.4094343+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:23.5096656+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:23.5096656+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:23.5096656+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:23.5096656+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:23.5096656+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:23.5096656+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:23.609648+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:23.609648+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:23.609648+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:23.609648+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:23.609648+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:23.609648+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:23.7097121+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:23.7097121+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:23.7097121+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:23.7097121+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:23.7097121+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:23.7097121+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:23.8093662+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:23.8093662+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:23.8093662+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:23.8093662+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:23.8093662+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:23.8093662+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:23.9094425+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:23.9094425+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:23.9094425+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:23.9094425+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:23.9094425+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:23.9094425+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:24.0095696+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:24.0095696+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:24.0095696+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:24.0095696+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:24.0095696+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:24.0095696+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:24.1092956+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:24.1092956+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:24.1092956+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:24.1092956+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:24.1092956+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:24.1092956+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:24.2097816+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:24.2097816+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:24.2097816+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:24.2097816+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:24.2097816+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:24.2097816+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:24.3096615+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:24.3096615+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:24.3096615+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:24.3096615+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:24.3096615+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:24.3096615+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:24.4095062+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:24.4095062+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:24.4095062+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:24.4095062+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:24.4095062+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:24.4095062+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:24.5096472+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:24.5096472+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:24.5096472+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:24.5096472+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:24.5096472+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:24.5096472+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:24.6096477+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:24.6096477+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:24.6096477+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:24.6096477+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:24.6096477+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:24.6096477+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:24.7093891+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:24.7093891+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:24.7093891+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:24.7093891+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:24.7093891+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:24.7093891+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:24.809782+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:24.809782+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:24.809782+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:24.809782+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:24.809782+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:24.809782+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:24.9094342+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:24.9094342+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:24.9094342+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:24.9094342+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:24.9094342+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:24.9094342+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:25.0094259+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:25.0094259+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:25.0094259+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:25.0094259+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:25.0094259+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:25.0094259+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:25.1093787+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:25.1093787+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:25.1093787+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:25.1093787+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:25.1093787+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:25.1093787+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:25.2094588+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:25.2094588+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:25.2094588+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:25.2094588+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:25.2094588+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:25.2094588+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:25.3096476+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:25.3096476+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:25.3096476+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:25.3096476+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:25.3096476+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:25.3096476+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:25.4096503+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:25.4096503+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:25.4096503+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:25.4096503+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:25.4096503+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:25.4096503+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:25.5097606+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:25.5097606+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:25.5097606+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:25.5097606+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:25.5097606+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:25.5097606+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:25.6096484+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:25.6096484+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:25.6096484+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:25.6096484+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:25.6096484+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:25.6096484+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:25.7094154+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:25.7094154+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:25.7094154+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:25.7094154+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:25.7094154+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:25.7094154+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:25.8095087+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:25.8095087+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:25.8095087+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:25.8095087+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:25.8095087+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:25.8095087+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:25.9094403+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:25.9094403+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:25.9094403+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:25.9094403+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:25.9094403+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:25.9094403+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:26.0096473+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:26.0096473+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:26.0096473+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:26.0096473+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:26.0096473+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:26.0096473+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:26.1095737+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:26.1095737+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:26.1095737+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:26.1095737+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:26.1095737+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:26.1095737+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:26.2096492+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:26.2096492+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:26.2096492+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:26.2096492+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:26.2096492+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:26.2096492+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:26.3095435+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:26.3095435+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:26.3095435+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:26.3095435+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:26.3095435+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:26.3095435+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:26.4096485+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:26.4096485+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:26.4096485+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:26.4096485+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:26.4096485+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:26.4096485+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:26.5094406+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:26.5094406+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:26.5094406+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:26.5094406+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:26.5094406+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:26.5094406+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:26.6096491+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:26.6096491+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:26.6096491+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:26.6096491+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:26.6096491+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:26.6096491+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:26.7093978+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":0,"role":"threeHole.p1"}
+{"time":"2026-06-24T21:38:26.7093978+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":1,"role":"threeHole.p2"}
+{"time":"2026-06-24T21:38:26.7093978+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":2,"role":"threeHole.p3"}
+{"time":"2026-06-24T21:38:26.7093978+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":16,"role":"threeHole.pAtm"}
+{"time":"2026-06-24T21:38:26.7093978+08:00","level":"DEBUG","msg":"readRawData: enabled channel has no data","channel":17,"role":"threeHole.tAtm"}
+{"time":"2026-06-24T21:38:26.7093978+08:00","level":"DEBUG","msg":"readRawData: missing required channel data (suppressed)","P1":false,"P2":false,"P3":false,"PAtm":false}
+{"time":"2026-06-24T21:38:26.8881334+08:00","level":"INFO","msg":"YX-DAQ application shutdown"}
+{"time":"2026-06-24T21:52:41.6549931+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-24T21:52:41.6571397+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-24T21:52:41.6576474+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-24T21:52:41.6581557+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-24T21:52:41.6628128+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-24T21:52:46.6579695+08:00","level":"WARN","msg":"auto-connect B140 failed (async)","id":"b140-mc-1","address":"192.168.1.101","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-24T21:55:41.9472325+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-24T21:55:47.3604064+08:00","level":"WARN","msg":"readRawData: missing required channel data (subsequent warnings suppressed until recovered)","P1":false,"P2":false,"P3":false,"PAtm":false,"missingChannels":[0,1,2,16,17]}
+{"time":"2026-06-24T21:55:51.0007232+08:00","level":"INFO","msg":"YX-DAQ application shutdown"}
+{"time":"2026-06-24T22:00:17.7498104+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-24T22:00:17.7518521+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-24T22:00:17.7528815+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-24T22:00:17.7528815+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-24T22:00:17.7589775+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-24T22:00:22.7532417+08:00","level":"WARN","msg":"auto-connect B140 failed (async)","id":"b140-mc-1","address":"192.168.1.101","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-24T22:01:19.7881082+08:00","level":"INFO","msg":"YX-DAQ application shutdown"}

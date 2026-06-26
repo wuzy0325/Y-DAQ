@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico"/>
+    <title>YX-DAQ 五孔探针校准系统</title>
+</head>
+<body>
+<div id="app">
+  <div style="padding:24px;color:#c9d7ff;background:#0a0a1a;font:14px/1.6 Consolas,monospace;">
+    前端资源已加载，正在启动 Vue...
+  </div>
+</div>
+<script>
+  (function () {
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>]/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]
+      })
+    }
+    function showError(message) {
+      try { localStorage.setItem('yx-daq:last-frontend-error', String(message)) } catch (_) {}
+      var root = document.getElementById('app')
+      if (!root) return
+      root.innerHTML = '<div style="padding:24px;color:#ffb4b4;background:#0a0a1a;font:14px/1.6 Consolas,monospace;white-space:pre-wrap;"><h2 style="margin:0 0 12px;color:#ff5c7a;">前端启动失败</h2><div>' + escapeHtml(message) + '</div></div>'
+    }
+    window.addEventListener('error', function (event) {
+      showError((event.message || 'Script error') + '\n' + (event.filename || '') + ':' + (event.lineno || 0) + ':' + (event.colno || 0) + '\n' + ((event.error && event.error.stack) || ''))
+    })
+    window.addEventListener('unhandledrejection', function (event) {
+      var reason = event.reason
+      showError((reason && (reason.stack || reason.message)) || String(reason))
+    })
+  })()
+</script>
+<script src="./src/main.ts" type="module"></script>
+</body>
+</html>

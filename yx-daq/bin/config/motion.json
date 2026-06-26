@@ -1,0 +1,182 @@
+[
+  {
+    "id": "b140-mc-1",
+    "name": "B140 运动控制器",
+    "type": "B140-MC",
+    "address": "192.168.1.101",
+    "port": 5000,
+    "timeoutMs": 5000,
+    "axes": [
+      {
+        "name": "X",
+        "enabled": true,
+        "kind": "LINEAR",
+        "inverted": false,
+        "stepAngleDeg": 1.8,
+        "microSteps": 16,
+        "lead": 5,
+        "gearRatio": 1,
+        "maxSpeed": 50,
+        "encoderScale": 0.005,
+        "encoderCompensation": {
+          "enabled": false,
+          "tolerance": 0,
+          "maxCycles": 0,
+          "settleMs": 0,
+          "minStep": 0,
+          "timeoutMs": 0
+        }
+      },
+      {
+        "name": "Y",
+        "enabled": true,
+        "kind": "LINEAR",
+        "inverted": false,
+        "stepAngleDeg": 1.8,
+        "microSteps": 16,
+        "lead": 5,
+        "gearRatio": 1,
+        "maxSpeed": 50,
+        "encoderScale": 0.005,
+        "encoderCompensation": {
+          "enabled": false,
+          "tolerance": 0,
+          "maxCycles": 0,
+          "settleMs": 0,
+          "minStep": 0,
+          "timeoutMs": 0
+        }
+      },
+      {
+        "name": "Z",
+        "enabled": true,
+        "kind": "LINEAR",
+        "inverted": false,
+        "stepAngleDeg": 1.8,
+        "microSteps": 16,
+        "lead": 5,
+        "gearRatio": 1,
+        "maxSpeed": 50,
+        "encoderScale": 0.005,
+        "encoderCompensation": {
+          "enabled": false,
+          "tolerance": 0,
+          "maxCycles": 0,
+          "settleMs": 0,
+          "minStep": 0,
+          "timeoutMs": 0
+        }
+      },
+      {
+        "name": "U",
+        "enabled": true,
+        "kind": "ROTARY",
+        "inverted": false,
+        "stepAngleDeg": 1.8,
+        "microSteps": 16,
+        "lead": 0,
+        "gearRatio": 1,
+        "maxSpeed": 30,
+        "encoderScale": 0.005,
+        "encoderCompensation": {
+          "enabled": false,
+          "tolerance": 0,
+          "maxCycles": 0,
+          "settleMs": 0,
+          "minStep": 0,
+          "timeoutMs": 0
+        }
+      }
+    ]
+  },
+  {
+    "id": "sim-mc-1",
+    "name": "模拟运动控制器",
+    "type": "SIMULATED-MC",
+    "address": "127.0.0.1",
+    "port": 5000,
+    "timeoutMs": 5000,
+    "axes": [
+      {
+        "name": "X",
+        "enabled": true,
+        "kind": "LINEAR",
+        "inverted": false,
+        "stepAngleDeg": 1.8,
+        "microSteps": 16,
+        "lead": 5,
+        "gearRatio": 1,
+        "maxSpeed": 50,
+        "encoderScale": 0.005,
+        "encoderCompensation": {
+          "enabled": false,
+          "tolerance": 0,
+          "maxCycles": 0,
+          "settleMs": 0,
+          "minStep": 0,
+          "timeoutMs": 0
+        }
+      },
+      {
+        "name": "Y",
+        "enabled": true,
+        "kind": "LINEAR",
+        "inverted": false,
+        "stepAngleDeg": 1.8,
+        "microSteps": 16,
+        "lead": 5,
+        "gearRatio": 1,
+        "maxSpeed": 50,
+        "encoderScale": 0.005,
+        "encoderCompensation": {
+          "enabled": false,
+          "tolerance": 0,
+          "maxCycles": 0,
+          "settleMs": 0,
+          "minStep": 0,
+          "timeoutMs": 0
+        }
+      },
+      {
+        "name": "Z",
+        "enabled": true,
+        "kind": "LINEAR",
+        "inverted": false,
+        "stepAngleDeg": 1.8,
+        "microSteps": 16,
+        "lead": 5,
+        "gearRatio": 1,
+        "maxSpeed": 50,
+        "encoderScale": 0.005,
+        "encoderCompensation": {
+          "enabled": false,
+          "tolerance": 0,
+          "maxCycles": 0,
+          "settleMs": 0,
+          "minStep": 0,
+          "timeoutMs": 0
+        }
+      },
+      {
+        "name": "U",
+        "enabled": true,
+        "kind": "ROTARY",
+        "inverted": false,
+        "stepAngleDeg": 1.8,
+        "microSteps": 16,
+        "lead": 0,
+        "gearRatio": 1,
+        "maxSpeed": 30,
+        "encoderScale": 0.005,
+        "encoderCompensation": {
+          "enabled": false,
+          "tolerance": 0,
+          "maxCycles": 0,
+          "settleMs": 0,
+          "minStep": 0,
+          "timeoutMs": 0
+        }
+      }
+    ]
+  }
+]

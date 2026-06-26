@@ -1,0 +1,42 @@
+<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0a1a"/>
+      <stop offset="100%" stop-color="#12122a"/>
+    </linearGradient>
+    <linearGradient id="grad" x1="15%" y1="85%" x2="85%" y2="15%">
+      <stop offset="0%" stop-color="#b829ff"/>
+      <stop offset="45%" stop-color="#5d4aff"/>
+      <stop offset="100%" stop-color="#00f5ff"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="20" stdDeviation="40" flood-color="#b829ff" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  
+  <!-- 背景 -->
+  <rect width="1024" height="1024" rx="220" ry="220" fill="url(#bg)"/>
+  
+  <!-- 主流线型形状 (Edge 风格渐变波浪) -->
+  <path d="M 260 460 
+           C 260 280, 420 220, 540 290 
+           C 660 360, 600 500, 490 480 
+           C 380 460, 380 620, 530 700 
+           C 680 780, 780 660, 780 570" 
+        fill="none" 
+        stroke="url(#grad)" 
+        stroke-width="160" 
+        stroke-linecap="round" 
+        filter="url(#shadow)"/>
+        
+  <!-- 内部高光细线，增加层次感与光泽 -->
+  <path d="M 260 460 
+           C 260 280, 420 220, 540 290 
+           C 660 360, 600 500, 490 480 
+           C 380 460, 380 620, 530 700 
+           C 680 780, 780 660, 780 570" 
+        fill="none" 
+        stroke="rgba(255,255,255,0.22)" 
+        stroke-width="18" 
+        stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,28 @@
+{
+  "rules": [
+    {
+      "name": "three-hole-test-analysis",
+      "pattern": "三孔|three.hole|ThreeHole",
+      "severity": "info",
+      "description": "三孔测试相关代码"
+    },
+    {
+      "name": "stop-restart-issues",
+      "pattern": "stop|Stop|pause|Pause|resume|Resume|start|Start",
+      "severity": "warning",
+      "description": "停止/重启相关的潜在问题"
+    },
+    {
+      "name": "race-condition",
+      "pattern": "atomic|sync|chan|goroutine",
+      "severity": "warning",
+      "description": "并发相关的潜在竞态条件"
+    },
+    {
+      "name": "state-sync",
+      "pattern": "status|Status|running|Running|paused|Paused",
+      "severity": "info",
+      "description": "状态同步相关代码"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{"time":"2026-06-22T22:32:18.6129631+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\logs"}
+{"time":"2026-06-22T22:32:23.6469615+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","address":"192.168.1.101","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-22T22:32:23.6469615+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-22T22:32:23.6526587+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-22T22:33:26.8916149+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\logs"}
+{"time":"2026-06-22T22:33:26.9157053+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-22T22:33:31.917545+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","address":"192.168.1.101","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-22T22:33:31.917545+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-22T22:33:31.9232743+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-22T22:38:26.197953+08:00","level":"INFO","msg":"YX-DAQ application shutdown"}

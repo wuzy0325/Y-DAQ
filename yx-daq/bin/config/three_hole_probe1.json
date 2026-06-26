@@ -1,0 +1,73 @@
+{
+  "name": "三孔移位测试-2026/6/25",
+  "deviceId": "",
+  "motionControllerId": "b140-mc-1",
+  "layout": {
+    "pattern": "rectangle",
+    "rectangle": {
+      "xMin": -20,
+      "xMax": 20,
+      "yMin": -20,
+      "yMax": 20,
+      "xSteps": [
+        {
+          "start": -20,
+          "end": 20,
+          "step": 5
+        }
+      ],
+      "ySteps": [
+        {
+          "start": -20,
+          "end": 20,
+          "step": 5
+        }
+      ]
+    }
+  },
+  "probeChannels": [
+    {
+      "name": "P1",
+      "role": "threeHole.p1",
+      "channel": 0,
+      "enabled": true
+    },
+    {
+      "name": "P2",
+      "role": "threeHole.p2",
+      "channel": 1,
+      "enabled": true
+    },
+    {
+      "name": "P3",
+      "role": "threeHole.p3",
+      "channel": 2,
+      "enabled": true
+    },
+    {
+      "name": "大气压",
+      "role": "threeHole.pAtm",
+      "channel": 16,
+      "enabled": true
+    },
+    {
+      "name": "大气温度",
+      "role": "threeHole.tAtm",
+      "channel": 17,
+      "enabled": true
+    }
+  ],
+  "motionAlpha": {
+    "axis": "X"
+  },
+  "motionBeta": {
+    "axis": "Y"
+  },
+  "calibFiles": [],
+  "dwellTimeMs": 2000,
+  "samplesPerPoint": 10,
+  "sampleIntervalMs": 50,
+  "motionTimeoutMs": 30000,
+  "savePath": "",
+  "saveFileName": ""
+}

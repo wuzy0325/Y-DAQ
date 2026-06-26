@@ -1,0 +1,162 @@
+:root {
+  // 方案 E 核心配色 (深色科技风)
+  --bg-color: #05080f;
+  --card-bg: #0d121f;
+  --text-main: #ffffff;
+  --text-dim: #8e9aaf;
+  --accent-color: #00f2ff;
+  --success-color: #3ef2a0;
+  --warn-color: #f2a03e;
+  --danger-color: #ff4d4d;
+  --border-color: rgba(0, 242, 255, 0.15);
+  --font-mono: "Microsoft YaHei", "JetBrains Mono", "Fira Code", "Consolas", monospace;
+  
+  // RGB 值用于 rgba() 函数
+  --accent-color-rgb: 0, 242, 255;
+  --success-color-rgb: 62, 242, 160;
+  --warn-color-rgb: 242, 160, 62;
+  --danger-color-rgb: 255, 77, 77;
+  
+  // Element Plus 覆盖变量
+  --el-color-primary: var(--accent-color);
+  --el-color-success: var(--success-color);
+  --el-color-warning: var(--warn-color);
+  --el-color-danger: var(--danger-color);
+  --el-bg-color: var(--bg-color);
+  --el-bg-color-overlay: var(--card-bg);
+  --el-text-color-primary: var(--text-main);
+  --el-text-color-regular: var(--text-dim);
+  --el-border-color: var(--border-color);
+  --el-border-color-light: rgba(0, 242, 255, 0.1);
+}
+
+// 全局基础样式
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  font-family: "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+
+// 统一网格背景
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(var(--border-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border-color) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.3;
+}
+
+// Element Plus 全局重写
+.el-button {
+  border-radius: 2px !important;
+  text-transform: uppercase;
+  font-weight: bold !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-main) !important;
+
+  &:hover {
+    background: var(--accent-color) !important;
+    color: #000 !important;
+    border-color: var(--accent-color) !important;
+  }
+
+  &--primary {
+    background: rgba(0, 242, 255, 0.1) !important;
+    border-color: var(--accent-color) !important;
+    color: var(--accent-color) !important;
+  }
+
+  &--success {
+    background: rgba(62, 242, 160, 0.1) !important;
+    border-color: var(--success-color) !important;
+    color: var(--success-color) !important;
+  }
+}
+
+.el-card {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-main) !important;
+}
+
+.el-input__wrapper {
+  background-color: rgba(0, 0, 0, 0.3) !important;
+  box-shadow: 0 0 0 1px var(--border-color) inset !important;
+}
+
+.el-table {
+  --el-table-bg-color: transparent !important;
+  --el-table-tr-bg-color: transparent !important;
+  --el-table-header-bg-color: rgba(255, 255, 255, 0.05) !important;
+  color: var(--text-main) !important;
+  
+  th.el-table__cell {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+  }
+  
+  td.el-table__cell {
+    border-bottom: 1px solid rgba(0, 242, 255, 0.05) !important;
+  }
+}
+
+// 侧边栏/导航通用样式
+.el-menu {
+  background-color: var(--card-bg) !important;
+  border-right: 1px solid var(--border-color) !important;
+  
+  .el-menu-item {
+    color: var(--text-dim) !important;
+    
+    &:hover, &.is-active {
+      color: var(--accent-color) !important;
+      background-color: rgba(0, 242, 255, 0.05) !important;
+    }
+    
+    &.is-active {
+      border-left: 3px solid var(--accent-color);
+    }
+  }
+}
+
+// 滚动条重写
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 10px;
+}

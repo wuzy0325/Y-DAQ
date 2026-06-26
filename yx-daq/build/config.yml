@@ -1,0 +1,42 @@
+version: '3'
+
+info:
+  companyName: "YX-DAQ"
+  productName: "YX-DAQ"
+  productIdentifier: "com.yxdaq.app"
+  description: "YX-DAQ数据采集系统"
+  copyright: "(c) 2025, YX-DAQ"
+  comments: "YX-DAQ数据采集系统"
+  version: "0.1.0"
+
+dev_mode:
+  root_path: .
+  log_level: warn
+  debounce: 1000
+  ignore:
+    dir:
+      - .git
+      - node_modules
+      - bin
+      - frontend/dist
+      - frontend/bindings
+      - frontend/node_modules
+      - logs
+      - webview-data
+      - data
+      - config
+    file:
+      - .DS_Store
+      - .gitignore
+      - "*_test.go"
+    watched_extension:
+      - "*.go"
+    git_ignore: true
+  executes:
+    # 固定使用 Vite dev server，避免 Wails auto 探测不到前端服务时停留在 502 页面。
+    - cmd: wails3 task common:dev:frontend
+      type: background
+    - cmd: wails3 build DEV=true
+      type: blocking
+    - cmd: wails3 task common:run:dev
+      type: primary

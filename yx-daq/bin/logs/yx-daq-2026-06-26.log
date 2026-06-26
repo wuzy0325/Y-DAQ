@@ -1,0 +1,923 @@
+{"time":"2026-06-26T00:00:03.4913492+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:00:03.4952435+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:00:03.4963027+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:00:03.4963027+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:00:03.5073127+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:00:14.9019572+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:00:14.904555+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:00:14.9055931+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:00:14.9061169+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:00:14.9129194+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:00:27.8683933+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:00:27.8715835+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:00:27.8726239+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:00:27.8731348+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:00:27.879417+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:00:40.7226419+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:00:40.7252454+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:00:40.7262835+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:00:40.7262835+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:00:40.7325442+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:00:53.8594094+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:00:53.8619945+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:00:53.862517+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:00:53.8630371+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:00:53.8714623+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:01:07.1431085+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:01:07.1458902+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:01:07.1469416+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:01:07.1469416+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:01:07.1531944+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:01:40.4554962+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:01:40.4575809+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:01:40.4591516+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:01:40.4591516+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:01:40.4678266+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:01:45.4594701+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:02:14.4259959+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:02:14.4284147+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:02:14.4294975+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:02:14.4294975+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:02:14.4357685+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:02:19.4298414+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:02:49.6429338+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:02:49.646731+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:02:49.6477768+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:02:49.6482929+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:02:49.6535227+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:02:54.6486188+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:03:22.8962439+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:03:22.8994161+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:03:22.9010265+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:03:22.9015557+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:03:22.9095371+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:03:27.9017721+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:03:57.4126973+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:03:57.4147737+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:03:57.4158082+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:03:57.4158082+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:03:57.4262315+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:04:02.4161732+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:04:30.8592209+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:04:30.8613065+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:04:30.8623445+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:04:30.8628718+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:04:30.8714866+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:04:35.8627233+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:05:04.5719836+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:05:04.5752752+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:05:04.5763369+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:05:04.5768536+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:05:04.5874286+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:05:09.5774183+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:05:37.9675932+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:05:37.9707593+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:05:37.9718143+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:05:37.9723334+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:05:37.9786217+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:05:42.9724223+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:06:11.1448762+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:06:11.1476573+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:06:11.1481791+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:06:11.1486985+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:06:11.1544375+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:06:16.1490725+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:06:44.7830994+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:06:44.785264+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:06:44.7857855+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:06:44.7863067+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:06:44.7915866+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:06:49.7867034+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:07:18.2508696+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:07:18.2568346+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:07:18.2587723+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:07:18.2592927+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:07:18.2683211+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:07:23.259605+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:07:55.4805874+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:07:55.4832548+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:07:55.4837785+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:07:55.4842934+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:07:55.4903158+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:08:00.484501+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:08:29.1806189+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:08:29.1832206+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:08:29.1837438+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:08:29.1842716+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:08:29.1943325+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:08:34.1850114+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:09:01.5827808+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:09:01.585506+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:09:01.5865541+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:09:01.5865541+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:09:01.5927806+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:09:06.5868863+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:09:34.3986095+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:09:34.4007103+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:09:34.4017155+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:09:34.4017155+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:09:34.4080696+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:09:39.4019438+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:10:07.1623931+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:10:07.1644962+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:10:07.1650178+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:10:07.1655324+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:10:07.1707594+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:10:12.1660247+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:10:40.5254223+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:10:40.5275436+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:10:40.5285767+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:10:40.5290944+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:10:40.5357815+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:10:45.5294073+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:11:15.5347719+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:11:15.5364771+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:11:15.5375199+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:11:15.5375199+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:11:15.5456106+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:11:20.5376065+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:11:50.6731079+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:11:50.6751747+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:11:50.6762078+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:11:50.6762078+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:11:50.6819516+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:11:55.6774043+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:12:22.1989523+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:12:22.202704+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:12:22.2037687+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:12:22.2042958+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:12:22.2100635+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:12:27.2047746+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:12:52.4629915+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:12:52.465079+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:12:52.4661156+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:12:52.4661156+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:12:52.4721476+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:12:57.4665091+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:13:22.6820646+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:13:22.6841556+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:13:22.6852031+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:13:22.6852031+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:13:22.6914378+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:13:27.6866572+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:13:53.0841967+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:13:53.085763+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:13:53.0872709+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:13:53.0872709+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:13:53.0931613+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:13:58.0877505+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:14:23.4884974+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:14:23.49112+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:14:23.4916407+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:14:23.4921633+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:14:23.4978899+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:14:28.4926887+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:14:53.7522817+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:14:53.7543607+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:14:53.7552419+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:14:53.7552419+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:14:53.7614991+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:14:58.7556924+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:15:24.0207476+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:15:24.0233534+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:15:24.0243797+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:15:24.0243797+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:15:24.031661+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:15:29.024894+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:15:54.0359278+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:15:54.0379961+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:15:54.0385146+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:15:54.0390349+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:15:54.0458058+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:15:59.0394653+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:16:24.3013699+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:16:24.3039978+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:16:24.3050322+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:16:24.3055549+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:16:24.3107638+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:16:29.3059736+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:16:54.6496968+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:16:54.6512608+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:16:54.6523007+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:16:54.6523007+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:16:54.658653+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:16:59.6528503+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:17:25.9740125+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:17:25.9760989+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:17:25.9766274+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:17:25.9771539+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:17:25.983425+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:17:30.9778005+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:17:56.3108152+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:17:56.3128931+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:17:56.3139284+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:17:56.3144481+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:17:56.3206936+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:18:01.3155346+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:18:26.4543725+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:18:26.4564589+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:18:26.457496+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:18:26.457496+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:18:26.4632916+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:18:31.4578763+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:18:56.8106837+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:18:56.8122745+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:18:56.8133188+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:18:56.8133188+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:18:56.8185293+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:19:01.8134605+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:19:27.1284069+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:19:27.1304998+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:19:27.1310181+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:19:27.13154+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:19:27.1368391+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:19:32.1316037+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:19:58.4518052+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:19:58.4549234+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:19:58.4565497+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:19:58.4570698+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:19:58.4623165+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:20:03.4568639+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:20:29.7156416+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:20:29.7183559+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:20:29.719864+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:20:29.7203848+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:20:29.7250422+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:20:34.7208683+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:21:00.1391022+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:21:00.1425619+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:21:00.1430813+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:21:00.1435954+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:21:00.1495289+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:21:05.1439768+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:21:30.3293729+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:21:30.3326047+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:21:30.33313+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:21:30.3336419+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:21:30.3401283+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:21:35.3337614+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:22:00.5657771+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:22:00.5683744+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:22:00.56898+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:22:00.5695029+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:22:00.5804049+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:22:05.5698696+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:22:30.8713606+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:22:30.8739922+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:22:30.8750357+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:22:30.8755853+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:22:30.882994+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:22:35.8759276+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:23:01.2699731+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:23:01.272058+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:23:01.2725781+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:23:01.2730952+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:23:01.2783027+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:23:06.2738199+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:23:31.4559789+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:23:31.4575305+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:23:31.458595+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:23:31.458595+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:23:31.4639952+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:23:36.4589033+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:24:01.7484288+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:24:01.7505094+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:24:01.7515522+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:24:01.7515522+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:24:01.7567681+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:24:06.7517891+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:24:32.3040024+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:24:32.3066297+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:24:32.307691+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:24:32.3082069+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:24:32.3187036+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:24:37.3084201+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:25:02.7803467+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:25:02.7824162+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:25:02.7834481+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:25:02.7839677+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:25:02.789163+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:25:07.78358+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:25:32.9930205+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:25:32.9956237+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:25:32.9966591+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:25:32.9966591+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:25:33.0025955+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:25:37.9972143+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:26:03.2627857+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:26:03.2648539+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:26:03.2658901+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:26:03.2658901+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:26:03.2715947+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:26:08.2668297+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:26:34.2358189+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:26:34.2400917+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:26:34.2411267+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:26:34.2411267+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:26:34.248971+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:26:39.2415908+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:27:04.4503942+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:27:04.4524708+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:27:04.4534986+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:27:04.4534986+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:27:04.4613411+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:27:09.4539009+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:27:35.0080104+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:27:35.0100946+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:27:35.0111285+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:27:35.0116415+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:27:35.0200947+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:27:40.0121019+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:28:05.593367+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:28:05.5957464+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:28:05.5967833+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:28:05.5967833+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:28:05.6025413+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:28:10.5973309+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:28:35.6422737+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:28:35.6448654+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:28:35.6459026+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:28:35.6459026+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:28:35.6506104+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:28:40.6459741+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:29:05.1695249+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:29:05.1716089+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:29:05.1731931+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:29:05.1731931+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:29:05.1784045+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:29:10.1737126+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T00:29:35.056732+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T00:29:35.0587794+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T00:29:35.0593009+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T00:29:35.0593009+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T00:29:35.0644514+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T00:29:40.059457+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T06:26:47.4609538+08:00","level":"INFO","msg":"YX-DAQ application shutdown"}
+{"time":"2026-06-26T06:27:40.7476162+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T06:27:40.7496853+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T06:27:40.7507194+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T06:27:40.7507194+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T06:27:40.7553563+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T06:27:45.7508827+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T06:27:50.9549687+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T06:28:30.6387198+08:00","level":"INFO","msg":"YX-DAQ application shutdown"}
+{"time":"2026-06-26T21:44:08.4189159+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T21:44:08.4225393+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T21:44:08.4230542+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T21:44:08.4235712+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T21:44:08.4535442+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T21:44:13.4239475+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T21:47:12.7978487+08:00","level":"INFO","msg":"YX-DAQ application shutdown"}
+{"time":"2026-06-26T21:49:55.3184797+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-26T21:49:55.3211304+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-26T21:49:55.3221623+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-26T21:49:55.3221623+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-26T21:49:55.3268076+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T21:50:00.3229998+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-26T21:50:38.4542363+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T21:50:42.3703447+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:42.4705031+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:42.5703309+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:42.670472+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:42.7703266+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:42.8705337+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:42.970565+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:43.0704181+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:43.1703448+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:43.2702539+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:43.3702889+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:43.4704773+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:43.5704568+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:43.6704788+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:43.7702715+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:43.8705002+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:43.9702913+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:44.0707411+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:44.170329+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:44.2705705+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:44.3703515+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:44.4706187+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:44.570183+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:44.670529+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:44.7704886+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:44.8705564+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:44.9702505+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:45.0704761+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:45.1705445+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:45.2704535+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:45.3703264+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:45.4704619+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:45.5703481+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:45.6703336+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:45.770528+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:45.870576+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:45.9701186+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:46.0702224+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:46.1705466+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:46.2703886+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:46.370538+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:46.4704468+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:46.5705226+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:46.6701585+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:46.770535+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:46.8704619+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:46.9703247+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:47.0703351+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:47.1705038+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:47.2704753+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:47.3704384+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:47.4701586+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:47.5705436+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:47.6703524+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:47.7705178+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:47.8705791+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:47.9703233+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:48.0700796+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:48.1705127+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:48.2705186+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:48.3704111+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:48.4705655+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:48.5703249+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:48.6704438+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:48.7704682+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:48.8705776+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:48.9704778+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:49.0700219+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:49.1702247+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:49.2703258+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:49.3705773+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:49.4703271+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:49.5701227+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:49.6701921+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:49.7703227+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:49.8705714+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:49.9704984+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:50.0700795+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:50.1700902+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:50.2701562+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:50.3703353+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:50.470187+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:50.5706093+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:50.6700719+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:50.7700911+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:50.8704908+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:50.9700569+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:51.070334+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:51.1705391+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:51.270373+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:51.3704165+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:51.4700838+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:51.5703328+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:51.6705386+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:51.7701579+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:51.8700995+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:51.9702086+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:52.0703251+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:52.1705722+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:52.2701981+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:52.3703183+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:52.4705403+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:52.5703479+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:52.6704826+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:52.7705831+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:52.870576+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:52.9705574+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:53.0702333+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:53.1700993+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:53.2704552+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:53.3705817+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:53.4701173+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:53.5705791+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:53.6702387+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:53.7703348+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:53.8705079+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:53.9700772+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:54.0701719+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:54.1705472+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:54.2705333+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:54.3701032+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:54.4700671+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:54.5704803+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:54.6701793+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:54.7702411+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:54.8704834+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:54.9705602+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:55.0703301+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:55.1705554+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:55.2703399+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:55.3705696+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:55.4700836+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:55.5701926+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:55.6700717+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:55.7705454+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:55.8704736+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:55.9702845+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:56.0703043+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:56.1702122+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:56.2704421+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:56.3702827+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:56.4704297+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:56.5701855+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:56.6704973+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:56.7705845+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:56.8705221+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:56.9700764+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:57.0705525+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:57.1701023+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:57.2700812+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:57.3703815+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:57.4705482+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:57.5705681+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:57.6700577+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:57.7703653+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:57.8704823+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:57.9701029+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:58.0702263+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:58.1705411+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:58.2704707+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:58.370323+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:58.4705621+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:58.5703683+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:58.6705133+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:58.7700992+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:58.8703271+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:58.9703986+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:59.0704646+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:59.170091+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:59.2703978+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:59.3704727+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:59.4702931+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:59.5704688+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:59.6705172+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:59.7701368+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:59.8701436+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:50:59.970213+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:00.0702993+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:00.1702005+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:00.2705304+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:00.3705763+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:00.4705562+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:00.5704898+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:00.6701345+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:00.7701868+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:00.8704513+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:00.9705812+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:01.07014+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:01.1703352+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:01.2703223+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:01.3703553+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:01.4703184+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:01.5700824+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:01.6701436+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:01.7702594+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:01.8705536+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:01.9705824+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:02.0701192+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:02.1705498+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:02.2702886+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:02.370515+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:02.4705297+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:02.5700864+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:02.6702083+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:02.7703609+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:02.8702328+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:02.9702229+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:03.0703238+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:03.170405+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:03.27015+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:03.3703251+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:03.4700605+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:03.5703245+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:03.670471+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:03.7701575+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:03.8702125+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:03.9701379+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:04.0702038+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:04.1704245+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:04.2705265+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:04.3705768+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:04.4705278+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:04.5705335+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:04.6705581+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:04.7700743+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:04.870079+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:04.9703393+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:05.0700665+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:05.1703069+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:05.2705374+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:05.3702586+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:05.4705362+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:05.5702377+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:05.6702476+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:05.7705886+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:05.8701051+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:05.9701558+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:06.0700734+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:06.170147+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:06.2705387+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:06.3703121+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:06.4704382+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:06.5700827+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:06.6702372+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:06.7703226+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:06.8701128+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:06.97029+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:07.0701042+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:07.1701526+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:07.2700473+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:07.3703301+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:07.4705397+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:07.5702274+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:07.6704218+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:07.770263+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:07.8703331+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:07.9702553+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:08.070439+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:08.1700788+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:08.2703923+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:08.3700857+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:08.4705026+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:08.5700861+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:08.6703735+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:08.7702468+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:08.870291+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:08.9703929+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:09.0704818+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:09.1705675+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:09.2705622+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:09.3700799+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:09.4702141+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:09.5702136+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:09.6702116+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:09.7710801+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:09.8707768+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:09.9703038+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:10.0704028+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:10.1700676+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:10.2705277+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:10.3701361+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:10.4704068+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:10.5701603+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:10.6705526+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:10.7703895+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:10.8702652+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:10.9703536+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:11.0703823+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:11.1705516+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:11.270439+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:11.3702367+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:11.4701137+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:11.5702251+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:11.6701158+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:11.7702104+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:11.870517+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:11.9703845+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:12.0701519+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:12.1705654+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:12.2701601+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:12.3701924+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:12.4700821+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:12.5702222+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:12.6705227+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:12.7705087+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:12.8704908+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:12.9705147+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:13.0700936+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:13.1700749+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:13.2704251+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:13.3706217+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:13.4702341+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:13.570329+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:13.6700627+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:13.770381+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:13.8705+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:13.9701816+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:14.0702569+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:14.1703178+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:14.2700766+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:14.3702362+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:14.4703207+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:14.5703267+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:14.6704433+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:14.7702792+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:14.8703311+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:14.9705232+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:15.0704039+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:15.1703719+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:15.2705035+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:15.3705325+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:15.4704386+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:15.5703398+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:15.670517+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:15.7704218+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:15.8703202+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:15.9702642+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:16.0705934+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:16.1702545+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:16.2701897+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:16.3703297+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:16.4705058+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:16.5700575+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:16.6700649+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:16.7704798+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:16.8704919+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:16.9705251+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:17.0701175+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:17.1704322+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:17.2705539+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:17.3705826+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:17.4700963+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:17.5704535+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:17.6701523+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:17.770207+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:17.8701796+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:17.9703392+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:18.0702269+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:18.1703221+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:18.2706224+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:18.370145+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:18.4704781+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:18.570503+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:18.670086+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:18.7703576+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:18.870081+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:18.9703004+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:19.0704626+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:19.1706066+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:19.2702366+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:19.3117685+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T21:51:19.370444+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:19.4701945+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:19.5700672+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:19.6705083+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:19.7703668+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:19.870112+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:19.9704309+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:20.0701084+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:20.1701765+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:20.2706517+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:20.370258+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:20.4701132+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:20.5705324+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:20.6701985+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:20.7705041+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:20.8705324+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:20.9701772+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:21.0702734+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:21.1705596+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:21.2702419+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:21.3703324+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:21.4702412+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:21.5703857+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:21.6701662+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:21.7701367+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:21.870536+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:21.9703177+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:22.070296+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:22.1702891+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:22.2702058+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:22.3706721+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:22.4704719+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:22.5705258+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:22.6701884+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:22.7705333+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:22.8704376+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:22.9705241+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:23.0705128+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:23.1701275+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:23.270116+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:23.3705444+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:23.4706491+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:23.5702805+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:23.6704966+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:23.7701083+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:23.8705881+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:23.9704288+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:24.0704887+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:24.1700861+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:24.2702342+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:24.3705627+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:24.4706618+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:24.5703894+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:24.6703453+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:24.7703303+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:24.870298+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:24.970164+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:25.0700539+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:25.1705402+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:25.270055+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:25.3701347+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:25.4700723+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:25.5703597+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:25.6700981+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:25.7703044+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:25.8704208+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:25.9701623+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:26.0703355+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:26.1703157+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:26.2701935+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:26.3704748+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:26.4704501+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:26.5704434+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:26.6705027+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:26.7705364+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:26.8700641+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:26.9705388+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:27.0703161+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:27.1706222+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:27.2700766+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:27.3703289+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:27.4704722+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:27.5703357+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:27.6703228+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:27.7705+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:27.8705149+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:27.9705788+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:28.0704822+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:28.1705364+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:28.2702559+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:28.3705975+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:28.4705322+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:28.5703297+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:28.6701119+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:28.7705569+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:28.8705077+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:28.9703262+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:29.0700963+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:29.1702106+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:29.2700522+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:29.3701697+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:29.470535+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:29.5702337+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:29.6701345+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:29.7705196+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:29.8703383+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:29.9509753+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-26T21:51:29.9704099+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:30.0700175+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:30.1703371+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:30.2702729+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:30.3701811+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:30.4703375+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:30.5704647+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:30.6701418+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:30.7705509+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:30.8700908+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:30.9703305+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:31.0704028+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:31.1704351+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:31.2706013+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:31.3705347+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:31.4700838+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:31.5704562+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:31.6700961+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:31.7703191+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:31.8701123+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:31.9704929+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:32.0703739+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:32.1705359+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:32.2703552+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:32.3700696+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:32.4701249+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:32.5701045+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:32.6703264+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:32.7703049+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:32.8704704+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:32.970163+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:33.0704832+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:33.1704435+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:33.2703965+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:33.3706044+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:33.4701062+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:33.5701766+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:33.6704412+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:33.770327+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:33.8703601+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:33.970456+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:34.0702674+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:34.170324+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:34.270092+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:34.3702955+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:34.4700866+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:34.5702759+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:34.6702636+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:34.770293+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:34.8701991+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:34.9704602+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:35.0702546+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:35.1705313+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:35.2701725+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:35.3700955+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:35.4703393+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:35.5705281+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:35.6701112+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:35.7703183+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:35.8703987+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:35.9704045+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:36.070418+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:36.1705411+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:36.2706576+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:36.3703769+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:36.4702476+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:36.5704219+08:00","level":"WARN","msg":"realtime read raw data failed","err":"读取大气压通道失败: 通道 16 无数据"}
+{"time":"2026-06-26T21:51:36.6423466+08:00","level":"INFO","msg":"YX-DAQ application shutdown"}

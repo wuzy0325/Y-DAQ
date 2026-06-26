@@ -1,0 +1,686 @@
+{"time":"2026-06-25T21:14:36.5596768+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T21:14:36.5612355+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T21:14:36.5626916+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T21:14:36.5626916+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T21:14:36.5944266+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T21:14:41.5631774+08:00","level":"WARN","msg":"auto-connect B140 failed (async)","id":"b140-mc-1","address":"192.168.1.101","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T21:15:41.6641675+08:00","level":"INFO","msg":"YX-DAQ application shutdown"}
+{"time":"2026-06-25T21:19:23.8253713+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T21:19:23.8274633+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T21:19:23.8284961+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T21:19:23.8284961+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T21:19:23.8331708+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T21:19:28.8288566+08:00","level":"WARN","msg":"auto-connect B140 failed (async)","id":"b140-mc-1","address":"192.168.1.101","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T21:20:31.7678418+08:00","level":"INFO","msg":"YX-DAQ application shutdown"}
+{"time":"2026-06-25T21:30:46.3066778+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T21:30:46.3087558+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T21:30:46.3092682+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T21:30:46.3097833+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T21:30:46.332707+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T21:30:51.3100547+08:00","level":"WARN","msg":"auto-connect B140 failed (async)","id":"b140-mc-1","address":"192.168.1.101","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T21:30:57.0929862+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T21:31:35.9410103+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T21:31:56.8063109+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T21:32:01.2286297+08:00","level":"WARN","msg":"readRawData: missing required channel data (subsequent warnings suppressed until recovered)","P1":false,"P2":false,"P3":false,"PAtm":false,"missingChannels":[0,1,2,16,17]}
+{"time":"2026-06-25T21:32:40.6948629+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T21:32:46.2413738+08:00","level":"INFO","msg":"YX-DAQ application shutdown"}
+{"time":"2026-06-25T21:40:44.0493648+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T21:40:44.051437+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T21:40:44.0524642+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T21:40:44.0524642+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T21:40:44.0582647+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T21:40:49.0528818+08:00","level":"WARN","msg":"auto-connect B140 failed (async)","id":"b140-mc-1","address":"192.168.1.101","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T21:41:05.4377523+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T21:41:45.2707405+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T21:42:28.13499+08:00","level":"INFO","msg":"YX-DAQ application shutdown"}
+{"time":"2026-06-25T22:00:49.1793311+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T22:00:49.1823908+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T22:00:49.1834287+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T22:00:49.1834287+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T22:00:49.2022016+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T22:00:54.183649+08:00","level":"WARN","msg":"auto-connect B140 failed (async)","id":"b140-mc-1","address":"192.168.1.101","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T22:01:15.6476971+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T22:01:15.649534+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T22:01:15.6505621+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T22:01:15.6505621+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T22:01:15.6546656+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T22:01:20.6511019+08:00","level":"WARN","msg":"auto-connect B140 failed (async)","id":"b140-mc-1","address":"192.168.1.101","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T22:19:44.723523+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T22:19:44.7261284+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T22:19:44.7271665+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T22:19:44.7271665+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T22:19:44.7323394+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T22:19:49.727336+08:00","level":"WARN","msg":"auto-connect B140 failed (async)","id":"b140-mc-1","address":"192.168.1.101","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T22:19:54.0593606+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T22:19:54.0614262+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T22:19:54.0619466+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T22:19:54.0619466+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T22:19:54.0677884+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T22:20:02.9811946+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T22:20:02.9834311+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T22:20:02.9844639+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T22:20:02.9844639+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T22:20:02.9897267+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T22:20:24.6783274+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T22:20:24.6810252+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T22:20:24.6815463+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T22:20:24.6815463+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T22:20:24.6866775+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T22:21:01.1271627+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T22:21:01.1314076+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T22:21:01.131929+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T22:21:01.1324454+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T22:21:01.1366036+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T22:21:43.3737389+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T22:21:43.3763329+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T22:21:43.3768502+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T22:21:43.3768502+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T22:21:43.4058327+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T22:21:48.3820912+08:00","level":"WARN","msg":"auto-connect B140 failed (async)","id":"b140-mc-1","address":"192.168.1.101","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T22:22:12.2654932+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T22:22:12.2675572+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T22:22:12.2685785+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T22:22:12.2685785+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T22:22:12.2738865+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T22:22:17.2686186+08:00","level":"WARN","msg":"auto-connect B140 failed (async)","id":"b140-mc-1","address":"192.168.1.101","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T22:22:23.7475844+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T22:22:30.6039768+08:00","level":"INFO","msg":"YX-DAQ application shutdown"}
+{"time":"2026-06-25T22:23:12.6199146+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T22:23:12.6225036+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T22:23:12.6230228+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T22:23:12.6235991+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T22:23:12.6272418+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T22:23:17.6239611+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T22:23:40.9812851+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T22:23:46.5394176+08:00","level":"INFO","msg":"YX-DAQ application shutdown"}
+{"time":"2026-06-25T22:24:01.5255288+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T22:24:01.5278204+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T22:24:01.528889+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T22:24:01.5294012+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T22:24:01.5345738+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T22:24:06.5299514+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T22:24:28.9393514+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T22:24:28.9414247+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T22:24:28.942454+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T22:24:28.942454+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T22:24:28.9483059+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T22:24:33.9429508+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T22:24:54.8169968+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T22:24:54.8195948+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T22:24:54.8205993+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T22:24:54.8215997+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T22:24:54.8269751+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T22:24:59.8221086+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T22:25:20.5210751+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T22:25:20.5231636+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T22:25:20.5241972+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T22:25:20.5241972+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T22:25:20.5288881+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T22:25:25.5244631+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T22:25:29.7506909+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T22:25:44.7977544+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T22:25:44.7998257+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T22:25:44.8008578+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T22:25:44.8008578+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T22:25:44.8049523+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T22:25:49.8011201+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T22:26:53.6734677+08:00","level":"INFO","msg":"Unsolicited response received on idle HTTP channel starting with \"HTTP/1.1 400 Bad Request\\r\\n\\r\\n\"; err=<nil>"}
+{"time":"2026-06-25T22:36:02.8963396+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T22:36:08.5022925+08:00","level":"INFO","msg":"YX-DAQ application shutdown"}
+{"time":"2026-06-25T23:06:41.647451+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:06:41.6495176+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:06:41.6500284+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:06:41.6505441+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:06:41.6567584+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:06:45.6443514+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:06:46.6509811+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:07:44.7498271+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:07:54.3961646+08:00","level":"INFO","msg":"YX-DAQ application shutdown"}
+{"time":"2026-06-25T23:11:23.3610934+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:11:23.3645649+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:11:23.3655974+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:11:23.3655974+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:11:23.3729146+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:12:15.4568187+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:12:15.4588736+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:12:15.4600806+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:12:15.4600806+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:12:15.4819282+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:12:20.4603364+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:13:11.8543369+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:13:11.8566131+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:13:11.8571203+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:13:11.8576641+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:13:11.8621976+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:13:16.8580136+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:13:37.57619+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:13:37.5777468+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:13:37.5782639+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:13:37.5787895+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:13:37.58343+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:13:42.5790138+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:13:44.3633857+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:14:04.1872622+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:14:04.1893325+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:14:04.1898526+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:14:04.19037+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:14:04.1951789+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:14:08.1564425+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:14:09.1904372+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:16:23.7285621+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:16:23.7311517+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:16:23.7316671+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:16:23.7321915+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:16:23.7372077+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:16:28.7322548+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:16:49.2927215+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:16:49.2948812+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:16:49.295912+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:16:49.295912+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:16:49.3011393+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:16:54.2964235+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:17:26.3256396+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:17:26.3282586+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:17:26.328781+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:17:26.3292974+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:17:26.3361041+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:17:31.3298394+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:17:53.7610354+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:17:53.7636658+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:17:53.7641873+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:17:53.7646995+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:17:53.7698877+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:17:58.7646953+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:18:54.9439566+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:28:02.3105803+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:28:02.3126575+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:28:02.3131846+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:28:02.3137124+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:28:02.3188614+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:28:07.3140681+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:28:27.9974319+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:28:27.9989969+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:28:27.9995183+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:28:28.0000365+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:28:28.0058205+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:28:33.0002012+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:28:33.9291386+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:28:54.8727744+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:28:54.8748606+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:28:54.8753764+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:28:54.8759004+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:28:54.8816217+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:28:59.8764266+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:29:09.415433+08:00","level":"INFO","msg":"YX-DAQ application shutdown"}
+{"time":"2026-06-25T23:29:20.802576+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:29:20.8046651+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:29:20.8057092+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:29:20.8057092+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:29:20.8108934+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:29:25.8061116+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:29:47.1060889+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:29:47.1086927+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:29:47.1092085+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:29:47.109731+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:29:47.1145328+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:29:52.1098031+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:29:56.7882576+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:29:56.7903239+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:29:56.7913745+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:29:56.7913745+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:29:56.7966891+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:30:06.0880241+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:30:06.0901257+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:30:06.091864+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:30:06.091864+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:30:06.0975744+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:30:15.3990158+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:30:15.4010998+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:30:15.4021955+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:30:15.4021955+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:30:15.411291+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:30:24.5280807+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:30:24.5300394+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:30:24.5310823+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:30:24.5310823+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:30:24.5363239+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:30:33.7172454+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:30:33.7202192+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:30:33.7212591+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:30:33.7212591+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:30:33.726488+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:30:42.7693564+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:30:42.7715009+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:30:42.7725471+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:30:42.7725471+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:30:42.7788083+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:30:51.9353934+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:30:51.9379933+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:30:51.9386686+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:30:51.9391895+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:30:51.9444475+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:31:01.1553749+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:31:01.1574817+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:31:01.1579982+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:31:01.1585531+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:31:01.1637736+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:31:27.1140933+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:31:27.1161636+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:31:27.1167131+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:31:27.117235+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:31:27.1218329+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:31:32.1176643+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:31:53.6263263+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:31:53.6278717+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:31:53.6294132+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:31:53.6294132+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:31:53.6340793+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:31:58.6297745+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:32:19.8113684+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:32:19.8134748+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:32:19.8145238+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:32:19.8145238+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:32:19.8203014+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:32:24.8150497+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:32:49.191203+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:32:49.1944477+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:32:49.1975204+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:32:49.1975204+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:32:49.2038001+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:32:54.1978306+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:33:16.0481602+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:33:16.0509758+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:33:16.0520225+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:33:16.052537+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:33:16.0572322+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:33:21.05249+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:33:41.9832559+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:33:41.9853512+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:33:41.9858653+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:33:41.9863834+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:33:41.9922817+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:33:46.9867802+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:34:07.2978967+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:34:07.2999769+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:34:07.3004959+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:34:07.3010059+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:34:07.3051268+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:34:12.3008822+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:34:33.1421458+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:34:33.1436978+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:34:33.1451157+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:34:33.1456908+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:34:33.1518499+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:34:38.1458723+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:35:01.8393787+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:35:01.8414511+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:35:01.8425439+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:35:01.8425439+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:35:01.8485315+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:35:06.8428571+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:35:33.0814584+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:35:33.0841237+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:35:33.0846451+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:35:33.0851559+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:35:33.0920266+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:35:38.0854208+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:36:05.1673688+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:36:05.1694667+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:36:05.1705128+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:36:05.1705128+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:36:05.1767532+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:36:10.1707506+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:36:36.834454+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:36:36.8370985+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:36:36.8381516+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:36:36.8381516+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:36:36.8443545+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:36:41.8385357+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:37:09.356459+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:37:09.3590491+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:37:09.3595616+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:37:09.3600824+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:37:09.3664139+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:37:14.3602365+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:37:41.9610092+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:37:41.9636238+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:37:41.9641446+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:37:41.964668+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:37:41.9709492+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:37:46.964833+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:38:13.4911096+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:38:13.493248+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:38:13.4942778+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:38:13.4942778+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:38:13.5000635+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:38:18.4947602+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:38:45.6971391+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:38:45.7015175+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:38:45.7030778+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:38:45.7030778+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:38:45.7093169+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:39:17.4195972+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:39:17.4244493+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:39:17.4249793+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:39:17.4255049+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:39:17.4312706+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:39:48.7905952+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:39:48.7937532+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:39:48.7947947+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:39:48.7947947+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:39:48.8015642+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:40:19.6547365+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:40:19.6580585+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:40:19.6590901+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:40:19.6590901+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:40:19.6716433+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:40:50.4021408+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:40:50.4048898+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:40:50.4059768+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:40:50.4065+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:40:50.4193471+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:41:21.6044054+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:41:21.6065479+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:41:21.6075865+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:41:21.6075865+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:41:21.6148952+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:41:53.7543678+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:41:53.7574095+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:41:53.7584337+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:41:53.7584337+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:41:53.7654258+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:42:27.7499319+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:42:27.7532391+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:42:27.754316+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:42:27.754316+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:42:27.7595329+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:42:32.7545318+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:43:00.9060944+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:43:00.9086903+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:43:00.9097817+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:43:00.9097817+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:43:00.919935+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:43:33.8974592+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:43:33.9001093+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:43:33.9011993+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:43:33.9011993+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:43:33.9077245+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:43:38.901591+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:44:07.0155943+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:44:07.0189125+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:44:07.019959+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:44:07.019959+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:44:07.026378+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:44:12.0203671+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:44:40.6272754+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:44:40.6293492+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:44:40.6303795+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:44:40.6303795+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:44:40.6369903+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:44:45.6304813+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:45:13.4181573+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:45:13.4206918+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:45:13.4217244+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:45:13.4217244+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:45:13.4274041+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:45:18.4220485+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:45:46.5824514+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:45:46.5845263+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:45:46.5855623+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:45:46.5855623+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:45:46.5918045+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:45:51.5860198+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:46:18.9654079+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:46:18.9679951+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:46:18.9693594+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:46:18.9693594+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:46:18.9766765+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:46:23.9696756+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:46:51.1576309+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:46:51.1593267+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:46:51.1611811+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:46:51.1617135+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:46:51.1679798+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:46:56.1821448+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:47:02.7937915+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:47:02.7965159+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:47:02.7975609+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:47:02.7975609+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:47:02.8044298+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:47:14.0905102+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:47:14.0931095+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:47:14.0946185+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:47:14.0946185+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:47:14.1024342+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:47:25.4435368+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:47:25.4466581+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:47:25.4471875+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:47:25.4477228+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:47:25.4535941+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:47:36.6555957+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:47:36.6582209+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:47:36.659733+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:47:36.6602532+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:47:36.6682165+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:47:47.4983619+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:47:47.5015008+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:47:47.5025381+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:47:47.5025381+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:47:47.5088108+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:47:58.3460872+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:47:58.3492238+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:47:58.3509535+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:47:58.3514807+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:47:58.3587556+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:48:09.6771169+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:48:09.68027+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:48:09.68132+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:48:09.6819639+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:48:09.6882272+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:48:20.7302215+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:48:20.7328282+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:48:20.7333537+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:48:20.7338752+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:48:20.7402371+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:48:31.8784996+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:48:31.8811088+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:48:31.8816536+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:48:31.8821808+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:48:31.8900766+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:48:42.8993549+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:48:42.901435+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:48:42.9024699+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:48:42.9024699+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:48:42.9087206+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:48:53.9230137+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:48:53.9251275+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:48:53.9261726+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:48:53.9261726+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:48:53.9342024+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:49:04.9563494+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:49:04.9589525+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:49:04.9594783+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:49:04.9600214+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:49:04.9668039+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:49:15.9158935+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:49:15.9189683+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:49:15.9200216+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:49:15.9200216+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:49:15.928366+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:49:26.9362489+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:49:26.9383204+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:49:26.9393634+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:49:26.9398764+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:49:26.9470671+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:49:38.1804376+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:49:38.1831123+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:49:38.1841387+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:49:38.1841387+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:49:38.193571+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:49:49.2341194+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:49:49.2356896+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:49:49.2367355+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:49:49.2367355+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:49:49.2429541+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:50:00.515223+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:50:00.5178345+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:50:00.5183565+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:50:00.5188773+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:50:00.5251293+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:50:11.7249227+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:50:11.7291061+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:50:11.7305712+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:50:11.7305712+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:50:11.7415242+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:50:22.9710236+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:50:22.9731118+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:50:22.9741573+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:50:22.9741573+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:50:22.9817383+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:50:34.2135529+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:50:34.2156559+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:50:34.2166989+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:50:34.2172178+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:50:34.224305+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:50:45.8192568+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:50:45.8223519+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:50:45.8237065+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:50:45.8237065+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:50:45.8320589+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:50:57.6008415+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:50:57.6034629+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:50:57.6034629+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:50:57.6043841+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:50:57.6112535+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:51:09.013328+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:51:09.0161329+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:51:09.0171884+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:51:09.0171884+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:51:09.0283705+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:51:50.3077111+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:51:50.3112052+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:51:50.3123704+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:51:50.3123704+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:51:50.3382073+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:51:55.312926+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:52:23.6513355+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:52:23.6534441+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:52:23.6544875+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:52:23.6544875+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:52:23.6607226+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:52:28.6549785+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:52:56.1273471+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:52:56.1294349+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:52:56.1305819+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:52:56.1315875+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:52:56.1383684+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:53:01.1322123+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:53:27.2022505+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:53:27.2043322+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:53:27.2048543+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:53:27.2053803+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:53:27.2100559+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:53:32.2057806+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:53:59.4897636+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:53:59.4918442+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:53:59.4923688+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:53:59.4928966+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:53:59.4988811+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:54:04.4927833+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:54:32.0294671+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:54:32.0320992+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:54:32.0331376+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:54:32.0331376+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:54:32.0383251+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:54:37.0332625+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:55:04.176051+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:55:04.1782064+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:55:04.1792456+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:55:04.1792456+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:55:04.1855256+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:55:09.1795543+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:55:36.2440634+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:55:36.2461646+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:55:36.2466839+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:55:36.247207+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:55:36.2520216+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:55:41.247659+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:56:08.7649675+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:56:08.7670312+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:56:08.7680793+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:56:08.7686012+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:56:08.7738085+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:56:13.768278+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:56:41.339738+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:56:41.3418145+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:56:41.3428932+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:56:41.3428932+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:56:41.3489946+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:56:46.343024+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:57:13.7240375+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:57:13.7265849+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:57:13.727099+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:57:13.7276203+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:57:13.7339665+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:57:18.7274169+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:57:46.1975535+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:57:46.1997402+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:57:46.2007725+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:57:46.2007725+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:57:46.2065175+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:57:51.2008917+08:00","level":"WARN","msg":"auto-connect B140 failed (manual connect available)","id":"b140-mc-1","err":"connect to B140 192.168.1.101:5000 failed: dial tcp 192.168.1.101:5000: i/o timeout"}
+{"time":"2026-06-25T23:57:59.7130838+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:57:59.7153515+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:57:59.7163726+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:57:59.7163726+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:57:59.723275+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:58:10.3902227+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:58:10.3928915+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:58:10.3939439+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:58:10.3944597+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:58:10.4063785+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:58:21.3006133+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:58:21.3032244+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:58:21.303751+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:58:21.303751+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:58:21.3123344+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:58:32.2774683+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:58:32.2807614+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:58:32.281284+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:58:32.281284+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:58:32.2875311+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:58:43.2768733+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:58:43.2795022+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:58:43.2800202+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:58:43.2805563+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:58:43.2874247+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:58:54.6596243+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:58:54.6611737+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:58:54.6622161+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:58:54.6622161+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:58:54.6705838+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:59:06.1092378+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:59:06.1115028+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:59:06.1125486+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:59:06.1125486+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:59:06.1194476+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:59:17.7369635+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:59:17.7395711+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:59:17.740089+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:59:17.7406015+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:59:17.7464158+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:59:29.5655674+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:59:29.5687016+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:59:29.5697367+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:59:29.5697367+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:59:29.5760115+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:59:41.0720547+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:59:41.0741497+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:59:41.0746734+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:59:41.075199+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:59:41.0831751+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
+{"time":"2026-06-25T23:59:52.2895486+08:00","level":"INFO","msg":"logger initialized","dir":"D:\\work\\wuli\\YX_DAQ\\YX-DAQ\\yx-daq\\bin\\logs"}
+{"time":"2026-06-25T23:59:52.2921748+08:00","level":"INFO","msg":"loaded device profiles from config","count":1}
+{"time":"2026-06-25T23:59:52.2932359+08:00","level":"INFO","msg":"loaded motion controller profiles from config","count":2}
+{"time":"2026-06-25T23:59:52.2932359+08:00","level":"INFO","msg":"YX-DAQ application started"}
+{"time":"2026-06-25T23:59:52.3036129+08:00","level":"INFO","msg":"[WebView2] Environment created successfully"}
