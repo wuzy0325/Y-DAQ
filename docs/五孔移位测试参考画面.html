@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>流场多探针测控与布点系统</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            bg: '#0b0f19',
+                            card: '#151b2d',
+                            border: '#232d45',
+                            accent: '#10b981'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons (用于现代化高精图标) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap');
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #0b0f19;
+        }
+        .mono-num {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        /* 微光呼吸效果 */
+        .glow-cyan { text-shadow: 0 0 10px rgba(6, 182, 212, 0.4); }
+        .glow-magenta { text-shadow: 0 0 10px rgba(236, 72, 153, 0.4); }
+        .glow-green { text-shadow: 0 0 10px rgba(34, 197, 94, 0.4); }
+        .glow-red { text-shadow: 0 0 10px rgba(239, 68, 68, 0.4); }
+        .glow-orange { text-shadow: 0 0 10px rgba(249, 115, 22, 0.4); }
+        .glow-teal { text-shadow: 0 0 10px rgba(20, 184, 166, 0.4); }
+        
+        /* 隐藏滚动条但保留功能 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0f19;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #232d45;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #313f62;
+        }
+    </style>
+</head>
+<body class="text-slate-200 min-h-screen flex flex-col p-4 md:p-6 lg:p-8 space-y-6">
+
+    <!-- 顶部导航和状态栏 -->
+    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-brand-border">
+        <div class="flex items-center space-x-3">
+            <div class="p-2 bg-emerald-500/10 rounded-lg text-emerald-400 border border-emerald-500/20">
+                <i data-lucide="compass" class="w-6 h-6 animate-spin-slow"></i>
+            </div>
+            <div>
+                <h1 class="text-xl md:text-2xl font-bold tracking-wider text-slate-100 flex items-center gap-2">
+                    多探针多点流场测控系统 
+                    <span class="text-xs bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-2 py-0.5 rounded-full font-normal">运行正常</span>
+                </h1>
+                <p class="text-xs text-slate-400 mt-0.5">三维气动多孔探针实时压力采集与数据反解平台</p>
+            </div>
+        </div>
+        
+        <!-- 全局时间及操控按钮 -->
+        <div class="flex items-center space-x-4">
+            <div class="text-right hidden lg:block">
+                <p class="text-xs text-slate-400">当前时间</p>
+                <p id="system-time" class="text-sm font-semibold mono-num text-slate-200">2026-06-27 21:54:00</p>
+            </div>
+            <div class="h-8 w-[1px] bg-brand-border hidden lg:block"></div>
+            <button onclick="startAutoScan()" id="btn-scan" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 transition-colors text-white text-sm font-medium px-4 py-2 rounded-lg shadow-lg shadow-emerald-950/40">
+                <i data-lucide="play" class="w-4 h-4"></i>
+                <span>自动点位扫描</span>
+            </button>
+            <button onclick="resetAllPoints()" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 transition-colors text-slate-300 text-sm font-medium px-4 py-2 rounded-lg border border-brand-border">
+                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                <span>全点重置</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- 主布局网格 -->
+    <main class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start flex-grow">
+        
+        <!-- 左侧：布点控制与实时预览 (占 5 列) -->
+        <section class="lg:col-span-5 bg-brand-card border border-brand-border rounded-xl p-5 shadow-2xl flex flex-col h-full justify-between">
+            <div>
+                <!-- 头部标题与控制项 -->
+                <div class="flex items-center justify-between mb-4 pb-3 border-b border-brand-border">
+                    <div class="flex items-center space-x-2">
+                        <i data-lucide="map" class="text-emerald-400 w-5 h-5"></i>
+                        <h2 class="font-bold text-slate-200 tracking-wide">布点预览与控制</h2>
+                    </div>
+                    <span class="text-xs text-slate-400 flex items-center gap-1">
+                        <span class="inline-block w-2 h-2 rounded-full bg-blue-500 animate-ping"></span>
+                        交互测点网格 (9x9)
+                    </span>
+                </div>
+
+                <!-- 状态图例 -->
+                <div class="grid grid-cols-5 gap-2 mb-6 text-xs bg-slate-900/50 p-2.5 rounded-lg border border-brand-border/60">
+                    <div class="flex items-center space-x-1.5 justify-center">
+                        <span class="w-3 h-3 rounded-full bg-slate-500 border border-slate-400/30"></span>
+                        <span class="text-slate-400">待测</span>
+                    </div>
+                    <div class="flex items-center space-x-1.5 justify-center">
+                        <span class="w-3 h-3 rounded-full bg-yellow-500 border border-yellow-400/30"></span>
+                        <span class="text-slate-400">移动</span>
+                    </div>
+                    <div class="flex items-center space-x-1.5 justify-center">
+                        <span class="w-3 h-3 rounded-full bg-blue-500 border border-blue-400/30"></span>
+                        <span class="text-slate-400">采集</span>
+                    </div>
+                    <div class="flex items-center space-x-1.5 justify-center">
+                        <span class="w-3 h-3 rounded-full bg-pink-500 border border-pink-400/30"></span>
+                        <span class="text-slate-400">等待</span>
+                    </div>
+                    <div class="flex items-center space-x-1.5 justify-center">
+                        <span class="w-3 h-3 rounded-full bg-emerald-500 border border-emerald-400/30"></span>
+                        <span class="text-slate-400">完成</span>
+                    </div>
+                </div>
+
+                <!-- 坐标网格核心绘图区 (SVG保证缩放清晰及高响应性) -->
+                <div class="relative w-full aspect-square bg-slate-950 rounded-lg border border-brand-border p-4 flex items-center justify-center overflow-hidden">
+                    <svg id="grid-svg" viewBox="-25 -25 50 50" class="w-full h-full select-none cursor-pointer">
+                        <!-- 定义箭头和标记 -->
+                        <defs>
+                            <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569" />
+                            </marker>
+                        </defs>
+                        
+                        <!-- 坐标轴线 -->
+                        <line x1="-23" y1="0" x2="23" y2="0" stroke="#1e293b" stroke-width="0.3" marker-end="url(#arrow)" />
+                        <line x1="0" y1="23" x2="0" y2="-23" stroke="#1e293b" stroke-width="0.3" marker-end="url(#arrow)" />
+
+                        <!-- 网格细分线 (10% 透明) -->
+                        <g opacity="0.15" stroke="#475569" stroke-width="0.1">
+                            <!-- X轴平行线 -->
+                            <line x1="-20" y1="-20" x2="20" y2="-20" />
+                            <line x1="-20" y1="-15" x2="20" y2="-15" />
+                            <line x1="-20" y1="-10" x2="20" y2="-10" />
+                            <line x1="-20" y1="-5" x2="20" y2="-5" />
+                            <line x1="-20" y1="5" x2="20" y2="5" />
+                            <line x1="-20" y1="10" x2="20" y2="10" />
+                            <line x1="-20" y1="15" x2="20" y2="15" />
+                            <line x1="-20" y1="20" x2="20" y2="20" />
+                            <!-- Y轴平行线 -->
+                            <line x1="-20" y1="-20" x2="-20" y2="20" />
+                            <line x1="-15" y1="-20" x2="-15" y2="20" />
+                            <line x1="-10" y1="-20" x2="-10" y2="20" />
+                            <line x1="-5" y1="-20" x2="-5" y2="20" />
+                            <line x1="5" y1="-20" x2="5" y2="20" />
+                            <line x1="10" y1="-20" x2="10" y2="20" />
+                            <line x1="15" y1="-20" x2="15" y2="20" />
+                            <line x1="20" y1="-20" x2="20" y2="20" />
+                        </g>
+
+                        <!-- 刻度值 -->
+                        <!-- X轴刻度 -->
+                        <g font-size="1.5" fill="#64748b" text-anchor="middle" font-family="JetBrains Mono" class="mono-num">
+                            <text x="-20" y="2.5">-20</text>
+                            <text x="-15" y="2.5">-15</text>
+                            <text x="-10" y="2.5">-10</text>
+                            <text x="-5" y="2.5">-5</text>
+                            <text x="5" y="2.5">5</text>
+                            <text x="10" y="2.5">10</text>
+                            <text x="15" y="2.5">15</text>
+                            <text x="20" y="2.5">20</text>
+                        </g>
+                        <!-- Y轴刻度 -->
+                        <g font-size="1.5" fill="#64748b" text-anchor="end" font-family="JetBrains Mono" class="mono-num">
+                            <text x="-1" y="-20" dominant-baseline="middle">20</text>
+                            <text x="-1" y="-15" dominant-baseline="middle">15</text>
+                            <text x="-1" y="-10" dominant-baseline="middle">10</text>
+                            <text x="-1" y="-5" dominant-baseline="middle">5</text>
+                            <text x="-1" y="5" dominant-baseline="middle">-5</text>
+                            <text x="-1" y="10" dominant-baseline="middle">-10</text>
+                            <text x="-1" y="15" dominant-baseline="middle">-15</text>
+                            <text x="-1" y="20" dominant-baseline="middle">-20</text>
+                        </g>
+
+                        <!-- 坐标轴名称 -->
+                        <text x="23" y="2" font-size="1.5" fill="#94a3b8" text-anchor="end">X (mm)</text>
+                        <text x="-2" y="-23" font-size="1.5" fill="#94a3b8" text-anchor="middle" transform="rotate(-90 -2 -23)">Y (mm)</text>
+
+                        <!-- 测点容器 (由JS自动填充) -->
+                        <g id="points-container"></g>
+                        
+                        <!-- 活跃焦点圈 -->
+                        <circle id="focus-ring" r="1.5" fill="none" stroke="#3b82f6" stroke-width="0.3" class="hidden animate-pulse"></circle>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- 数据监测附加卡片 -->
+            <div class="mt-4 bg-slate-900/60 border border-brand-border p-3.5 rounded-lg text-xs space-y-2">
+                <div class="flex justify-between">
+                    <span class="text-slate-400">总规划测试点:</span>
+                    <span class="mono-num font-semibold text-slate-200">81 点</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">当前扫描进程:</span>
+                    <span id="scan-progress" class="mono-num font-semibold text-emerald-400">10 / 81 (12.3%)</span>
+                </div>
+                <!-- 进度条 -->
+                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                    <div id="scan-progress-bar" class="bg-emerald-500 h-full transition-all duration-300" style="width: 12.3%"></div>
+                </div>
+                <div class="text-[10px] text-slate-400 mt-2 leading-relaxed bg-brand-bg/50 p-2 rounded border border-brand-border/40">
+                    💡 <span class="font-medium text-slate-300">交互提示:</span> 可直接点击上方网格内任意圆点，手动设定其测定状态并读取该坐标处的测定物理参数。
+                </div>
+            </div>
+        </section>
+
+        <!-- 右侧：探针数据集成区 (占 7 列) -->
+        <section class="lg:col-span-7 flex flex-col space-y-6">
+            
+            <!-- 探针卡片列表容器 -->
+            <div id="probes-container" class="space-y-6">
+                <!-- 探针数据卡片通过JS生成，包含全部原始参数和插值参数 -->
+            </div>
+
+        </section>
+    </main>
+
+    <!-- 底部状态通报栏 -->
+    <footer class="text-center text-xs text-slate-500 pt-4 border-t border-brand-border flex flex-col sm:flex-row justify-between items-center gap-2">
+        <p>© 2026 智能流体动力学实验室. 保留所有权利.</p>
+        <div class="flex items-center space-x-4">
+            <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> 硬件总线: 已连接</span>
+            <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> 算法核心: V3.5-Active</span>
+        </div>
+    </footer>
+
+    <!-- 全局提示框容器 -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <script>
+        // 初始化 Lucide 图标
+        lucide.createIcons();
+
+        // 统一系统时间更新
+        function updateSystemTime() {
+            const timeEl = document.getElementById('system-time');
+            if (timeEl) {
+                const now = new Date();
+                timeEl.innerText = now.toISOString().replace('T', ' ').substring(0, 19);
+            }
+        }
+        setInterval(updateSystemTime, 1000);
+
+        // ==========================================
+        // 测点坐标网格状态设计 (X: -20 to 20, step 5; Y: -20 to 20, step 5)
+        // 共 9 x 9 = 81 个节点
+        // ==========================================
+        const gridPoints = [];
+        const steps = [-20, -15, -10, -5, 0, 5, 10, 15, 20];
+        
+        // 测点状态枚举
+        const STATES = {
+            PENDING: 'pending',   // 待测 - 灰
+            MOVING: 'moving',     // 移动 - 黄
+            SAMPLING: 'sampling', // 采集 - 蓝
+            WAITING: 'waiting',   // 等待 - 粉
+            COMPLETED: 'completed'// 完成 - 绿
+        };
+
+        const STATE_COLORS = {
+            [STATES.PENDING]: '#4b5563',   // gray-600
+            [STATES.MOVING]: '#eab308',    // yellow-500
+            [STATES.SAMPLING]: '#3b82f6',  // blue-500
+            [STATES.WAITING]: '#ec4899',   // pink-500
+            [STATES.COMPLETED]: '#22c55e'  // green-500
+        };
+
+        // 初始化测点状态
+        function initGridData() {
+            gridPoints.length = 0;
+            for (let y of steps) {
+                for (let x of steps) {
+                    // 初始化一些随机的、有规律的状态分布，让画面一进来就非常逼真
+                    let state = STATES.PENDING;
+                    const r = Math.random();
+                    if (y < -5) {
+                        state = STATES.COMPLETED;
+                    } else if (y === -5) {
+                        state = r > 0.5 ? STATES.COMPLETED : STATES.WAITING;
+                    } else if (y === 0 && x === 0) {
+                        state = STATES.SAMPLING;
+                    } else if (y === 0 && x > 0) {
+                        state = STATES.MOVING;
+                    }
+
+                    gridPoints.push({ x, y, state });
+                }
+            }
+        }
+
+        // 渲染网格测点
+        function renderGridPoints() {
+            const container = document.getElementById('points-container');
+            container.innerHTML = '';
+
+            gridPoints.forEach((point, index) => {
+                // 创建测点组
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.setAttribute('class', 'group transition-all duration-300');
+                g.setAttribute('transform', `translate(${point.x}, ${point.y})`);
+                
+                // 背景感应热区 (增大点击区域)
+                const hitCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                hitCircle.setAttribute('r', '2');
+                hitCircle.setAttribute('fill', 'transparent');
+                hitCircle.setAttribute('class', 'cursor-pointer');
+                
+                // 实体点
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('id', `pt-${point.x}-${point.y}`);
+                circle.setAttribute('r', '0.7');
+                circle.setAttribute('fill', STATE_COLORS[point.state]);
+                circle.setAttribute('class', 'transition-all duration-300 hover:scale-150');
+                
+                // 点击事件
+                const clickHandler = () => {
+                    handlePointClick(point, circle);
+                };
+                hitCircle.addEventListener('click', clickHandler);
+                circle.addEventListener('click', clickHandler);
+
+                // 悬停提示
+                const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+                title.textContent = `坐标: (${point.x}, ${point.y}mm)\n状态: ${getStatusName(point.state)}`;
+                g.appendChild(title);
+
+                g.appendChild(hitCircle);
+                g.appendChild(circle);
+                container.appendChild(g);
+            });
+
+            updateProgressDashboard();
+        }
+
+        function getStatusName(state) {
+            switch(state) {
+                case STATES.PENDING: return '待测';
+                case STATES.MOVING: return '移动中';
+                case STATES.SAMPLING: return '数据采集中';
+                case STATES.WAITING: return '等待中';
+                case STATES.COMPLETED: return '已完成';
+                default: return '未知';
+            }
+        }
+
+        // 单击测点交互
+        let selectedPoint = null;
+        function handlePointClick(point, element) {
+            selectedPoint = point;
+            
+            // 环形焦点效果移动到当前节点
+            const focusRing = document.getElementById('focus-ring');
+            focusRing.setAttribute('cx', point.x);
+            focusRing.setAttribute('cy', point.y);
+            focusRing.classList.remove('hidden');
+
+            // 状态循环轮转
+            const stateOrder = [STATES.PENDING, STATES.MOVING, STATES.SAMPLING, STATES.WAITING, STATES.COMPLETED];
+            let nextIndex = (stateOrder.indexOf(point.state) + 1) % stateOrder.length;
+            point.state = stateOrder[nextIndex];
+            
+            element.setAttribute('fill', STATE_COLORS[point.state]);
+            showToast(`节点 (${point.x}, ${point.y}mm) 状态变更为: ${getStatusName(point.state)}`);
+            
+            // 更新当前进展看板
+            updateProgressDashboard();
+            // 注入扰动物理数值，模拟读取真实测点数据
+            simulateFlowData(point.x, point.y);
+        }
+
+        // 更新状态统计仪表
+        function updateProgressDashboard() {
+            const total = gridPoints.length;
+            const completed = gridPoints.filter(p => p.state === STATES.COMPLETED).length;
+            const percentage = ((completed / total) * 100).toFixed(1);
+
+            document.getElementById('scan-progress').innerText = `${completed} / ${total} (${percentage}%)`;
+            document.getElementById('scan-progress-bar').style.width = `${percentage}%`;
+        }
+
+        // 重置所有点为待测状态
+        function resetAllPoints() {
+            gridPoints.forEach(p => p.state = STATES.PENDING);
+            renderGridPoints();
+            document.getElementById('focus-ring').classList.add('hidden');
+            showToast('所有测点已成功重置为 待测 状态');
+            simulateFlowData(0, 0); // 恢复静止数据
+        }
+
+        // 自动点位扫描动画模拟
+        let scanInterval = null;
+        function startAutoScan() {
+            const btn = document.getElementById('btn-scan');
+            if (scanInterval) {
+                // 停止扫描
+                clearInterval(scanInterval);
+                scanInterval = null;
+                btn.innerHTML = `<i data-lucide="play" class="w-4 h-4"></i><span>自动点位扫描</span>`;
+                btn.classList.replace('bg-amber-600', 'bg-emerald-600');
+                btn.classList.replace('hover:bg-amber-500', 'hover:bg-emerald-500');
+                lucide.createIcons();
+                showToast('点位扫描已暂停');
+                return;
+            }
+
+            showToast('开始自动寻点采集流程...');
+            btn.innerHTML = `<i data-lucide="square" class="w-4 h-4"></i><span>停止扫描</span>`;
+            btn.classList.replace('bg-emerald-600', 'bg-amber-600');
+            btn.classList.replace('hover:bg-emerald-500', 'hover:bg-amber-500');
+            lucide.createIcons();
+
+            let targetIndex = 0;
+            scanInterval = setInterval(() => {
+                // 找到第一个未测定的点
+                while (targetIndex < gridPoints.length && gridPoints[targetIndex].state === STATES.COMPLETED) {
+                    targetIndex++;
+                }
+
+                if (targetIndex >= gridPoints.length) {
+                    clearInterval(scanInterval);
+                    scanInterval = null;
+                    btn.innerHTML = `<i data-lucide="play" class="w-4 h-4"></i><span>自动点位扫描</span>`;
+                    btn.classList.replace('bg-amber-600', 'bg-emerald-600');
+                    btn.classList.replace('hover:bg-amber-500', 'hover:bg-emerald-500');
+                    lucide.createIcons();
+                    showToast('🎉 所有规划测点数据扫描完成！', 'success');
+                    return;
+                }
+
+                const pt = gridPoints[targetIndex];
+                // 模拟物理寻道及采样逻辑
+                pt.state = STATES.MOVING;
+                renderGridPoints();
+                simulateFlowData(pt.x, pt.y);
+
+                setTimeout(() => {
+                    pt.state = STATES.SAMPLING;
+                    renderGridPoints();
+                    simulateFlowData(pt.x, pt.y);
+                }, 400);
+
+                setTimeout(() => {
+                    pt.state = STATES.COMPLETED;
+                    renderGridPoints();
+                    simulateFlowData(pt.x, pt.y);
+                }, 900);
+
+                targetIndex++;
+            }, 1400);
+        }
+
+
+        // ==========================================
+        // 探针数据结构与算法修正器
+        // ==========================================
+        const probes = [
+            { id: 1, name: '探针 1', calibrated: false },
+            { id: 2, name: '探针 2', calibrated: false },
+            { id: 3, name: '探针 3', calibrated: false }
+        ];
+
+        // 核心动态数据：每个探针在当前位置的参数结构
+        const probeData = {
+            1: {
+                raw: { p1: 102452.1, p2: 101890.3, p3: 102120.4, p4: 100980.2, p5: 101340.5, pinf: 101325.0, tinf: 20.4 },
+                calc: { alpha: 1.25, beta: -0.42, ma: 0.15, v: 51.4, pt: 102450.0, ps: 101320.0 }
+            },
+            2: {
+                raw: { p1: 102455.3, p2: 101888.1, p3: 102122.9, p4: 100977.8, p5: 101338.1, pinf: 101325.0, tinf: 20.4 },
+                calc: { alpha: 1.28, beta: -0.45, ma: 0.15, v: 51.5, pt: 102452.1, ps: 101322.4 }
+            },
+            3: {
+                raw: { p1: 102448.9, p2: 101892.4, p3: 102118.2, p4: 100982.5, p5: 101342.9, pinf: 101325.0, tinf: 20.5 },
+                calc: { alpha: 1.22, beta: -0.39, ma: 0.15, v: 51.2, pt: 102447.5, ps: 101318.9 }
+            }
+        };
+
+        // 渲染探针模板DOM到集成面板中
+        function renderProbes() {
+            const container = document.getElementById('probes-container');
+            container.innerHTML = '';
+
+            probes.forEach(probe => {
+                const data = probeData[probe.id];
+                const card = document.createElement('div');
+                card.className = `bg-brand-card border border-brand-border rounded-xl p-5 shadow-lg transition-all duration-300 hover:border-slate-700 hover:shadow-xl`;
+                card.id = `probe-card-${probe.id}`;
+
+                card.innerHTML = `
+                    <!-- 探针卡片头部 -->
+                    <div class="flex items-center justify-between pb-3 border-b border-brand-border/60 mb-4">
+                        <div class="flex items-center space-x-2">
+                            <div class="p-1.5 bg-cyan-500/10 rounded text-cyan-400 border border-cyan-500/20">
+                                <i data-lucide="activity" class="w-4 h-4"></i>
+                            </div>
+                            <h3 class="font-bold text-slate-100 tracking-wider text-base">${probe.name}</h3>
+                        </div>
+                        
+                        <!-- 校准状态切换 -->
+                        <div class="flex items-center space-x-2">
+                            <span id="cal-text-${probe.id}" class="text-xs ${probe.calibrated ? 'text-emerald-400' : 'text-slate-400'} font-medium">
+                                ${probe.calibrated ? '已校准' : '无校准'}
+                            </span>
+                            <button onclick="toggleCalibration(${probe.id})" class="relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${probe.calibrated ? 'bg-emerald-500' : 'bg-slate-700'}" role="switch" aria-checked="${probe.calibrated}">
+                                <span aria-hidden="true" class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${probe.calibrated ? 'translate-x-5' : 'translate-x-0'}"></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 原始压力参数区 -->
+                    <div class="mb-5">
+                        <div class="text-xs text-slate-400 font-medium mb-2.5 flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> 原始压力测量 (Raw Pressures)
+                        </div>
+                        <div class="grid grid-cols-4 md:grid-cols-7 gap-2">
+                            <!-- P1 -->
+                            <div class="bg-slate-900/60 border border-brand-border/40 p-2 rounded text-center">
+                                <div class="text-[10px] text-slate-500 font-semibold mb-1">P1</div>
+                                <div id="p-${probe.id}-p1" class="mono-num text-xs font-bold text-violet-400">${data.raw.p1.toFixed(1)}</div>
+                            </div>
+                            <!-- P2 -->
+                            <div class="bg-slate-900/60 border border-brand-border/40 p-2 rounded text-center">
+                                <div class="text-[10px] text-slate-500 font-semibold mb-1">P2</div>
+                                <div id="p-${probe.id}-p2" class="mono-num text-xs font-bold text-cyan-400">${data.raw.p2.toFixed(1)}</div>
+                            </div>
+                            <!-- P3 -->
+                            <div class="bg-slate-900/60 border border-brand-border/40 p-2 rounded text-center">
+                                <div class="text-[10px] text-slate-500 font-semibold mb-1">P3</div>
+                                <div id="p-${probe.id}-p3" class="mono-num text-xs font-bold text-teal-400">${data.raw.p3.toFixed(1)}</div>
+                            </div>
+                            <!-- P4 -->
+                            <div class="bg-slate-900/60 border border-brand-border/40 p-2 rounded text-center">
+                                <div class="text-[10px] text-slate-500 font-semibold mb-1">P4</div>
+                                <div id="p-${probe.id}-p4" class="mono-num text-xs font-bold text-amber-500">${data.raw.p4.toFixed(1)}</div>
+                            </div>
+                            <!-- P5 -->
+                            <div class="bg-slate-900/60 border border-brand-border/40 p-2 rounded text-center">
+                                <div class="text-[10px] text-slate-500 font-semibold mb-1">P5</div>
+                                <div id="p-${probe.id}-p5" class="mono-num text-xs font-bold text-rose-500">${data.raw.p5.toFixed(1)}</div>
+                            </div>
+                            <!-- P_inf -->
+                            <div class="bg-slate-900/60 border border-brand-border/40 p-2 rounded text-center">
+                                <div class="text-[10px] text-slate-500 font-semibold mb-1">P∞</div>
+                                <div id="p-${probe.id}-pinf" class="mono-num text-xs font-bold text-emerald-400">${data.raw.pinf.toFixed(1)}</div>
+                            </div>
+                            <!-- T_inf -->
+                            <div class="bg-slate-900/60 border border-brand-border/40 p-2 rounded text-center col-span-1">
+                                <div class="text-[10px] text-slate-500 font-semibold mb-1">T∞ (°C)</div>
+                                <div id="p-${probe.id}-tinf" class="mono-num text-xs font-bold text-blue-400">${data.raw.tinf.toFixed(1)}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 插值计算结果区 -->
+                    <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+                        <div class="flex-grow">
+                            <div class="text-xs text-slate-400 font-medium mb-2.5 flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> 测值气动插值解析 (Interpolated Aerodynamics)
+                            </div>
+                            <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
+                                <!-- 攻角 alpha -->
+                                <div class="bg-slate-900/40 border border-brand-border/30 p-2.5 rounded hover:bg-slate-900/80 transition-colors">
+                                    <div class="text-[10px] text-slate-400 mb-1 flex items-center gap-1">
+                                        <span class="inline-block w-1.5 h-1.5 rounded-full bg-cyan-400"></span> 攻角 α
+                                    </div>
+                                    <div class="text-slate-100 font-bold mono-num text-sm glow-cyan">
+                                        <span id="c-${probe.id}-alpha">${data.calc.alpha.toFixed(2)}</span><span class="text-slate-500 text-xs font-normal ml-0.5">°</span>
+                                    </div>
+                                </div>
+                                <!-- 侧滑角 beta -->
+                                <div class="bg-slate-900/40 border border-brand-border/30 p-2.5 rounded hover:bg-slate-900/80 transition-colors">
+                                    <div class="text-[10px] text-slate-400 mb-1 flex items-center gap-1">
+                                        <span class="inline-block w-1.5 h-1.5 rounded-full bg-purple-400"></span> 侧滑角 β
+                                    </div>
+                                    <div class="text-slate-100 font-bold mono-num text-sm glow-magenta">
+                                        <span id="c-${probe.id}-beta">${data.calc.beta.toFixed(2)}</span><span class="text-slate-500 text-xs font-normal ml-0.5">°</span>
+                                    </div>
+                                </div>
+                                <!-- 马赫数 Ma -->
+                                <div class="bg-slate-900/40 border border-brand-border/30 p-2.5 rounded hover:bg-slate-900/80 transition-colors">
+                                    <div class="text-[10px] text-slate-400 mb-1 flex items-center gap-1">
+                                        <span class="inline-block w-1.5 h-1.5 rounded-full bg-green-400"></span> 马赫数 Ma
+                                    </div>
+                                    <div class="text-slate-100 font-bold mono-num text-sm glow-green">
+                                        <span id="c-${probe.id}-ma">${data.calc.ma.toFixed(3)}</span>
+                                    </div>
+                                </div>
+                                <!-- 速度 V -->
+                                <div class="bg-slate-900/40 border border-brand-border/30 p-2.5 rounded hover:bg-slate-900/80 transition-colors">
+                                    <div class="text-[10px] text-slate-400 mb-1 flex items-center gap-1">
+                                        <span class="inline-block w-1.5 h-1.5 rounded-full bg-red-400"></span> 速度 V
+                                    </div>
+                                    <div class="text-slate-100 font-bold mono-num text-sm glow-red">
+                                        <span id="c-${probe.id}-v">${data.calc.v.toFixed(1)}</span><span class="text-slate-500 text-[10px] font-normal ml-0.5">m/s</span>
+                                    </div>
+                                </div>
+                                <!-- 总压 Pt -->
+                                <div class="bg-slate-900/40 border border-brand-border/30 p-2.5 rounded hover:bg-slate-900/80 transition-colors">
+                                    <div class="text-[10px] text-slate-400 mb-1 flex items-center gap-1">
+                                        <span class="inline-block w-1.5 h-1.5 rounded-full bg-amber-400"></span> 总压 Pt
+                                    </div>
+                                    <div class="text-slate-100 font-bold mono-num text-xs md:text-sm glow-orange">
+                                        <span id="c-${probe.id}-pt">${Math.round(data.calc.pt)}</span><span class="text-slate-500 text-[10px] font-normal ml-0.5">Pa</span>
+                                    </div>
+                                </div>
+                                <!-- 静压 Ps -->
+                                <div class="bg-slate-900/40 border border-brand-border/30 p-2.5 rounded hover:bg-slate-900/80 transition-colors">
+                                    <div class="text-[10px] text-slate-400 mb-1 flex items-center gap-1">
+                                        <span class="inline-block w-1.5 h-1.5 rounded-full bg-teal-400"></span> 静压 Ps
+                                    </div>
+                                    <div class="text-slate-100 font-bold mono-num text-xs md:text-sm glow-teal">
+                                        <span id="c-${probe.id}-ps">${Math.round(data.calc.ps)}</span><span class="text-slate-500 text-[10px] font-normal ml-0.5">Pa</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 导出操作 -->
+                        <div class="flex md:flex-col items-stretch gap-2 shrink-0">
+                            <button onclick="exportCSV(${probe.id})" class="flex items-center justify-center gap-1.5 px-3 py-2 bg-transparent hover:bg-slate-800 transition-colors border border-cyan-500/30 hover:border-cyan-500 text-cyan-400 font-medium text-xs rounded-lg whitespace-nowrap">
+                                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                                <span>导出 CSV</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+
+            lucide.createIcons();
+        }
+
+        // 切换探针的校准状态
+        function toggleCalibration(probeId) {
+            const probe = probes.find(p => p.id === probeId);
+            if (probe) {
+                probe.calibrated = !probe.calibrated;
+                
+                // 更新UI显示
+                const calText = document.getElementById(`cal-text-${probeId}`);
+                const btn = calText.nextElementSibling;
+                const bullet = btn.querySelector('span');
+
+                if (probe.calibrated) {
+                    calText.textContent = '已校准';
+                    calText.className = 'text-xs text-emerald-400 font-medium';
+                    btn.className = btn.className.replace('bg-slate-700', 'bg-emerald-500');
+                    bullet.className = bullet.className.replace('translate-x-0', 'translate-x-5');
+                    showToast(`${probe.name} 已启用高精度二次标定算法`, 'success');
+                } else {
+                    calText.textContent = '无校准';
+                    calText.className = 'text-xs text-slate-400 font-medium';
+                    btn.className = btn.className.replace('bg-emerald-500', 'bg-slate-700');
+                    bullet.className = bullet.className.replace('translate-x-5', 'translate-x-0');
+                    showToast(`${probe.name} 已切回原始通道模拟计算`);
+                }
+
+                // 基于校准状态，对当前该探针下的测量值加一层仿真扰动计算
+                applyCalibrationShift(probeId, probe.calibrated);
+            }
+        }
+
+        // 应用校准修正公式模拟
+        function applyCalibrationShift(probeId, isCalibrated) {
+            const data = probeData[probeId];
+            if (isCalibrated) {
+                // 已校准：数据更精确更聚焦，排除部分低频噪声引起的杂波
+                data.calc.alpha += (Math.random() - 0.5) * 0.05;
+                data.calc.beta += (Math.random() - 0.5) * 0.05;
+                data.calc.pt = 101325 + (data.raw.p1 - 101325) * 0.998;
+            } else {
+                // 还原常规模拟
+                data.calc.alpha += (Math.random() - 0.5) * 0.2;
+                data.calc.beta += (Math.random() - 0.5) * 0.2;
+            }
+            updateProbeDataDOM(probeId);
+        }
+
+        // 手动局部更新探针的数据节点DOM，防止完全重渲染导致动画闪烁
+        function updateProbeDataDOM(probeId) {
+            const data = probeData[probeId];
+            
+            // 原始压力
+            document.getElementById(`p-${probeId}-p1`).innerText = data.raw.p1.toFixed(1);
+            document.getElementById(`p-${probeId}-p2`).innerText = data.raw.p2.toFixed(1);
+            document.getElementById(`p-${probeId}-p3`).innerText = data.raw.p3.toFixed(1);
+            document.getElementById(`p-${probeId}-p4`).innerText = data.raw.p4.toFixed(1);
+            document.getElementById(`p-${probeId}-p5`).innerText = data.raw.p5.toFixed(1);
+            document.getElementById(`p-${probeId}-pinf`).innerText = data.raw.pinf.toFixed(1);
+            document.getElementById(`p-${probeId}-tinf`).innerText = data.raw.tinf.toFixed(1);
+
+            // 插值结果
+            document.getElementById(`c-${probeId}-alpha`).innerText = data.calc.alpha.toFixed(2);
+            document.getElementById(`c-${probeId}-beta`).innerText = data.calc.beta.toFixed(2);
+            document.getElementById(`c-${probeId}-ma`).innerText = data.calc.ma.toFixed(3);
+            document.getElementById(`c-${probeId}-v`).innerText = data.calc.v.toFixed(1);
+            document.getElementById(`c-${probeId}-pt`).innerText = Math.round(data.calc.pt);
+            document.getElementById(`c-${probeId}-ps`).innerText = Math.round(data.calc.ps);
+        }
+
+        // ==========================================
+        // 核心仿真算法：基于物理距离生成压力和反解流场
+        // ==========================================
+        function simulateFlowData(x, y) {
+            // 用到中心点 (0, 0) 的距离模拟风洞风速场、剪切流分布
+            const dist = Math.sqrt(x * x + y * y);
+            
+            probes.forEach(probe => {
+                const data = probeData[probe.id];
+                const calFactor = probe.calibrated ? 0.985 : 1.0;
+                
+                // 1. 模拟原始通道微小振荡与差分压力
+                // 距离核心气流越近(中心)，总压越高
+                const basePress = 101325 + (30 - dist) * 55; 
+                data.raw.p1 = basePress + (Math.random() - 0.5) * 35;
+                // 差分探头各孔压力与位移偏差有关 (模拟剪切流角度)
+                data.raw.p2 = basePress - y * 45 + (Math.random() - 0.5) * 15;
+                data.raw.p3 = basePress + y * 35 + (Math.random() - 0.5) * 15;
+                data.raw.p4 = basePress - x * 40 + (Math.random() - 0.5) * 15;
+                data.raw.p5 = basePress + x * 50 + (Math.random() - 0.5) * 15;
+                
+                data.raw.pinf = 101325 + (Math.random() - 0.5) * 5;
+                data.raw.tinf = 20.4 + (Math.random() - 0.5) * 0.2;
+
+                // 2. 基于标定公式，由差分法反向计算气动力角度与气压
+                const coeffY = (data.raw.p2 - data.raw.p3) / (data.raw.p1 - (data.raw.p2 + data.raw.p3 + data.raw.p4 + data.raw.p5)/4);
+                const coeffX = (data.raw.p4 - data.raw.p5) / (data.raw.p1 - (data.raw.p2 + data.raw.p3 + data.raw.p4 + data.raw.p5)/4);
+
+                data.calc.alpha = coeffY * 8.5 * calFactor;
+                data.calc.beta = coeffX * 8.5 * calFactor;
+
+                // 模拟马赫数和流速
+                const q = Math.max(10, data.raw.p1 - data.raw.pinf); // 动压估计值
+                data.calc.v = Math.sqrt((2 * q) / 1.2) * calFactor; // 简化不可压速度公式
+                data.calc.ma = data.calc.v / 340; // 声速假设为 340m/s
+
+                // 总压与静压解算
+                data.calc.pt = data.raw.p1 + 0.1 * q * calFactor;
+                data.calc.ps = data.raw.pinf - 0.05 * q * calFactor;
+
+                updateProbeDataDOM(probe.id);
+            });
+        }
+
+        // ==========================================
+        // 真实 CSV 数据报表导出模块
+        // ==========================================
+        function exportCSV(probeId) {
+            const probe = probes.find(p => p.id === probeId);
+            const data = probeData[probeId];
+            
+            // 准备CSV文本内容
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "流场多探针测控与解析报告\n";
+            csvContent += `导出时间,${document.getElementById('system-time').innerText}\n`;
+            csvContent += `设备单元,${probe.name}\n`;
+            csvContent += `标定状态,${probe.calibrated ? '已启用高精标定' : '未校准'}\n\n`;
+            
+            csvContent += "参数类别,参数标识,测量值,单位,说明\n";
+            csvContent += `原始压力,P1,${data.raw.p1.toFixed(2)},Pa,测针中心尖端孔压\n`;
+            csvContent += `原始压力,P2,${data.raw.p2.toFixed(2)},Pa,俯仰敏感上孔压\n`;
+            csvContent += `原始压力,P3,${data.raw.p3.toFixed(2)},Pa,俯仰敏感下孔压\n`;
+            csvContent += `原始压力,P4,${data.raw.p4.toFixed(2)},Pa,偏航敏感左孔压\n`;
+            csvContent += `原始压力,P5,${data.raw.p5.toFixed(2)},Pa,偏航敏感右孔压\n`;
+            csvContent += `环境基准,P_inf,${data.raw.pinf.toFixed(2)},Pa,静默环境背景压力\n`;
+            csvContent += `环境基准,T_inf,${data.raw.tinf.toFixed(2)},°C,气流环境温度\n`;
+            
+            csvContent += `解算流场,攻角 Alpha (α),${data.calc.alpha.toFixed(4)},°,流向偏角\n`;
+            csvContent += `解算流场,侧滑角 Beta (β),${data.calc.beta.toFixed(4)},°,偏航偏角\n`;
+            csvContent += `解算流场,马赫数 Ma,${data.calc.ma.toFixed(5)},-,无量纲流速\n`;
+            csvContent += `解算流场,速度 V,${data.calc.v.toFixed(3)},m/s,空气运动流速\n`;
+            csvContent += `解算流场,总压 Pt,${data.calc.pt.toFixed(2)},Pa,解算流场总压\n`;
+            csvContent += `解算流场,静压 Ps,${data.calc.ps.toFixed(2)},Pa,解算流场静压\n`;
+
+            // 利用 blob 形式下载
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `FlowField_Report_${probe.name.replace(' ', '')}_${Date.now()}.csv`);
+            document.body.appendChild(link); // Required for FF
+
+            link.click();
+            document.body.removeChild(link);
+
+            showToast(`已成功下载 ${probe.name} 的数据报表!`, 'success');
+        }
+
+        // ==========================================
+        // 极简Toast弹窗通知
+        // ==========================================
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const bgClass = type === 'success' 
+                ? 'bg-emerald-950/90 border-emerald-500/50 text-emerald-300' 
+                : 'bg-slate-900/95 border-brand-border text-slate-200';
+            
+            const icon = type === 'success' ? 'check-circle' : 'info';
+
+            toast.className = `flex items-center space-x-2.5 px-4 py-3 rounded-lg border shadow-xl text-sm transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto max-w-sm ${bgClass}`;
+            toast.innerHTML = `
+                <i data-lucide="${icon}" class="w-4 h-4 shrink-0"></i>
+                <span class="font-medium">${message}</span>
+            `;
+
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            // 进场动画
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            // 退场销毁
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-1');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 3000);
+        }
+
+        // ==========================================
+        // 页面初始化加载
+        // ==========================================
+        window.onload = function() {
+            initGridData();
+            renderGridPoints();
+            renderProbes();
+            
+            // 设定一个初始焦点，使其一开始在视觉上饱满
+            const initPt = gridPoints.find(p => p.x === 0 && p.y === 0);
+            if (initPt) {
+                const ring = document.getElementById('focus-ring');
+                ring.setAttribute('cx', initPt.x);
+                ring.setAttribute('cy', initPt.y);
+                ring.classList.remove('hidden');
+                simulateFlowData(0, 0);
+            }
+        }
+    </script>
+</body>
+</html>

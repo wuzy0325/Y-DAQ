@@ -1,9 +1,38 @@
-nul
+# ===== 构建产物 =====
+src/build/bin/
+bin/*.exe
+bin/*.exe~
+bin/webview-data/
+src/frontend/dist/
+*.exe
+*.exe~
+
+# ===== 依赖 =====
 node_modules/
-frontend/dist/
-build/bin/
+
+# ===== 运行时数据 =====
+webview-data/
+data/
+logs/
+debug.log
+coverage.out
+*.csv
+*.out
+*.log
+
+# ===== 工具缓存 =====
+.gitnexus
+.code-review-graph/
 .codeartsdoer/
 .claude/
-.gitnexus
-# Added by code-review-graph
-.code-review-graph/
+.arts/
+.opencode/
+.task/
+tmp_gitnexus/
+graphify-out/
+*.pyc
+
+# ===== 测试输出 =====
+ThreeHoleTraversal-*.csv
+package.json.md5
+nul
