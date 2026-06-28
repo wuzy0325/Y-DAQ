@@ -64,10 +64,16 @@ func TestInitialize_DefaultName(t *testing.T) {
 func TestInitialize_InvalidPath(t *testing.T) {
 	writer := NewThreeHoleCsvWriter()
 
-	// 测试绝对路径
-	err := writer.Initialize("/root", "test.csv")
+	// 测试 savePath 指向一个已存在的文件（MkdirAll 应失败，跨平台一致）
+	tempDir := t.TempDir()
+	fileAsDir := filepath.Join(tempDir, "afile")
+	if err := os.WriteFile(fileAsDir, []byte("x"), 0644); err != nil {
+		t.Fatalf("setup failed: %v", err)
+	}
+	err := writer.Initialize(fileAsDir, "test.csv")
 	if err == nil {
-		t.Error("Expected error for absolute path")
+		t.Error("Expected error when savePath points to an existing file")
+		writer.Close()
 	}
 
 	// 测试包含路径分隔符的文件名

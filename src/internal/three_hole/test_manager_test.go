@@ -409,6 +409,23 @@ func TestCheckCancelled(t *testing.T) {
 	publisher := &MockEventPublisher{}
 	testManager := NewTestManager(publisher)
 
+	// NewTestManager 初始 ctx 为已取消状态，Start 后才重建为未取消
+	config := types.ThreeHoleTraversalConfig{
+		Layout: types.TraversalLayout{
+			Pattern: types.TraversalPatternLine,
+			Line: &types.LineLayout{
+				StartX: 0,
+				EndX:   10,
+				StartY: 0,
+				EndY:   5,
+			},
+		},
+	}
+	if _, err := testManager.Start(config); err != nil {
+		t.Fatalf("Start failed: %v", err)
+	}
+	defer testManager.Stop()
+
 	if err := testManager.CheckCancelled(); err != nil {
 		t.Errorf("Unexpected error when not cancelled: %v", err)
 	}

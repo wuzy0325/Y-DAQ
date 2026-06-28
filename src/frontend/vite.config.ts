@@ -69,6 +69,13 @@ export default defineConfig({
     globals: true,
     environment: 'happy-dom',
     include: ['src/**/*.{test,spec}.{js,ts}'],
+    server: {
+      deps: {
+        // element-plus 内部导入 theme-chalk/*.css，需经 Vite 管线处理
+        // 否则 Node ESM loader 报 "Unknown file extension .css"
+        inline: [/element-plus/],
+      },
+    },
   },
   build: {
     minify: 'terser',

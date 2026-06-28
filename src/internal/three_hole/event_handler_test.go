@@ -50,12 +50,15 @@ func TestOnTestStart_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Start failed: %v", err)
 	}
+	defer testManager.Stop()
 
 	// 初始化CSV写入器
 	err = eventHandler.OnTestStart(config)
 	if err != nil {
 		t.Fatalf("OnTestStart failed: %v", err)
 	}
+	// 确保CSV文件在TempDir清理前关闭（Windows文件锁）
+	defer csvWriter.Close()
 
 	// 验证测试管理器配置
 	actualConfig := testManager.GetConfig()
@@ -77,7 +80,7 @@ func TestOnTestStart_CsvError(t *testing.T) {
 	publisher := &MockEventPublisher{}
 	eventHandler := NewEventHandler(testManager, dataProcessor, csvWriter, publisher)
 
-	// 使用无效的路径
+	// 使用无效的文件名（路径穿越在所有平台都被 filepath.IsLocal 拒绝）
 	config := types.ThreeHoleTraversalConfig{
 		Layout: types.TraversalLayout{
 			Pattern: types.TraversalPatternLine,
@@ -89,8 +92,8 @@ func TestOnTestStart_CsvError(t *testing.T) {
 					EndY:   5,
 			},
 		},
-		SavePath: "/invalid/path/that/does/not/exist",
-		SaveFileName: "test.csv",
+		SavePath:     ".",
+		SaveFileName: "../test.csv",
 	}
 
 	err := eventHandler.OnTestStart(config)
@@ -207,12 +210,15 @@ func TestOnTestError(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Start failed: %v", err)
 	}
+	defer testManager.Stop()
 
 	// 初始化CSV写入器
 	err = eventHandler.OnTestStart(config)
 	if err != nil {
 		t.Fatalf("OnTestStart failed: %v", err)
 	}
+	// 确保CSV文件在TempDir清理前关闭（Windows文件锁）
+	defer csvWriter.Close()
 
 	// 发送测试错误
 	testErr := errors.New("test error")
@@ -291,6 +297,8 @@ func TestOnDataPointAcquired(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OnTestStart failed: %v", err)
 	}
+	// 确保CSV文件在TempDir清理前关闭（Windows文件锁）
+	defer csvWriter.Close()
 
 	// 准备测试数据
 	dataPoint := types.ThreeHoleTraversalDataPoint{
