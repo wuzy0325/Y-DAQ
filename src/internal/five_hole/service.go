@@ -160,14 +160,23 @@ func (s *FiveHoleTraversalService) GetCalibInfo(probeID string) []types.FiveHole
 // 启动 100ms ticker 协程读所有探针实时数据 + 插值 + 发射 realtime 事件（含所有探针数据）
 // 已在运行时仅更新配置；否则等待旧 goroutine 退出后再启动新的，避免新旧 goroutine 并发发射事件
 func (s *FiveHoleTraversalService) StartRealtimeMonitor(config types.FiveHoleTraversalConfig) {
-	// 等待旧 goroutine 完全退出，避免 Stop+Start 快速切换时新旧 goroutine 短暂并存
+	s.mu.Lock()
+	if s.monitorRunning.Load() {
+		// 已在运行：仅更新配置（旧 goroutine 下次迭代自动用新配置）
+		s.monitorConfig = config
+		s.mu.Unlock()
+		return
+	}
+	s.mu.Unlock()
+
+	// 等待旧 goroutine 完全退出（Stop 已调用但 Done() 尚未调用的情况）
+	// 不持锁以避免与 runRealtimeMonitor 内的 RLock 死锁
 	s.monitorWg.Wait()
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
-
+	// 双重检查：Wait 期间可能有并发 Start 启动了新 goroutine
 	if s.monitorRunning.Load() {
-		// 已在运行：仅更新配置（旧 goroutine 下次迭代自动用新配置）
 		s.monitorConfig = config
 		return
 	}

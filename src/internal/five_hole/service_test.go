@@ -3,13 +3,16 @@ package five_hole
 import (
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 
 	"yx-daq/internal/types"
 )
 
 // MockEventPublisher 用于测试的模拟事件发布器（五孔）
+// 含 sync.Mutex 保护，可安全用于 realtime monitor 等并发场景
 type MockEventPublisher struct {
+	mu             sync.Mutex
 	progressEvents []types.FiveHoleTraversalProgressEvent
 	completeEvents []types.FiveHoleTraversalCompleteEvent
 	errorEvents    []types.FiveHoleTraversalErrorEvent
@@ -17,19 +20,51 @@ type MockEventPublisher struct {
 }
 
 func (m *MockEventPublisher) EmitProgress(event types.FiveHoleTraversalProgressEvent) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.progressEvents = append(m.progressEvents, event)
 }
 
 func (m *MockEventPublisher) EmitRealtime(event types.FiveHoleTraversalRealtimeEvent) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.realtimeEvents = append(m.realtimeEvents, event)
 }
 
 func (m *MockEventPublisher) EmitComplete(event types.FiveHoleTraversalCompleteEvent) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.completeEvents = append(m.completeEvents, event)
 }
 
 func (m *MockEventPublisher) EmitError(event types.FiveHoleTraversalErrorEvent) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.errorEvents = append(m.errorEvents, event)
+}
+
+// GetRealtimeEvents 线程安全地获取已收集的 realtime 事件
+func (m *MockEventPublisher) GetRealtimeEvents() []types.FiveHoleTraversalRealtimeEvent {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.realtimeEvents
+}
+
+// RealtimeCount 线程安全地获取 realtime 事件数量
+func (m *MockEventPublisher) RealtimeCount() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return len(m.realtimeEvents)
+}
+
+// Clear 清空所有已收集事件
+func (m *MockEventPublisher) Clear() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.progressEvents = nil
+	m.completeEvents = nil
+	m.errorEvents = nil
+	m.realtimeEvents = nil
 }
 
 // makeValidFiveHoleConfig 构造一个能通过 Validate() 的最小五孔配置
