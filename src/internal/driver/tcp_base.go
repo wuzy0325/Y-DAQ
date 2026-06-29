@@ -43,8 +43,18 @@ func NewTCPDriverBase(host string, port int, channels []types.ChannelConfig) *TC
 }
 
 // SetDataCallback 设置数据回调
+// 必须加锁：receiveLoop goroutine 通过 EmitData 并发读取 b.onData
 func (b *TCPDriverBase) SetDataCallback(cb types.DataCallback) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
 	b.onData = cb
+}
+
+// getOnData 安全读取 onData 回调（与 getOnStatusChange 风格一致）
+func (b *TCPDriverBase) getOnData() types.DataCallback {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.onData
 }
 
 // SetOnStatusChange 设置状态变更回调（断连/重连成功/重连失败时触发）
@@ -233,9 +243,10 @@ func (b *TCPDriverBase) HandleDisconnect() {
 }
 
 // EmitData 发射数据到回调
+// 由 receiveLoop goroutine 调用，必须通过 getOnData 加锁读取，避免与 SetDataCallback 竞争
 func (b *TCPDriverBase) EmitData(payload types.DataPayload) {
-	if b.onData != nil {
-		b.onData(payload)
+	if cb := b.getOnData(); cb != nil {
+		cb(payload)
 	}
 }
 

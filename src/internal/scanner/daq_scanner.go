@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"strconv"
 	"strings"
 	"time"
 
@@ -56,7 +57,7 @@ func (s *DAQScanner) Scan(timeoutMs int) ([]types.DiscoveredDevice, error) {
 	// 发送广播（同时支持XY-DAQ和DAQ-T设备）
 	broadcastMsgs := [][]byte{[]byte("psi9000"), []byte("T1603")}
 	for _, addr := range broadcastAddrs {
-		target := fmt.Sprintf("%s:%d", addr, s.broadcastPort)
+		target := net.JoinHostPort(addr, strconv.Itoa(s.broadcastPort))
 		conn, err := net.Dial("udp4", target)
 		if err != nil {
 			continue

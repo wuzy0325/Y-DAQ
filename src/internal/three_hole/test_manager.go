@@ -115,13 +115,15 @@ func (tm *TestManager) Stop() {
 		tm.mu.Unlock()
 		return
 	}
+	// 在锁内捕获 cancel，避免与 Start 写入 tm.cancel 产生数据竞争
+	cancel := tm.cancel
 	tm.mu.Unlock()
 
 	tm.running.Store(false)
 	tm.paused.Store(false)
 
-	if tm.cancel != nil {
-		tm.cancel()
+	if cancel != nil {
+		cancel()
 	}
 
 	// 立即返回，不等待 goroutine 退出。
@@ -160,6 +162,13 @@ func (tm *TestManager) GetConfig() types.ThreeHoleTraversalConfig {
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
 	return tm.config
+}
+
+// SetConfig 设置当前测试配置（加锁，供 DataProcessor.StartRealtimeMonitor 安全写入）
+func (tm *TestManager) SetConfig(config types.ThreeHoleTraversalConfig) {
+	tm.mu.Lock()
+	defer tm.mu.Unlock()
+	tm.config = config
 }
 
 // UpdateDataPoints 更新数据点
@@ -245,16 +254,27 @@ func (tm *TestManager) EmitPointError(errMsg string) {
 }
 
 // emitFatalError 致命错误，停止测试
+// 仅在 Running/Paused 状态下切换到 Error，避免 Idle/Completed 下被错误调用导致状态污染
+// 错误事件始终发射（即使状态未变），便于调用方报告错误
 func (tm *TestManager) EmitFatalError(errMsg string) {
 	tm.SetLastError(errMsg)
-	tm.SetStatus(types.TraversalStatusError)
 
-	tm.running.Store(false)
-	tm.paused.Store(false)
+	tm.mu.Lock()
+	shouldTransition := tm.status.Status == types.TraversalStatusRunning || tm.status.Status == types.TraversalStatusPaused
+	if shouldTransition {
+		tm.status.Status = types.TraversalStatusError
+	}
+	taskID := tm.status.TaskID
+	tm.mu.Unlock()
+
+	if shouldTransition {
+		tm.running.Store(false)
+		tm.paused.Store(false)
+	}
 
 	if tm.eventPublisher != nil {
 		tm.eventPublisher.EmitError(types.ThreeHoleTraversalErrorEvent{
-			TaskID:  tm.status.TaskID,
+			TaskID:  taskID,
 			Error:   errMsg,
 			IsFatal: true,
 		})
@@ -263,18 +283,26 @@ func (tm *TestManager) EmitFatalError(errMsg string) {
 
 
 // CheckCancelled 检查是否已被取消
+// 在锁内捕获 ctx，避免与 Start 写入 tm.ctx 产生数据竞争
 func (tm *TestManager) CheckCancelled() error {
-	if tm.ctx.Err() != nil {
+	tm.mu.Lock()
+	ctx := tm.ctx
+	tm.mu.Unlock()
+	if ctx.Err() != nil {
 		return fmt.Errorf("canceled")
 	}
 	return nil
 }
 
 // WaitForResume 阻塞等待直到暂停解除
+// 在锁内捕获 ctx，避免与 Start 写入 tm.ctx 产生数据竞争
 func (tm *TestManager) WaitForResume() {
+	tm.mu.Lock()
+	ctx := tm.ctx
+	tm.mu.Unlock()
 	for tm.paused.Load() {
 		select {
-		case <-tm.ctx.Done():
+		case <-ctx.Done():
 			return
 		case <-time.After(100 * time.Millisecond):
 		}

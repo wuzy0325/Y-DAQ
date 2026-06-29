@@ -87,8 +87,19 @@ func (h *AcquisitionHub) GetPublishHz() int {
 }
 
 // SetOnSnapshot 设置快照回调
+// 必须加锁：StartPublishing goroutine 会并发读取 h.onSnapshot
 func (h *AcquisitionHub) SetOnSnapshot(cb func(snapshots []types.DataPayload)) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
 	h.onSnapshot = cb
+}
+
+// getOnSnapshot 加锁读取 onSnapshot 回调（与 emitStatusChange 风格一致：
+// 锁内取指针，锁外执行回调，避免回调内部再获取 h.mu 导致死锁）
+func (h *AcquisitionHub) getOnSnapshot() func(snapshots []types.DataPayload) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return h.onSnapshot
 }
 
 // ClearDevice 清除指定设备的最新数据（停止采集时调用，避免继续发布旧数据）
@@ -116,8 +127,8 @@ func (h *AcquisitionHub) StartPublishing(ctx context.Context) {
 				lastHz = curHz
 				ticker.Reset(time.Duration(1000/curHz) * time.Millisecond)
 			}
-			if h.onSnapshot != nil {
-				h.onSnapshot(h.GetSnapshot())
+			if cb := h.getOnSnapshot(); cb != nil {
+				cb(h.GetSnapshot())
 			}
 		}
 	}

@@ -6,13 +6,17 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"yx-daq/internal/types"
 )
 
 // ThreeHoleCsvWriter 三孔移位测试 CSV 写入器
+// 并发说明：OnTestStart（主 goroutine）与 OnTestComplete（runTestLoop goroutine）
+// 可能并发调用 Close/Initialize，必须用 mu 保护 file/writer/flushCnt
 type ThreeHoleCsvWriter struct {
+	mu       sync.Mutex
 	file     *os.File
 	writer   *csv.Writer
 	flushCnt int // 累计写入点数，达到阈值时 flush
@@ -48,10 +52,15 @@ func (w *ThreeHoleCsvWriter) Initialize(savePath string, fileName string) error 
 		slog.Error("write BOM to csv file failed", "err", err)
 	}
 
+	w.mu.Lock()
 	w.file = file
 	w.writer = csv.NewWriter(file)
+	w.flushCnt = 0
+	w.mu.Unlock()
 
-	// 写入表头
+	// 写入表头（writer 已加锁保护，此处通过局部变量写入）
+	w.mu.Lock()
+	defer w.mu.Unlock()
 	header := []string{
 		"点号", "X", "Y",
 		"P1", "P2", "P3", "P∞", "T∞",
@@ -68,6 +77,8 @@ func (w *ThreeHoleCsvWriter) Initialize(savePath string, fileName string) error 
 
 // AppendPoint 追加一个数据点
 func (w *ThreeHoleCsvWriter) AppendPoint(dp types.ThreeHoleTraversalDataPoint) error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
 	if w.writer == nil {
 		return fmt.Errorf("csv writer not initialized")
 	}
@@ -105,6 +116,8 @@ func (w *ThreeHoleCsvWriter) AppendPoint(dp types.ThreeHoleTraversalDataPoint) e
 
 // Close 关闭文件
 func (w *ThreeHoleCsvWriter) Close() {
+	w.mu.Lock()
+	defer w.mu.Unlock()
 	if w.writer != nil {
 		w.writer.Flush()
 	}

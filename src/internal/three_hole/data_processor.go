@@ -68,7 +68,8 @@ func (dp *DataProcessor) StartRealtimeMonitor(config types.ThreeHoleTraversalCon
 	if dp.monitorRunning.Load() {
 		return
 	}
-	dp.testManager.config = config
+	// 加锁写入 config，避免与 runTestLoop goroutine 读取 config 产生数据竞争
+	dp.testManager.SetConfig(config)
 	dp.monitorCtx, dp.monitorCancel = context.WithCancel(context.Background())
 	dp.monitorRunning.Store(true)
 
@@ -170,6 +171,9 @@ func (dp *DataProcessor) MoveToPoint(point types.TraversalPoint) error {
 	dp.testManager.EmitProgress(dp.testManager.status.TaskID, dp.testManager.status.TotalPoints,
 		dp.testManager.status.CompletedPoints, dp.testManager.status.Progress, point.X, point.Y, "moving")
 
+	// 加锁获取 config 副本，避免与 StartRealtimeMonitor 写入 config 产生数据竞争
+	cfg := dp.testManager.GetConfig()
+
 	// 并行控制Alpha和Beta轴
 	var wg sync.WaitGroup
 	errChan := make(chan error, 2)
@@ -178,7 +182,7 @@ func (dp *DataProcessor) MoveToPoint(point types.TraversalPoint) error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if err := dp.motionCtrl(dp.testManager.config.MotionAlpha.Axis, point.X); err != nil {
+		if err := dp.motionCtrl(cfg.MotionAlpha.Axis, point.X); err != nil {
 			errChan <- fmt.Errorf("move α axis to %.2f failed: %w", point.X, err)
 		}
 	}()
@@ -187,7 +191,7 @@ func (dp *DataProcessor) MoveToPoint(point types.TraversalPoint) error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if err := dp.motionCtrl(dp.testManager.config.MotionBeta.Axis, point.Y); err != nil {
+		if err := dp.motionCtrl(cfg.MotionBeta.Axis, point.Y); err != nil {
 			errChan <- fmt.Errorf("move β axis to %.2f failed: %w", point.Y, err)
 		}
 	}()
@@ -202,7 +206,7 @@ func (dp *DataProcessor) MoveToPoint(point types.TraversalPoint) error {
 
 	// 并行等待运动完成
 	if dp.motionWaiter != nil {
-		motionTimeout := dp.testManager.config.MotionTimeoutMs
+		motionTimeout := cfg.MotionTimeoutMs
 		if motionTimeout <= 0 {
 			motionTimeout = 30000
 		}
@@ -213,18 +217,18 @@ func (dp *DataProcessor) MoveToPoint(point types.TraversalPoint) error {
 		// Alpha轴等待
 		go func() {
 			defer wg.Done()
-			if err := dp.motionWaiter(dp.testManager.config.MotionAlpha.Axis, motionTimeout); err != nil {
+			if err := dp.motionWaiter(cfg.MotionAlpha.Axis, motionTimeout); err != nil {
 				dp.testManager.EmitPointError(fmt.Sprintf("α轴运动超时: %v", err))
-				slog.Warn("motion waiter α axis timeout", "axis", dp.testManager.config.MotionAlpha.Axis, "err", err)
+				slog.Warn("motion waiter α axis timeout", "axis", cfg.MotionAlpha.Axis, "err", err)
 			}
 		}()
 
 		// Beta轴等待
 		go func() {
 			defer wg.Done()
-			if err := dp.motionWaiter(dp.testManager.config.MotionBeta.Axis, motionTimeout); err != nil {
+			if err := dp.motionWaiter(cfg.MotionBeta.Axis, motionTimeout); err != nil {
 				dp.testManager.EmitPointError(fmt.Sprintf("β轴运动超时: %v", err))
-				slog.Warn("motion waiter β axis timeout", "axis", dp.testManager.config.MotionBeta.Axis, "err", err)
+				slog.Warn("motion waiter β axis timeout", "axis", cfg.MotionBeta.Axis, "err", err)
 			}
 		}()
 
@@ -239,7 +243,9 @@ func (dp *DataProcessor) DwellWithRealtimeUpdate(point types.TraversalPoint) {
 	dp.testManager.EmitProgress(dp.testManager.status.TaskID, dp.testManager.status.TotalPoints,
 		dp.testManager.status.CompletedPoints, dp.testManager.status.Progress, point.X, point.Y, "waiting")
 
-	dwellDuration := time.Duration(dp.testManager.config.DwellTimeMs) * time.Millisecond
+	// 加锁获取 config 副本，避免与 StartRealtimeMonitor 写入 config 产生数据竞争
+	cfg := dp.testManager.GetConfig()
+	dwellDuration := time.Duration(cfg.DwellTimeMs) * time.Millisecond
 	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
 
@@ -295,13 +301,15 @@ func (dp *DataProcessor) DwellWithRealtimeUpdate(point types.TraversalPoint) {
 
 // AcquireAndInterpolate 采集数据并执行插值
 func (dp *DataProcessor) AcquireAndInterpolate(point types.TraversalPoint) (types.ThreeHoleTraversalDataPoint, error) {
+	// 加锁获取 config 副本，避免与 StartRealtimeMonitor 写入 config 产生数据竞争
+	cfg := dp.testManager.GetConfig()
 	samples := []types.ThreeHoleRawData{}
 
 	// 发送采集开始事件
 	dp.testManager.EmitProgress(dp.testManager.status.TaskID, dp.testManager.status.TotalPoints,
 		dp.testManager.status.CompletedPoints, dp.testManager.status.Progress, point.X, point.Y, "acquiring")
 
-	for i := 0; i < dp.testManager.config.SamplesPerPoint; i++ {
+	for i := 0; i < cfg.SamplesPerPoint; i++ {
 		if err := dp.testManager.CheckCancelled(); err != nil {
 			return types.ThreeHoleTraversalDataPoint{}, err
 		}
@@ -332,7 +340,7 @@ func (dp *DataProcessor) AcquireAndInterpolate(point types.TraversalPoint) (type
 		}
 
 		// 采样间隔
-		intervalMs := dp.testManager.config.SampleIntervalMs
+		intervalMs := cfg.SampleIntervalMs
 		if intervalMs <= 0 {
 			intervalMs = 50
 		}
@@ -376,7 +384,9 @@ func (dp *DataProcessor) readRawData() *types.ThreeHoleRawData {
 		return nil
 	}
 
-	data, err := dp.batchGetter(dp.testManager.config.ProbeChannels)
+	// 加锁获取 config 副本，避免与 StartRealtimeMonitor 写入 config 产生数据竞争
+	cfg := dp.testManager.GetConfig()
+	data, err := dp.batchGetter(cfg.ProbeChannels)
 	if err != nil {
 		slog.Warn("readRawData batch getter failed", "err", err)
 		return nil
@@ -384,8 +394,8 @@ func (dp *DataProcessor) readRawData() *types.ThreeHoleRawData {
 
 	result := &types.ThreeHoleRawData{}
 	gotP1, gotP2, gotP3, gotPAtm := false, false, false, false
-	missingChannels := make([]int, 0, len(dp.testManager.config.ProbeChannels))
-	for _, ch := range dp.testManager.config.ProbeChannels {
+	missingChannels := make([]int, 0, len(cfg.ProbeChannels))
+	for _, ch := range cfg.ProbeChannels {
 		if !ch.Enabled {
 			continue
 		}
