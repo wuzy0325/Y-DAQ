@@ -163,8 +163,16 @@ slog.Error("load config failed", "err", err)
 | map 并发读写 | `sync.RWMutex` |
 | 复杂状态互斥 | `sync.Mutex` |
 | 跨 goroutine 标志 | `atomic.Bool` |
-| goroutine 生命周期控制 | `chan struct{}` |
+| goroutine 生命周期控制 | `context.Context`（统一规范，禁止裸 `chan struct{}`） |
 | 轮询 | `time.NewTicker` + `select` |
+| 回调字段（`onXxx`）读写 | 必须用所属结构的 `mu` 保护，禁止裸字段访问 |
+| 单实例 goroutine 守护 | `atomic.Bool.CompareAndSwap`（参考 `MotionControllerManager.StartPolling`） |
+
+> **强制规范（race detector 友好）**：
+> 1. 所有回调字段（`onData` / `onSnapshot` / `onStatusChange` / `onReconnect` 等）的读写必须经过加锁的 setter / getter（如 `getOnData()`），禁止在 goroutine 中裸读 `b.onData`。参考 `TCPDriverBase`、`AcquisitionHub`、`MotionControllerManager` 的实现。
+> 2. goroutine 取消统一用 `context.Context`，禁止用裸 `chan struct{}` 作为取消信号（`stopReconnect` 等历史代码除外，新代码必须用 ctx）。
+> 3. 跨 goroutine 状态标志统一用 `atomic.Bool` / `atomic.Int64`，禁止裸 `bool` 字段跨 goroutine 共享。
+> 4. 并发测试必须能在 `go test -race` 下通过，新增并发逻辑需补对应 `-race` 测试用例。
 
 ```go
 // 锁的正确用法：不在持有锁时调用外部函数
@@ -185,6 +193,27 @@ func (m *Manager) pollStatus() {
     m.mu.Lock()  // 写结果时再获取写锁
     ...
     m.mu.Unlock()
+}
+```
+
+```go
+// 回调字段加锁模式：锁内取指针，锁外执行回调（避免回调内部再获取 mu 导致死锁）
+func (b *Base) SetOnData(cb DataCallback) {
+    b.mu.Lock()
+    defer b.mu.Unlock()
+    b.onData = cb
+}
+
+func (b *Base) getOnData() DataCallback {
+    b.mu.RLock()
+    defer b.mu.RUnlock()
+    return b.onData
+}
+
+func (b *Base) EmitData(payload DataPayload) {
+    if cb := b.getOnData(); cb != nil {
+        cb(payload)  // 回调在锁外执行
+    }
 }
 ```
 
@@ -246,6 +275,13 @@ if math.Abs(result.X - expected.X) > 1e-6 { t.Errorf(...) }
 // 临时文件
 tmpDir := t.TempDir()
 ```
+
+并发测试规范（race detector 友好）：
+- 命名：`TestXxx_Concurrent_<Scenario>`，与功能测试区分
+- 用 `sync.WaitGroup` 同步，用 `chan struct{}` 作为停止信号
+- 运行时长用 `time.After` / `time.Sleep` 控制（建议 200ms-1s），不要用 sleep 做同步断言
+- 必须在 `go test -race` 下通过；本地一键命令 `wails3 task test:race`（需 CGO_ENABLED=1 + gcc）
+- CI 通过 `.github/workflows/go-test.yml` 自动执行 race 检测
 
 ### 1.10 健壮性（Robustness）
 

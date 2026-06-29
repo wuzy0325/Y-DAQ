@@ -5,6 +5,10 @@ import Components from 'unplugin-vue-components/vite'
 import {ElementPlusResolver} from 'unplugin-vue-components/resolvers'
 import path from 'path'
 
+// E2E 模式：Playwright webServer 通过 env 注入 E2E=true，使 Vite 将
+// @bindings / @wailsio/runtime 别名指向 e2e/mocks，前端在不接入 Go 后端的情况下运行
+const isE2E = process.env.E2E === 'true'
+
 // https://vitejs.dev/config/
 export default defineConfig({
   define: {
@@ -33,14 +37,25 @@ export default defineConfig({
   },
   resolve: {
     extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json'],
-    alias: {
-      '@': path.resolve(__dirname, 'src'),
-      '@bindings': path.resolve(__dirname, 'bindings'),
-    },
+    // E2E 下用精确路径别名把 @bindings/yx-daq/internal/{app,types} 和
+    // @wailsio/runtime 重定向到 e2e/mocks（mock 目录结构不必镜像真实 bindings）
+    alias: isE2E
+      ? [
+          { find: '@', replacement: path.resolve(__dirname, 'src') },
+          { find: '@bindings/yx-daq/internal/app', replacement: path.resolve(__dirname, 'e2e/mocks/bindings/app') },
+          { find: '@bindings/yx-daq/internal/types', replacement: path.resolve(__dirname, 'e2e/mocks/bindings/types') },
+          { find: '@wailsio/runtime', replacement: path.resolve(__dirname, 'e2e/mocks/wails-runtime.ts') },
+        ]
+      : {
+          '@': path.resolve(__dirname, 'src'),
+          '@bindings': path.resolve(__dirname, 'bindings'),
+        },
   },
   server: {
+    port: isE2E ? 5174 : 5173,
+    strictPort: true,
     watch: {
-      ignored: ['**/bindings/**', '**/dist/**'],
+      ignored: ['**/bindings/**', '**/dist/**', ...(isE2E ? ['**/e2e/**'] : [])],
     },
     fs: {
       allow: [path.resolve(__dirname)],

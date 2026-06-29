@@ -72,10 +72,10 @@ rmdir /s /q src\frontend\dist
 | Frontend tests (happy-dom) | `cd src/frontend && npm run test` (vitest) |
 | Frontend tests (watch) | `cd src/frontend && npm run test:watch` |
 | Go tests | `cd src && go test ./internal/...` |
+| Go tests (race detector, 需 CGO_ENABLED=1 + gcc) | `cd src && wails3 task test:race` |
+| Go tests (verbose + race) | `cd src && wails3 task test:verbose` |
 
-Test files (pattern: `src/**/*.{test,spec}.{js,ts}`):
-- Go: `src/internal/calibration/formulas_test.go`, `src/internal/storage/config_store_test.go`
-- Frontend: `src/frontend/src/components/__tests__/GlassCard.test.ts`, `StatusIndicator.test.ts`, `ValueDisplay.test.ts`
+Test files (pattern: `src/**/*.{test,spec}.{js,ts}`): 按 `src/internal/` 和 `src/frontend/src/` 目录分布，含 `_test.go`（Go 单元/并发/状态机测试）和 `__tests__/`（Vitest 组件测试）
 
 ## Architecture（速查）
 

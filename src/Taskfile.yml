@@ -33,3 +33,21 @@ tasks:
     summary: Runs the application in development mode
     cmds:
       - wails3 dev
+
+  test:
+    summary: Run Go unit tests
+    dir: "{{.ROOT_DIR}}"
+    cmds:
+      - go test ./internal/...
+
+  test:race:
+    summary: Run Go tests with race detector (slow, ~30s, requires CGO_ENABLED=1 + gcc)
+    dir: "{{.ROOT_DIR}}"
+    cmds:
+      - go test -race -count=1 ./internal/...
+
+  test:verbose:
+    summary: Run Go tests with verbose output and race detector
+    dir: "{{.ROOT_DIR}}"
+    cmds:
+      - go test -v -race -count=1 ./internal/...
