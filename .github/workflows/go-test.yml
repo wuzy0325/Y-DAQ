@@ -1,0 +1,43 @@
+name: Go Tests
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  # 支持手动触发，便于排查
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  race-test:
+    runs-on: windows-latest   # 项目为 Windows-only Wails 应用
+    defaults:
+      run:
+        working-directory: src
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache: true
+          cache-dependency-path: src/go.sum
+
+      - name: Go vet
+        run: go vet ./internal/...
+
+      - name: Build check
+        run: go build ./...
+
+      - name: Unit tests
+        run: go test -count=1 ./internal/...
+
+      - name: Race detector tests
+        run: go test -race -count=1 ./internal/...
+        # race detector 较慢，单独 step 便于在 Actions 日志中定位
+        env:
+          CGO_ENABLED: '1'
