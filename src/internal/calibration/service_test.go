@@ -1,6 +1,7 @@
 package calibration
 
 import (
+	"sync"
 	"testing"
 	"time"
 
@@ -8,22 +9,37 @@ import (
 )
 
 // mockEventPublisher 记录事件用于测试验证
+// runCalibrationLoop goroutine 写入事件，测试 goroutine 读取事件，必须加锁避免数据竞争
 type mockEventPublisher struct {
+	mu             sync.Mutex
 	progressEvents []types.CalibrationProgressEvent
 	realtimeEvents []types.CalibrationRealtimeEvent
 	completeEvents []types.CalibrationCompleteEvent
 }
 
 func (m *mockEventPublisher) EmitProgress(event types.CalibrationProgressEvent) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.progressEvents = append(m.progressEvents, event)
 }
 
 func (m *mockEventPublisher) EmitRealtime(event types.CalibrationRealtimeEvent) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.realtimeEvents = append(m.realtimeEvents, event)
 }
 
 func (m *mockEventPublisher) EmitComplete(event types.CalibrationCompleteEvent) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.completeEvents = append(m.completeEvents, event)
+}
+
+// getCompleteCount 加锁读取完成事件数量（供测试 goroutine 安全读取）
+func (m *mockEventPublisher) getCompleteCount() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return len(m.completeEvents)
 }
 
 func TestNewCalibrationService(t *testing.T) {
@@ -103,8 +119,8 @@ func TestStartStopLifecycle(t *testing.T) {
 	if len(status.DataPoints) != 1 {
 		t.Errorf("expected 1 data point, got %d", len(status.DataPoints))
 	}
-	if len(mock.completeEvents) != 1 {
-		t.Errorf("expected 1 complete event, got %d", len(mock.completeEvents))
+	if mock.getCompleteCount() != 1 {
+		t.Errorf("expected 1 complete event, got %d", mock.getCompleteCount())
 	}
 }
 

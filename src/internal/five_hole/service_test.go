@@ -50,6 +50,27 @@ func (m *MockEventPublisher) GetRealtimeEvents() []types.FiveHoleTraversalRealti
 	return m.realtimeEvents
 }
 
+// GetErrorEvents 线程安全地获取已收集的 error 事件
+func (m *MockEventPublisher) GetErrorEvents() []types.FiveHoleTraversalErrorEvent {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.errorEvents
+}
+
+// GetProgressEvents 线程安全地获取已收集的 progress 事件
+func (m *MockEventPublisher) GetProgressEvents() []types.FiveHoleTraversalProgressEvent {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.progressEvents
+}
+
+// GetCompleteEvents 线程安全地获取已收集的 complete 事件
+func (m *MockEventPublisher) GetCompleteEvents() []types.FiveHoleTraversalCompleteEvent {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.completeEvents
+}
+
 // RealtimeCount 线程安全地获取 realtime 事件数量
 func (m *MockEventPublisher) RealtimeCount() int {
 	m.mu.Lock()

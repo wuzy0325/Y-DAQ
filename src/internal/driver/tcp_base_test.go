@@ -1,7 +1,9 @@
 package driver
 
 import (
+	"sync"
 	"testing"
+	"time"
 
 	"yx-daq/internal/types"
 )
@@ -9,7 +11,7 @@ import (
 func TestTCPDriverBase_SetDataCallback(t *testing.T) {
 	base := NewTCPDriverBase("127.0.0.1", 9000, nil)
 
-	if base.onData != nil {
+	if base.getOnData() != nil {
 		t.Fatal("initial onData should be nil")
 	}
 
@@ -19,12 +21,12 @@ func TestTCPDriverBase_SetDataCallback(t *testing.T) {
 	}
 	base.SetDataCallback(cb)
 
-	if base.onData == nil {
+	if base.getOnData() == nil {
 		t.Fatal("onData should not be nil after SetDataCallback")
 	}
 
-	// 验证回调可被调用
-	base.onData(types.DataPayload{DeviceID: "test"})
+	// 验证回调可被调用（通过 EmitData 走加锁路径）
+	base.EmitData(types.DataPayload{DeviceID: "test"})
 	if !called {
 		t.Fatal("callback was not called")
 	}
@@ -85,4 +87,60 @@ func TestTCPDriverBase_ConnectedState(t *testing.T) {
 	if base.acquiring.Load() {
 		t.Fatal("acquiring flag should be false initially")
 	}
+}
+
+// TestTCPDriverBase_Concurrent_SetDataCallback_And_EmitData 验证并发设置回调与发射数据无数据竞争
+// N 个 goroutine 并发 SetDataCallback（含 nil）+ M 个 goroutine 并发 EmitData，运行 500ms
+// 覆盖 R2 回归：receiveLoop goroutine 调用 EmitData 读 b.onData 必须与 SetDataCallback 写互斥
+func TestTCPDriverBase_Concurrent_SetDataCallback_And_EmitData(t *testing.T) {
+	base := NewTCPDriverBase("127.0.0.1", 9000, nil)
+
+	stop := make(chan struct{})
+	var wg sync.WaitGroup
+
+	// 4 个 goroutine 并发切换回调（含 nil 回调，模拟重连/配置变更场景）
+	for i := 0; i < 4; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			for {
+				select {
+				case <-stop:
+					return
+				default:
+				}
+				if idx%2 == 0 {
+					base.SetDataCallback(func(payload types.DataPayload) {
+						// 回调内部仅消费 payload，不访问 base 字段，避免与 getOnData 锁顺序冲突
+						_ = payload.DeviceID
+					})
+				} else {
+					base.SetDataCallback(nil)
+				}
+			}
+		}(i)
+	}
+
+	// 8 个 goroutine 并发 EmitData，模拟 receiveLoop 高频调用
+	for i := 0; i < 8; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			for {
+				select {
+				case <-stop:
+					return
+				default:
+				}
+				base.EmitData(types.DataPayload{
+					DeviceID: "dev",
+					Channels: []float64{float64(idx)},
+				})
+			}
+		}(i)
+	}
+
+	time.Sleep(500 * time.Millisecond)
+	close(stop)
+	wg.Wait()
 }

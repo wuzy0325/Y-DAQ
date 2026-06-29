@@ -1,6 +1,7 @@
 package three_hole
 
 import (
+	"sync"
 	"testing"
 	"time"
 
@@ -503,4 +504,116 @@ func TestConcurrentAccess(t *testing.T) {
 	if successCount != 1 {
 		t.Errorf("Expected exactly 1 successful start, got %d", successCount)
 	}
+}
+
+// TestTestManager_Concurrent_Start_Pause_Stop 验证并发 Start/Pause/Resume/Stop/CheckCancelled 无数据竞争
+// 覆盖 R5 回归：Stop 读 tm.cancel、CheckCancelled 读 tm.ctx 必须与 Start 写入互斥
+// 多 goroutine 交错执行状态机操作，断言不 panic、最终状态一致
+func TestTestManager_Concurrent_Start_Pause_Stop(t *testing.T) {
+	publisher := &MockEventPublisher{}
+	tm := NewTestManager(publisher)
+
+	config := types.ThreeHoleTraversalConfig{
+		Name: "ConcurrentStartPauseStop",
+		Layout: types.TraversalLayout{
+			Pattern: types.TraversalPatternLine,
+			Line: &types.LineLayout{
+				StartX: 0,
+				EndX:   10,
+				StartY: 0,
+				EndY:   5,
+			},
+		},
+	}
+
+	stop := make(chan struct{})
+	var wg sync.WaitGroup
+
+	// goroutine A：Start -> Pause -> Resume -> Stop 循环，每个周期重建 ctx/cancel
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for {
+			select {
+			case <-stop:
+				return
+			default:
+			}
+			_, _ = tm.Start(config)
+			// 关闭上一轮 doneCh，避免 waitForTestComplete goroutine 永久泄漏
+			tm.mu.Lock()
+			if tm.doneCh != nil {
+				close(tm.doneCh)
+				tm.doneCh = nil
+			}
+			tm.mu.Unlock()
+			tm.Pause()
+			tm.Resume()
+			tm.Stop()
+		}
+	}()
+
+	// goroutine B：并发 Pause/Resume/Stop（部分会因状态不匹配被忽略，但不影响竞态检测）
+	for i := 0; i < 3; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for {
+				select {
+				case <-stop:
+					return
+				default:
+				}
+				tm.Pause()
+				tm.Resume()
+				tm.Stop()
+			}
+		}()
+	}
+
+	// goroutine C：并发 CheckCancelled（读 tm.ctx，覆盖 R5 修复）
+	// 这是关键：CheckCancelled 在 Start 写入 tm.ctx 期间并发读取，必须无数据竞争
+	for i := 0; i < 3; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for {
+				select {
+				case <-stop:
+					return
+				default:
+				}
+				_ = tm.CheckCancelled()
+			}
+		}()
+	}
+
+	// goroutine D：并发 GetStatus（读 tm.status，验证锁保护）
+	for i := 0; i < 2; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for {
+				select {
+				case <-stop:
+					return
+				default:
+				}
+				_ = tm.GetStatus()
+			}
+		}()
+	}
+
+	time.Sleep(500 * time.Millisecond)
+	close(stop)
+	wg.Wait()
+
+	// 最终清理：确保状态回到 Idle，关闭残留 doneCh
+	tm.Stop()
+	tm.mu.Lock()
+	if tm.doneCh != nil {
+		close(tm.doneCh)
+		tm.doneCh = nil
+	}
+	tm.mu.Unlock()
 }

@@ -2,7 +2,9 @@ package manager
 
 import (
 	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"yx-daq/internal/driver"
 	"yx-daq/internal/types"
@@ -286,4 +288,129 @@ func TestMotionManager_GetStatusAll(t *testing.T) {
 	if statuses[0].Status != types.StatusConnected {
 		t.Errorf("expected connected, got %s", statuses[0].Status)
 	}
+}
+
+// TestMotionManager_StartPolling_Concurrent_StartStop 验证 StartPolling/StopPolling 并发调用无竞态
+// 覆盖 R3 回归：CompareAndSwap 守护单实例 + context.WithCancel 取消
+// 设计要点：
+//   - 多个 goroutine 同时启动 StartPolling，CAS 应保证只有一个进入轮询循环，其余立即返回
+//   - CAS 成功的 goroutine 阻塞在 StartPolling 内部，需外部 StopPolling 唤醒
+//   - 不在 for 循环中反复调用 StartPolling，避免 CAS 成功者退出后再次 CAS 成功导致 StopPolling 漏唤醒
+func TestMotionManager_StartPolling_Concurrent_StartStop(t *testing.T) {
+	m := newTestMotionManager()
+	// 注入一个已连接的模拟控制器，让 pollStatus 有内容可轮询
+	m.AddProfile(newMCProfile("mc-1"))
+	mock := newMockMotionController()
+	mock.connected = true
+	injectMockMC(m, "mc-1", mock)
+
+	// 8 个 goroutine 同时调用 StartPolling（仅一次），CAS 竞争
+	// 期望：1 个阻塞在轮询循环，7 个 CAS 失败立即返回
+	var wg sync.WaitGroup
+	for i := 0; i < 8; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			m.StartPolling()
+		}()
+	}
+
+	// 运行 500ms，让轮询循环执行若干次 pollStatus
+	time.Sleep(500 * time.Millisecond)
+
+	// StopPolling 唤醒阻塞在 StartPolling 内部的 goroutine
+	m.StopPolling()
+
+	// 等待所有 goroutine 退出（最长 2 秒，避免死锁卡死测试）
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("StartPolling goroutines did not exit within 2s")
+	}
+}
+
+// TestMotionManager_PollStatus_During_Connect_Remove 验证轮询期间并发 Connect/RemoveProfile/GetStatusAll 无竞态
+// 覆盖 R4 回归：emitStatusChange 在 Connect/RemoveProfile 期间不产生数据竞争
+func TestMotionManager_PollStatus_During_Connect_Remove(t *testing.T) {
+	m := newTestMotionManager()
+
+	// 注册状态变更回调，让 emitStatusChange 路径被触发
+	var cbCount atomic.Int64
+	m.SetOnStatusChange(func(statuses []types.MotionControllerStatus) {
+		cbCount.Add(1)
+	})
+
+	// 预添加几个 profile，让 pollStatus 有内容
+	for i := 0; i < 3; i++ {
+		m.AddProfile(newMCProfile("mc-" + string(rune('A'+i))))
+	}
+
+	// 启动轮询（在 goroutine 中运行，测试结束时 StopPolling）
+	go m.StartPolling()
+	defer m.StopPolling()
+
+	stop := make(chan struct{})
+	var wg sync.WaitGroup
+
+	// 并发 Connect/Disconnect（模拟控制器，无 TCP 拨号）
+	for i := 0; i < 4; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			id := "mc-" + string(rune('A'+idx%3))
+			for {
+				select {
+				case <-stop:
+					return
+				default:
+				}
+				_ = m.Connect(id)
+				m.Disconnect(id)
+			}
+		}(i)
+	}
+
+	// 并发 GetStatusAll（读取 profiles/instances/runtimeStatus）
+	for i := 0; i < 4; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for {
+				select {
+				case <-stop:
+					return
+				default:
+				}
+				_ = m.GetStatusAll()
+				_ = m.GetCachedStatusAll()
+			}
+		}()
+	}
+
+	// 并发 AddProfile/RemoveProfile（修改 profiles map）
+	for i := 0; i < 2; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			for {
+				select {
+				case <-stop:
+					return
+				default:
+				}
+				id := "dyn-" + string(rune('A'+idx))
+				m.AddProfile(newMCProfile(id))
+				m.RemoveProfile(id)
+			}
+		}(i)
+	}
+
+	time.Sleep(500 * time.Millisecond)
+	close(stop)
+	wg.Wait()
 }

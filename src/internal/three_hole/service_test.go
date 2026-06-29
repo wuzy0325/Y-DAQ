@@ -51,7 +51,7 @@ func TestGenerationCheckSimple(t *testing.T) {
 		SamplesPerPoint:  1,
 		SampleIntervalMs: 10,
 		MotionTimeoutMs:  1000,
-		SavePath:         "/tmp",
+		SavePath:         t.TempDir(),
 		SaveFileName:     "test.csv",
 	}
 

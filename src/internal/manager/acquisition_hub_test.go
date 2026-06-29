@@ -1,7 +1,10 @@
 package manager
 
 import (
+	"context"
+	"sync"
 	"testing"
+	"time"
 
 	"yx-daq/internal/types"
 )
@@ -136,9 +139,116 @@ func TestAcquisitionHub_SetOnSnapshot(t *testing.T) {
 	})
 
 	h.OnData(types.DataPayload{DeviceID: "d1"})
-	// 直接调用回调（不依赖 StartPublishing goroutine）
-	h.onSnapshot(h.GetSnapshot())
+	// 直接调用回调（不依赖 StartPublishing goroutine），通过加锁读取避免数据竞争
+	if cb := h.getOnSnapshot(); cb != nil {
+		cb(h.GetSnapshot())
+	}
 	if len(got) != 1 || got[0].DeviceID != "d1" {
 		t.Errorf("snapshot callback got %v", got)
 	}
+}
+
+// TestAcquisitionHub_Concurrent_OnData_And_GetSnapshot 验证并发写入与读取无数据竞争
+// N 个 goroutine 并发 OnData + M 个 goroutine 并发 GetSnapshot/GetLatestValue，运行 500ms
+func TestAcquisitionHub_Concurrent_OnData_And_GetSnapshot(t *testing.T) {
+	h := NewAcquisitionHub()
+
+	devices := []string{"d1", "d2", "d3", "d4"}
+	stop := make(chan struct{})
+
+	var wg sync.WaitGroup
+	// N=8 写入者
+	for i := 0; i < 8; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			devID := devices[idx%len(devices)]
+			for {
+				select {
+				case <-stop:
+					return
+				default:
+				}
+				h.OnData(types.DataPayload{
+					DeviceID:       devID,
+					Channels:       []float64{float64(idx), float64(time.Now().UnixNano() % 1000)},
+					ChannelIndices: []int{0, 1},
+				})
+			}
+		}(i)
+	}
+
+	// M=8 读取者，混合 GetSnapshot / GetLatestValue / GetLatestData
+	for i := 0; i < 8; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			devID := devices[idx%len(devices)]
+			for {
+				select {
+				case <-stop:
+					return
+				default:
+				}
+				switch idx % 3 {
+				case 0:
+					_ = h.GetSnapshot()
+				case 1:
+					_, _ = h.GetLatestData(devID)
+				case 2:
+					_, _ = h.GetLatestValue(devID, 0)
+				}
+			}
+		}(i)
+	}
+
+	time.Sleep(500 * time.Millisecond)
+	close(stop)
+	wg.Wait()
+}
+
+// TestAcquisitionHub_Concurrent_SetOnSnapshot_DuringPublish 验证发布期间并发切换回调无数据竞争
+// 启动 StartPublishing，并发 SetOnSnapshot 切换回调，500ms 后 cancel 退出
+func TestAcquisitionHub_Concurrent_SetOnSnapshot_DuringPublish(t *testing.T) {
+	h := NewAcquisitionHub()
+	h.SetPublishHz(50) // 50Hz 加快触发频率
+
+	// 预填充数据，让 GetSnapshot 有内容
+	h.OnData(types.DataPayload{DeviceID: "d1", Channels: []float64{1.0}})
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go h.StartPublishing(ctx)
+
+	stop := make(chan struct{})
+	var wg sync.WaitGroup
+
+	// 4 个 goroutine 并发切换回调（含 nil 回调）
+	for i := 0; i < 4; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			for {
+				select {
+				case <-stop:
+					return
+				default:
+				}
+				if idx%2 == 0 {
+					h.SetOnSnapshot(func(snapshots []types.DataPayload) {
+						// 回调内部不获取 h.mu，避免死锁；仅消费切片
+						_ = len(snapshots)
+					})
+				} else {
+					h.SetOnSnapshot(nil)
+				}
+			}
+		}(i)
+	}
+
+	time.Sleep(500 * time.Millisecond)
+	close(stop)
+	wg.Wait()
+	cancel()
 }
