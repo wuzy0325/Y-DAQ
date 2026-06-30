@@ -41,6 +41,9 @@ type FiveHoleTraversalService struct {
 	monitorWg      sync.WaitGroup // 等待监控 goroutine 退出，避免 Stop+Start 快速切换时 race
 	// 标记是否正在执行测试，避免监控和测试数据冲突
 	testRunning atomic.Bool
+	// 实时监控 WARN 日志限频（避免 100ms 刷屏）
+	lastRealtimeWarnTime time.Time
+	lastRealtimeWarnMsg  string
 
 	eventPublisher FiveHoleEventPublisher
 }
@@ -223,12 +226,7 @@ func (s *FiveHoleTraversalService) runRealtimeMonitor() {
 		config := s.monitorConfig
 		s.mu.RUnlock()
 
-		// 配置未完成（PAtm/TAtm 设备未选）时静默跳过，避免每 100ms 刷错误日志
-		// 这是用户尚未完成配置的正常状态，不应视为错误
-		if config.PAtmDeviceID == "" || config.TAtmDeviceID == "" {
-			continue
-		}
-		// 没有启用探针也跳过
+		// 没有启用探针则跳过
 		hasEnabled := false
 		for _, p := range config.Probes {
 			if p.Enabled {
@@ -511,6 +509,9 @@ func (s *FiveHoleTraversalService) samplePoint(taskID string, point types.Traver
 			lastTimestamps,
 		)
 		if err != nil {
+			// PAtm/TAtm 等读取失败：丢弃本点位已收集的部分样本，避免混入不同 PAtm 上下文导致 3σ 失真
+			// 下轮 WaitForFreshData 会因 PAtm 设备无新帧触发 ErrDataStagnant → 自动暂停 + OnTestError
+			probeSamples = make(map[string][]types.FiveHoleRawData)
 			s.eventHandler.OnTestError(point.ID, err)
 			break
 		}
@@ -520,7 +521,11 @@ func (s *FiveHoleTraversalService) samplePoint(taskID string, point types.Traver
 		realtimeItems := make([]types.FiveHoleProbeRealtimeItem, 0, len(enabledIndices))
 		for _, idx := range enabledIndices {
 			probe := config.Probes[idx]
-			rawData := rawDatas[idx]
+			rawDataPtr := rawDatas[idx]
+			if rawDataPtr == nil {
+				continue // 该探针本轮无数据，静默跳过
+			}
+			rawData := *rawDataPtr
 			probeSamples[probe.ProbeID] = append(probeSamples[probe.ProbeID], rawData)
 
 			// 插值（占位，结果 invalid）
@@ -669,6 +674,8 @@ func (s *FiveHoleTraversalService) waitForResumeWithRealtime(taskID string, poin
 
 // emitRealtimeForAllProbes 读取所有探针实时数据 + 插值 + 发射 realtime 事件（含所有探针数据）
 // 实时监控场景不使用 timestamp 去重，每次都取当前最新帧
+// 数据缺失的探针静默跳过，不阻塞其他探针
+// PAtm/TAtm 读取失败时降级为 0 继续推送（实现"谁配置谁更新"），仅限频 WARN 提示
 func (s *FiveHoleTraversalService) emitRealtimeForAllProbes(taskID, pointID, phase string, config types.FiveHoleTraversalConfig) {
 	rawDatas, _, err := s.dataProcessor.ReadAllProbesRawData(
 		config.Probes,
@@ -677,10 +684,14 @@ func (s *FiveHoleTraversalService) emitRealtimeForAllProbes(taskID, pointID, pha
 		nil,
 	)
 	if err != nil {
-		// 实时监控场景下瞬时读取失败（设备未连接/通道暂无数据）较常见，
-		// 降级为 debug 日志避免刷屏；测试主循环中的读取失败由调用方处理
-		slog.Debug("realtime read raw data skipped", "err", err)
-		return
+		// PAtm/TAtm 读取失败：results 中各探针 P1-P5 仍完整，降级为 0 继续推送（"谁配置谁更新"）
+		// 仅限频 WARN 提示用户大气压基准不可信，但不阻塞已配置探针的实时观察
+		s.logRealtimeWarn(fmt.Sprintf("五孔实时监控 PAtm/TAtm 读取失败（已降级为0继续推送）: %v", err))
+		// 致命错误（如 batchGetter 未设置）会返回 nil rawDatas，无数据可推送
+		if rawDatas == nil {
+			return
+		}
+		// PAtm/TAtm 失败但 rawDatas 有数据，继续走下面的 results 处理
 	}
 
 	items := make([]types.FiveHoleProbeRealtimeItem, 0, len(config.Probes))
@@ -688,13 +699,21 @@ func (s *FiveHoleTraversalService) emitRealtimeForAllProbes(taskID, pointID, pha
 		if !p.Enabled {
 			continue
 		}
-		rawData := rawDatas[i]
+		rawDataPtr := rawDatas[i]
+		if rawDataPtr == nil {
+			continue // 该探针本轮无数据，静默跳过
+		}
+		rawData := *rawDataPtr
 		interp := s.calculateForProbe(p.ProbeID, rawData)
 		items = append(items, types.FiveHoleProbeRealtimeItem{
 			ProbeID:      p.ProbeID,
 			RawData:      rawData,
 			InterpResult: interp,
 		})
+	}
+
+	if len(items) == 0 {
+		return // 所有探针均无数据，跳过本次推送
 	}
 
 	evt := types.FiveHoleTraversalRealtimeEvent{
@@ -710,6 +729,18 @@ func (s *FiveHoleTraversalService) emitRealtimeForAllProbes(taskID, pointID, pha
 func (s *FiveHoleTraversalService) emitAndRecordRealtime(evt types.FiveHoleTraversalRealtimeEvent) {
 	s.testManager.EmitRealtime(evt)
 	s.realtimeRecorder.Record(evt)
+}
+
+// logRealtimeWarn 实时监控专用限频 WARN 日志（同一条消息 10 秒内只打印一次）
+// 实时监控 goroutine 单协程访问，无需加锁
+func (s *FiveHoleTraversalService) logRealtimeWarn(msg string) {
+	now := time.Now()
+	if msg == s.lastRealtimeWarnMsg && now.Sub(s.lastRealtimeWarnTime) < 10*time.Second {
+		return
+	}
+	s.lastRealtimeWarnTime = now
+	s.lastRealtimeWarnMsg = msg
+	slog.Warn(msg)
 }
 
 // calculateForProbe 对指定探针执行插值（占位算法，结果 invalid）

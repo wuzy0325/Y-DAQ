@@ -1,6 +1,7 @@
 package five_hole
 
 import (
+	"fmt"
 	"path/filepath"
 	"testing"
 	"time"
@@ -230,8 +231,8 @@ func TestService_IsRealtimeRecording_InitialFalse(t *testing.T) {
 	}
 }
 
-// TestService_RunRealtimeMonitor_NoPAtmDevice_SkipsEmit PAtmDeviceID 为空时跳过发射
-func TestService_RunRealtimeMonitor_NoPAtmDevice_SkipsEmit(t *testing.T) {
+// TestService_RunRealtimeMonitor_NoPAtmDevice_StillEmits PAtmDeviceID 为空时仍应发射事件（PAtm=0）
+func TestService_RunRealtimeMonitor_NoPAtmDevice_StillEmits(t *testing.T) {
 	publisher := &MockEventPublisher{}
 	service := NewFiveHoleTraversalService(publisher)
 	service.SetMultiDeviceBatchGetter(makeRealtimeBatchGetter5H())
@@ -244,13 +245,21 @@ func TestService_RunRealtimeMonitor_NoPAtmDevice_SkipsEmit(t *testing.T) {
 	service.StopRealtimeMonitor()
 
 	events := publisher.GetRealtimeEvents()
-	if len(events) != 0 {
-		t.Errorf("PAtmDeviceID 为空时不应发射事件，实际 %d 个", len(events))
+	if len(events) == 0 {
+		t.Error("PAtmDeviceID 为空时仍应发射事件（PAtm 默认为 0），但实际未发射")
+	}
+	// 验证 PAtm 为 0
+	for _, evt := range events {
+		for _, item := range evt.ProbeRealtime {
+			if item.RawData.PAtm != 0 {
+				t.Errorf("PAtmDeviceID 为空时 PAtm 应为 0，实际 %f", item.RawData.PAtm)
+			}
+		}
 	}
 }
 
-// TestService_RunRealtimeMonitor_NoTAtmDevice_SkipsEmit TAtmDeviceID 为空时跳过发射
-func TestService_RunRealtimeMonitor_NoTAtmDevice_SkipsEmit(t *testing.T) {
+// TestService_RunRealtimeMonitor_NoTAtmDevice_StillEmits TAtmDeviceID 为空时仍应发射事件（TAtm=0）
+func TestService_RunRealtimeMonitor_NoTAtmDevice_StillEmits(t *testing.T) {
 	publisher := &MockEventPublisher{}
 	service := NewFiveHoleTraversalService(publisher)
 	service.SetMultiDeviceBatchGetter(makeRealtimeBatchGetter5H())
@@ -263,8 +272,16 @@ func TestService_RunRealtimeMonitor_NoTAtmDevice_SkipsEmit(t *testing.T) {
 	service.StopRealtimeMonitor()
 
 	events := publisher.GetRealtimeEvents()
-	if len(events) != 0 {
-		t.Errorf("TAtmDeviceID 为空时不应发射事件，实际 %d 个", len(events))
+	if len(events) == 0 {
+		t.Error("TAtmDeviceID 为空时仍应发射事件（TAtm 默认为 0），但实际未发射")
+	}
+	// 验证 TAtm 为 0
+	for _, evt := range events {
+		for _, item := range evt.ProbeRealtime {
+			if item.RawData.TAtm != 0 {
+				t.Errorf("TAtmDeviceID 为空时 TAtm 应为 0，实际 %f", item.RawData.TAtm)
+			}
+		}
 	}
 }
 
@@ -379,9 +396,51 @@ func TestService_RunRealtimeMonitor_NoBatchGetter_NoPanic(t *testing.T) {
 	time.Sleep(250 * time.Millisecond)
 	service.StopRealtimeMonitor()
 
-	// 不应 panic（ReadAllProbesRawData 会返回错误，emitRealtimeForAllProbes 降级为 debug 日志）
+	// 不应 panic（ReadAllProbesRawData 返回 nil, err，emitRealtimeForAllProbes 限频 WARN 后直接 return）
 	events := publisher.GetRealtimeEvents()
 	if len(events) != 0 {
 		t.Errorf("batchGetter=nil 时不应发射事件，实际 %d 个", len(events))
+	}
+}
+
+// makePAtmFailingBatchGetter 返回一个对 devPAtm 报错、其他设备正常的 batchGetter
+// 用于测试 PAtm 配置后读取失败时实时监控的"谁配置谁更新"降级行为
+func makePAtmFailingBatchGetter() FiveHoleMultiDeviceBatchGetter {
+	base := makeRealtimeBatchGetter5H()
+	return func(deviceID string, channels []int) (map[int]float64, int64, error) {
+		if deviceID == "devPAtm" {
+			return nil, 0, fmt.Errorf("simulated PAtm device read failure")
+		}
+		return base(deviceID, channels)
+	}
+}
+
+// TestService_RunRealtimeMonitor_PAtmReadFails_StillEmitsWithZero PAtm 配置后读取失败时
+// 实时监控仍应降级推送（PAtm=0），已配置探针的 P1-P5 数据照常更新前端
+func TestService_RunRealtimeMonitor_PAtmReadFails_StillEmitsWithZero(t *testing.T) {
+	publisher := &MockEventPublisher{}
+	service := NewFiveHoleTraversalService(publisher)
+	service.SetMultiDeviceBatchGetter(makePAtmFailingBatchGetter())
+
+	config := makeRealtimeConfig5H(t, makeRealtimeProbe5H("probe1"))
+	service.StartRealtimeMonitor(config)
+
+	time.Sleep(300 * time.Millisecond)
+	service.StopRealtimeMonitor()
+
+	events := publisher.GetRealtimeEvents()
+	if len(events) == 0 {
+		t.Fatal("PAtm 读取失败时应仍发射事件（降级 PAtm=0，'谁配置谁更新'），但实际未发射")
+	}
+	// 验证 PAtm 降级为 0，P1-P5 数据仍正常
+	for _, evt := range events {
+		for _, item := range evt.ProbeRealtime {
+			if item.RawData.PAtm != 0 {
+				t.Errorf("PAtm 读取失败时应降级为 0，实际 %f", item.RawData.PAtm)
+			}
+			if item.RawData.P1 != 100.0 {
+				t.Errorf("P1 应仍为 100.0（探针数据不受 PAtm 失败影响），实际 %f", item.RawData.P1)
+			}
+		}
 	}
 }
