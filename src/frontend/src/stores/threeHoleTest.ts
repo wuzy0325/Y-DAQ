@@ -156,7 +156,7 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
     sampleIntervalMs: 50,
     motionTimeoutMs: 30000,
     savePath: '',
-    saveFileName: '',
+    saveFileName: `ThreeHoleTraversal-${new Date().toISOString().slice(0, 10)}`,
   })
 
   // 计算属性

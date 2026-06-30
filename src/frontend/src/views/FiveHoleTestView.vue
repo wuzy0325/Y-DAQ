@@ -339,7 +339,7 @@
                 <label class="group-label">保存路径</label>
                 <el-input v-model="store.config.savePath" placeholder="默认 ~/.yx-daq/recordings/" size="small" clearable>
                   <template #append>
-                    <el-button :icon="FolderOpened" @click="browseSavePath" />
+                    <el-button :icon="FolderOpened" class="browse-save-btn" @click="browseSavePath" />
                   </template>
                 </el-input>
               </div>
@@ -1268,6 +1268,20 @@ onUnmounted(() => {
   font-size: 11px;
   color: rgba(255,255,255,0.55);
   font-weight: 500;
+}
+
+.browse-save-btn {
+  background: rgba(0,0,0,0.25);
+  border-color: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.65);
+  &:hover {
+    background: rgba(0,0,0,0.45);
+    border-color: rgba(255,255,255,0.25);
+    color: #fff;
+  }
+  &:active {
+    background: rgba(0,0,0,0.55);
+  }
 }
 
 .range-inputs, .point-inputs {

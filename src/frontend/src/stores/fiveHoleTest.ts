@@ -69,7 +69,7 @@ function defaultConfig(): FiveHoleTraversalConfig {
     tAtmChannel: 17,
     probes: PROBE_IDS.map(defaultProbe),
     savePath: '',
-    saveFileName: '',
+    saveFileName: `FiveHoleTraversal-${new Date().toISOString().slice(0, 10)}`,
   }
 }
 
