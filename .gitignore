@@ -1,8 +1,6 @@
 # ===== 构建产物 =====
 src/build/bin/
-bin/*.exe
-bin/*.exe~
-bin/webview-data/
+bin/
 src/frontend/dist/
 *.exe
 *.exe~
@@ -36,3 +34,5 @@ graphify-out/
 ThreeHoleTraversal-*.csv
 package.json.md5
 nul
+src/frontend/.ms-playwright/
+src/frontend/e2e/test-results/
