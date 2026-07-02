@@ -28,8 +28,6 @@ tasks:
     cmds:
       - wails3 generate webview2bootstrapper -dir "{{.ROOT_DIR}}/build/windows/nsis"
       - cmd: makensis -DARG_WAILS_AMD64_BINARY="{{.ROOT_DIR}}\..\bin\yx-daq.exe" project.nsi
-      - cmd: '& "C:\Program Files (x86)\NSIS\Bin\makensis.exe" -DARG_WAILS_AMD64_BINARY="{{.ROOT_DIR}}\..\bin\yx-daq.exe" project.nsi'
-        platforms: [windows]
     vars:
       ARCH: '{{.ARCH | default "amd64"}}'
 

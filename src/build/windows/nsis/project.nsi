@@ -32,7 +32,7 @@ ManifestDPIAware true
 !insertmacro MUI_LANGUAGE "English"
 
 Name "${INFO_PRODUCTNAME}"
-OutFile "..\..\..\bin\${INFO_PROJECTNAME}-${ARCH}-installer.exe"
+OutFile "..\..\..\..\bin\${INFO_PROJECTNAME}-${ARCH}-installer.exe"
 InstallDir "$PROGRAMFILES64\${INFO_COMPANYNAME}\${INFO_PRODUCTNAME}"
 ShowInstDetails show
 
