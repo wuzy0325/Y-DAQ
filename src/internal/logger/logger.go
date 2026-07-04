@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"runtime"
 	"sync"
 	"time"
 )
@@ -22,31 +21,20 @@ var (
 	closer io.Closer
 )
 
+// Init 初始化日志系统。
+// 日志固定写入 ~/.yx-daq/logs/yx-daq-YYYY-MM-DD.log，保留 30 天。
+// 使用用户主目录避免 Program Files 等 UAC 虚拟化目录导致写入失效
+// （非管理员运行时对 Program Files 的写入会被透明重定向到 VirtualStore，
+// 导致目标路径下的文件成为 0 字节空壳）。
 func Init() error {
 	mu.Lock()
 	defer mu.Unlock()
 
-	// 优先使用可执行文件所在目录下的 logs 子目录（兼容沙箱环境）
-	if exePath, err := os.Executable(); err == nil {
-		candidate := filepath.Join(filepath.Dir(exePath), "logs")
-		if TryEnsureDir(candidate) {
-			logDir = candidate
-		}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("get user home dir: %w", err)
 	}
-
-	// 回退到系统标准目录
-	if logDir == "" {
-		if runtime.GOOS == "windows" {
-			localAppData := os.Getenv("LOCALAPPDATA")
-			if localAppData == "" {
-				localAppData = filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Local")
-			}
-			logDir = filepath.Join(localAppData, appName, "logs")
-		} else {
-			home, _ := os.UserHomeDir()
-			logDir = filepath.Join(home, ".local", "share", appName, "logs")
-		}
-	}
+	logDir = filepath.Join(home, ".yx-daq", "logs")
 
 	if err := os.MkdirAll(logDir, 0755); err != nil {
 		return fmt.Errorf("create log dir: %w", err)
