@@ -75,8 +75,8 @@
         <div class="point-legend">
           <span class="legend-item"><span class="legend-dot pending" />待测</span>
           <span class="legend-item"><span class="legend-dot moving" />移动</span>
+          <span class="legend-item"><span class="legend-dot waiting" />稳定</span>
           <span class="legend-item"><span class="legend-dot acquiring" />采集</span>
-          <span class="legend-item"><span class="legend-dot waiting" />等待</span>
           <span class="legend-item"><span class="legend-dot completed" />完成</span>
         </div>
 
@@ -658,7 +658,7 @@ const phaseLabel = computed(() => {
   const map: Record<string, string> = {
     starting: '启动中',
     moving: '移动中',
-    waiting: '等待中',
+    waiting: '稳定中',
     acquiring: '采集中',
     acquired: '已采集',
   }
@@ -1271,16 +1271,23 @@ onUnmounted(() => {
 }
 
 .browse-save-btn {
-  background: rgba(0,0,0,0.25);
-  border-color: rgba(255,255,255,0.12);
-  color: rgba(255,255,255,0.65);
-  &:hover {
-    background: rgba(0,0,0,0.45);
-    border-color: rgba(255,255,255,0.25);
+  width: 36px;
+  padding: 0;
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.9);
+  font-size: 16px;
+  &:hover,
+  &:focus {
+    background: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.35);
     color: #fff;
   }
   &:active {
-    background: rgba(0,0,0,0.55);
+    background: rgba(255,255,255,0.28);
+  }
+  :deep(.el-icon) {
+    font-size: 16px;
   }
 }
 
@@ -1355,7 +1362,7 @@ onUnmounted(() => {
   }
   :deep(.el-tabs__item) {
     font-size: 12px;
-    color: rgba(255,255,255,0.55);
+    color: rgba(255,255,255,0.85);
     background: rgba(255,255,255,0.04);
     border: 1px solid rgba(255,255,255,0.08) !important;
     border-radius: 4px 4px 0 0;
@@ -1374,7 +1381,7 @@ onUnmounted(() => {
       box-shadow: 0 -2px 8px rgba(0,245,255,0.2);
     }
     &:hover:not(.is-active) {
-      color: rgba(255,255,255,0.85);
+      color: #ffffff;
       background: rgba(255,255,255,0.08);
     }
   }
@@ -1441,33 +1448,42 @@ onUnmounted(() => {
   white-space: nowrap;
 }
 
-// 弹窗全局样式优化
-:deep(.settings-dialog) {
-  .el-dialog__header {
-    margin-right: 0;
-    padding: 16px 20px;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-  }
-  .el-dialog__title {
-    font-size: 14px;
-    font-weight: 600;
-    color: rgba(255,255,255,0.9);
-  }
-  .el-dialog__body {
-    padding: 16px 20px;
-  }
+// 注：settings-dialog 样式见文件末尾非 scoped 块（dialog 使用 append-to-body，scoped :deep 无法选中）
+</style>
+
+<style lang="scss">
+// 五孔测试设置弹窗（append-to-body，需用全局样式 + .settings-dialog 限定作用域）
+.settings-dialog {
   .el-tabs__nav-wrap::after {
     background: rgba(255,255,255,0.08);
   }
   .el-tabs__item {
-    font-size: 12px;
-    color: rgba(255,255,255,0.55);
+    font-size: 13px;
+    color: rgba(255,255,255,0.85);
+    font-weight: 500;
+    &:hover:not(.is-active) {
+      color: #ffffff;
+    }
     &.is-active {
       color: #00f5ff;
+      font-weight: 600;
     }
   }
   .el-tabs__active-bar {
     background: #00f5ff;
+  }
+
+  // 探针配置区内层 card tabs
+  .probe-tabs .el-tabs__item {
+    font-size: 12px;
+    color: rgba(255,255,255,0.8);
+    &:hover:not(.is-active) {
+      color: rgba(255,255,255,0.95);
+    }
+    &.is-active {
+      color: #00f5ff;
+      font-weight: 600;
+    }
   }
 }
 </style>

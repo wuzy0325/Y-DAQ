@@ -57,8 +57,8 @@
           <div class="point-legend">
             <span class="legend-item"><span class="legend-dot pending" />待测</span>
             <span class="legend-item"><span class="legend-dot moving" />移动</span>
+            <span class="legend-item"><span class="legend-dot waiting" />稳定</span>
             <span class="legend-item"><span class="legend-dot acquiring" />采集</span>
-            <span class="legend-item"><span class="legend-dot waiting" />等待</span>
             <span class="legend-item"><span class="legend-dot completed" />完成</span>
           </div>
           <canvas ref="pointCanvasRef" class="point-canvas" width="400" height="400" />
@@ -447,7 +447,7 @@ const phaseLabel = computed(() => {
   const map: Record<string, string> = {
     starting: '启动中',
     moving: '移动中',
-    waiting: '等待中',
+    waiting: '稳定中',
     acquiring: '采集中',
     acquired: '已采集',
   }

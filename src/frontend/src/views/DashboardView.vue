@@ -44,9 +44,11 @@
           />
           <div class="device-info">
             <span class="device-name">{{ s.name }}</span>
-            <span class="device-type">{{ s.type }}</span>
-            <span v-if="s.status === 'Connecting'" class="status-hint">连接中...</span>
-            <span v-if="s.status === 'Error'" class="status-hint error-hint">连接错误</span>
+            <div class="device-meta">
+              <span class="device-type">{{ s.type }}</span>
+              <span v-if="s.status === 'Connecting'" class="status-hint">连接中...</span>
+              <span v-if="s.status === 'Error'" class="status-hint error-hint">连接错误</span>
+            </div>
           </div>
           <span v-if="s.acquiring" class="acq-tag">采集中</span>
           <span v-if="s.acquiring && isRecording" class="rec-tag">记录中</span>
@@ -586,11 +588,15 @@ watch(() => deviceStore.isAcquiring, (acquiring) => {
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
+  // 固定行高，避免 status-hint/acq-tag/rec-tag 等条件渲染元素显示/隐藏导致行高变化
+  min-height: 56px;
+  box-sizing: border-box;
   border-radius: 8px;
   background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255,255,255,0.08);
   cursor: pointer;
-  transition: all 0.2s;
+  // 仅过渡颜色/边框，避免高度变化被过渡放大造成视觉跳动
+  transition: background-color $transition-fast, border-color $transition-fast, box-shadow $transition-fast;
 
   &:hover {
     background: rgba(255,255,255,0.08);
@@ -652,11 +658,22 @@ watch(() => deviceStore.isAcquiring, (acquiring) => {
 
 .device-name {
   font-size: 13px;
+  line-height: 18px;
   color: rgba(255,255,255,0.85);
   font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+// type 与 status-hint 同行，避免 status-hint 显示/隐藏导致行高变化引起列表跳动
+.device-meta {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  font-size: 11px;
+  line-height: 16px;
+  height: 16px;
 }
 
 .device-type {
@@ -684,6 +701,7 @@ watch(() => deviceStore.isAcquiring, (acquiring) => {
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 10px;
+  line-height: 14px;
   background: rgba($color-accent, 0.15);
   color: $color-accent;
   flex-shrink: 0;
@@ -693,6 +711,7 @@ watch(() => deviceStore.isAcquiring, (acquiring) => {
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 10px;
+  line-height: 14px;
   background: rgba($color-danger, 0.15);
   color: $color-danger;
   flex-shrink: 0;

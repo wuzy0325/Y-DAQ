@@ -21,6 +21,8 @@ export interface FiveHoleInterpolationResult {
 
 export interface FiveHoleTraversalDataPoint {
   pointId: string; probeId: string; x: number; y: number
+  alphaControllerId: string; alphaAxis: AxisNameValue
+  betaControllerId: string; betaAxis: AxisNameValue
   rawData: FiveHoleRawData; interpResult: FiveHoleInterpolationResult
   sampleCount: number; timestamp: number
 }

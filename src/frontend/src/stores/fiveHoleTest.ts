@@ -226,8 +226,8 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
         await fetchStatus()
         const status = taskStatus.value?.status
         if (status === 'idle' || status === 'completed' || status === 'error') {
+          // 仅清理 realtime（结束后无实时数据），保留 progress 以便用户查看已完成进度与布点图
           realtime.value = null
-          progress.value = null
           break
         }
         await new Promise(resolve => setTimeout(resolve, 200))
@@ -236,12 +236,10 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
       if (retries >= maxRetries) {
         console.warn('stopTest: 超时未收到停止确认，强制清理状态')
         realtime.value = null
-        progress.value = null
       }
     } catch (e) {
       console.error('stopTest failed:', e)
       realtime.value = null
-      progress.value = null
     }
   }
 
@@ -300,7 +298,7 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
         // 缓存每探针数据点，供 CSV 导出使用
         const data = event.data as FiveHoleTraversalCompleteEvent
         setCompleteData(data.probeDataPoints)
-        progress.value = null
+        // 保留 progress 以便用户查看最终布点图与进度（仅在 startTest 时清空）
         await fetchStatus()
       },
     },
@@ -309,9 +307,7 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
       handler: (event: any) => {
         const data = event.data as FiveHoleTraversalErrorEvent
         lastError.value = data.error
-        if (data.isFatal) {
-          progress.value = null
-        }
+        // 保留 progress 以便用户查看出错时已完成的进度与布点图
         // 数据停滞等非致命错误会触发自动暂停，刷新状态以同步 UI
         fetchStatus()
       },
