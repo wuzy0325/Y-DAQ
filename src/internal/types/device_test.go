@@ -11,9 +11,9 @@ func TestDeviceType_Info_KnownTypes(t *testing.T) {
 		wantIsDAQ        bool
 		wantIsTemp       bool
 	}{
-		{DeviceTypeXYDAQ8, 8, 10, 45, true, false},
-		{DeviceTypeXYDAQ16, 16, 18, 77, true, false},
-		{DeviceTypeYXDAQT, 16, 16, 0, true, true},
+		{DeviceTypeEA2508A, 8, 10, 45, true, false},
+		{DeviceTypeEA2516A, 16, 18, 77, true, false},
+		{DeviceTypeEA2516T, 16, 16, 0, true, true},
 		{DeviceTypeSimulated, 16, 18, 77, false, false},
 	}
 	for _, tc := range cases {
@@ -43,29 +43,29 @@ func TestDeviceType_Info_KnownTypes(t *testing.T) {
 
 func TestDeviceType_Info_UnknownFallsBackToDAQ16(t *testing.T) {
 	info := DeviceType("UNKNOWN").Info()
-	if info.Type != DeviceTypeXYDAQ16 {
-		t.Errorf("expected fallback to XY-DAQ16, got %q", info.Type)
+	if info.Type != DeviceTypeEA2516A {
+		t.Errorf("expected fallback to EA2516A, got %q", info.Type)
 	}
 }
 
 func TestDeviceType_Methods(t *testing.T) {
-	if DeviceTypeXYDAQ16.PressureChannelCount() != 16 {
-		t.Error("XY-DAQ16 PressureChannelCount should be 16")
+	if DeviceTypeEA2516A.PressureChannelCount() != 16 {
+		t.Error("EA2516A PressureChannelCount should be 16")
 	}
-	if DeviceTypeXYDAQ16.TotalChannelCount() != 18 {
-		t.Error("XY-DAQ16 TotalChannelCount should be 18")
+	if DeviceTypeEA2516A.TotalChannelCount() != 18 {
+		t.Error("EA2516A TotalChannelCount should be 18")
 	}
-	if DeviceTypeXYDAQ16.StreamFrameSize() != 77 {
-		t.Error("XY-DAQ16 StreamFrameSize should be 77")
+	if DeviceTypeEA2516A.StreamFrameSize() != 77 {
+		t.Error("EA2516A StreamFrameSize should be 77")
 	}
-	if !DeviceTypeXYDAQ16.IsDAQDevice() {
-		t.Error("XY-DAQ16 should be DAQ device")
+	if !DeviceTypeEA2516A.IsDAQDevice() {
+		t.Error("EA2516A should be DAQ device")
 	}
-	if DeviceTypeXYDAQ16.IsTemperatureDevice() {
-		t.Error("XY-DAQ16 should not be temperature device")
+	if DeviceTypeEA2516A.IsTemperatureDevice() {
+		t.Error("EA2516A should not be temperature device")
 	}
-	if !DeviceTypeYXDAQT.IsTemperatureDevice() {
-		t.Error("YX-DAQ-T should be temperature device")
+	if !DeviceTypeEA2516T.IsTemperatureDevice() {
+		t.Error("EA2516T should be temperature device")
 	}
 	if DeviceTypeSimulated.IsDAQDevice() {
 		t.Error("SIMULATED should not be DAQ device")
@@ -81,10 +81,68 @@ func TestAllDeviceTypes_ReturnsAllRegistered(t *testing.T) {
 	for _, info := range all {
 		seen[info.Type] = true
 	}
-	for _, want := range []DeviceType{DeviceTypeSimulated, DeviceTypeXYDAQ8, DeviceTypeXYDAQ16, DeviceTypeYXDAQT} {
+	for _, want := range []DeviceType{DeviceTypeSimulated, DeviceTypeEA2508A, DeviceTypeEA2516A, DeviceTypeEA2516T} {
 		if !seen[want] {
 			t.Errorf("AllDeviceTypes missing %q", want)
 		}
+	}
+}
+
+// TestMigrateDeviceType 旧型号到新型号的迁移映射。
+// 存量用户配置文件中保存的 "XY-DAQ8" / "XY-DAQ16" / "YX-DAQ-T" 必须能正确迁移，
+// 否则 8 通道硬件会被 fallback 到 EA2516A（16 通道）导致通道配置错位、驱动无法连接。
+func TestMigrateDeviceType(t *testing.T) {
+	cases := []struct {
+		name        string
+		input       DeviceType
+		wantMapped  DeviceType
+		wantChanged bool
+	}{
+		{"XY-DAQ8 → EA2508A", "XY-DAQ8", DeviceTypeEA2508A, true},
+		{"XY-DAQ16 → EA2516A", "XY-DAQ16", DeviceTypeEA2516A, true},
+		{"YX-DAQ-T → EA2516T", "YX-DAQ-T", DeviceTypeEA2516T, true},
+		{"EA2508A 不变", DeviceTypeEA2508A, DeviceTypeEA2508A, false},
+		{"EA2516A 不变", DeviceTypeEA2516A, DeviceTypeEA2516A, false},
+		{"EA2516T 不变", DeviceTypeEA2516T, DeviceTypeEA2516T, false},
+		{"SIMULATED 不变", DeviceTypeSimulated, DeviceTypeSimulated, false},
+		{"未知型号不迁移", "UNKNOWN-XYZ", "UNKNOWN-XYZ", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, changed := MigrateDeviceType(tc.input)
+			if got != tc.wantMapped {
+				t.Errorf("mapped = %q, want %q", got, tc.wantMapped)
+			}
+			if changed != tc.wantChanged {
+				t.Errorf("changed = %v, want %v", changed, tc.wantChanged)
+			}
+		})
+	}
+}
+
+// TestMigrateMotionControllerType B140-MC → EA25MC04 迁移
+func TestMigrateMotionControllerType(t *testing.T) {
+	cases := []struct {
+		name        string
+		input       MotionControllerType
+		wantMapped  MotionControllerType
+		wantChanged bool
+	}{
+		{"B140-MC → EA25MC04", "B140-MC", MotionTypeEA25MC04, true},
+		{"EA25MC04 不变", MotionTypeEA25MC04, MotionTypeEA25MC04, false},
+		{"SIMULATED-MC 不变", MotionTypeSimulated, MotionTypeSimulated, false},
+		{"未知型号不迁移", "UNKNOWN-MC", "UNKNOWN-MC", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, changed := MigrateMotionControllerType(tc.input)
+			if got != tc.wantMapped {
+				t.Errorf("mapped = %q, want %q", got, tc.wantMapped)
+			}
+			if changed != tc.wantChanged {
+				t.Errorf("changed = %v, want %v", changed, tc.wantChanged)
+			}
+		})
 	}
 }
 

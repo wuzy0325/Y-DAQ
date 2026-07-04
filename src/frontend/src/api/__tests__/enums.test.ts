@@ -22,9 +22,9 @@ describe('enums', () => {
     it('应有 4 种设备类型', () => {
       expect(Object.keys(DeviceType)).toHaveLength(4)
       expect(DeviceType.SIMULATED).toBe('SIMULATED')
-      expect(DeviceType.XY_DAQ8).toBe('XY-DAQ8')
-      expect(DeviceType.XY_DAQ16).toBe('XY-DAQ16')
-      expect(DeviceType.YX_DAQT).toBe('YX-DAQ-T')
+      expect(DeviceType.EA2508A).toBe('EA2508A')
+      expect(DeviceType.EA2516A).toBe('EA2516A')
+      expect(DeviceType.EA2516T).toBe('EA2516T')
     })
 
     it('DeviceTypeLabels 应覆盖所有类型', () => {
@@ -47,43 +47,43 @@ describe('enums', () => {
       }
     })
 
-    it('YX_DAQT 应为温度设备（isTemperature=true, defaultUnit=°C）', () => {
-      expect(deviceTypeRegistry[DeviceType.YX_DAQT].isTemperature).toBe(true)
-      expect(deviceTypeRegistry[DeviceType.YX_DAQT].defaultUnit).toBe('°C')
+    it('EA2516T 应为温度设备（isTemperature=true, defaultUnit=°C）', () => {
+      expect(deviceTypeRegistry[DeviceType.EA2516T].isTemperature).toBe(true)
+      expect(deviceTypeRegistry[DeviceType.EA2516T].defaultUnit).toBe('°C')
     })
 
     it('非 DAQT 设备应为压力设备（isTemperature=false）', () => {
-      expect(deviceTypeRegistry[DeviceType.XY_DAQ8].isTemperature).toBe(false)
-      expect(deviceTypeRegistry[DeviceType.XY_DAQ16].isTemperature).toBe(false)
+      expect(deviceTypeRegistry[DeviceType.EA2508A].isTemperature).toBe(false)
+      expect(deviceTypeRegistry[DeviceType.EA2516A].isTemperature).toBe(false)
       expect(deviceTypeRegistry[DeviceType.SIMULATED].isTemperature).toBe(false)
     })
   })
 
   describe('getDeviceInfo', () => {
     it('已知类型返回对应信息', () => {
-      const info = getDeviceInfo(DeviceType.XY_DAQ8)
-      expect(info.type).toBe('XY-DAQ8')
+      const info = getDeviceInfo(DeviceType.EA2508A)
+      expect(info.type).toBe('EA2508A')
       expect(info.pressureChCount).toBe(8)
       expect(info.totalChCount).toBe(10)
     })
 
-    it('未知类型回退到 XY_DAQ16', () => {
+    it('未知类型回退到 EA2516A', () => {
       const info = getDeviceInfo('unknown' as any)
-      expect(info.type).toBe('XY-DAQ16')
+      expect(info.type).toBe('EA2516A')
     })
   })
 
   describe('getTotalChannelCount', () => {
-    it('XY_DAQ8 总通道数 = 10', () => {
-      expect(getTotalChannelCount(DeviceType.XY_DAQ8)).toBe(10)
+    it('EA2508A 总通道数 = 10', () => {
+      expect(getTotalChannelCount(DeviceType.EA2508A)).toBe(10)
     })
 
-    it('XY_DAQ16 总通道数 = 18（16 压力 + 大气压 + 大气温度）', () => {
-      expect(getTotalChannelCount(DeviceType.XY_DAQ16)).toBe(18)
+    it('EA2516A 总通道数 = 18（16 压力 + 大气压 + 大气温度）', () => {
+      expect(getTotalChannelCount(DeviceType.EA2516A)).toBe(18)
     })
 
-    it('YX_DAQT 总通道数 = 16', () => {
-      expect(getTotalChannelCount(DeviceType.YX_DAQT)).toBe(16)
+    it('EA2516T 总通道数 = 16', () => {
+      expect(getTotalChannelCount(DeviceType.EA2516T)).toBe(16)
     })
   })
 

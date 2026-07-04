@@ -34,7 +34,7 @@ const (
 	CommandTimeoutMs = 2000
 )
 
-// DAQ-T-1603 热电偶采集设备常量
+// EA2516T 热电偶采集设备常量
 const (
 	DAQTDefaultHost       = "192.168.1.7"
 	DAQTDefaultPort       = 9000

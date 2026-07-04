@@ -65,9 +65,9 @@ export enum ConnectionStatus {
 export enum DeviceType {
   $zero = '',
   DeviceTypeSimulated = 'SIMULATED',
-  DeviceTypeXYDAQ8 = 'XY-DAQ8',
-  DeviceTypeXYDAQ16 = 'XY-DAQ16',
-  DeviceTypeYXDAQT = 'YX-DAQ-T',
+  DeviceTypeEA2508A = 'EA2508A',
+  DeviceTypeEA2516A = 'EA2516A',
+  DeviceTypeEA2516T = 'EA2516T',
 }
 
 export enum FiveHoleChannelRole {
@@ -84,7 +84,7 @@ export enum FiveHoleChannelRole {
 export enum MotionControllerType {
   $zero = '',
   MotionTypeSimulated = 'SIMULATED-MC',
-  MotionTypeB140 = 'B140-MC',
+  MotionTypeEA25MC04 = 'EA25MC04',
 }
 
 export enum ProbeChannelRole {

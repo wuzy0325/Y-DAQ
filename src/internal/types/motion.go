@@ -23,8 +23,24 @@ type MotionControllerType string
 
 const (
 	MotionTypeSimulated MotionControllerType = "SIMULATED-MC"
-	MotionTypeB140      MotionControllerType = "B140-MC"
+	MotionTypeEA25MC04  MotionControllerType = "EA25MC04"
 )
+
+// legacyMotionTypeAliases 旧运动控制器型号到新型号的迁移映射。
+// 历史配置文件（~/.yx-daq/motion.json）中可能保存 "B140-MC"，升级后 controllerFactories 无法识别。
+// 在 MotionControllerManager.Init() 加载配置后调用 MigrateMotionControllerType 做一次性迁移并写回。
+var legacyMotionTypeAliases = map[MotionControllerType]MotionControllerType{
+	"B140-MC": MotionTypeEA25MC04,
+}
+
+// MigrateMotionControllerType 将旧运动控制器型号字符串迁移到新型号。
+// 返回 (mapped, changed)：changed=true 表示发生迁移，调用方需持久化。
+func MigrateMotionControllerType(t MotionControllerType) (mapped MotionControllerType, changed bool) {
+	if newType, ok := legacyMotionTypeAliases[t]; ok {
+		return newType, true
+	}
+	return t, false
+}
 
 // EncoderCompensationConfig 编码器补偿配置
 type EncoderCompensationConfig struct {

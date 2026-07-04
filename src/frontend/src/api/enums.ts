@@ -3,9 +3,9 @@
 // 设备类型
 export const DeviceType = {
   SIMULATED: 'SIMULATED',
-  XY_DAQ8: 'XY-DAQ8',
-  XY_DAQ16: 'XY-DAQ16',
-  YX_DAQT: 'YX-DAQ-T',
+  EA2508A: 'EA2508A',
+  EA2516A: 'EA2516A',
+  EA2516T: 'EA2516T',
 } as const
 
 export type DeviceTypeValue = typeof DeviceType[keyof typeof DeviceType]
@@ -13,9 +13,9 @@ export type DeviceTypeValue = typeof DeviceType[keyof typeof DeviceType]
 // 设备类型中文标签
 export const DeviceTypeLabels: Record<DeviceTypeValue, string> = {
   [DeviceType.SIMULATED]: '模拟设备',
-  [DeviceType.XY_DAQ8]: 'XY-DAQ8',
-  [DeviceType.XY_DAQ16]: 'XY-DAQ16',
-  [DeviceType.YX_DAQT]: 'DAQ-T-1603',
+  [DeviceType.EA2508A]: 'EA2508A',
+  [DeviceType.EA2516A]: 'EA2516A',
+  [DeviceType.EA2516T]: 'EA2516T',
 }
 
 export interface DeviceTypeInfo {
@@ -24,36 +24,37 @@ export interface DeviceTypeInfo {
   pressureChCount: number
   totalChCount: number
   isTemperature: boolean
+  isRealDAQ: boolean
   defaultHost: string
   defaultPort: number
   defaultUnit: string
 }
 
 export const deviceTypeRegistry: Record<DeviceTypeValue, DeviceTypeInfo> = {
-  [DeviceType.XY_DAQ8]: {
-    type: 'XY-DAQ8', label: 'XY-DAQ8',
-    pressureChCount: 8, totalChCount: 10, isTemperature: false,
+  [DeviceType.EA2508A]: {
+    type: 'EA2508A', label: 'EA2508A',
+    pressureChCount: 8, totalChCount: 10, isTemperature: false, isRealDAQ: true,
     defaultHost: '192.168.3.101', defaultPort: 9000, defaultUnit: 'kPa',
   },
-  [DeviceType.XY_DAQ16]: {
-    type: 'XY-DAQ16', label: 'XY-DAQ16',
-    pressureChCount: 16, totalChCount: 18, isTemperature: false,
+  [DeviceType.EA2516A]: {
+    type: 'EA2516A', label: 'EA2516A',
+    pressureChCount: 16, totalChCount: 18, isTemperature: false, isRealDAQ: true,
     defaultHost: '192.168.3.101', defaultPort: 9000, defaultUnit: 'kPa',
   },
-  [DeviceType.YX_DAQT]: {
-    type: 'YX-DAQ-T', label: 'DAQ-T-1603',
-    pressureChCount: 16, totalChCount: 16, isTemperature: true,
+  [DeviceType.EA2516T]: {
+    type: 'EA2516T', label: 'EA2516T',
+    pressureChCount: 16, totalChCount: 16, isTemperature: true, isRealDAQ: true,
     defaultHost: '192.168.1.7', defaultPort: 9000, defaultUnit: '°C',
   },
   [DeviceType.SIMULATED]: {
     type: 'SIMULATED', label: '模拟设备',
-    pressureChCount: 16, totalChCount: 18, isTemperature: false,
+    pressureChCount: 16, totalChCount: 18, isTemperature: false, isRealDAQ: false,
     defaultHost: '127.0.0.1', defaultPort: 9000, defaultUnit: 'kPa',
   },
 }
 
 export function getDeviceInfo(type: DeviceTypeValue): DeviceTypeInfo {
-  return deviceTypeRegistry[type] || deviceTypeRegistry[DeviceType.XY_DAQ16]
+  return deviceTypeRegistry[type] || deviceTypeRegistry[DeviceType.EA2516A]
 }
 
 // 设备类型对应的总通道数（压力 + 大气压 + 大气温度）

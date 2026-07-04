@@ -9,7 +9,7 @@ import (
 	"yx-daq/internal/types"
 )
 
-// YXDAQTDriver DAQ-T-1603 热电偶采集设备驱动
+// YXDAQTDriver EA2516T 热电偶采集设备驱动
 // 嵌入 TCPDriverBase 复用连接/重连/接收循环等通用逻辑
 // 组合 FrameParser 策略实现可替换的帧解析
 type YXDAQTDriver struct {
@@ -25,7 +25,7 @@ type YXDAQTDriver struct {
 	onConfigSynced  func(DAQTHardwareConfig) // 配置同步完成回调
 }
 
-// NewYXDAQTDriver 创建 DAQ-T-1603 驱动
+// NewYXDAQTDriver 创建 EA2516T 驱动
 func NewYXDAQTDriver(host string, port int, channels []types.ChannelConfig) *YXDAQTDriver {
 	d := &YXDAQTDriver{
 		TCPDriverBase: NewTCPDriverBase(host, port, channels),

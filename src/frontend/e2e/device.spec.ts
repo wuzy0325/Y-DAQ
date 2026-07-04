@@ -8,7 +8,7 @@ import { test, expect } from './fixtures'
  */
 
 /** 通过 UI 添加一个设备（取消自动连接，避免 1s 等待），返回设备名 */
-async function addDeviceViaUI(page: import('@playwright/test').Page, name: string, type = 'XY-DAQ16') {
+async function addDeviceViaUI(page: import('@playwright/test').Page, name: string, type = 'EA2516A') {
   await page.getByRole('button', { name: '添加设备' }).click()
   await expect(page.locator('.el-dialog').filter({ hasText: '添加设备' })).toBeVisible()
   await page.locator('.device-dialog .el-input__inner').first().fill(name)
@@ -30,14 +30,14 @@ test.describe('设备管理', () => {
     await expect(page).toHaveURL(/#\/device/)
   })
 
-  test('添加设备（XY-DAQ16）', async ({ page }) => {
+  test('添加设备（EA2516A）', async ({ page }) => {
     await page.getByRole('button', { name: '添加设备' }).click()
     await expect(page.locator('.el-dialog').filter({ hasText: '添加设备' })).toBeVisible()
 
     // 填写名称
     await page.locator('.device-dialog .el-input__inner').first().fill('测试设备A')
 
-    // 类型默认 XY-DAQ16，确认 host/port 已自动填充
+    // 类型默认 EA2516A，确认 host/port 已自动填充
     await expect(page.locator('.device-dialog input[placeholder="192.168.3.101"]')).toHaveValue('192.168.3.101')
 
     // 取消自动连接
@@ -52,7 +52,7 @@ test.describe('设备管理', () => {
     // 验证：成功消息 + 设备出现在表格
     await expect(page.locator('.el-message--success')).toBeVisible()
     await expect(page.locator('.device-table')).toContainText('测试设备A')
-    await expect(page.locator('.device-table')).toContainText('XY-DAQ16')
+    await expect(page.locator('.device-table')).toContainText('EA2516A')
   })
 
   test('添加设备（模拟设备 SIMULATED）', async ({ page }) => {

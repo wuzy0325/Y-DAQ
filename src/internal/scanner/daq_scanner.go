@@ -11,13 +11,13 @@ import (
 	"yx-daq/internal/types"
 )
 
-// DAQScanner XY-DAQ/DAQ-T UDP设备扫描器（DAQ8/DAQ16/DAQ-T-1603通用）
+// DAQScanner EA25系列 UDP设备扫描器（EA2508A/EA2516A/EA2516T通用）
 type DAQScanner struct {
 	listenPort    int
 	broadcastPort int
 }
 
-// daqTDiscoveryResponse DAQ-T设备JSON发现响应
+// daqTDiscoveryResponse EA2516T 设备 JSON 发现响应
 type daqTDiscoveryResponse struct {
 	IP              string `json:"ip"`
 	MAC             string `json:"mac"`
@@ -54,7 +54,7 @@ func (s *DAQScanner) Scan(timeoutMs int) ([]types.DiscoveredDevice, error) {
 		return nil, err
 	}
 
-	// 发送广播（同时支持XY-DAQ和DAQ-T设备）
+	// 发送广播（同时支持 EA25 系列 EA2508A/EA2516A/EA2516T 设备）
 	broadcastMsgs := [][]byte{[]byte("psi9000"), []byte("T1603")}
 	for _, addr := range broadcastAddrs {
 		target := net.JoinHostPort(addr, strconv.Itoa(s.broadcastPort))
@@ -93,10 +93,10 @@ func (s *DAQScanner) Scan(timeoutMs int) ([]types.DiscoveredDevice, error) {
 
 // parseResponse 解析扫描响应
 // 支持两种格式：
-//   - JSON（DAQ-T设备）: {"ip":"...","mac":"...","serialNumber":"...","model":"...","firmwareVersion":"...","port":9000,...}
-//   - CSV（XY-DAQ设备）: IP,MAC,_,SN,FW,_,_,Port,Mask,GW
+//   - JSON（EA2516T 设备）: {"ip":"...","mac":"...","serialNumber":"...","model":"...","firmwareVersion":"...","port":9000,...}
+//   - CSV（EA2508A/EA2516A 设备）: IP,MAC,_,SN,FW,_,_,Port,Mask,GW
 func (s *DAQScanner) parseResponse(resp string) (types.DiscoveredDevice, bool) {
-	// 尝试JSON格式解析（DAQ-T设备）
+	// 尝试JSON格式解析（EA2516T 设备）
 	if strings.HasPrefix(strings.TrimSpace(resp), "{") {
 		var jr daqTDiscoveryResponse
 		if err := json.Unmarshal([]byte(resp), &jr); err == nil && jr.IP != "" {
@@ -110,7 +110,7 @@ func (s *DAQScanner) parseResponse(resp string) (types.DiscoveredDevice, bool) {
 		}
 	}
 
-	// 回退到CSV格式解析（XY-DAQ设备）
+	// 回退到 CSV 格式解析（EA2508A/EA2516A 设备）
 	parts := strings.Split(resp, ",")
 	if len(parts) < 10 {
 		return types.DiscoveredDevice{}, false

@@ -7,8 +7,8 @@ import { test, expect } from './fixtures'
  * MotionView 使用卡片列表（非表格），删除使用自定义弹窗（非 ElMessageBox）。
  */
 
-/** 通过 UI 添加一个 B140 控制器 */
-async function addControllerViaUI(page: import('@playwright/test').Page, name: string, type = 'B140 运动控制器') {
+/** 通过 UI 添加一个 EA25MC04 控制器 */
+async function addControllerViaUI(page: import('@playwright/test').Page, name: string, type = 'EA25MC04 运动控制器') {
   await page.locator('.controller-sidebar').getByRole('button', { name: '添加', exact: true }).click()
   const dialog = page.locator('.el-dialog').filter({ hasText: '添加控制器' })
   await expect(dialog).toBeVisible()
@@ -34,12 +34,12 @@ test.describe('运动控制器', () => {
     await expect(page).toHaveURL(/#\/motion/)
   })
 
-  test('添加控制器（B140）', async ({ page }) => {
+  test('添加控制器（EA25MC04）', async ({ page }) => {
     await addControllerViaUI(page, '测试控制器A')
     // 验证卡片出现
     const card = controllerCard(page, '测试控制器A')
     await expect(card).toBeVisible()
-    await expect(card).toContainText('B140')
+    await expect(card).toContainText('EA25MC04')
     await expect(card).toContainText('未连接')
   })
 

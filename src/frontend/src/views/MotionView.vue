@@ -144,7 +144,7 @@
           </el-form-item>
           <el-form-item label="类型">
             <el-select v-model="newController.type" style="width: 100%">
-              <el-option label="B140 运动控制器" value="B140-MC" />
+              <el-option label="EA25MC04 运动控制器" value="EA25MC04" />
               <el-option label="模拟控制器" value="SIMULATED-MC" />
             </el-select>
           </el-form-item>
@@ -475,7 +475,7 @@ function statusLabel(status: string): string {
 }
 
 function typeLabel(type: string): string {
-  if (type === 'B140-MC') return 'B140'
+  if (type === 'EA25MC04') return 'EA25MC04'
   if (type === 'SIMULATED-MC') return '模拟'
   return type
 }
@@ -489,7 +489,7 @@ const showAddDialog = ref(false)
 const adding = ref(false)
 const newController = ref({
   name: '',
-  type: 'B140-MC',
+  type: 'EA25MC04',
   address: '192.168.1.101',
   port: 5000,
   timeoutMs: 5000,
@@ -498,7 +498,7 @@ const newController = ref({
 function openAddDialog() {
   newController.value = {
     name: '',
-    type: 'B140-MC',
+    type: 'EA25MC04',
     address: '192.168.1.101',
     port: 5000,
     timeoutMs: 5000,
@@ -507,7 +507,7 @@ function openAddDialog() {
 }
 
 watch(() => newController.value.type, (t) => {
-  if (t === 'B140-MC') {
+  if (t === 'EA25MC04') {
     newController.value.address = '192.168.1.101'
     newController.value.port = 5000
   } else {
@@ -521,7 +521,7 @@ async function addController() {
     ElMessage.warning('请输入控制器名称')
     return
   }
-  if (newController.value.type === 'B140-MC') {
+  if (newController.value.type === 'EA25MC04') {
     if (!newController.value.address.trim()) {
       ElMessage.warning('请输入地址')
       return

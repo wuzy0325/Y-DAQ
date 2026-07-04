@@ -166,7 +166,7 @@ test.describe('三孔测试', () => {
     await expect(page.locator('.el-dialog').filter({ hasText: '添加设备' })).toBeVisible()
     await page.locator('.device-dialog .el-input__inner').first().fill('三孔测试设备')
     await page.locator('.device-dialog .el-select').first().click()
-    await page.locator('.el-select-dropdown__item', { hasText: 'XY-DAQ16' }).click()
+    await page.locator('.el-select-dropdown__item', { hasText: 'EA2516A' }).click()
     // 取消自动连接
     const autoSwitch = page.locator('.device-dialog .auto-connect-row .el-switch').first()
     if (await autoSwitch.evaluate((el: HTMLElement) => el.classList.contains('is-checked'))) {

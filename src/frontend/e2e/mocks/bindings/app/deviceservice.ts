@@ -125,8 +125,8 @@ export function ScanDevices(): Promise<any[]> {
   __logCall('ScanDevices', [])
   // 返回 2 个模拟发现设备
   return Promise.resolve([
-    { ip: '192.168.3.101', mac: 'AA:BB:CC:DD:00:01', type: 'XY-DAQ16' },
-    { ip: '192.168.3.102', mac: 'AA:BB:CC:DD:00:02', type: 'XY-DAQ8' },
+    { ip: '192.168.3.101', mac: 'AA:BB:CC:DD:00:01', type: 'EA2516A' },
+    { ip: '192.168.3.102', mac: 'AA:BB:CC:DD:00:02', type: 'EA2508A' },
   ])
 }
 
