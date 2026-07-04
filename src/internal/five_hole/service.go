@@ -362,7 +362,12 @@ func (s *FiveHoleTraversalService) runTestLoop(taskID string, config types.FiveH
 
 	s.testManager.EmitProgress(taskID, totalPoints, 0, 0, 0, 0, "starting")
 
-	defer func() { s.eventHandler.OnTestComplete(taskID, s.testManager.GetStatus().Status) }()
+	// 测试循环退出时（自然完成 / 取消 / 致命错误）必须重置 testRunning，
+	// 否则 runRealtimeMonitor 会因 testRunning=true 永远 continue，导致测试完成后画面数据不再更新
+	defer func() {
+		s.testRunning.Store(false)
+		s.eventHandler.OnTestComplete(taskID, s.testManager.GetStatus().Status)
+	}()
 
 	// 保存当前代际号，用于检测是否被新测试取代
 	myGen := s.testManager.testGen.Load()
@@ -582,14 +587,18 @@ func (s *FiveHoleTraversalService) aggregateProbeData(point types.TraversalPoint
 		interp := s.calculateForProbe(probe.ProbeID, avgData)
 
 		dataPoint := types.FiveHoleTraversalDataPoint{
-			PointID:      point.ID,
-			ProbeID:      probe.ProbeID,
-			X:            point.X,
-			Y:            point.Y,
-			RawData:      avgData,
-			InterpResult: interp,
-			SampleCount:  len(samples),
-			Timestamp:    time.Now().UnixMilli(),
+			PointID:           point.ID,
+			ProbeID:           probe.ProbeID,
+			X:                 point.X,
+			Y:                 point.Y,
+			AlphaControllerID: probe.MotionAlpha.ControllerID,
+			AlphaAxis:         probe.MotionAlpha.Axis,
+			BetaControllerID:  probe.MotionBeta.ControllerID,
+			BetaAxis:          probe.MotionBeta.Axis,
+			RawData:           avgData,
+			InterpResult:      interp,
+			SampleCount:       len(samples),
+			Timestamp:         time.Now().UnixMilli(),
 		}
 
 		// csvWriter.AppendPoint + eventHandler.OnDataPointAcquired

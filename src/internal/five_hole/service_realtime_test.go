@@ -415,6 +415,46 @@ func makePAtmFailingBatchGetter() FiveHoleMultiDeviceBatchGetter {
 	}
 }
 
+// TestService_RealtimeMonitor_ResumesAfterTestCompletes 测试自然完成后实时监控应恢复推送数据
+// 回归测试：runTestLoop 退出时必须重置 testRunning=false，否则 runRealtimeMonitor
+// 会因 testRunning=true 永远 continue，导致测试完成后前端画面数据不再更新
+func TestService_RealtimeMonitor_ResumesAfterTestCompletes(t *testing.T) {
+	publisher := &MockEventPublisher{}
+	service := setupService5H(t, publisher)
+	cfg := makeServiceConfig5H(t) // 1 点位，快速完成
+
+	// 启动实时监控
+	service.StartRealtimeMonitor(cfg)
+	defer service.StopRealtimeMonitor()
+
+	// 启动测试（testRunning=true，监控应停止推送）
+	if _, err := service.Start(cfg); err != nil {
+		t.Fatalf("Start failed: %v", err)
+	}
+
+	// 等待测试自然完成
+	waitForCompleteEvent5H(t, publisher, 3*time.Second)
+	waitForStatusEventually5H(t, service, types.TraversalStatusIdle, 1*time.Second)
+
+	// 等 ticker 周期让 in-flight 事件完成，再清空
+	time.Sleep(150 * time.Millisecond)
+	publisher.Clear()
+
+	// 等待监控 ticker 触发（100ms × 2 + 缓冲）
+	time.Sleep(350 * time.Millisecond)
+
+	// 验证监控已恢复推送数据
+	events := publisher.GetRealtimeEvents()
+	if len(events) == 0 {
+		t.Fatal("测试完成后实时监控应恢复推送数据，但实际未推送（testRunning 未被重置）")
+	}
+
+	// 验证 testRunning 标志已被重置
+	if service.testRunning.Load() {
+		t.Error("测试完成后 testRunning 应为 false")
+	}
+}
+
 // TestService_RunRealtimeMonitor_PAtmReadFails_StillEmitsWithZero PAtm 配置后读取失败时
 // 实时监控仍应降级推送（PAtm=0），已配置探针的 P1-P5 数据照常更新前端
 func TestService_RunRealtimeMonitor_PAtmReadFails_StillEmitsWithZero(t *testing.T) {

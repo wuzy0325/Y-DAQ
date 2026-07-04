@@ -52,9 +52,10 @@ func (w *FiveHoleCsvWriter) Initialize(savePath string, baseName string, probeID
 	w.file = file
 	w.writer = csv.NewWriter(file)
 
-	// 写入表头（含 β 列及仓库富字段：CAS/SAT/动压/密度/Vx/Vy/Vz）
+	// 写入表头（含 β 列及仓库富字段：CAS/SAT/动压/密度/Vx/Vy/Vz；α/β 轴位移机构ID 与轴号）
 	header := []string{
 		"点号", "探针ID", "X", "Y",
+		"α位移机构ID", "α轴号", "β位移机构ID", "β轴号",
 		"P1", "P2", "P3", "P4", "P5", "P∞", "T∞",
 		"总压Pt", "静压Ps", "马赫数Ma", "攻角Alpha", "侧滑角Beta", "速度V",
 		"校正空速CAS", "静温SAT", "动压Qc", "密度ρ",
@@ -80,6 +81,10 @@ func (w *FiveHoleCsvWriter) AppendPoint(dp types.FiveHoleTraversalDataPoint) err
 		dp.ProbeID,
 		fmt.Sprintf("%.4f", dp.X),
 		fmt.Sprintf("%.4f", dp.Y),
+		dp.AlphaControllerID,
+		string(dp.AlphaAxis),
+		dp.BetaControllerID,
+		string(dp.BetaAxis),
 		fmt.Sprintf("%.6f", dp.RawData.P1),
 		fmt.Sprintf("%.6f", dp.RawData.P2),
 		fmt.Sprintf("%.6f", dp.RawData.P3),

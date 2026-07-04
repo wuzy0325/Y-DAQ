@@ -24,10 +24,14 @@ func TestFiveHoleCsvWriter_HeaderAndDataPoint(t *testing.T) {
 
 	// 写入数据点
 	dp := types.FiveHoleTraversalDataPoint{
-		PointID: "pt-0",
-		ProbeID: "probe1",
-		X:       10.5,
-		Y:       20.3,
+		PointID:           "pt-0",
+		ProbeID:           "probe1",
+		X:                 10.5,
+		Y:                 20.3,
+		AlphaControllerID: "ctrl-α",
+		AlphaAxis:         "X",
+		BetaControllerID:  "ctrl-β",
+		BetaAxis:          "Y",
 		RawData: types.FiveHoleRawData{
 			P1: 100.123456, P2: 101.654321, P3: 99.111111, P4: 100.222222, P5: 100.333333,
 			PAtm: 101.325, TAtm: 20.5,
@@ -74,6 +78,12 @@ func TestFiveHoleCsvWriter_HeaderAndDataPoint(t *testing.T) {
 	if !contains(str, "侧滑角Beta") {
 		t.Fatal("header missing 侧滑角Beta")
 	}
+	if !contains(str, "α位移机构ID") {
+		t.Fatal("header missing α位移机构ID")
+	}
+	if !contains(str, "β位移机构ID") {
+		t.Fatal("header missing β位移机构ID")
+	}
 	if !contains(str, "P4") {
 		t.Fatal("header missing P4")
 	}
@@ -100,6 +110,12 @@ func TestFiveHoleCsvWriter_HeaderAndDataPoint(t *testing.T) {
 	// 验证数据行
 	if !contains(str, "probe1") {
 		t.Fatal("data row missing probe1")
+	}
+	if !contains(str, "ctrl-α") {
+		t.Fatal("data row missing alpha controller id")
+	}
+	if !contains(str, "ctrl-β") {
+		t.Fatal("data row missing beta controller id")
 	}
 	if !contains(str, "5.2000") {
 		t.Fatal("data row missing alpha value")

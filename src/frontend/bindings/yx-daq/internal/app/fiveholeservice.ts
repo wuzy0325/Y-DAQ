@@ -98,7 +98,7 @@ export function SelectAndStartFiveHoleRealtimeRecording(): $CancellablePromise<s
 }
 
 /**
- * SelectFiveHoleCalibFiles 选择五孔校准文件（.cal）
+ * SelectFiveHoleCalibFiles 选择五孔校准文件（.cal / .prb）
  */
 export function SelectFiveHoleCalibFiles(): $CancellablePromise<string[]> {
     return $Call.ByID(128678352).then(($result: any) => {

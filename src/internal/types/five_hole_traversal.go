@@ -119,14 +119,18 @@ type FiveHoleInterpolationResult struct {
 
 // FiveHoleTraversalDataPoint 五孔移位测试数据点（每探针一份）
 type FiveHoleTraversalDataPoint struct {
-	PointID      string                      `json:"pointId"`
-	ProbeID      string                      `json:"probeId"`
-	X            float64                     `json:"x"`
-	Y            float64                     `json:"y"`
-	RawData      FiveHoleRawData             `json:"rawData"`
-	InterpResult FiveHoleInterpolationResult `json:"interpResult"`
-	SampleCount  int                         `json:"sampleCount"`
-	Timestamp    int64                       `json:"timestamp"`
+	PointID           string                      `json:"pointId"`
+	ProbeID           string                      `json:"probeId"`
+	X                 float64                     `json:"x"`
+	Y                 float64                     `json:"y"`
+	AlphaControllerID string                      `json:"alphaControllerId"` // α 轴位移机构ID（用于区分轴来自哪个运动控制器）
+	AlphaAxis         AxisName                    `json:"alphaAxis"`         // α 轴号
+	BetaControllerID  string                      `json:"betaControllerId"`  // β 轴位移机构ID
+	BetaAxis          AxisName                    `json:"betaAxis"`          // β 轴号
+	RawData           FiveHoleRawData             `json:"rawData"`
+	InterpResult      FiveHoleInterpolationResult `json:"interpResult"`
+	SampleCount       int                         `json:"sampleCount"`
+	Timestamp         int64                       `json:"timestamp"`
 }
 
 // ==================== 五孔测试状态 ====================

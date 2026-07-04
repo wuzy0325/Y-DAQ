@@ -193,11 +193,11 @@ func (s *FiveHoleService) GetFiveHoleTraversalStatus() types.FiveHoleTraversalTa
 	return s.Core.FiveHoleService.GetStatus()
 }
 
-// SelectFiveHoleCalibFiles 选择五孔校准文件（.cal）
+// SelectFiveHoleCalibFiles 选择五孔校准文件（.cal / .prb）
 func (s *FiveHoleService) SelectFiveHoleCalibFiles() []string {
 	filePaths, err := s.Core.App.Dialog.OpenFile().
 		SetTitle("选择五孔校准文件").
-		AddFilter("五孔校准数据文件", "*.cal").
+		AddFilter("五孔校准数据文件", "*.cal;*.prb").
 		AddFilter("所有文件", "*.*").
 		PromptForMultipleSelection()
 	if err != nil {

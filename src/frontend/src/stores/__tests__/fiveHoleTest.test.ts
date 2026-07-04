@@ -391,7 +391,7 @@ describe('stores/fiveHoleTest', () => {
       const store = useFiveHoleTestStore()
       store.calibLoadedMap = { probe1: true, probe2: true, probe3: true }
       // 预置旧数据
-      store.setCompleteData({ probe1: [{ pointId: 'old', probeId: 'probe1', x: 0, y: 0, rawData: {} as any, interpResult: {} as any, sampleCount: 1, timestamp: 1 }] })
+      store.setCompleteData({ probe1: [{ pointId: 'old', probeId: 'probe1', x: 0, y: 0, alphaControllerId: 'ctrl-1', alphaAxis: AxisName.X, betaControllerId: 'ctrl-1', betaAxis: AxisName.Y, rawData: {} as any, interpResult: {} as any, sampleCount: 1, timestamp: 1 }] })
       expect(store.completeProbeDataPoints).not.toBeNull()
       mockFiveHoleService.StartFiveHoleTraversal.mockResolvedValue('task-1')
       mockFiveHoleService.GetFiveHoleTraversalStatus.mockResolvedValue({ status: 'running' })
@@ -434,7 +434,7 @@ describe('stores/fiveHoleTest', () => {
     beforeEach(() => vi.useFakeTimers())
     afterEach(() => vi.useRealTimers())
 
-    it('StopFiveHoleTraversal 后状态变 idle → 立即清理 realtime/progress 并退出', async () => {
+    it('StopFiveHoleTraversal 后状态变 idle → 立即清理 realtime，保留 progress 以便用户查看已完成进度', async () => {
       mockFiveHoleService.StopFiveHoleTraversal.mockResolvedValue(undefined)
       mockFiveHoleService.GetFiveHoleTraversalStatus.mockResolvedValue({ status: 'idle' })
       const store = useFiveHoleTestStore()
@@ -443,10 +443,11 @@ describe('stores/fiveHoleTest', () => {
       await store.stopTest()
       expect(mockFiveHoleService.GetFiveHoleTraversalStatus).toHaveBeenCalledTimes(1)
       expect(store.realtime).toBeNull()
-      expect(store.progress).toBeNull()
+      // progress 保留：仅在 startTest 时清空，结束后允许用户查看布点图与进度
+      expect(store.progress).toEqual({ progress: 50 })
     })
 
-    it('10 次仍 running → 超时强制清理 realtime/progress', async () => {
+    it('10 次仍 running → 超时强制清理 realtime，保留 progress', async () => {
       mockFiveHoleService.StopFiveHoleTraversal.mockResolvedValue(undefined)
       mockFiveHoleService.GetFiveHoleTraversalStatus.mockResolvedValue({ status: 'running' })
       const store = useFiveHoleTestStore()
@@ -459,10 +460,10 @@ describe('stores/fiveHoleTest', () => {
       await promise
       expect(mockFiveHoleService.GetFiveHoleTraversalStatus).toHaveBeenCalledTimes(10)
       expect(store.realtime).toBeNull()
-      expect(store.progress).toBeNull()
+      expect(store.progress).toEqual({ progress: 50 })
     })
 
-    it('StopFiveHoleTraversal 抛错 → 清空 realtime/progress，不抛出', async () => {
+    it('StopFiveHoleTraversal 抛错 → 清空 realtime，保留 progress，不抛出', async () => {
       mockFiveHoleService.StopFiveHoleTraversal.mockRejectedValue(new Error('stop boom'))
       const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
       const store = useFiveHoleTestStore()
@@ -470,7 +471,7 @@ describe('stores/fiveHoleTest', () => {
       store.progress = { progress: 50 } as any
       await expect(store.stopTest()).resolves.toBeUndefined()
       expect(store.realtime).toBeNull()
-      expect(store.progress).toBeNull()
+      expect(store.progress).toEqual({ progress: 50 })
       spy.mockRestore()
     })
   })
@@ -582,11 +583,12 @@ describe('stores/fiveHoleTest', () => {
       expect(store.completeProbeDataPoints?.probe1).toHaveLength(1)
       expect(store.completeProbeDataPoints?.probe2).toHaveLength(1)
       expect(store.completeProbeDataPoints?.probe3).toBeUndefined()
-      expect(store.progress).toBeNull()
+      // progress 保留：complete 事件后允许用户查看最终布点图与进度
+      expect(store.progress).toEqual({ progress: 50 })
       expect(store.taskStatus?.status).toBe('completed')
     })
 
-    it('error 事件 isFatal=true → 写入 lastError + 清空 progress + 触发 fetchStatus', async () => {
+    it('error 事件 isFatal=true → 写入 lastError，保留 progress 以便查看已完成进度 + 触发 fetchStatus', async () => {
       mockFiveHoleService.GetFiveHoleTraversalStatus.mockResolvedValue({ status: 'error' })
       const store = useFiveHoleTestStore()
       store.startListening()
@@ -595,7 +597,8 @@ describe('stores/fiveHoleTest', () => {
       handler({ data: { taskId: 't1', error: '致命错误', isFatal: true } })
       await new Promise(r => setTimeout(r, 0))
       expect(store.lastError).toBe('致命错误')
-      expect(store.progress).toBeNull()
+      // progress 保留：出错时也允许用户查看已完成进度与布点图
+      expect(store.progress).toEqual({ progress: 50 })
       expect(mockFiveHoleService.GetFiveHoleTraversalStatus).toHaveBeenCalled()
     })
 
@@ -640,7 +643,7 @@ describe('stores/fiveHoleTest', () => {
   describe('setCompleteData + exportProbeCSV（按探针独立导出）', () => {
     it('setCompleteData 写入 completeProbeDataPoints', () => {
       const store = useFiveHoleTestStore()
-      const data = { probe1: [{ pointId: 'p1', probeId: 'probe1', x: 1, y: 2, rawData: {} as any, interpResult: {} as any, sampleCount: 1, timestamp: 1 }] }
+      const data = { probe1: [{ pointId: 'p1', probeId: 'probe1', x: 1, y: 2, alphaControllerId: 'ctrl-1', alphaAxis: AxisName.X, betaControllerId: 'ctrl-1', betaAxis: AxisName.Y, rawData: {} as any, interpResult: {} as any, sampleCount: 1, timestamp: 1 }] }
       store.setCompleteData(data)
       // Pinia ref 解包后是 reactive proxy，不保留原引用 → 用 toStrictEqual 做深比较
       expect(store.completeProbeDataPoints).toStrictEqual(data)
@@ -664,6 +667,7 @@ describe('stores/fiveHoleTest', () => {
       store.setCompleteData({
         probe2: [{
           pointId: 'p1', probeId: 'probe2', x: 1.5, y: 2.5,
+          alphaControllerId: 'ctrl-1', alphaAxis: AxisName.X, betaControllerId: 'ctrl-1', betaAxis: AxisName.Y,
           rawData: { p1: 100, p2: 101, p3: 102, p4: 103, p5: 104, pAtm: 90, tAtm: 25 },
           interpResult: {
             ptProbe: 1, psProbe: 2, machProbe: 0.5, alphaProbe: 5, betaProbe: -3,
