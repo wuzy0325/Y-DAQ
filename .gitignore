@@ -4,6 +4,8 @@ bin/
 src/frontend/dist/
 *.exe
 *.exe~
+# Wails v3 Windows 资源文件（每次构建重新生成）
+src/wails_*.syso
 
 # ===== 依赖 =====
 node_modules/

@@ -1,8 +1,10 @@
 package driver
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -16,6 +18,8 @@ type SimulatedDevice struct {
 	channels      []types.ChannelConfig
 	pressureCount int // 压力通道数
 	stopCh        chan struct{}
+	valveMu       sync.Mutex         // 保护 valveState 的跨 goroutine 读写
+	valveState    types.ValveState   // 模拟阀位，默认测量位
 }
 
 // NewSimulatedDevice 创建模拟设备
@@ -29,6 +33,7 @@ func NewSimulatedDevice(channels []types.ChannelConfig) *SimulatedDevice {
 		channels:      channels,
 		pressureCount: pressureCount,
 		stopCh:        make(chan struct{}),
+		valveState:    types.ValveStateMeasurement,
 	}
 }
 
@@ -153,4 +158,24 @@ func (s *SimulatedDevice) simulateData(periodMs int) {
 			}
 		}
 	}
+}
+
+// ReadValveState 返回模拟设备当前阀位（默认测量位）。
+// 模拟设备不模拟设备拒绝，始终成功返回。
+func (s *SimulatedDevice) ReadValveState() (types.ValveState, error) {
+	s.valveMu.Lock()
+	defer s.valveMu.Unlock()
+	return s.valveState, nil
+}
+
+// SetValveState 设置模拟设备阀位。
+// 仅接受 Calibration / Measurement，Unknown 拒绝（与真实驱动一致）。
+func (s *SimulatedDevice) SetValveState(state types.ValveState) error {
+	if state != types.ValveStateCalibration && state != types.ValveStateMeasurement {
+		return fmt.Errorf("invalid valve state: %s", state)
+	}
+	s.valveMu.Lock()
+	defer s.valveMu.Unlock()
+	s.valveState = state
+	return nil
 }

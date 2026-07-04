@@ -1,6 +1,11 @@
 package types
 
-import "fmt"
+import (
+	"fmt"
+	"math"
+	"strconv"
+	"strings"
+)
 
 // PressureUnitCoefficients 压力单位换算系数表（1 psi = coeff 该单位）
 // 与驱动层 driver/xy_daq16.go 的 unitToCoeff 系数保持一致
@@ -63,4 +68,43 @@ func ConvertPressureToUnit(value float64, fromUnit, toUnit string) (float64, err
 		return 0, err
 	}
 	return ConvertPaToUnit(inPa, toUnit)
+}
+
+// UnitToCoeff 单位字符串 → EU转换系数（硬件协议使用，返回字符串形式）
+// 与驱动层 unitToCoeff 等价，统一使用 PressureUnitCoefficients 作为单一数据源。
+func UnitToCoeff(unit string) (string, bool) {
+	coeff, ok := PressureUnitCoefficients[unit]
+	if !ok {
+		return "", false
+	}
+	return strconv.FormatFloat(coeff, 'f', -1, 64), true
+}
+
+// CoeffToUnit EU转换系数/返回值 → 单位字符串（硬件协议反向查找，近似匹配）
+// 与驱动层 coeffToUnit 等价，统一使用 PressureUnitCoefficients 作为源数据。
+func CoeffToUnit(raw string) string {
+	raw = strings.TrimSpace(raw)
+
+	switch raw {
+	case "0":
+		return "kgf/cm²"
+	case "1":
+		return "psi"
+	case "6":
+		return "kPa"
+	case "6894", "6894.76":
+		return "Pa"
+	}
+
+	var val float64
+	if _, err := fmt.Sscanf(raw, "%f", &val); err != nil {
+		return ""
+	}
+
+	for unit, coeff := range PressureUnitCoefficients {
+		if math.Abs(val-coeff)/coeff < 0.01 {
+			return unit
+		}
+	}
+	return ""
 }

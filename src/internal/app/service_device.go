@@ -95,6 +95,36 @@ func (s *DeviceService) SetSingleThermocoupleType(id string, channelIndex int, t
 	return s.Core.DeviceManager.SetSingleThermocoupleType(id, channelIndex, tcType)
 }
 
+// ReadValveState 读取设备校准阀位（每次从设备读取，不持久化）
+func (s *DeviceService) ReadValveState(id string) (types.ValveState, error) {
+	return s.Core.DeviceManager.ReadValveState(id)
+}
+
+// SetValveState 切换设备校准阀位（采集进行中会被拒绝）
+func (s *DeviceService) SetValveState(id string, state types.ValveState) error {
+	return s.Core.DeviceManager.SetValveState(id, state)
+}
+
+// ZeroCalibrate 对指定设备的所有启用压力通道执行零位校准
+func (s *DeviceService) ZeroCalibrate(id string) error {
+	return s.Core.DeviceManager.ZeroCalibrate(id)
+}
+
+// ZeroCalibrateChannel 对指定设备的单个通道执行零位校准
+func (s *DeviceService) ZeroCalibrateChannel(id string, channelIndex int) error {
+	return s.Core.DeviceManager.ZeroCalibrateChannel(id, channelIndex)
+}
+
+// ClearZeroOffset 清除指定通道的零位偏移
+func (s *DeviceService) ClearZeroOffset(id string, channelIndex int) error {
+	return s.Core.DeviceManager.ClearZeroOffset(id, channelIndex)
+}
+
+// ClearAllZeroOffsets 清除指定设备所有通道的零位偏移
+func (s *DeviceService) ClearAllZeroOffsets(id string) error {
+	return s.Core.DeviceManager.ClearAllZeroOffsets(id)
+}
+
 // ScanDevices 扫描设备
 func (s *DeviceService) ScanDevices() []types.DiscoveredDevice {
 	devices, err := s.Core.DaqScanner.Scan(3000)

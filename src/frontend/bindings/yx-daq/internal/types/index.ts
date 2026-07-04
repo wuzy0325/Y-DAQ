@@ -54,5 +54,6 @@ export {
     TraversalLayout,
     TraversalPattern,
     TraversalPoint,
-    TraversalTestStatus
+    TraversalTestStatus,
+    ValveState
 } from "./models";

@@ -405,9 +405,24 @@ export class ChannelConfig {
     "rangeMax": number;
 
     /**
-     * 热电偶类型（K/J/T/E/N/S/R/B/C/WRE325/WRE526/WRE520），仅 YX-DAQ-T
+     * 热电偶类型（K/J/T/E/N/S/R/B/C/WRE325/WRE526/WRE520），仅 EA2516T
      */
     "thermocoupleType"?: string;
+
+    /**
+     * 零位偏移（校准时记录的当前读数，后续采集时减去）
+     */
+    "zeroOffset"?: number;
+
+    /**
+     * 零位偏移记录时的单位（用于换单位后换算）
+     */
+    "zeroOffsetUnit"?: string;
+
+    /**
+     * 零位校准时刻（Unix 毫秒），0 表示未校准
+     */
+    "zeroCalibratedAt"?: number;
 
     /** Creates a new ChannelConfig instance. */
     constructor($$source: Partial<ChannelConfig> = {}) {
@@ -634,9 +649,9 @@ export enum DeviceType {
     $zero = "",
 
     DeviceTypeSimulated = "SIMULATED",
-    DeviceTypeXYDAQ8 = "XY-DAQ8",
-    DeviceTypeXYDAQ16 = "XY-DAQ16",
-    DeviceTypeYXDAQT = "YX-DAQ-T",
+    DeviceTypeEA2508A = "EA2508A",
+    DeviceTypeEA2516A = "EA2516A",
+    DeviceTypeEA2516T = "EA2516T",
 };
 
 /**
@@ -1715,7 +1730,7 @@ export enum MotionControllerType {
     $zero = "",
 
     MotionTypeSimulated = "SIMULATED-MC",
-    MotionTypeB140 = "B140-MC",
+    MotionTypeEA25MC04 = "EA25MC04",
 };
 
 /**
@@ -2449,6 +2464,33 @@ export enum TraversalTestStatus {
     TraversalStatusPaused = "paused",
     TraversalStatusCompleted = "completed",
     TraversalStatusError = "error",
+};
+
+/**
+ * ValveState 校准阀状态（仅 EA2508A/EA2516A 压力设备支持）
+ * 阀位语义：校准位 = 传感器与校准口接通（数据无效），测量位 = 传感器与测量口接通（数据有效）
+ * 设备读阀返回 0 在不同固件下含义不一，未初始化归为 Unknown，由 UI 决定如何呈现
+ */
+export enum ValveState {
+    /**
+     * The Go zero value for the underlying type of the enum.
+     */
+    $zero = "",
+
+    /**
+     * 校准位（设备读阀=1）
+     */
+    ValveStateCalibration = "Calibration",
+
+    /**
+     * 测量位（设备读阀=2/3）
+     */
+    ValveStateMeasurement = "Measurement",
+
+    /**
+     * 未初始化或读阀失败（设备读阀=0 或读阀异常）
+     */
+    ValveStateUnknown = "Unknown",
 };
 
 // Private type creation functions

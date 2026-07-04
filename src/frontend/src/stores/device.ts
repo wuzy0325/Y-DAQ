@@ -12,6 +12,9 @@ interface ChannelConfig {
   rangeMin: number
   rangeMax: number
   thermocoupleType?: string
+  zeroOffset?: number
+  zeroOffsetUnit?: string
+  zeroCalibratedAt?: number
 }
 
 interface DeviceProfile {
@@ -153,6 +156,22 @@ export const useDeviceStore = defineStore('device', () => {
     return withDeviceAction('setSingleThermocoupleType', () => DeviceService.SetSingleThermocoupleType(id, channelIndex, tcType), fetchProfiles)
   }
 
+  async function zeroCalibrate(id: string): Promise<string | null> {
+    return withDeviceAction('zeroCalibrate', () => DeviceService.ZeroCalibrate(id), fetchProfiles)
+  }
+
+  async function zeroCalibrateChannel(id: string, channelIndex: number): Promise<string | null> {
+    return withDeviceAction('zeroCalibrateChannel', () => DeviceService.ZeroCalibrateChannel(id, channelIndex), fetchProfiles)
+  }
+
+  async function clearZeroOffset(id: string, channelIndex: number): Promise<string | null> {
+    return withDeviceAction('clearZeroOffset', () => DeviceService.ClearZeroOffset(id, channelIndex), fetchProfiles)
+  }
+
+  async function clearAllZeroOffsets(id: string): Promise<string | null> {
+    return withDeviceAction('clearAllZeroOffsets', () => DeviceService.ClearAllZeroOffsets(id), fetchProfiles)
+  }
+
   async function connectDevice(id: string): Promise<string | null> {
     connectingIds.value = new Set([...connectingIds.value, id])
     try {
@@ -216,6 +235,7 @@ export const useDeviceStore = defineStore('device', () => {
     getDeviceStatus, isDeviceConnecting,
     fetchProfiles, fetchStatuses, updateProfile, setUnit,
     setThermocoupleType, setSingleThermocoupleType,
+    zeroCalibrate, zeroCalibrateChannel, clearZeroOffset, clearAllZeroOffsets,
     connectDevice, disconnectDevice,
     startAcquisition, stopAcquisition,
     startListening, stopListening,

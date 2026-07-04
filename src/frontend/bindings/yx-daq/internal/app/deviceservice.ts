@@ -22,6 +22,20 @@ export function AddDeviceProfile(profile: types$0.DeviceProfile): $CancellablePr
 }
 
 /**
+ * ClearAllZeroOffsets 清除指定设备所有通道的零位偏移
+ */
+export function ClearAllZeroOffsets(id: string): $CancellablePromise<void> {
+    return $Call.ByID(1903488134, id);
+}
+
+/**
+ * ClearZeroOffset 清除指定通道的零位偏移
+ */
+export function ClearZeroOffset(id: string, channelIndex: number): $CancellablePromise<void> {
+    return $Call.ByID(1200105536, id, channelIndex);
+}
+
+/**
  * ConnectDevice 连接设备
  */
 export function ConnectDevice(id: string): $CancellablePromise<void> {
@@ -63,6 +77,13 @@ export function GetLatestData(): $CancellablePromise<types$0.DataPayload[]> {
 }
 
 /**
+ * ReadValveState 读取设备校准阀位（每次从设备读取，不持久化）
+ */
+export function ReadValveState(id: string): $CancellablePromise<types$0.ValveState> {
+    return $Call.ByID(1625049843, id);
+}
+
+/**
  * RemoveDeviceProfile 删除设备配置
  */
 export function RemoveDeviceProfile(id: string): $CancellablePromise<void> {
@@ -100,6 +121,13 @@ export function SetUnit(id: string, unit: string): $CancellablePromise<void> {
 }
 
 /**
+ * SetValveState 切换设备校准阀位（采集进行中会被拒绝）
+ */
+export function SetValveState(id: string, state: types$0.ValveState): $CancellablePromise<void> {
+    return $Call.ByID(3874892551, id, state);
+}
+
+/**
  * StartAcquisition 启动采集
  */
 export function StartAcquisition(id: string): $CancellablePromise<void> {
@@ -132,6 +160,20 @@ export function StopAcquisitionAll(): $CancellablePromise<void> {
  */
 export function UpdateDeviceProfile(profile: types$0.DeviceProfile): $CancellablePromise<void> {
     return $Call.ByID(1151889656, profile);
+}
+
+/**
+ * ZeroCalibrate 对指定设备的所有启用压力通道执行零位校准
+ */
+export function ZeroCalibrate(id: string): $CancellablePromise<void> {
+    return $Call.ByID(963286367, id);
+}
+
+/**
+ * ZeroCalibrateChannel 对指定设备的单个通道执行零位校准
+ */
+export function ZeroCalibrateChannel(id: string, channelIndex: number): $CancellablePromise<void> {
+    return $Call.ByID(2259552190, id, channelIndex);
 }
 
 // Private type creation functions

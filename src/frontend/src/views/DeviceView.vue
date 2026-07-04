@@ -31,6 +31,27 @@
             <span v-else class="idle-badge">--</span>
           </template>
         </el-table-column>
+        <el-table-column label="阀位" width="110" align="center">
+          <template #default="{ row }">
+            <el-tooltip
+              v-if="isValveSupported(row.type)"
+              :content="valveTooltip(row)"
+              :disabled="!valveDisabledReason(row)"
+              placement="top"
+            >
+              <el-button
+                size="small"
+                :type="valveBtnType(row.id)"
+                :loading="valveLoading[row.id]"
+                :disabled="!!valveDisabledReason(row)"
+                @click="handleToggleValve(row)"
+              >
+                {{ valveLabel(row.id) }}
+              </el-button>
+            </el-tooltip>
+            <span v-else class="readonly-text">--</span>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="220" align="right">
           <template #default="{ row }">
             <el-button-group class="action-group">
@@ -62,9 +83,9 @@
           </el-form-item>
           <el-form-item label="类型">
             <el-select v-model="newDevice.type" style="width: 100%">
-              <el-option label="XY-DAQ8" value="XY-DAQ8" />
-              <el-option label="XY-DAQ16" value="XY-DAQ16" />
-              <el-option label="DAQ-T-1603 (热电偶)" value="YX-DAQ-T" />
+              <el-option label="EA2508A" value="EA2508A" />
+              <el-option label="EA2516A" value="EA2516A" />
+              <el-option label="EA2516T (热电偶)" value="EA2516T" />
               <el-option label="模拟设备" value="SIMULATED" />
             </el-select>
           </el-form-item>
@@ -163,7 +184,7 @@
       <div class="dialog-section">
         <div class="section-title">⚙️ 通道参数</div>
         <div class="form-row">
-          <div v-if="editProfileType !== 'YX-DAQ-T'" class="form-group">
+          <div v-if="editProfileType !== 'EA2516T'" class="form-group">
             <label class="group-label">压力单位</label>
             <el-select v-model="editForm.unit" filterable allow-create size="small" style="width: 100px">
               <el-option v-for="u in unitOptions" :key="u" :label="u" :value="u" />
@@ -184,7 +205,7 @@
           </div>
           <div class="form-group">
             <label class="group-label">特殊通道</label>
-            <span class="special-channels" v-if="editProfileType !== 'YX-DAQ-T'">CH{{ editPressureCount + 1 }}: 大气压 | CH{{ editPressureCount + 2 }}: 大气温度</span>
+            <span class="special-channels" v-if="editProfileType !== 'EA2516T'">CH{{ editPressureCount + 1 }}: 大气压 | CH{{ editPressureCount + 2 }}: 大气温度</span>
             <span class="special-channels" v-else>16 通道热电偶温度</span>
           </div>
         </div>
@@ -192,7 +213,17 @@
 
       <!-- 通道编辑表格 -->
       <div class="channel-section">
-        <div class="section-title">📋 通道配置</div>
+        <div class="channel-section-header">
+          <div class="section-title">📋 通道配置</div>
+          <el-button
+            v-if="isPressureDAQ(editProfileType)"
+            size="small"
+            type="primary"
+            :loading="zeroCalibrating"
+            :disabled="!canZeroCalibrate"
+            @click="handleZeroCalibrateAll"
+          >批量校零</el-button>
+        </div>
         <el-table :data="editChannels" size="small" class="channel-table" :max-height="320">
           <el-table-column prop="index" label="#" width="45" align="center">
             <template #default="{ row }">
@@ -214,7 +245,7 @@
               <span class="readonly-text">{{ row.unit }}</span>
             </template>
           </el-table-column>
-          <el-table-column v-if="editProfileType === 'YX-DAQ-T'" label="热电偶" width="100" align="center">
+          <el-table-column v-if="editProfileType === 'EA2516T'" label="热电偶" width="100" align="center">
             <template #default="{ row }">
               <el-select v-model="row.thermocoupleType" size="small" style="width: 80px" @change="onChannelThermocoupleChange(row)">
                 <el-option v-for="opt in thermocoupleTypeOptions" :key="opt.value" :label="opt.value" :value="opt.value" />
@@ -236,8 +267,43 @@
               <el-input-number v-model="row.rangeMax" size="small" controls-position="right" style="width: 85px" />
             </template>
           </el-table-column>
+          <el-table-column v-if="isPressureDAQ(editProfileType)" label="零位" width="130" align="center">
+            <template #default="{ row }">
+              <template v-if="row.index < editPressureCount">
+                <div v-if="row.zeroCalibratedAt" class="zero-info">
+                  <span class="zero-value">{{ formatZeroValue(row.zeroOffset) }} {{ row.zeroOffsetUnit }}</span>
+                  <span class="zero-time">{{ formatZeroTime(row.zeroCalibratedAt) }}</span>
+                </div>
+                <span v-else class="readonly-text">未校准</span>
+              </template>
+              <span v-else class="readonly-text">--</span>
+            </template>
+          </el-table-column>
+          <el-table-column v-if="isPressureDAQ(editProfileType)" label="校零" width="80" align="center">
+            <template #default="{ row }">
+              <template v-if="row.index < editPressureCount">
+                <el-button
+                  v-if="!row.zeroCalibratedAt"
+                  size="small"
+                  type="primary"
+                  link
+                  :loading="zeroCalibrating"
+                  :disabled="!canZeroCalibrate"
+                  @click="handleZeroCalibrateChannel(row.index)"
+                >校零</el-button>
+                <el-button
+                  v-else
+                  size="small"
+                  type="warning"
+                  link
+                  :disabled="zeroCalibrating"
+                  @click="handleClearZeroOffset(row.index)"
+                >去校零</el-button>
+              </template>
+            </template>
+          </el-table-column>
         </el-table>
-        <div class="channel-hint" v-if="editProfileType !== 'YX-DAQ-T'">
+        <div class="channel-hint" v-if="isPressureDAQ(editProfileType)">
           0-{{ editPressureCount - 1 }}: 压力通道 | {{ editPressureCount }}: 大气压 | {{ editPressureCount + 1 }}: 大气温度
         </div>
         <div class="channel-hint" v-else>
@@ -265,6 +331,106 @@ import { DeviceService, DataService } from '@bindings/yx-daq/internal/app'
 import * as types from '@bindings/yx-daq/internal/types'
 
 const deviceStore = useDeviceStore()
+
+function isPressureDAQ(type: string): boolean {
+  const info = getDeviceInfo(type as DeviceTypeValue)
+  return info.isRealDAQ && !info.isTemperature
+}
+
+// ==================== 阀位控制 ====================
+// 阀位状态按需查询：设备已连接时从硬件读取，未连接或读取失败显示"未知"
+// 阀位不持久化到本地，每次重新连接后需重新查询
+const valveStates = reactive<Record<string, string>>({}) // id -> 'Calibration' | 'Measurement' | 'Unknown'
+const valveLoading = reactive<Record<string, boolean>>({})
+
+// 仅 EA2508A/EA2516A/SIMULATED 支持阀控，EA2516T（温度设备）不支持
+function isValveSupported(type: string): boolean {
+  return type !== 'EA2516T'
+}
+
+function valveLabel(id: string): string {
+  const s = valveStates[id]
+  if (s === 'Calibration') return '校准位'
+  if (s === 'Measurement') return '测量位'
+  return '未知'
+}
+
+function valveBtnType(id: string): '' | 'success' | 'warning' | 'danger' {
+  const s = valveStates[id]
+  if (s === 'Calibration') return 'danger'  // 校准位=数据无效，红色警示
+  if (s === 'Measurement') return 'success' // 测量位=数据有效，绿色
+  return 'warning' // 未知=黄色，提示需查询
+}
+
+// 禁用原因：返回非空字符串时按钮禁用并显示 tooltip
+function valveDisabledReason(row: { id: string; status: string; acquiring: boolean }): string {
+  if (row.status !== 'Connected') return '设备未连接'
+  if (row.acquiring) return '采集进行中，不允许切换阀位'
+  return ''
+}
+
+function valveTooltip(row: { id: string; status: string; acquiring: boolean }): string {
+  return valveDisabledReason(row) || '点击切换阀位'
+}
+
+// 切换阀位：校准↔测量；未知状态点击默认切到测量位
+async function handleToggleValve(row: { id: string; status: string; acquiring: boolean }) {
+  const reason = valveDisabledReason(row)
+  if (reason) {
+    ElMessage.warning(reason)
+    return
+  }
+  const current = valveStates[row.id]
+  const target = current === 'Calibration' ? 'Measurement' : 'Calibration'
+  valveLoading[row.id] = true
+  try {
+    await DeviceService.SetValveState(row.id, target as any)
+    valveStates[row.id] = target
+    ElMessage.success(`已切换到${target === 'Calibration' ? '校准位' : '测量位'}`)
+  } catch (e: any) {
+    ElMessage.error(`切换阀位失败: ${e?.message || e}`)
+    // 切换失败时重新查询真实状态
+    refreshValveState(row.id).catch(() => {})
+  } finally {
+    valveLoading[row.id] = false
+  }
+}
+
+// 查询单个设备阀位（设备已连接时调用）
+async function refreshValveState(id: string) {
+  try {
+    const state = await DeviceService.ReadValveState(id) as string
+    valveStates[id] = state || 'Unknown'
+  } catch (e) {
+    valveStates[id] = 'Unknown'
+  }
+}
+
+// 监听设备状态变化，已连接的设备自动查询阀位
+watch(
+  () => deviceStore.statuses,
+  (statuses) => {
+    for (const s of statuses) {
+      if (s.status === 'Connected' && isValveSupported(s.type) && !valveStates[s.id]) {
+        refreshValveState(s.id)
+      }
+    }
+  },
+  { deep: true },
+)
+
+// 设备断开连接时清除缓存的阀位状态，下次重连时重新查询
+watch(
+  () => deviceStore.statuses.map(s => `${s.id}:${s.status}`).join(','),
+  () => {
+    for (const [id, state] of Object.entries(valveStates)) {
+      const ds = deviceStore.statuses.find(s => s.id === id)
+      if (!ds || ds.status !== 'Connected') {
+        delete valveStates[id]
+      }
+    }
+  },
+)
 
 // 连接状态映射
 function statusClass(status: string): string {
@@ -304,7 +470,7 @@ const showAddDialog = ref(false)
 const adding = ref(false)
 const newDevice = ref({
   name: '',
-  type: 'XY-DAQ16',
+  type: 'EA2516A',
   host: '192.168.3.101',
   port: 9000,
   publishRate: 20,
@@ -316,7 +482,7 @@ const newDevice = ref({
 function openAddDialog() {
   newDevice.value = {
     name: '',
-    type: 'XY-DAQ16',
+    type: 'EA2516A',
     host: '192.168.3.101',
     port: 9000,
     publishRate: 20,
@@ -434,18 +600,21 @@ interface EditChannel {
   rangeMin: number
   rangeMax: number
   thermocoupleType: string
+  zeroOffset?: number
+  zeroOffsetUnit?: string
+  zeroCalibratedAt?: number
 }
 const editChannels = ref<EditChannel[]>([])
 const editProfileType = ref('')
 
 // 编辑中的设备压力通道数（从通道配置推断）
 const editPressureCount = computed(() => {
-  if (editProfileType.value === 'YX-DAQ-T') return 16
+  if (editProfileType.value === 'EA2516T') return 16
   return Math.max(editChannels.value.length - 2, 8)
 })
 
-// 常用单位选项
-const unitOptions = ['kPa', 'Pa', 'MPa', 'bar', 'mbar', 'mmHg', 'psi', '°C', '°F']
+// 常用压力单位选项（仅零位校准白名单内 6 种，删除 mmHg/atm/mbar）
+const unitOptions = ['psi', 'kgf/cm²', 'bar', 'kPa', 'MPa', 'Pa']
 
 function openEditDialog(id: string) {
   const profile = deviceStore.profiles.find(p => p.id === id)
@@ -486,7 +655,7 @@ function openEditDialog(id: string) {
 
 // 当统一单位或精度变化时，同步到通道表格
 function syncUnitToChannels() {
-  if (editProfileType.value === 'YX-DAQ-T') {
+  if (editProfileType.value === 'EA2516T') {
     for (const ch of editChannels.value) {
       ch.unit = '°C'
     }
@@ -508,7 +677,7 @@ function syncPrecisionToChannels() {
 
 // 当统一热电偶类型变化时，同步到通道表格
 function syncThermocoupleTypeToChannels() {
-  if (editProfileType.value !== 'YX-DAQ-T') return
+  if (editProfileType.value !== 'EA2516T') return
   for (const ch of editChannels.value) {
     ch.thermocoupleType = editForm.value.thermocoupleType
   }
@@ -526,6 +695,85 @@ function onChannelThermocoupleChange(_row: EditChannel) {
 watch(() => editForm.value.unit, () => syncUnitToChannels())
 watch(() => editForm.value.precision, () => syncPrecisionToChannels())
 
+// ==================== 零位校准 ====================
+const zeroCalibrating = ref(false)
+
+// 当前编辑设备是否已连接且正在采集（校零前置条件）
+const canZeroCalibrate = computed(() => {
+  const status = deviceStore.statuses.find(s => s.id === editForm.value.id)
+  return status?.status === 'Connected' && status?.acquiring
+})
+
+function formatZeroValue(value: number | undefined): string {
+  if (!value) return '0'
+  return Math.abs(value) < 0.001 ? '0' : value.toFixed(3)
+}
+
+function formatZeroTime(ts: number | undefined): string {
+  if (!ts) return ''
+  const d = new Date(ts)
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mm = String(d.getMinutes()).padStart(2, '0')
+  return `${hh}:${mm}校准`
+}
+
+// 校零后从后端 profile 同步零位字段到 editChannels（保留其他未保存编辑）
+async function syncZeroOffsetsFromProfile() {
+  await deviceStore.fetchProfiles()
+  const profile = deviceStore.profiles.find(p => p.id === editForm.value.id)
+  if (!profile) return
+  for (const ec of editChannels.value) {
+    const pc = profile.channels.find(c => c.index === ec.index)
+    if (pc) {
+      ec.zeroOffset = pc.zeroOffset
+      ec.zeroOffsetUnit = pc.zeroOffsetUnit
+      ec.zeroCalibratedAt = pc.zeroCalibratedAt
+    }
+  }
+}
+
+async function handleZeroCalibrateAll() {
+  ElMessage({ message: '请保持设备静止，正在采样...', type: 'warning', duration: 1200 })
+  zeroCalibrating.value = true
+  try {
+    const err = await deviceStore.zeroCalibrate(editForm.value.id)
+    if (err) {
+      ElMessage.error(`批量校零失败: ${err}`)
+    } else {
+      ElMessage.success('批量校零完成')
+      await syncZeroOffsetsFromProfile()
+    }
+  } finally {
+    zeroCalibrating.value = false
+  }
+}
+
+async function handleZeroCalibrateChannel(channelIndex: number) {
+  ElMessage({ message: '请保持设备静止，正在采样...', type: 'warning', duration: 1200 })
+  zeroCalibrating.value = true
+  try {
+    const err = await deviceStore.zeroCalibrateChannel(editForm.value.id, channelIndex)
+    if (err) {
+      ElMessage.error(`通道 ${channelIndex} 校零失败: ${err}`)
+    } else {
+      ElMessage.success(`通道 ${channelIndex} 校零完成`)
+      await syncZeroOffsetsFromProfile()
+    }
+  } finally {
+    zeroCalibrating.value = false
+  }
+}
+
+async function handleClearZeroOffset(channelIndex: number) {
+  const err = await deviceStore.clearZeroOffset(editForm.value.id, channelIndex)
+  if (err) {
+    ElMessage.error(`清除零位失败: ${err}`)
+  } else {
+    ElMessage.success('零位已清除')
+    await syncZeroOffsetsFromProfile()
+  }
+}
+
 async function saveEdit() {
   saving.value = true
   try {
@@ -538,7 +786,7 @@ async function saveEdit() {
     const formSnapshot = { ...editForm.value }
     const channelsSnapshot = editChannels.value.map(c => ({ ...c }))
     const pc = editPressureCount.value
-    const isTempDevice = editProfileType.value === 'YX-DAQ-T'
+    const isTempDevice = editProfileType.value === 'EA2516T'
     const updatedChannels = channelsSnapshot.map(c => ({
       index: c.index,
       name: c.name,
@@ -548,6 +796,10 @@ async function saveEdit() {
       rangeMin: c.rangeMin,
       rangeMax: c.rangeMax,
       thermocoupleType: isTempDevice ? (c.thermocoupleType || 'K') : undefined,
+      // 保留零位校准字段（校零由运行时操作设置，编辑配置时不能丢失）
+      zeroOffset: c.zeroOffset,
+      zeroOffsetUnit: c.zeroOffsetUnit,
+      zeroCalibratedAt: c.zeroCalibratedAt,
     }))
 
     const updatedProfile = new types.DeviceProfile({
@@ -761,9 +1013,9 @@ async function removeDevice(id: string) {
 .acquiring-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 3px 10px;
-  border-radius: 12px;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $border-radius-md;
   background: rgba($color-accent, 0.1);
   color: $color-accent;
   font-size: 11px;
@@ -785,8 +1037,13 @@ async function removeDevice(id: string) {
 }
 
 .idle-badge {
-  color: rgba(255,255,255,0.3);
+  // 与 acquiring-badge 保持相同的盒模型，避免采集状态切换时行高变化引起表格跳动
+  display: inline-flex;
+  align-items: center;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $border-radius-md;
   font-size: 11px;
+  color: rgba(255,255,255,0.3);
 }
 
 .action-group {
@@ -909,6 +1166,33 @@ async function removeDevice(id: string) {
 .channel-section {
   .section-title {
     margin-bottom: 10px;
+  }
+}
+
+.channel-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  .section-title {
+    margin-bottom: 0;
+  }
+}
+
+.zero-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  .zero-value {
+    font-family: $font-family-mono;
+    font-size: 11px;
+    color: rgba(255,255,255,0.85);
+    white-space: nowrap;
+  }
+  .zero-time {
+    font-size: $font-size-xs;
+    color: rgba(255,255,255,0.4);
   }
 }
 

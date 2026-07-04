@@ -222,10 +222,14 @@ func (d *YXDAQTDriver) SetThermocoupleType(tcTypes string) error {
 }
 
 // SetSingleThermocoupleType 设置单个通道的热电偶类型
-// channelIndex: 0-15, tcType: 热电偶类型字符
+// channelIndex: 0-15, tcType: 热电偶类型字符（K/J/T/E/N/S/R/B）
 func (d *YXDAQTDriver) SetSingleThermocoupleType(channelIndex int, tcType string) error {
 	if channelIndex < 0 || channelIndex > 15 {
 		return fmt.Errorf("channel index must be 0-15, got %d", channelIndex)
+	}
+	validTypes := map[string]bool{"K": true, "J": true, "T": true, "E": true, "N": true, "S": true, "R": true, "B": true}
+	if !validTypes[tcType] {
+		return fmt.Errorf("unsupported thermocouple type: %s (supported: K, J, T, E, N, S, R, B)", tcType)
 	}
 
 	// 读取当前所有通道的热电偶类型

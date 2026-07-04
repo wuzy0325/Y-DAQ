@@ -5,9 +5,9 @@ type DeviceType string
 
 const (
 	DeviceTypeSimulated DeviceType = "SIMULATED"
-	DeviceTypeXYDAQ8    DeviceType = "XY-DAQ8"
-	DeviceTypeXYDAQ16   DeviceType = "XY-DAQ16"
-	DeviceTypeYXDAQT    DeviceType = "YX-DAQ-T"
+	DeviceTypeEA2508A   DeviceType = "EA2508A"
+	DeviceTypeEA2516A   DeviceType = "EA2516A"
+	DeviceTypeEA2516T   DeviceType = "EA2516T"
 )
 
 // DeviceTypeInfo 设备类型元数据（注册表驱动，新增设备类型只需加一行）
@@ -26,18 +26,18 @@ type DeviceTypeInfo struct {
 
 // deviceTypeRegistry 设备类型注册表 — 新增设备类型只需在此添加一行
 var deviceTypeRegistry = map[DeviceType]DeviceTypeInfo{
-	DeviceTypeXYDAQ8: {
-		Type: "XY-DAQ8", Label: "XY-DAQ8",
+	DeviceTypeEA2508A: {
+		Type: "EA2508A", Label: "EA2508A",
 		PressureChCount: 8, TotalChCount: 10, FrameSize: 45,
 		IsRealDAQ: true, DefaultHost: "192.168.3.101", DefaultPort: 9000, DefaultUnit: "kPa",
 	},
-	DeviceTypeXYDAQ16: {
-		Type: "XY-DAQ16", Label: "XY-DAQ16",
+	DeviceTypeEA2516A: {
+		Type: "EA2516A", Label: "EA2516A",
 		PressureChCount: 16, TotalChCount: 18, FrameSize: 77,
 		IsRealDAQ: true, DefaultHost: "192.168.3.101", DefaultPort: 9000, DefaultUnit: "kPa",
 	},
-	DeviceTypeYXDAQT: {
-		Type: "YX-DAQ-T", Label: "DAQ-T-1603",
+	DeviceTypeEA2516T: {
+		Type: "EA2516T", Label: "EA2516T",
 		PressureChCount: 16, TotalChCount: 16, FrameSize: 0,
 		IsTemperature: true, IsRealDAQ: true,
 		DefaultHost: "192.168.1.7", DefaultPort: 9000, DefaultUnit: "°C",
@@ -54,7 +54,7 @@ func (t DeviceType) Info() DeviceTypeInfo {
 	if info, ok := deviceTypeRegistry[t]; ok {
 		return info
 	}
-	return deviceTypeRegistry[DeviceTypeXYDAQ16] // 默认
+	return deviceTypeRegistry[DeviceTypeEA2516A] // 默认
 }
 
 // 以下方法委托给 Info()，保持向后兼容
@@ -93,6 +93,27 @@ func AllDeviceTypes() []DeviceTypeInfo {
 	return result
 }
 
+// legacyDeviceTypeAliases 旧设备型号到新型号的迁移映射。
+// 历史配置文件（~/.yx-daq/devices.json）中可能保存旧型号字符串（XY-DAQ8 / XY-DAQ16 / YX-DAQ-T），
+// 升级后这些字符串无法命中 deviceTypeRegistry，会导致设备 fallback 到 EA2516A
+// （8 通道硬件被当成 16 通道）且 driverFactories 查不到对应驱动无法连接。
+// 在 DeviceManager.Init() 加载配置后调用 MigrateDeviceType 做一次性迁移并写回。
+var legacyDeviceTypeAliases = map[DeviceType]DeviceType{
+	"XY-DAQ8":  DeviceTypeEA2508A,
+	"XY-DAQ16": DeviceTypeEA2516A,
+	"YX-DAQ-T": DeviceTypeEA2516T,
+}
+
+// MigrateDeviceType 将旧设备型号字符串迁移到新型号。
+// 返回 (mapped, changed)：changed=true 表示发生迁移，调用方需持久化。
+// 已是新型号或不在别名表中的（如 SIMULATED）原样返回，changed=false。
+func MigrateDeviceType(t DeviceType) (mapped DeviceType, changed bool) {
+	if newType, ok := legacyDeviceTypeAliases[t]; ok {
+		return newType, true
+	}
+	return t, false
+}
+
 // ConnectionStatus 连接状态
 type ConnectionStatus string
 
@@ -101,6 +122,17 @@ const (
 	StatusConnecting   ConnectionStatus = "Connecting"
 	StatusConnected    ConnectionStatus = "Connected"
 	StatusError        ConnectionStatus = "Error"
+)
+
+// ValveState 校准阀状态（仅 EA2508A/EA2516A 压力设备支持）
+// 阀位语义：校准位 = 传感器与校准口接通（数据无效），测量位 = 传感器与测量口接通（数据有效）
+// 设备读阀返回 0 在不同固件下含义不一，未初始化归为 Unknown，由 UI 决定如何呈现
+type ValveState string
+
+const (
+	ValveStateCalibration ValveState = "Calibration" // 校准位（设备读阀=1）
+	ValveStateMeasurement ValveState = "Measurement" // 测量位（设备读阀=2/3）
+	ValveStateUnknown     ValveState = "Unknown"     // 未初始化或读阀失败（设备读阀=0 或读阀异常）
 )
 
 // ChannelConfig 通道配置
@@ -112,7 +144,10 @@ type ChannelConfig struct {
 	Precision int     `json:"precision"`
 	RangeMin  float64 `json:"rangeMin"`
 	RangeMax         float64 `json:"rangeMax"`
-	ThermocoupleType string  `json:"thermocoupleType,omitempty"` // 热电偶类型（K/J/T/E/N/S/R/B/C/WRE325/WRE526/WRE520），仅 YX-DAQ-T
+	ThermocoupleType string  `json:"thermocoupleType,omitempty"` // 热电偶类型（K/J/T/E/N/S/R/B/C/WRE325/WRE526/WRE520），仅 EA2516T
+	ZeroOffset       float64 `json:"zeroOffset,omitempty"`       // 零位偏移（校准时记录的当前读数，后续采集时减去）
+	ZeroOffsetUnit   string  `json:"zeroOffsetUnit,omitempty"`   // 零位偏移记录时的单位（用于换单位后换算）
+	ZeroCalibratedAt int64   `json:"zeroCalibratedAt,omitempty"` // 零位校准时刻（Unix 毫秒），0 表示未校准
 }
 
 // DeviceProfile 设备完整配置
