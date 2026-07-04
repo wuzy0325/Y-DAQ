@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -47,7 +48,7 @@ type MotionControllerFactory func(profile types.MotionControllerProfile) MotionC
 
 // controllerFactories 控制器工厂注册表 — 新增控制器类型只需在此注册工厂函数
 var controllerFactories = map[types.MotionControllerType]MotionControllerFactory{
-	types.MotionTypeB140: func(p types.MotionControllerProfile) MotionController {
+	types.MotionTypeEA25MC04: func(p types.MotionControllerProfile) MotionController {
 		b140Drv := driver.NewB140Driver(p.Address, p.Port, p.TimeoutMs)
 		return driver.NewB140MotionController(b140Drv, p.Axes)
 	},
@@ -351,6 +352,12 @@ func (m *MotionControllerManager) buildStatusAll(includeLive bool) []types.Motio
 		}
 		statuses = append(statuses, status)
 	}
+	// 按 ID 稳定排序：避免遍历 map 导致返回顺序随机，
+	// 否则前端 v-for 会反复重排 DOM 造成列表上下跳动，
+	// 同时确保 broadcastStatus 的 JSON 变化检测不会因顺序不同而误判。
+	sort.Slice(statuses, func(i, j int) bool {
+		return statuses[i].ID < statuses[j].ID
+	})
 	return statuses
 }
 
@@ -425,13 +432,25 @@ func (m *MotionControllerManager) Init() {
 	if m.configStore != nil {
 		profiles := m.configStore.Get()
 		if len(profiles) > 0 {
+			migrated := 0
+			for i := range profiles {
+				p := &profiles[i]
+				if newType, changed := types.MigrateMotionControllerType(p.Type); changed {
+					slog.Info("migrate legacy motion controller type", "id", p.ID, "old", p.Type, "new", newType)
+					p.Type = newType
+					migrated++
+				}
+			}
 			m.Lock()
 			for _, p := range profiles {
 				m.profiles[p.ID] = p
 			}
 			m.Unlock()
 			loaded = true
-			slog.Info("loaded motion controller profiles from config", "count", len(profiles))
+			slog.Info("loaded motion controller profiles from config", "count", len(profiles), "migrated", migrated)
+			if migrated > 0 {
+				m.saveProfilesWithLog("motion")
+			}
 		}
 	}
 
@@ -465,11 +484,11 @@ func (m *MotionControllerManager) Init() {
 	m.RUnlock()
 
 	for _, e := range entries {
-		if e.kind == types.MotionTypeB140 {
+		if e.kind == types.MotionTypeEA25MC04 {
 			pid := e.id
 			go func() {
 				if err := m.Connect(pid); err != nil {
-					slog.Warn("auto-connect B140 failed (manual connect available)", "id", pid, "err", err)
+					slog.Warn("auto-connect EA25MC04 failed (manual connect available)", "id", pid, "err", err)
 				}
 			}()
 		} else {

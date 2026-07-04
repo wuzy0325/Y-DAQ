@@ -12,7 +12,7 @@ import (
 func newScanner() *DAQScanner { return &DAQScanner{} }
 
 func TestParseResponse_JSON_DAQT(t *testing.T) {
-	resp := `{"ip":"192.168.1.7","mac":"AA:BB:CC:DD:EE:FF","serialNumber":"SN12345","model":"DAQ-T-1603","firmwareVersion":"v1.0","port":9000}`
+	resp := `{"ip":"192.168.1.7","mac":"AA:BB:CC:DD:EE:FF","serialNumber":"SN12345","model":"EA2516T","firmwareVersion":"v1.0","port":9000}`
 	dev, ok := newScanner().parseResponse(resp)
 	if !ok {
 		t.Fatal("expected ok for JSON response")
