@@ -47,8 +47,11 @@ export interface StepSegment {
 }
 
 export interface LineLayout {
-  startX: number; startY: number; endX: number; endY: number
-  xSteps: StepSegment[]; ySteps: StepSegment[]
+  axis: 'x' | 'y'   // 移动轴
+  start: number     // 起点坐标（沿 axis 方向）
+  end: number       // 终点坐标（沿 axis 方向）
+  step: number      // 步长（>0，方向自动按 start→end）
+  fixed: number     // 静止轴坐标值
 }
 
 export interface RectangleLayout {

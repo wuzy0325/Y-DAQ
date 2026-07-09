@@ -187,6 +187,10 @@ func (c *B140MotionController) MoveTo(axis types.AxisName, position float64) err
 		return err
 	}
 
+	if err := c.applyConfiguredSpeed(axis, bAxis); err != nil {
+		return err
+	}
+
 	pulse := c.engineeringToPulse(axis, position)
 	cmd := fmt.Sprintf("PA%s=%d", bAxis, int(math.Round(pulse)))
 	if _, err := c.driver.SendCommand(cmd); err != nil {
@@ -207,6 +211,10 @@ func (c *B140MotionController) MoveBy(axis types.AxisName, delta float64) error 
 	pulse := c.engineeringToPulse(axis, delta)
 	if int(math.Round(pulse)) == 0 {
 		return nil
+	}
+
+	if err := c.applyConfiguredSpeed(axis, bAxis); err != nil {
+		return err
 	}
 
 	cmd := fmt.Sprintf("PR%s=%d", bAxis, int(math.Round(pulse)))
@@ -258,6 +266,9 @@ func (c *B140MotionController) Jog(axis types.AxisName, direction int, distance 
 func (c *B140MotionController) Home(axis types.AxisName) error {
 	bAxis, err := c.resolveAxis(axis)
 	if err != nil {
+		return err
+	}
+	if err := c.applyConfiguredSpeed(axis, bAxis); err != nil {
 		return err
 	}
 	if _, err := c.driver.SendCommand(fmt.Sprintf("HM%s", bAxis)); err != nil {
@@ -490,6 +501,20 @@ func (c *B140MotionController) SetSpeed(axis types.AxisName, speed float64) erro
 	pulseSpeed := c.engineeringToPulse(axis, speed)
 	_, err := c.driver.SendCommand(fmt.Sprintf("SP%s=%d", bAxis, int(math.Round(pulseSpeed))))
 	return err
+}
+
+// applyConfiguredSpeed 在运动前下发轴配置的最大速度（SP 命令），
+// 确保使用设定速度而非固件默认/上次残留速度。MaxSpeed 未配置时跳过。
+func (c *B140MotionController) applyConfiguredSpeed(axis types.AxisName, bAxis string) error {
+	ax := c.findAxis(axis)
+	if ax == nil || ax.MaxSpeed <= 0 {
+		return nil
+	}
+	pulseSpeed := c.engineeringToPulse(axis, ax.MaxSpeed)
+	if _, err := c.driver.SendCommand(fmt.Sprintf("SP%s=%d", bAxis, int(math.Round(pulseSpeed)))); err != nil {
+		return err
+	}
+	return nil
 }
 
 // engineeringToPulse 工程单位→脉冲

@@ -175,28 +175,29 @@
             <template v-if="store.config.layout.pattern === TraversalPattern.LINE && store.config.layout.line">
               <div class="form-row">
                 <div class="form-group">
-                  <label class="group-label">起点</label>
-                  <div class="point-inputs">
-                    <el-input-number v-model="store.config.layout.line.startX" :step="5" size="small" style="width:90px" />
-                    <el-input-number v-model="store.config.layout.line.startY" :step="5" size="small" style="width:90px" />
-                  </div>
+                  <label class="group-label">移动轴</label>
+                  <el-radio-group v-model="store.config.layout.line.axis" size="small">
+                    <el-radio-button label="x">X 轴</el-radio-button>
+                    <el-radio-button label="y">Y 轴</el-radio-button>
+                  </el-radio-group>
                 </div>
                 <div class="form-group">
-                  <label class="group-label">终点</label>
-                  <div class="point-inputs">
-                    <el-input-number v-model="store.config.layout.line.endX" :step="5" size="small" style="width:90px" />
-                    <el-input-number v-model="store.config.layout.line.endY" :step="5" size="small" style="width:90px" />
-                  </div>
+                  <label class="group-label">固定坐标</label>
+                  <el-input-number v-model="store.config.layout.line.fixed" :step="1" size="small" style="width:110px" />
                 </div>
               </div>
               <div class="form-row">
                 <div class="form-group">
-                  <label class="group-label">X步长</label>
-                  <el-input-number v-model="lineXStep" :min="1" :step="1" size="small" style="width:100px" />
+                  <label class="group-label">起点</label>
+                  <el-input-number v-model="store.config.layout.line.start" :step="1" size="small" style="width:110px" />
                 </div>
                 <div class="form-group">
-                  <label class="group-label">Y步长</label>
-                  <el-input-number v-model="lineYStep" :min="1" :step="1" size="small" style="width:100px" />
+                  <label class="group-label">终点</label>
+                  <el-input-number v-model="store.config.layout.line.end" :step="1" size="small" style="width:110px" />
+                </div>
+                <div class="form-group">
+                  <label class="group-label">步长</label>
+                  <el-input-number v-model="store.config.layout.line.step" :min="0.1" :step="1" size="small" style="width:100px" />
                 </div>
               </div>
             </template>
@@ -454,8 +455,8 @@ const phaseLabel = computed(() => {
   return map[store.progress?.phase || ''] || '采集中'
 })
 
-// 步长快捷设置 + 同步到 store.config.layout.{rectangle|line}.{xSteps|ySteps}
-const { rectXStep, rectYStep, lineXStep, lineYStep } = useLayoutStepSync(
+// 步长快捷设置 + 同步到 store.config.layout.rectangle.{xSteps|ySteps}
+const { rectXStep, rectYStep } = useLayoutStepSync(
   computed(() => store.config.layout),
 )
 

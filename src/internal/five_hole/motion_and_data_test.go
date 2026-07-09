@@ -27,16 +27,25 @@ func TestMotionCoordinator_AllProbesMoveParallel(t *testing.T) {
 	probes := []types.FiveHoleProbeConfig{
 		{
 			ProbeID: "probe1", Enabled: true,
-			MotionAlpha: types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "X"},
-			MotionBeta:  types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "Y"},
+			MotionX: types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "X"},
+			MotionY: types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "Y"},
 		},
 		{
 			ProbeID: "probe2", Enabled: true,
-			MotionAlpha: types.FiveHoleMotionAxisMapping{ControllerID: "c2", Axis: "X"},
-			MotionBeta:  types.FiveHoleMotionAxisMapping{ControllerID: "c2", Axis: "Y"},
+			MotionX: types.FiveHoleMotionAxisMapping{ControllerID: "c2", Axis: "X"},
+			MotionY: types.FiveHoleMotionAxisMapping{ControllerID: "c2", Axis: "Y"},
 		},
 	}
-	layout := types.TraversalLayout{Pattern: types.TraversalPatternRectangle}
+	layout := types.TraversalLayout{
+		Pattern: types.TraversalPatternRectangle,
+		Rectangle: &types.RectangleLayout{
+			XMin: 0, XMax: 10, YMin: 0, YMax: 10,
+			XSteps: []types.StepSegment{{Start: 0, End: 10, Step: 10}},
+			YSteps: []types.StepSegment{{Start: 0, End: 10, Step: 10}},
+			XAxis:  "X",
+			YAxis:  "Y",
+		},
+	}
 	point := types.TraversalPoint{ID: "p1", X: 10, Y: 20}
 
 	err := mc.MoveAllProbesToPoint(point, probes, layout, 1000)
@@ -66,17 +75,19 @@ func TestMotionCoordinator_LineSingleAxisX_SkipBeta(t *testing.T) {
 	probes := []types.FiveHoleProbeConfig{
 		{
 			ProbeID: "probe1", Enabled: true,
-			MotionAlpha: types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "X"},
-			MotionBeta:  types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "Y"},
+			MotionX: types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "X"},
+			MotionY: types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "Y"},
 		},
 	}
 	// 直线单轴：仅 X 变化
 	layout := types.TraversalLayout{
 		Pattern: types.TraversalPatternLine,
 		Line: &types.LineLayout{
-			StartX: 0, StartY: 5,
-			EndX:   10, EndY: 5,
-			XSteps: []types.StepSegment{{Start: 0, End: 10, Step: 5}},
+			Axis:  "X",
+			Start: 0,
+			End:   10,
+			Step:  5,
+			Fixed: 5,
 		},
 	}
 	point := types.TraversalPoint{ID: "p1", X: 10, Y: 5}
@@ -85,7 +96,7 @@ func TestMotionCoordinator_LineSingleAxisX_SkipBeta(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MoveAllProbesToPoint failed: %v", err)
 	}
-	// 仅 α（X 轴）移动，β（Y 轴）跳过
+	// 仅 X 方向轴移动，Y 方向轴跳过
 	if !movedAxes["X"] {
 		t.Fatal("expected X axis moved")
 	}
@@ -94,7 +105,8 @@ func TestMotionCoordinator_LineSingleAxisX_SkipBeta(t *testing.T) {
 	}
 }
 
-func TestMotionCoordinator_LineSingleAxisY_SkipAlpha(t *testing.T) {
+func TestMotionCoordinator_LineAlwaysUsesMotionX(t *testing.T) {
+	// 直线模式永远只用 MotionX，不管 layout.Line.Axis 配什么值
 	movedAxes := make(map[string]bool)
 	var mu sync.Mutex
 	mover := func(controllerID string, axis types.AxisName, position float64) error {
@@ -111,31 +123,33 @@ func TestMotionCoordinator_LineSingleAxisY_SkipAlpha(t *testing.T) {
 	probes := []types.FiveHoleProbeConfig{
 		{
 			ProbeID: "probe1", Enabled: true,
-			MotionAlpha: types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "X"},
-			MotionBeta:  types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "Y"},
+			MotionX: types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "X"},
+			MotionY: types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "Y"},
 		},
 	}
-	// 直线单轴：仅 Y 变化
+	// Axis=Y 也仍然只用 MotionX
 	layout := types.TraversalLayout{
 		Pattern: types.TraversalPatternLine,
 		Line: &types.LineLayout{
-			StartX: 5, StartY: 0,
-			EndX:   5, EndY: 10,
-			YSteps: []types.StepSegment{{Start: 0, End: 10, Step: 5}},
+			Axis:  "Y",
+			Start: 0,
+			End:   10,
+			Step:  5,
+			Fixed: 5,
 		},
 	}
-	point := types.TraversalPoint{ID: "p1", X: 5, Y: 10}
+	point := types.TraversalPoint{ID: "p1", X: 10, Y: 0}
 
 	err := mc.MoveAllProbesToPoint(point, probes, layout, 1000)
 	if err != nil {
 		t.Fatalf("MoveAllProbesToPoint failed: %v", err)
 	}
-	// 仅 β（Y 轴）移动，α（X 轴）跳过
-	if !movedAxes["Y"] {
-		t.Fatal("expected Y axis moved")
+	// 永远是 MotionX(X) 移动，MotionY(Y) 跳过
+	if !movedAxes["X"] {
+		t.Fatal("expected X axis (MotionX) moved")
 	}
-	if movedAxes["X"] {
-		t.Fatal("expected X axis skipped")
+	if movedAxes["Y"] {
+		t.Fatal("expected Y axis (MotionY) skipped")
 	}
 }
 
@@ -156,14 +170,23 @@ func TestMotionCoordinator_DisabledProbeSkipped(t *testing.T) {
 	probes := []types.FiveHoleProbeConfig{
 		{
 			ProbeID: "probe1", Enabled: true,
-			MotionAlpha: types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "X"},
-			MotionBeta:  types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "Y"},
+			MotionX: types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "X"},
+			MotionY: types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "Y"},
 		},
 		{
 			ProbeID: "probe2", Enabled: false, // 禁用
 		},
 	}
-	layout := types.TraversalLayout{Pattern: types.TraversalPatternRectangle}
+	layout := types.TraversalLayout{
+		Pattern: types.TraversalPatternRectangle,
+		Rectangle: &types.RectangleLayout{
+			XMin: 0, XMax: 10, YMin: 0, YMax: 10,
+			XSteps: []types.StepSegment{{Start: 0, End: 10, Step: 10}},
+			YSteps: []types.StepSegment{{Start: 0, End: 10, Step: 10}},
+			XAxis:  "X",
+			YAxis:  "Y",
+		},
+	}
 	point := types.TraversalPoint{ID: "p1", X: 10, Y: 20}
 
 	err := mc.MoveAllProbesToPoint(point, probes, layout, 1000)
@@ -294,14 +317,14 @@ func TestMotionCoordinator_ParallelExecution(t *testing.T) {
 
 	probes := []types.FiveHoleProbeConfig{
 		{ProbeID: "probe1", Enabled: true,
-			MotionAlpha: types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "X"},
-			MotionBeta:  types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "Y"}},
+			MotionX: types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "X"},
+			MotionY: types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "Y"}},
 		{ProbeID: "probe2", Enabled: true,
-			MotionAlpha: types.FiveHoleMotionAxisMapping{ControllerID: "c2", Axis: "X"},
-			MotionBeta:  types.FiveHoleMotionAxisMapping{ControllerID: "c2", Axis: "Y"}},
+			MotionX: types.FiveHoleMotionAxisMapping{ControllerID: "c2", Axis: "X"},
+			MotionY: types.FiveHoleMotionAxisMapping{ControllerID: "c2", Axis: "Y"}},
 		{ProbeID: "probe3", Enabled: true,
-			MotionAlpha: types.FiveHoleMotionAxisMapping{ControllerID: "c3", Axis: "X"},
-			MotionBeta:  types.FiveHoleMotionAxisMapping{ControllerID: "c3", Axis: "Y"}},
+			MotionX: types.FiveHoleMotionAxisMapping{ControllerID: "c3", Axis: "X"},
+			MotionY: types.FiveHoleMotionAxisMapping{ControllerID: "c3", Axis: "Y"}},
 	}
 	layout := types.TraversalLayout{Pattern: types.TraversalPatternRectangle}
 	point := types.TraversalPoint{ID: "p1", X: 10, Y: 20}

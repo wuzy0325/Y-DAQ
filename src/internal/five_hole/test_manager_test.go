@@ -20,6 +20,8 @@ func makeTMTestConfig(probes ...types.FiveHoleProbeConfig) types.FiveHoleTravers
 				XMin: 0, XMax: 10, YMin: 0, YMax: 10,
 				XSteps: []types.StepSegment{{Start: 0, End: 10, Step: 10}},
 				YSteps: []types.StepSegment{{Start: 0, End: 10, Step: 10}},
+				XAxis:  "X",
+				YAxis:  "Y",
 			},
 		},
 		Probes: probes,

@@ -212,6 +212,13 @@ func (s *ThreeHoleTraversalService) runTestLoop(taskID string, config types.Thre
 
 	s.testManager.EmitProgress(taskID, totalPoints, 0, 0, 0, 0, "starting")
 
+	// 直线单轴模式：主循环开始前将静止轴预定位到 line.Fixed
+	// 否则 MoveToPoint 会跳过静止轴，导致其位置 ≠ line.Fixed
+	if err := s.dataProcessor.PrePositionStationaryAxis(config); err != nil {
+		s.eventHandler.OnFatalError(fmt.Sprintf("静止轴预定位失败: %v", err))
+		return
+	}
+
 	defer func() { s.eventHandler.OnTestComplete(taskID, s.testManager.GetStatus().Status) }()
 
 	// 保存当前代际号，用于检测是否被新测试取代

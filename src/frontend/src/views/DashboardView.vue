@@ -32,45 +32,71 @@
           :class="{ active: selectedDeviceId === s.id }"
           @click="selectedDeviceId = s.id"
         >
-          <span
-            class="device-light"
-            :class="{
-              connected: s.status === 'Connected',
-              connecting: s.status === 'Connecting',
-              error: s.status === 'Error',
-              disconnected: s.status === 'Disconnected',
-              acquiring: s.acquiring,
-            }"
-          />
-          <div class="device-info">
-            <span class="device-name">{{ s.name }}</span>
-            <div class="device-meta">
-              <span class="device-type">{{ s.type }}</span>
-              <span v-if="s.status === 'Connecting'" class="status-hint">连接中...</span>
-              <span v-if="s.status === 'Error'" class="status-hint error-hint">连接错误</span>
+          <div class="device-row">
+            <div class="device-left">
+              <span
+                class="device-light"
+                :class="{
+                  connected: s.status === 'Connected',
+                  connecting: s.status === 'Connecting',
+                  error: s.status === 'Error',
+                  disconnected: s.status === 'Disconnected',
+                  acquiring: s.acquiring,
+                }"
+              />
+              <div class="device-info">
+                <span class="device-name" :title="s.name">{{ s.name }}</span>
+                <span class="device-type">{{ s.type }}</span>
+              </div>
+            </div>
+            <div class="device-actions">
+              <el-button
+                v-if="s.status !== 'Connected'"
+                type="primary"
+                size="small"
+                class="action-btn"
+                :loading="deviceStore.isDeviceConnecting(s.id)"
+                @click.stop="handleConnect(s.id)"
+              >
+                连接
+              </el-button>
+              <template v-else>
+                <el-tooltip
+                  :content="s.acquiring ? '停止采集' : '开始采集'"
+                  placement="top"
+                  :show-after="300"
+                >
+                  <el-button
+                    :type="s.acquiring ? 'warning' : 'success'"
+                    size="small"
+                    class="action-btn icon-btn"
+                    :loading="deviceStore.isAcqBusy(s.id)"
+                    :disabled="deviceStore.isAcqBusy(s.id)"
+                    @click.stop="handleToggleAcq(s.id)"
+                  >
+                    <el-icon v-if="!deviceStore.isAcqBusy(s.id)">
+                      <VideoPause v-if="s.acquiring" />
+                      <VideoPlay v-else />
+                    </el-icon>
+                  </el-button>
+                </el-tooltip>
+                <el-button
+                  type="warning"
+                  size="small"
+                  class="action-btn"
+                  @click.stop="handleDisconnect(s.id)"
+                >
+                  断开
+                </el-button>
+              </template>
             </div>
           </div>
-          <span v-if="s.acquiring" class="acq-tag">采集中</span>
-          <span v-if="s.acquiring && isRecording" class="rec-tag">记录中</span>
-          <el-button
-            v-if="s.status !== 'Connected'"
-            type="primary"
-            size="small"
-            class="conn-btn"
-            :loading="deviceStore.isDeviceConnecting(s.id)"
-            @click.stop="handleConnect(s.id)"
-          >
-            连接
-          </el-button>
-          <el-button
-            v-else
-            type="warning"
-            size="small"
-            class="conn-btn"
-            @click.stop="handleDisconnect(s.id)"
-          >
-            断开
-          </el-button>
+          <div class="device-status-row">
+            <span v-if="s.acquiring && isRecording" class="status-tag rec">记录中</span>
+            <span v-else-if="s.status === 'Connecting'" class="status-tag connecting">连接中...</span>
+            <span v-else-if="s.status === 'Error'" class="status-tag error">连接错误</span>
+            <span v-else-if="s.status === 'Disconnected'" class="status-tag disconnected">未连接</span>
+          </div>
         </div>
         <div v-if="deviceStore.statuses.length === 0" class="no-device">
           暂无设备，请先在设备管理中添加设备
@@ -140,7 +166,9 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, shallowRef, triggerRef } from 'vue'
 import { ElMessage } from 'element-plus'
+import { VideoPlay, VideoPause } from '@element-plus/icons-vue'
 import { useDeviceStore } from '../stores/device'
+import { getDeviceInfo, type DeviceTypeValue } from '../api/enums'
 import { NEON_COLORS } from '../constants/colors'
 import { DeviceService, DataService } from '@bindings/yx-daq/internal/app'
 import ChartPanel from '../components/ChartPanel.vue'
@@ -200,6 +228,16 @@ async function handleDisconnect(id: string) {
   else ElMessage.success('设备已断开')
 }
 
+// 单设备采集启停：busy 状态由 store 统一管理，view 只负责提示
+async function handleToggleAcq(id: string) {
+  const { error, name, wasAcquiring } = await deviceStore.toggleAcquisition(id)
+  if (error) {
+    ElMessage.error(`${wasAcquiring ? '停止' : '开始'}采集失败：${name} - ${error}`)
+  } else {
+    ElMessage.success(`${wasAcquiring ? '已停止' : '已开始'}采集：${name}`)
+  }
+}
+
 // ==================== 录制控制 ====================
 const isRecording = ref(false)
 
@@ -236,7 +274,7 @@ onMounted(() => {
     const profile = deviceStore.profiles.find(p => p.id === selectedDeviceId.value)
     if (profile) {
       const total = profile.channels.length
-      visibleChannels.value = new Set(profile.channels.filter(ch => ch.enabled && !isAtmosphericChannel(ch, total)).map(ch => ch.index))
+      visibleChannels.value = new Set(profile.channels.filter(ch => ch.enabled && !isAtmosphericChannel(ch, total, profile.type)).map(ch => ch.index))
     }
   }
 })
@@ -303,7 +341,9 @@ const historyData = shallowRef<Record<string, number[]>>({})
 const historyLabels = ref<string[]>([])
 
 // 判断通道是否为大气压力/大气温度（不显示在波形图上）
-function isAtmosphericChannel(ch: { name: string; index: number }, total: number): boolean {
+// 温度设备（如 EA2516T）所有通道均为测量通道，无大气压/大气温度通道
+function isAtmosphericChannel(ch: { name: string; index: number }, total: number, deviceType?: string): boolean {
+  if (deviceType && getDeviceInfo(deviceType as DeviceTypeValue).isTemperature) return false
   return ch.index >= total - 2
 }
 
@@ -435,33 +475,43 @@ function scheduleChartUpdate() {
 }
 
 function updateChartOption() {
-  const allEntries = Object.entries(historyData.value)
-  const filteredEntries = allEntries.filter(([name]) => {
-    const ch = selectedChannelConfigs.value.find(c => (c.name || `CH${c.index + 1}`) === name)
-    return ch ? visibleChannels.value.has(ch.index) : true
+  // 基于 channelOptions 构建固定顺序和数量的 series，避免取消勾选通道时
+  // series 数组变短导致 ECharts 合并模式残留旧系列或 replaceMode 闪烁
+  // 不可见通道 data 置空数组，自然不绘制曲线
+  // 颜色按通道 index 取色，保证取消/勾选其他通道时本通道颜色稳定
+  const visibleSet = visibleChannels.value
+  const allOptions = channelOptions.value
+  const hist = historyData.value
+
+  const series = allOptions.map(ch => {
+    const data = visibleSet.has(ch.index) ? (hist[ch.label] || []) : []
+    const color = NEON_COLORS[ch.index % NEON_COLORS.length]
+    return {
+      name: ch.label,
+      type: 'line',
+      data,
+      smooth: true,
+      symbol: 'none',
+      lineStyle: {
+        width: 2,
+        color,
+        shadowColor: color,
+        shadowBlur: 4,
+      },
+      itemStyle: {
+        color,
+      },
+    }
   })
 
-  const series = filteredEntries.map(([name, data], idx) => ({
-    name,
-    type: 'line',
-    data,
-    smooth: true,
-    symbol: 'none',
-    lineStyle: {
-      width: 2,
-      color: NEON_COLORS[idx % NEON_COLORS.length],
-      shadowColor: NEON_COLORS[idx % NEON_COLORS.length],
-      shadowBlur: 4,
-    },
-    itemStyle: {
-      color: NEON_COLORS[idx % NEON_COLORS.length],
-    },
-  }))
+  // legend 只显示当前可见通道
+  const legendData = allOptions
+    .filter(ch => visibleSet.has(ch.index))
+    .map(ch => ch.label)
 
-  // 增量更新：只更新变化的数据部分，避免完整重建 option 导致闪烁
   chartOption.value = {
     legend: {
-      data: filteredEntries.map(([name]) => name),
+      data: legendData,
       textStyle: { color: 'rgba(255,255,255,0.7)', fontSize: 11 },
       top: 0,
     },
@@ -512,7 +562,8 @@ watch(selectedChannelConfigs, (configs) => {
   if (configs.length > 0 && visibleChannels.value.size === 0) {
     const profile = deviceStore.profiles.find(p => p.id === selectedDeviceId.value)
     const total = profile ? profile.channels.length : 0
-    visibleChannels.value = new Set(configs.filter(ch => !isAtmosphericChannel(ch, total)).map(ch => ch.index))
+    const deviceType = profile?.type
+    visibleChannels.value = new Set(configs.filter(ch => !isAtmosphericChannel(ch, total, deviceType)).map(ch => ch.index))
     scheduleChartUpdate()
   }
 })
@@ -526,7 +577,7 @@ watch(selectedDeviceId, (newId, oldId) => {
   const profile = deviceStore.profiles.find(p => p.id === newId)
   if (profile) {
     const total = profile.channels.length
-    visibleChannels.value = new Set(profile.channels.filter(ch => ch.enabled && !isAtmosphericChannel(ch, total)).map(ch => ch.index))
+    visibleChannels.value = new Set(profile.channels.filter(ch => ch.enabled && !isAtmosphericChannel(ch, total, profile.type)).map(ch => ch.index))
   } else {
     visibleChannels.value = new Set()
   }
@@ -585,17 +636,15 @@ watch(() => deviceStore.isAcquiring, (acquiring) => {
 
 .device-item {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  // 固定行高，避免 status-hint/acq-tag/rec-tag 等条件渲染元素显示/隐藏导致行高变化
-  min-height: 56px;
+  flex-direction: column;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-md;
+  min-height: 68px;
   box-sizing: border-box;
   border-radius: 8px;
   background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255,255,255,0.08);
   cursor: pointer;
-  // 仅过渡颜色/边框，避免高度变化被过渡放大造成视觉跳动
   transition: background-color $transition-fast, border-color $transition-fast, box-shadow $transition-fast;
 
   &:hover {
@@ -608,6 +657,37 @@ watch(() => deviceStore.isAcquiring, (acquiring) => {
     border-color: rgba($color-accent, 0.5);
     box-shadow: 0 0 12px rgba($color-accent, 0.15);
   }
+}
+
+// 第一行：设备信息 + 操作按钮
+.device-row {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  width: 100%;
+}
+
+.device-left {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  flex: 1;
+  min-width: 0;
+}
+
+.device-actions {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  flex-shrink: 0;
+}
+
+// 第二行：状态标签（与按钮上下分离，避免水平挤压）
+.device-status-row {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  min-height: 18px;
 }
 
 .device-light {
@@ -666,29 +746,38 @@ watch(() => deviceStore.isAcquiring, (acquiring) => {
   white-space: nowrap;
 }
 
-// type 与 status-hint 同行，避免 status-hint 显示/隐藏导致行高变化引起列表跳动
-.device-meta {
-  display: flex;
-  align-items: center;
-  gap: $spacing-xs;
-  font-size: 11px;
-  line-height: 16px;
-  height: 16px;
-}
-
 .device-type {
   font-size: 11px;
   color: rgba(255,255,255,0.4);
 }
 
-.status-hint {
+// 统一状态标签（采集中/记录中/已连接/连接中/连接错误/未连接）
+.status-tag {
+  padding: 2px 6px;
+  border-radius: 4px;
   font-size: 10px;
-  color: $color-accent;
-  animation: hintFade 1.5s ease-in-out infinite;
+  line-height: 14px;
+  flex-shrink: 0;
 
-  &.error-hint {
+  &.rec {
+    background: rgba($color-danger, 0.15);
     color: $color-danger;
-    animation: none;
+  }
+
+  &.connecting {
+    background: rgba($color-accent, 0.12);
+    color: $color-accent;
+    animation: hintFade 1.5s ease-in-out infinite;
+  }
+
+  &.error {
+    background: rgba($color-danger, 0.12);
+    color: $color-danger;
+  }
+
+  &.disconnected {
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.35);
   }
 }
 
@@ -697,30 +786,14 @@ watch(() => deviceStore.isAcquiring, (acquiring) => {
   50% { opacity: 0.5; }
 }
 
-.acq-tag {
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 10px;
-  line-height: 14px;
-  background: rgba($color-accent, 0.15);
-  color: $color-accent;
-  flex-shrink: 0;
-}
-
-.rec-tag {
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 10px;
-  line-height: 14px;
-  background: rgba($color-danger, 0.15);
-  color: $color-danger;
-  flex-shrink: 0;
-}
-
-.conn-btn {
+.action-btn {
   flex-shrink: 0;
   padding: 4px 8px;
   font-size: 11px;
+
+  &.icon-btn {
+    padding: 4px 6px;
+  }
 }
 
 .acq-controls {

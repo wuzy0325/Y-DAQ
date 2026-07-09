@@ -240,6 +240,46 @@ func (c *Core) initFiveHole() {
 		return fmt.Errorf("位移机构 %s 未连接", controllerID)
 	})
 
+	// 单轴当前位置获取：用于测试开始前保存初始位置、测试结束后回到初始位置
+	// 不持有 fiveHoleMotionMu：该闭包不读 c.* 字段（mover/waiter 闭包持锁是为读 fiveHoleMotionControllerID），
+	// 且持锁调用外部函数违反"持锁时不调用外部函数"规范
+	svc.SetProbeAxisPositionGetter(func(controllerID string, axis types.AxisName) (float64, error) {
+		if controllerID != "" && c.MotionManager.IsConnected(controllerID) {
+			return c.MotionManager.GetAxisPosition(controllerID, axis)
+		}
+		return 0, fmt.Errorf("位移机构 %s 未连接", controllerID)
+	})
+
+	// 单轴类型获取：用于扇面模式启动前校验 MotionX=线性轴、MotionY=旋转轴
+	// 遍历所有 profile 查找匹配的 controllerID + axis，返回 AxisConfig.Kind
+	svc.SetAxisKindGetter(func(controllerID string, axis types.AxisName) (types.AxisKind, bool) {
+		if controllerID == "" || axis == "" {
+			return "", false
+		}
+		for _, profile := range c.MotionManager.GetProfiles() {
+			if profile.ID != controllerID {
+				continue
+			}
+			for _, ax := range profile.Axes {
+				if ax.Name == axis {
+					return ax.Kind, true
+				}
+			}
+			return "", false
+		}
+		return "", false
+	})
+
+	// 位移机构名获取：用于数据点保存时把 ControllerID 转为用户可读的机构名
+	svc.SetControllerNameGetter(func(controllerID string) string {
+		for _, profile := range c.MotionManager.GetProfiles() {
+			if profile.ID == controllerID {
+				return profile.Name
+			}
+		}
+		return ""
+	})
+
 	c.FiveHoleService = svc
 }
 

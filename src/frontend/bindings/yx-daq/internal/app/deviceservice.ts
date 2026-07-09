@@ -170,6 +170,15 @@ export function ZeroCalibrate(id: string): $CancellablePromise<void> {
 }
 
 /**
+ * ZeroCalibrateAll 对所有已连接且正在采集的压力采集设备批量执行零位校准
+ */
+export function ZeroCalibrateAll(): $CancellablePromise<types$0.ZeroCalibrateResult[]> {
+    return $Call.ByID(1773570314).then(($result: any) => {
+        return $$createType9($result);
+    });
+}
+
+/**
  * ZeroCalibrateChannel 对指定设备的单个通道执行零位校准
  */
 export function ZeroCalibrateChannel(id: string, channelIndex: number): $CancellablePromise<void> {
@@ -185,3 +194,5 @@ const $$createType4 = types$0.DataPayload.createFrom;
 const $$createType5 = $Create.Array($$createType4);
 const $$createType6 = types$0.DiscoveredDevice.createFrom;
 const $$createType7 = $Create.Array($$createType6);
+const $$createType8 = types$0.ZeroCalibrateResult.createFrom;
+const $$createType9 = $Create.Array($$createType8);

@@ -25,13 +25,24 @@ type FiveHoleTraversalService struct {
 	interpolators map[string]*FiveHoleInterpolator
 	calibInfos    map[string][]types.FiveHoleCalibFileInfo
 
-	motionCoordinator *MotionCoordinator
-	probeAxisMover    FiveHoleProbeAxisMover
-	probeAxisWaiter   FiveHoleProbeAxisWaiter
-	dataProcessor     *DataProcessor
-	eventHandler      *EventHandler
-	testManager       *TestManager
-	realtimeRecorder  *RealtimeRecorder
+	motionCoordinator       *MotionCoordinator
+	probeAxisMover          FiveHoleProbeAxisMover
+	probeAxisWaiter         FiveHoleProbeAxisWaiter
+	// probeAxisPositionGetter 用于测试开始前保存初始位置、测试结束后回到初始位置
+	// 未设置（如单元测试）时跳过返回初始位置逻辑
+	probeAxisPositionGetter FiveHoleProbeAxisPositionGetter
+	// probeAxisKindGetter 用于扇面模式启动前校验 MotionX=线性轴、MotionY=旋转轴
+	// 未设置（如单元测试）时跳过扇面轴类型校验
+	probeAxisKindGetter FiveHoleAxisKindGetter
+	// controllerNameGetter 用于数据点保存时把 ControllerID 转为机构名
+	// 未设置（如单元测试）时回退到 ID
+	controllerNameGetter FiveHoleControllerNameGetter
+	// returnToInitialDone 返回初始位置完成回调（测试用），生产代码应保持 nil
+	returnToInitialDone     FiveHoleReturnToInitialDoneCallback
+	dataProcessor           *DataProcessor
+	eventHandler            *EventHandler
+	testManager             *TestManager
+	realtimeRecorder        *RealtimeRecorder
 
 	// 实时监控相关
 	monitorRunning atomic.Bool
@@ -103,6 +114,55 @@ func (s *FiveHoleTraversalService) SetProbeAxisWaiter(waiter FiveHoleProbeAxisWa
 	defer s.mu.Unlock()
 	s.probeAxisWaiter = waiter
 	s.motionCoordinator = NewMotionCoordinator(s.probeAxisMover, waiter)
+}
+
+// SetProbeAxisPositionGetter 设置探针单轴当前位置获取函数
+// 用于测试开始前保存初始位置、测试结束后回到初始位置
+// 注意：仅可在服务初始化阶段（runTestLoop 启动前）调用。
+func (s *FiveHoleTraversalService) SetProbeAxisPositionGetter(getter FiveHoleProbeAxisPositionGetter) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.probeAxisPositionGetter = getter
+}
+
+// SetAxisKindGetter 设置单轴类型获取函数
+// 用于扇面模式启动前校验 MotionX=线性轴、MotionY=旋转轴
+// 注意：仅可在服务初始化阶段（runTestLoop 启动前）调用。
+func (s *FiveHoleTraversalService) SetAxisKindGetter(getter FiveHoleAxisKindGetter) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.probeAxisKindGetter = getter
+}
+
+// SetControllerNameGetter 设置位移机构名获取函数
+// 用于数据点保存时把 ControllerID 转为用户可读的机构名
+// 注意：仅可在服务初始化阶段（runTestLoop 启动前）调用。
+func (s *FiveHoleTraversalService) SetControllerNameGetter(getter FiveHoleControllerNameGetter) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.controllerNameGetter = getter
+}
+
+// resolveControllerName 把 ControllerID 转为机构名，getter 未设置或未找到时回退到 ID
+func (s *FiveHoleTraversalService) resolveControllerName(controllerID string) string {
+	s.mu.RLock()
+	getter := s.controllerNameGetter
+	s.mu.RUnlock()
+	if getter == nil {
+		return controllerID
+	}
+	if name := getter(controllerID); name != "" {
+		return name
+	}
+	return controllerID
+}
+
+// SetReturnToInitialDoneCallback 设置返回初始位置完成回调（测试用）
+// 注意：仅可在服务初始化阶段（runTestLoop 启动前）调用。
+func (s *FiveHoleTraversalService) SetReturnToInitialDoneCallback(cb FiveHoleReturnToInitialDoneCallback) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.returnToInitialDone = cb
 }
 
 // SetEventPublisher 设置事件发布器（可选，便于测试替换）
@@ -261,10 +321,20 @@ func (s *FiveHoleTraversalService) IsRealtimeRecording() bool {
 
 // Start 启动测试
 // 校验 config.Validate()、每探针 IsCalibLoaded、初始化 csvWriters、testManager.Start、go runTestLoop
+// 测试开始前若已设置 probeAxisPositionGetter，会保存每根启用探针 α/β 轴的当前位置作为初始位置，
+// 测试循环退出时（自然完成 / 取消 / 致命错误）会尝试把探针移动回初始位置。
 func (s *FiveHoleTraversalService) Start(config types.FiveHoleTraversalConfig) (string, error) {
 	// 验证配置
 	if err := config.Validate(); err != nil {
 		return "", fmt.Errorf("配置验证失败: %w", err)
+	}
+
+	// 扇面模式：校验每根启用探针 MotionX=线性轴、MotionY=旋转轴
+	// probeAxisKindGetter 未设置（如单元测试）时跳过校验
+	if config.Layout.Pattern == types.TraversalPatternFan {
+		if err := s.validateFanAxisKinds(config); err != nil {
+			return "", fmt.Errorf("扇面轴类型校验失败: %w", err)
+		}
 	}
 
 	// 检查每探针校准文件是否已加载
@@ -276,6 +346,10 @@ func (s *FiveHoleTraversalService) Start(config types.FiveHoleTraversalConfig) (
 			return "", fmt.Errorf("探针%s 校准文件未载入", p.ProbeID)
 		}
 	}
+
+	// 保存每根启用探针 α/β 轴的初始位置，用于测试结束后回到初始位置
+	// 获取失败时仅记录警告，不阻塞测试启动（用户可能未连接运动控制器）
+	initialPositions := s.captureInitialPositions(config)
 
 	// 标记测试开始
 	s.testRunning.Store(true)
@@ -300,7 +374,7 @@ func (s *FiveHoleTraversalService) Start(config types.FiveHoleTraversalConfig) (
 	// 启动测试协程
 	doneCloseOnce := &sync.Once{}
 	go func() {
-		s.runTestLoop(taskID, config)
+		s.runTestLoop(taskID, config, initialPositions)
 		doneCloseOnce.Do(func() {
 			s.testManager.CloseDoneCh()
 		})
@@ -352,8 +426,9 @@ func (s *FiveHoleTraversalService) GetConfig() types.FiveHoleTraversalConfig {
 //  7. 更新统一进度 +1，发射 progress（phase=completed）
 //  8. 检查 Pause/Cancel
 //  完成后 eventHandler.OnTestComplete
-func (s *FiveHoleTraversalService) runTestLoop(taskID string, config types.FiveHoleTraversalConfig) {
-	points, err := generatePoints(config.Layout)
+//  测试循环退出时（自然完成 / 取消 / 致命错误）尝试把所有探针移动回 initialPositions 保存的初始位置。
+func (s *FiveHoleTraversalService) runTestLoop(taskID string, config types.FiveHoleTraversalConfig, initialPositions map[string]types.TraversalPoint) {
+	points, err := generatePoints(config)
 	if err != nil {
 		s.eventHandler.OnFatalError(fmt.Sprintf("生成布点失败: %v", err))
 		return
@@ -366,7 +441,11 @@ func (s *FiveHoleTraversalService) runTestLoop(taskID string, config types.FiveH
 	// 否则 runRealtimeMonitor 会因 testRunning=true 永远 continue，导致测试完成后画面数据不再更新
 	defer func() {
 		s.testRunning.Store(false)
+		// 先发射完成事件，让 UI 立即收到测试结束信号；
+		// 再尝试把所有探针移动回测试开始前的初始位置（可能耗时数秒），
+		// 失败时仅记录警告，不影响已发射的完成事件。
 		s.eventHandler.OnTestComplete(taskID, s.testManager.GetStatus().Status)
+		s.returnToInitialPositions(config, initialPositions)
 	}()
 
 	// 保存当前代际号，用于检测是否被新测试取代
@@ -587,18 +666,18 @@ func (s *FiveHoleTraversalService) aggregateProbeData(point types.TraversalPoint
 		interp := s.calculateForProbe(probe.ProbeID, avgData)
 
 		dataPoint := types.FiveHoleTraversalDataPoint{
-			PointID:           point.ID,
-			ProbeID:           probe.ProbeID,
-			X:                 point.X,
-			Y:                 point.Y,
-			AlphaControllerID: probe.MotionAlpha.ControllerID,
-			AlphaAxis:         probe.MotionAlpha.Axis,
-			BetaControllerID:  probe.MotionBeta.ControllerID,
-			BetaAxis:          probe.MotionBeta.Axis,
-			RawData:           avgData,
-			InterpResult:      interp,
-			SampleCount:       len(samples),
-			Timestamp:         time.Now().UnixMilli(),
+			PointID:         point.ID,
+			ProbeID:         probe.ProbeID,
+			X:               point.X,
+			Y:               point.Y,
+			XControllerName: s.resolveControllerName(probe.MotionX.ControllerID),
+			XAxis:           probe.MotionX.Axis,
+			YControllerName: s.resolveControllerName(probe.MotionY.ControllerID),
+			YAxis:           probe.MotionY.Axis,
+			RawData:         avgData,
+			InterpResult:    interp,
+			SampleCount:     len(samples),
+			Timestamp:       time.Now().UnixMilli(),
 		}
 
 		// csvWriter.AppendPoint + eventHandler.OnDataPointAcquired

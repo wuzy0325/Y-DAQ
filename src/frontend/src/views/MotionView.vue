@@ -172,7 +172,7 @@
               :max="65535"
               size="small"
               style="width: 110px"
-              controls-position="right"
+              :controls="false"
               :disabled="newController.type === 'SIMULATED-MC'"
             />
           </div>
@@ -191,7 +191,7 @@
               :step="100"
               size="small"
               style="width: 130px"
-              controls-position="right"
+              :controls="false"
             />
           </div>
         </div>
@@ -229,7 +229,7 @@
               :max="65535"
               size="small"
               style="width: 110px"
-              controls-position="right"
+              :controls="false"
               :disabled="editIsSimulated"
             />
           </div>
@@ -242,7 +242,7 @@
               :step="100"
               size="small"
               style="width: 110px"
-              controls-position="right"
+              :controls="false"
             />
           </div>
         </div>
@@ -263,10 +263,7 @@
           </el-table-column>
           <el-table-column label="轴类型" width="100" align="center">
             <template #default="{ row }">
-              <el-select v-model="row.kind" size="small" style="width: 85px">
-                <el-option label="平移轴" value="LINEAR" />
-                <el-option label="旋转轴" value="ROTARY" />
-              </el-select>
+              <el-input v-model="row.kind" size="small" style="width: 85px" placeholder="LINEAR/ROTARY" />
             </template>
           </el-table-column>
           <el-table-column label="步距角(°)" width="90" align="center">
@@ -278,16 +275,23 @@
                 :min="0.1"
                 :max="10"
                 size="small"
-                controls-position="right"
+                :controls="false"
                 style="width: 80px"
               />
             </template>
           </el-table-column>
           <el-table-column label="细分数" width="80" align="center">
             <template #default="{ row }">
-              <el-select v-model="row.microSteps" size="small" style="width: 70px">
-                <el-option v-for="n in [1,2,4,8,16,32,64,128,256]" :key="n" :label="`${n}`" :value="n" />
-              </el-select>
+              <el-input-number
+                v-model="row.microSteps"
+                :precision="0"
+                :step="1"
+                :min="1"
+                :max="256"
+                size="small"
+                :controls="false"
+                style="width: 70px"
+              />
             </template>
           </el-table-column>
           <el-table-column label="丝杆导程(mm)" width="100" align="center">
@@ -300,7 +304,7 @@
                 :min="0.1"
                 :max="50"
                 size="small"
-                controls-position="right"
+                :controls="false"
                 style="width: 85px"
               />
               <span v-else class="readonly-text">-</span>
@@ -315,7 +319,7 @@
                 :step="1"
                 :min="1"
                 size="small"
-                controls-position="right"
+                :controls="false"
                 style="width: 80px"
               />
               <span v-else class="readonly-text">-</span>
@@ -331,7 +335,7 @@
                   :min="0.1"
                   :max="500"
                   size="small"
-                  controls-position="right"
+                  :controls="false"
                   style="width: 75px"
                 />
                 <span class="unit">{{ row.kind === 'LINEAR' ? 'mm/s' : '°/s' }}</span>

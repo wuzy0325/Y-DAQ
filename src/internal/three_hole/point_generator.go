@@ -23,45 +23,25 @@ func generatePoints(layout types.TraversalLayout) []types.TraversalPoint {
 	}
 }
 
-// generateLinePoints 直线/网格布点（当XSteps和YSteps都有值时生成X*Y网格点）
+// generateLinePoints 直线布点（单轴）
+// 沿 line.Axis 方向从 Start 到 End 按步长 Step 取点，强制包含终点；另一轴固定为 Fixed
 func generateLinePoints(line *types.LineLayout) []types.TraversalPoint {
 	if line == nil {
 		return nil
 	}
 
-	var points []types.TraversalPoint
-	id := 0
+	values := types.ExpandLineAxisValues(line.Start, line.End, line.Step)
 
-	// 生成X方向点位
-	xValues := expandStepSegments(line.XSteps)
-	yValues := expandStepSegments(line.YSteps)
-
-	if len(xValues) == 0 && len(yValues) == 0 {
-		// 如果没有分段步长，直接用起止点
-		points = append(points, types.TraversalPoint{ID: fmt.Sprintf("pt-%d", id), X: line.StartX, Y: line.StartY})
-		id++
-		points = append(points, types.TraversalPoint{ID: fmt.Sprintf("pt-%d", id), X: line.EndX, Y: line.EndY})
-		return points
-	}
-
-	if len(yValues) == 0 {
-		yValues = []float64{line.StartY}
-	}
-	if len(xValues) == 0 {
-		xValues = []float64{line.StartX}
-	}
-
-	for _, x := range xValues {
-		for _, y := range yValues {
-			points = append(points, types.TraversalPoint{
-				ID: fmt.Sprintf("pt-%d", id),
-				X:  x,
-				Y:  y,
-			})
-			id++
+	points := make([]types.TraversalPoint, 0, len(values))
+	for i, v := range values {
+		var pt types.TraversalPoint
+		if line.Axis == types.LineAxisX {
+			pt = types.TraversalPoint{ID: fmt.Sprintf("pt-%d", i), X: v, Y: line.Fixed}
+		} else {
+			pt = types.TraversalPoint{ID: fmt.Sprintf("pt-%d", i), X: line.Fixed, Y: v}
 		}
+		points = append(points, pt)
 	}
-
 	return points
 }
 

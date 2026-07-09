@@ -75,6 +75,8 @@ func makeMultiPointConfig5H(t *testing.T) types.FiveHoleTraversalConfig {
 			XMin: 0, XMax: 90, YMin: 0, YMax: 90,
 			XSteps: []types.StepSegment{{Start: 0, End: 90, Step: 10}},
 			YSteps: []types.StepSegment{{Start: 0, End: 90, Step: 10}},
+			XAxis:  "X",
+			YAxis:  "Y",
 		},
 	}
 	return cfg
@@ -816,5 +818,96 @@ func TestService5H_Stop_ClosesAllProbeCSVWriters(t *testing.T) {
 		if err := os.Rename(original, renamed); err != nil {
 			t.Errorf("探针 %s 的 CSV 文件应可重命名（句柄已关闭），但失败: %v", pid, err)
 		}
+	}
+}
+
+// P2-18 TestService5H_ReturnToInitialPosition_AfterComplete
+// 测试正常完成后，探针 α/β 轴被移动回测试开始前的初始位置
+// 注：mover 会被多次调用（每个布点移动 + 完成后返回初始位置），
+//
+//	最后两次 mover 调用应携带初始位置 (initX=42.0, initY=77.0)
+func TestService5H_ReturnToInitialPosition_AfterComplete(t *testing.T) {
+	publisher := &MockEventPublisher{}
+	service := NewFiveHoleTraversalService(publisher)
+
+	calPath := writeTestCalFile(t)
+	if err := service.LoadCalibFiles("probe1", []string{calPath}); err != nil {
+		t.Fatalf("LoadCalibFiles failed: %v", err)
+	}
+
+	// 记录所有 mover 调用的位置参数
+	var mu sync.Mutex
+	var moverCalls []struct {
+		controllerID string
+		axis         types.AxisName
+		position     float64
+	}
+	mover := func(controllerID string, axis types.AxisName, position float64) error {
+		mu.Lock()
+		moverCalls = append(moverCalls, struct {
+			controllerID string
+			axis         types.AxisName
+			position     float64
+		}{controllerID, axis, position})
+		mu.Unlock()
+		return nil
+	}
+	waiter := func(controllerID string, axis types.AxisName, timeoutMs int) error { return nil }
+	service.SetProbeAxisMover(mover)
+	service.SetProbeAxisWaiter(waiter)
+	service.SetMultiDeviceBatchGetter(makeMockMultiDeviceBatchGetter5H())
+
+	// 设置 positionGetter 返回固定初始位置 (X=42.0, Y=77.0)
+	const initX, initY = 42.0, 77.0
+	service.SetProbeAxisPositionGetter(func(controllerID string, axis types.AxisName) (float64, error) {
+		if axis == types.AxisX {
+			return initX, nil
+		}
+		return initY, nil
+	})
+
+	returnDoneCh := make(chan struct{}, 1)
+	service.SetReturnToInitialDoneCallback(func() { returnDoneCh <- struct{}{} })
+
+	cfg := makeServiceConfig5H(t) // 单点位，快速完成
+	if _, err := service.Start(cfg); err != nil {
+		t.Fatalf("Start failed: %v", err)
+	}
+
+	// 等待测试自然完成 + 返回初始位置执行完毕
+	waitForCompleteEvent5H(t, publisher, 3*time.Second)
+	select {
+	case <-returnDoneCh:
+	case <-time.After(3 * time.Second):
+		t.Fatal("等待返回初始位置完成超时")
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+	if len(moverCalls) < 2 {
+		t.Fatalf("至少应有 2 次 mover 调用（测试移动 + 返回初始位置），实际 %d", len(moverCalls))
+	}
+	// 返回初始位置的调用发生在 complete 事件之后，且应在最后两次 mover 调用中
+	// 注：α/β 在 ReturnProbesToInitialPositions 中并行调用，顺序不固定
+	var lastXPos, lastYPos float64
+	var hasLastX, hasLastY bool
+	for i := len(moverCalls) - 1; i >= 0; i-- {
+		c := moverCalls[i]
+		if c.axis == types.AxisX && !hasLastX {
+			lastXPos = c.position
+			hasLastX = true
+		} else if c.axis == types.AxisY && !hasLastY {
+			lastYPos = c.position
+			hasLastY = true
+		}
+		if hasLastX && hasLastY {
+			break
+		}
+	}
+	if !hasLastX || lastXPos != initX {
+		t.Errorf("最后一次 α 轴 mover 调用应携带初始位置 X=%.2f，实际 hasX=%v pos=%.2f", initX, hasLastX, lastXPos)
+	}
+	if !hasLastY || lastYPos != initY {
+		t.Errorf("最后一次 β 轴 mover 调用应携带初始位置 Y=%.2f，实际 hasY=%v pos=%.2f", initY, hasLastY, lastYPos)
 	}
 }

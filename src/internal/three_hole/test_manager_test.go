@@ -27,10 +27,11 @@ func TestStart_NewTask(t *testing.T) {
 		Layout: types.TraversalLayout{
 			Pattern: types.TraversalPatternLine,
 			Line: &types.LineLayout{
-				StartX: 0,
-				EndX:   10,
-				StartY: 0,
-				EndY:   5,
+				Axis:  types.LineAxisX,
+				Start: 0,
+				End:   10,
+				Step:  5,
+				Fixed: 0,
 			},
 		},
 	}
@@ -65,10 +66,11 @@ func TestStart_AlreadyRunning(t *testing.T) {
 		Layout: types.TraversalLayout{
 			Pattern: types.TraversalPatternLine,
 			Line: &types.LineLayout{
-				StartX: 0,
-				EndX:   10,
-				StartY: 0,
-				EndY:   5,
+				Axis:  types.LineAxisX,
+				Start: 0,
+				End:   10,
+				Step:  5,
+				Fixed: 0,
 			},
 		},
 	}
@@ -97,10 +99,11 @@ func TestPause_RunningTask(t *testing.T) {
 		Layout: types.TraversalLayout{
 			Pattern: types.TraversalPatternLine,
 			Line: &types.LineLayout{
-				StartX: 0,
-				EndX:   10,
-				StartY: 0,
-				EndY:   5,
+				Axis:  types.LineAxisX,
+				Start: 0,
+				End:   10,
+				Step:  5,
+				Fixed: 0,
 			},
 		},
 	}
@@ -142,10 +145,11 @@ func TestResume_PausedTask(t *testing.T) {
 		Layout: types.TraversalLayout{
 			Pattern: types.TraversalPatternLine,
 			Line: &types.LineLayout{
-				StartX: 0,
-				EndX:   10,
-				StartY: 0,
-				EndY:   5,
+				Axis:  types.LineAxisX,
+				Start: 0,
+				End:   10,
+				Step:  5,
+				Fixed: 0,
 			},
 		},
 	}
@@ -188,10 +192,11 @@ func TestStop_RunningTask(t *testing.T) {
 		Layout: types.TraversalLayout{
 			Pattern: types.TraversalPatternLine,
 			Line: &types.LineLayout{
-				StartX: 0,
-				EndX:   10,
-				StartY: 0,
-				EndY:   5,
+				Axis:  types.LineAxisX,
+				Start: 0,
+				End:   10,
+				Step:  5,
+				Fixed: 0,
 			},
 		},
 	}
@@ -256,10 +261,11 @@ func TestGetConfig(t *testing.T) {
 		Layout: types.TraversalLayout{
 			Pattern: types.TraversalPatternLine,
 			Line: &types.LineLayout{
-				StartX: 0,
-				EndX:   10,
-				StartY: 0,
-				EndY:   5,
+				Axis:  types.LineAxisX,
+				Start: 0,
+				End:   10,
+				Step:  5,
+				Fixed: 0,
 			},
 		},
 	}
@@ -310,10 +316,11 @@ func TestUpdateProgress(t *testing.T) {
 		Layout: types.TraversalLayout{
 			Pattern: types.TraversalPatternLine,
 			Line: &types.LineLayout{
-				StartX: 0,
-				EndX:   10,
-				StartY: 0,
-				EndY:   5,
+				Axis:  types.LineAxisX,
+				Start: 0,
+				End:   10,
+				Step:  5,
+				Fixed: 0,
 			},
 		},
 	}
@@ -330,8 +337,8 @@ func TestUpdateProgress(t *testing.T) {
 		t.Errorf("Expected 5 completed points, got %d", status.CompletedPoints)
 	}
 
-	if status.TotalPoints != 2 {
-		t.Errorf("Expected 2 total points, got %d", status.TotalPoints)
+	if status.TotalPoints != 3 {
+		t.Errorf("Expected 3 total points, got %d", status.TotalPoints)
 	}
 
 	if status.Progress != 50.0 {
@@ -415,10 +422,11 @@ func TestCheckCancelled(t *testing.T) {
 		Layout: types.TraversalLayout{
 			Pattern: types.TraversalPatternLine,
 			Line: &types.LineLayout{
-				StartX: 0,
-				EndX:   10,
-				StartY: 0,
-				EndY:   5,
+				Axis:  types.LineAxisX,
+				Start: 0,
+				End:   10,
+				Step:  5,
+				Fixed: 0,
 			},
 		},
 	}
@@ -475,10 +483,11 @@ func TestConcurrentAccess(t *testing.T) {
 		Layout: types.TraversalLayout{
 			Pattern: types.TraversalPatternLine,
 			Line: &types.LineLayout{
-				StartX: 0,
-				EndX:   10,
-				StartY: 0,
-				EndY:   5,
+				Axis:  types.LineAxisX,
+				Start: 0,
+				End:   10,
+				Step:  5,
+				Fixed: 0,
 			},
 		},
 	}
@@ -518,10 +527,11 @@ func TestTestManager_Concurrent_Start_Pause_Stop(t *testing.T) {
 		Layout: types.TraversalLayout{
 			Pattern: types.TraversalPatternLine,
 			Line: &types.LineLayout{
-				StartX: 0,
-				EndX:   10,
-				StartY: 0,
-				EndY:   5,
+				Axis:  types.LineAxisX,
+				Start: 0,
+				End:   10,
+				Step:  5,
+				Fixed: 0,
 			},
 		},
 	}

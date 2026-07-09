@@ -3,6 +3,7 @@ package five_hole
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 
@@ -113,6 +114,8 @@ func makeValidFiveHoleConfig(t *testing.T, enabledProbes ...types.FiveHoleProbeC
 				XMin: 0, XMax: 10, YMin: 0, YMax: 10,
 				XSteps: []types.StepSegment{{Start: 0, End: 10, Step: 10}},
 				YSteps: []types.StepSegment{{Start: 0, End: 10, Step: 10}},
+				XAxis:  "X",
+				YAxis:  "Y",
 			},
 		},
 		SavePath:     t.TempDir(),
@@ -132,8 +135,8 @@ func makeEnabledProbe(probeID string) types.FiveHoleProbeConfig {
 			{Role: types.Role5H_P4, DeviceID: "d1", Channel: 3, Enabled: true},
 			{Role: types.Role5H_P5, DeviceID: "d1", Channel: 4, Enabled: true},
 		},
-		MotionAlpha: types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "X"},
-		MotionBeta:  types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "Y"},
+		MotionX: types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "X"},
+		MotionY: types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "Y"},
 		CalibFiles: []types.FiveHoleCalibFileInfo{
 			{FilePath: "fake.cal", FileName: "fake.cal", CMa: 0.5},
 		},
@@ -232,5 +235,199 @@ func TestService_LoadCalibFiles_PerProbe(t *testing.T) {
 	}
 	if service.GetCalibInfo("probe3") != nil {
 		t.Fatal("probe3 未载入 GetCalibInfo 应为 nil")
+	}
+}
+
+// makeFanConfig 构造一个能通过 Validate() 的扇面模式五孔配置
+// 探针 MotionX=线性轴 X，MotionY=旋转轴 U
+func makeFanConfig(t *testing.T, probes ...types.FiveHoleProbeConfig) types.FiveHoleTraversalConfig {
+	t.Helper()
+	ps := probes
+	if ps == nil {
+		ps = []types.FiveHoleProbeConfig{}
+	}
+	return types.FiveHoleTraversalConfig{
+		Name:             "Test",
+		DwellTimeMs:      100,
+		SamplesPerPoint:  1,
+		SampleIntervalMs: 10,
+		MotionTimeoutMs:  1000,
+		PAtmDeviceID:     "devP",
+		PAtmChannel:      0,
+		TAtmDeviceID:     "devT",
+		TAtmChannel:      0,
+		Probes:           ps,
+		Layout: types.TraversalLayout{
+			Pattern: types.TraversalPatternFan,
+			Fan: &types.FanLayout{
+				RStart:     0,
+				ThetaStart: 0,
+				RSteps:     []types.StepSegment{{Start: 0, End: 10, Step: 5}},
+				ThetaSteps: []types.StepSegment{{Start: 0, End: 30, Step: 15}},
+			},
+		},
+		SavePath:     t.TempDir(),
+		SaveFileName: "test",
+	}
+}
+
+// TestValidateFanAxisKinds_GetterNil getter 未设置时跳过校验
+func TestValidateFanAxisKinds_GetterNil(t *testing.T) {
+	service := NewFiveHoleTraversalService(&MockEventPublisher{})
+	config := makeFanConfig(t, makeEnabledProbe("probe1"))
+	// 未调用 SetAxisKindGetter，应直接返回 nil
+	if err := service.validateFanAxisKinds(config); err != nil {
+		t.Fatalf("getter 未设置时应跳过校验返回 nil, got: %v", err)
+	}
+}
+
+// TestValidateFanAxisKinds_LinearRotaryPass MotionX=线性轴、MotionY=旋转轴 → 通过
+func TestValidateFanAxisKinds_LinearRotaryPass(t *testing.T) {
+	service := NewFiveHoleTraversalService(&MockEventPublisher{})
+	// getter: c1 的 X 为线性轴, c1 的 U 为旋转轴
+	service.SetAxisKindGetter(func(controllerID string, axis types.AxisName) (types.AxisKind, bool) {
+		if controllerID == "c1" && axis == "X" {
+			return types.AxisKindLinear, true
+		}
+		if controllerID == "c1" && axis == "U" {
+			return types.AxisKindRotary, true
+		}
+		return "", false
+	})
+
+	probe := makeEnabledProbe("probe1")
+	probe.MotionX = types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "X"}
+	probe.MotionY = types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "U"}
+	config := makeFanConfig(t, probe)
+
+	if err := service.validateFanAxisKinds(config); err != nil {
+		t.Fatalf("线性/旋转轴组合应通过校验, got: %v", err)
+	}
+}
+
+// TestValidateFanAxisKinds_MotionXNotLinear MotionX=旋转轴 → 失败
+func TestValidateFanAxisKinds_MotionXNotLinear(t *testing.T) {
+	service := NewFiveHoleTraversalService(&MockEventPublisher{})
+	service.SetAxisKindGetter(func(controllerID string, axis types.AxisName) (types.AxisKind, bool) {
+		if controllerID == "c1" && axis == "U" {
+			return types.AxisKindRotary, true
+		}
+		return "", false
+	})
+
+	probe := makeEnabledProbe("probe1")
+	probe.MotionX = types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "U"} // 旋转轴
+	probe.MotionY = types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "U"}
+	config := makeFanConfig(t, probe)
+
+	err := service.validateFanAxisKinds(config)
+	if err == nil {
+		t.Fatal("MotionX 为旋转轴应返回错误")
+	}
+}
+
+// TestValidateFanAxisKinds_MotionYNotRotary MotionY=线性轴 → 失败
+func TestValidateFanAxisKinds_MotionYNotRotary(t *testing.T) {
+	service := NewFiveHoleTraversalService(&MockEventPublisher{})
+	service.SetAxisKindGetter(func(controllerID string, axis types.AxisName) (types.AxisKind, bool) {
+		if controllerID == "c1" && axis == "X" {
+			return types.AxisKindLinear, true
+		}
+		if controllerID == "c1" && axis == "Y" {
+			return types.AxisKindLinear, true
+		}
+		return "", false
+	})
+
+	probe := makeEnabledProbe("probe1")
+	probe.MotionX = types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "X"}
+	probe.MotionY = types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "Y"} // 线性轴
+	config := makeFanConfig(t, probe)
+
+	err := service.validateFanAxisKinds(config)
+	if err == nil {
+		t.Fatal("MotionY 为线性轴应返回错误")
+	}
+}
+
+// TestValidateFanAxisKinds_AxisNotFound 控制器/轴未找到 → 失败
+func TestValidateFanAxisKinds_AxisNotFound(t *testing.T) {
+	service := NewFiveHoleTraversalService(&MockEventPublisher{})
+	// getter 永远返回未找到
+	service.SetAxisKindGetter(func(controllerID string, axis types.AxisName) (types.AxisKind, bool) {
+		return "", false
+	})
+
+	probe := makeEnabledProbe("probe1")
+	probe.MotionX = types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "X"}
+	probe.MotionY = types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "U"}
+	config := makeFanConfig(t, probe)
+
+	err := service.validateFanAxisKinds(config)
+	if err == nil {
+		t.Fatal("轴未找到应返回错误")
+	}
+}
+
+// TestValidateFanAxisKinds_DisabledProbeSkipped 禁用探针跳过校验
+func TestValidateFanAxisKinds_DisabledProbeSkipped(t *testing.T) {
+	service := NewFiveHoleTraversalService(&MockEventPublisher{})
+	service.SetAxisKindGetter(func(controllerID string, axis types.AxisName) (types.AxisKind, bool) {
+		// 仅 c1/X 和 c1/U 通过，其它都未找到
+		if controllerID == "c1" && axis == "X" {
+			return types.AxisKindLinear, true
+		}
+		if controllerID == "c1" && axis == "U" {
+			return types.AxisKindRotary, true
+		}
+		return "", false
+	})
+
+	probe1 := makeEnabledProbe("probe1")
+	probe1.MotionX = types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "X"}
+	probe1.MotionY = types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "U"}
+
+	// 禁用探针（轴配置错误，但不应被校验）
+	probe2 := makeEnabledProbe("probe2")
+	probe2.Enabled = false
+	probe2.MotionX = types.FiveHoleMotionAxisMapping{ControllerID: "unknown", Axis: "X"}
+	probe2.MotionY = types.FiveHoleMotionAxisMapping{ControllerID: "unknown", Axis: "U"}
+
+	config := makeFanConfig(t, probe1, probe2)
+
+	if err := service.validateFanAxisKinds(config); err != nil {
+		t.Fatalf("禁用探针应被跳过, got: %v", err)
+	}
+}
+
+// TestValidateFanAxisKinds_MultiProbeErrorsMerged 多探针错误合并返回
+func TestValidateFanAxisKinds_MultiProbeErrorsMerged(t *testing.T) {
+	service := NewFiveHoleTraversalService(&MockEventPublisher{})
+	// getter 永远返回线性轴（MotionY 必失败）
+	service.SetAxisKindGetter(func(controllerID string, axis types.AxisName) (types.AxisKind, bool) {
+		return types.AxisKindLinear, true
+	})
+
+	probe1 := makeEnabledProbe("probe1")
+	probe1.MotionX = types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "X"}
+	probe1.MotionY = types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "U"}
+
+	probe2 := makeEnabledProbe("probe2")
+	probe2.MotionX = types.FiveHoleMotionAxisMapping{ControllerID: "c2", Axis: "X"}
+	probe2.MotionY = types.FiveHoleMotionAxisMapping{ControllerID: "c2", Axis: "U"}
+
+	config := makeFanConfig(t, probe1, probe2)
+
+	err := service.validateFanAxisKinds(config)
+	if err == nil {
+		t.Fatal("应返回错误")
+	}
+	// 两根探针的 MotionY 都应该报错（合并返回）
+	errMsg := err.Error()
+	if !strings.Contains(errMsg, "probe1") {
+		t.Fatalf("错误信息应包含 probe1, got: %s", errMsg)
+	}
+	if !strings.Contains(errMsg, "probe2") {
+		t.Fatalf("错误信息应包含 probe2, got: %s", errMsg)
 	}
 }

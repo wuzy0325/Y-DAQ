@@ -32,6 +32,7 @@ const (
 	TraversalPatternLine      TraversalPattern = "line"
 	TraversalPatternRectangle TraversalPattern = "rectangle"
 	TraversalPatternCustom    TraversalPattern = "custom"
+	TraversalPatternFan       TraversalPattern = "fan"
 )
 
 // StepSegment 分段步长区段
@@ -41,17 +42,79 @@ type StepSegment struct {
 	Step  float64 `json:"step"`
 }
 
-// LineLayout 直线布点配置
+// LineLayout 直线布点配置（单轴）
+// 沿 Axis 方向从 Start 到 End 按步长 Step 取点，另一轴固定为 Fixed
 type LineLayout struct {
-	StartX float64       `json:"startX"`
-	StartY float64       `json:"startY"`
-	EndX   float64       `json:"endX"`
-	EndY   float64       `json:"endY"`
-	XSteps []StepSegment `json:"xSteps"`
-	YSteps []StepSegment `json:"ySteps"`
+	Axis  string  `json:"axis"`  // 移动轴："x" 或 "y"
+	Start float64 `json:"start"` // 起点坐标（沿 Axis 方向）
+	End   float64 `json:"end"`   // 终点坐标（沿 Axis 方向）
+	Step  float64 `json:"step"`  // 步长（>0，方向自动按 start→end）
+	Fixed float64 `json:"fixed"` // 静止轴坐标值
+}
+
+// LineAxisX / LineAxisY 直线布点移动轴常量
+const (
+	LineAxisX = "x"
+	LineAxisY = "y"
+)
+
+// validateLineLayout 校验直线布点配置（三孔/五孔共享基础校验）
+// 注意：Axis 的具体取值由各自模块解释
+//   - 三孔：Axis 必须是 "x" 或 "y"
+//   - 五孔：Axis 是物理轴名（如 X/Y/Z/U），由 FiveHoleTraversalConfig.Validate 校验
+func validateLineLayout(line *LineLayout) error {
+	if line == nil {
+		return fmt.Errorf("直线布点需要Line配置")
+	}
+	if line.Axis == "" {
+		return fmt.Errorf("直线布点Axis不能为空")
+	}
+	if line.Step <= 0 {
+		return fmt.Errorf("直线布点Step必须>0")
+	}
+	return nil
+}
+
+// ExpandLineAxisValues 沿单轴方向展开点位坐标（三孔/五孔共享）
+//   - 支持 start>end 反向（步长恒为正，方向自动跟随 start→end）
+//   - 步长不整除时强制包含 end（最后一点用 end 替代，避免浮点漂移）
+func ExpandLineAxisValues(start, end, step float64) []float64 {
+	if step <= 0 {
+		return []float64{start}
+	}
+	if start == end {
+		return []float64{start}
+	}
+
+	direction := 1.0
+	if end < start {
+		direction = -1
+	}
+
+	absStep := step
+	absDelta := end - start
+	if absDelta < 0 {
+		absDelta = -absDelta
+	}
+
+	// n = floor(absDelta/absStep)，整数步数
+	n := int(absDelta / absStep)
+
+	values := make([]float64, 0, n+2)
+	values = append(values, start)
+	for i := 1; i <= n; i++ {
+		values = append(values, start+direction*float64(i)*absStep)
+	}
+	// 若 n 步尚未抵达 end，追加 end 作为终点
+	if float64(n)*absStep < absDelta {
+		values = append(values, end)
+	}
+	return values
 }
 
 // RectangleLayout 矩形布点配置
+// XAxis/YAxis 为五孔专用：X/Y 方向分别映射到的物理轴名（如 X/Y/Z/U）
+// 三孔不使用这两个字段，保持默认空值即可
 type RectangleLayout struct {
 	XMin   float64       `json:"xMin"`
 	XMax   float64       `json:"xMax"`
@@ -59,6 +122,19 @@ type RectangleLayout struct {
 	YMax   float64       `json:"yMax"`
 	XSteps []StepSegment `json:"xSteps"`
 	YSteps []StepSegment `json:"ySteps"`
+	XAxis  string        `json:"xAxis"` // 五孔：X 方向物理轴名
+	YAxis  string        `json:"yAxis"` // 五孔：Y 方向物理轴名
+}
+
+// FanLayout 扇形布点配置
+// R 方向为线性轴，θ 方向为旋转轴；第一点位为相对原点（当前位置）
+type FanLayout struct {
+	RSteps     []StepSegment `json:"rSteps"`     // 半径方向步进
+	ThetaSteps []StepSegment `json:"thetaSteps"` // 角度方向步进
+	RStart     float64       `json:"rStart"`     // 起始半径，用于相对原点计算
+	ThetaStart float64       `json:"thetaStart"` // 起始角度（度），用于相对原点计算
+	RAxis      string        `json:"rAxis"`      // 半径方向物理轴名
+	ThetaAxis  string        `json:"thetaAxis"`  // 角度方向物理轴名
 }
 
 // TraversalLayout 布点配置
@@ -66,6 +142,7 @@ type TraversalLayout struct {
 	Pattern      TraversalPattern `json:"pattern"`
 	Line         *LineLayout      `json:"line,omitempty"`
 	Rectangle    *RectangleLayout `json:"rectangle,omitempty"`
+	Fan          *FanLayout       `json:"fan,omitempty"`
 	CustomPoints []TraversalPoint `json:"customPoints,omitempty"`
 }
 
@@ -264,12 +341,11 @@ func (c *ThreeHoleTraversalConfig) Validate() error {
 	// 布局配置验证
 	switch c.Layout.Pattern {
 	case TraversalPatternLine:
-		if c.Layout.Line == nil {
-			return fmt.Errorf("直线布点需要Line配置")
+		if err := validateLineLayout(c.Layout.Line); err != nil {
+			return err
 		}
-		if c.Layout.Line.StartX == 0 && c.Layout.Line.EndX == 0 &&
-		   len(c.Layout.Line.XSteps) == 0 {
-			return fmt.Errorf("直线布点必须有X方向配置")
+		if c.Layout.Line.Axis != LineAxisX && c.Layout.Line.Axis != LineAxisY {
+			return fmt.Errorf("三孔直线布点Axis必须为 x 或 y")
 		}
 
 	case TraversalPatternRectangle:

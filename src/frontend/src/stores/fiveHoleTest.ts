@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { FiveHoleService } from '@bindings/yx-daq/internal/app'
 import {
@@ -42,8 +42,8 @@ function defaultProbe(probeId: string): FiveHoleProbeConfig {
     probeId,
     enabled: true,
     probeChannels: defaultProbeChannels(),
-    motionAlpha: { controllerId: '', axis: AxisName.X },
-    motionBeta: { controllerId: '', axis: AxisName.Y },
+    motionX: { controllerId: '', axis: AxisName.X },
+    motionY: { controllerId: '', axis: AxisName.Y },
     calibFiles: [],
   }
 }
@@ -57,6 +57,17 @@ function defaultConfig(): FiveHoleTraversalConfig {
         xMin: -20, xMax: 20, yMin: -20, yMax: 20,
         xSteps: [{ start: -20, end: 20, step: 5 }],
         ySteps: [{ start: -20, end: 20, step: 5 }],
+        xAxis: AxisName.X,
+        yAxis: AxisName.Y,
+      },
+      line: { axis: AxisName.X, start: -20, end: 20, step: 5, fixed: 0 },
+      fan: {
+        rSteps: [{ start: 0, end: 20, step: 5 }],
+        thetaSteps: [{ start: 0, end: 90, step: 15 }],
+        rStart: 0,
+        thetaStart: 0,
+        rAxis: AxisName.X,
+        thetaAxis: AxisName.U,
       },
     },
     dwellTimeMs: 2000,
@@ -174,7 +185,7 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
     // 检查每探针位移机构连接状态
     const motionStore = useMotionStore()
     for (const probe of enabledProbes.value) {
-      for (const axisMap of [probe.motionAlpha, probe.motionBeta]) {
+      for (const axisMap of [probe.motionX, probe.motionY]) {
         if (!axisMap.controllerId) continue
         const mc = motionStore.statuses.find(s => s.id === axisMap.controllerId)
         if (!mc || mc.status !== 'Connected') {
@@ -333,9 +344,10 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
     const probeData = completeProbeDataPoints.value?.[probeId] ?? []
     if (probeData.length === 0) return
 
-    const BOM = '﻿'
+    const BOM = '\uFEFF'
     const headers = [
       '点号', '探针ID', 'X', 'Y',
+      'X方向位移机构名', 'X方向轴号', 'Y方向位移机构名', 'Y方向轴号',
       'P1', 'P2', 'P3', 'P4', 'P5', 'P∞', 'T∞',
       '总压Pt', '静压Ps', '马赫数Ma', '攻角Alpha', '侧滑角Beta', '速度V',
       '校正空速CAS', '静温SAT', '动压Qc', '密度ρ',
@@ -344,6 +356,7 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
     ]
     const rows = probeData.map(p => [
       p.pointId, p.probeId, p.x.toFixed(4), p.y.toFixed(4),
+      p.xControllerName, p.xAxis, p.yControllerName, p.yAxis,
       p.rawData.p1.toFixed(6), p.rawData.p2.toFixed(6), p.rawData.p3.toFixed(6),
       p.rawData.p4.toFixed(6), p.rawData.p5.toFixed(6),
       p.rawData.pAtm.toFixed(6), p.rawData.tAtm.toFixed(6),
@@ -387,7 +400,8 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
         const loaded = await FiveHoleService.LoadFiveHoleConfig() as any
         if (loaded && loaded.probes && loaded.probes.length > 0) {
           config.value = loaded as FiveHoleTraversalConfig
-          localStorage.setItem(configStorageKey, JSON.stringify(loaded))
+          migrateLegacyConfig()
+          localStorage.setItem(configStorageKey, JSON.stringify(config.value))
         } else {
           loadConfigFromLocal()
         }
@@ -432,11 +446,70 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
       const data = JSON.parse(raw)
       if (data && data.probes && data.probes.length > 0) {
         config.value = data as FiveHoleTraversalConfig
+        migrateLegacyConfig()
       }
     } catch (e) {
       console.error('从localStorage加载配置失败:', e)
     }
   }
+
+  // 确保当前 pattern 对应的布局对象存在，避免旧配置缺少 line/rectangle 导致控件不渲染
+  function ensureLayoutObjects() {
+    const layout = config.value.layout as any
+    if (!layout) return
+    if (layout.pattern === TraversalPattern.LINE && !layout.line) {
+      layout.line = { axis: AxisName.X, start: -20, end: 20, step: 5, fixed: 0 }
+    }
+    if (layout.pattern === TraversalPattern.RECTANGLE && !layout.rectangle) {
+      layout.rectangle = {
+        xMin: -20, xMax: 20, yMin: -20, yMax: 20,
+        xSteps: [{ start: -20, end: 20, step: 5 }],
+        ySteps: [{ start: -20, end: 20, step: 5 }],
+        xAxis: AxisName.X,
+        yAxis: AxisName.Y,
+      }
+    }
+    if (layout.pattern === TraversalPattern.FAN && !layout.fan) {
+      layout.fan = {
+        rSteps: [{ start: 0, end: 20, step: 5 }],
+        thetaSteps: [{ start: 0, end: 90, step: 15 }],
+        rStart: 0,
+        thetaStart: 0,
+        rAxis: AxisName.X,
+        thetaAxis: AxisName.U,
+      }
+    }
+  }
+
+  // 迁移旧配置字段：motionAlpha/motionBeta -> motionX/motionY；line.axis 小写 -> 大写
+  function migrateLegacyConfig() {
+    const cfg = config.value as any
+    if (!cfg.probes) return
+    for (const probe of cfg.probes) {
+      if (probe.motionAlpha) {
+        probe.motionX = probe.motionAlpha
+        delete probe.motionAlpha
+      }
+      if (probe.motionBeta) {
+        probe.motionY = probe.motionBeta
+        delete probe.motionBeta
+      }
+    }
+    if (cfg.layout?.line?.axis === 'x') cfg.layout.line.axis = AxisName.X
+    if (cfg.layout?.line?.axis === 'y') cfg.layout.line.axis = AxisName.Y
+    if (cfg.layout?.rectangle) {
+      if (!cfg.layout.rectangle.xAxis) cfg.layout.rectangle.xAxis = AxisName.X
+      if (!cfg.layout.rectangle.yAxis) cfg.layout.rectangle.yAxis = AxisName.Y
+    }
+    ensureLayoutObjects()
+  }
+
+  // 切换布点模式时自动补全缺失的布局对象
+  watch(
+    () => config.value.layout?.pattern,
+    () => ensureLayoutObjects(),
+    { immediate: true },
+  )
 
   return {
     // 状态

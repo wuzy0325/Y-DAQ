@@ -56,7 +56,7 @@ func (tm *TestManager) Start(config types.FiveHoleTraversalConfig) (string, erro
 		return "", fmt.Errorf("test already running")
 	}
 
-	points, err := generatePoints(config.Layout)
+	points, err := generatePoints(config)
 	if err != nil {
 		return "", fmt.Errorf("生成布点失败: %w", err)
 	}

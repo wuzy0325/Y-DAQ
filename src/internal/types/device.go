@@ -203,3 +203,12 @@ type DeviceStatus struct {
 	Acquiring bool             `json:"acquiring"`
 	LastError string           `json:"lastError"`
 }
+
+// ZeroCalibrateResult 批量校零的单设备结果
+type ZeroCalibrateResult struct {
+	DeviceID   string `json:"deviceId"`   // 设备ID
+	DeviceName string `json:"deviceName"` // 设备名称
+	Success    bool   `json:"success"`    // 是否校零成功
+	Channels   int    `json:"channels"`   // 校零的通道数（失败时为0）
+	Error      string `json:"error"`      // 失败原因（成功时为空）
+}

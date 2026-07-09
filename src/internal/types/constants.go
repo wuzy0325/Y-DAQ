@@ -40,9 +40,10 @@ const (
 	DAQTDefaultPort       = 9000
 	DAQTDiscoveryPort     = 7000
 	DAQTChannelCount      = 16
-	DAQTBinaryFrameSize   = 64  // BIN=1: 16 × float32 LE
-	DAQTASCIIFrameSize    = 192 // BIN=0: 16 × 12字符定宽
-	DAQTSerialFrameSize   = 46  // 串口帧
+	DAQTBinaryFrameSize             = 64 // BIN=1: 16 × float32 LE
+	DAQTBinaryFrameSizeWithTs       = 72 // BIN=1+TIME/HEAD: 8B timestamp + 64B float32
+	DAQTASCIIFrameSize              = 192 // BIN=0: 16 × 12字符定宽
+	DAQTSerialFrameSize             = 46  // 串口帧
 	DAQTConfigSyncDelayMs = 300 // 连接后配置同步延迟
 	DAQTCmdTerminator     = "" // 命令以裸 ASCII 发送，不追加换行或终止符
 	DAQTACKTimeoutMs      = 200 // ACK 超时

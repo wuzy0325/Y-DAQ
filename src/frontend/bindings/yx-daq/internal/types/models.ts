@@ -747,6 +747,82 @@ export class EncoderCompensationConfig {
 }
 
 /**
+ * FanLayout 扇形布点配置
+ * R 方向为线性轴，θ 方向为旋转轴；第一点位为相对原点（当前位置）
+ */
+export class FanLayout {
+    /**
+     * 半径方向步进
+     */
+    "rSteps": StepSegment[];
+
+    /**
+     * 角度方向步进
+     */
+    "thetaSteps": StepSegment[];
+
+    /**
+     * 起始半径，用于相对原点计算
+     */
+    "rStart": number;
+
+    /**
+     * 起始角度（度），用于相对原点计算
+     */
+    "thetaStart": number;
+
+    /**
+     * 半径方向物理轴名
+     */
+    "rAxis": string;
+
+    /**
+     * 角度方向物理轴名
+     */
+    "thetaAxis": string;
+
+    /** Creates a new FanLayout instance. */
+    constructor($$source: Partial<FanLayout> = {}) {
+        if (!("rSteps" in $$source)) {
+            this["rSteps"] = [];
+        }
+        if (!("thetaSteps" in $$source)) {
+            this["thetaSteps"] = [];
+        }
+        if (!("rStart" in $$source)) {
+            this["rStart"] = 0;
+        }
+        if (!("thetaStart" in $$source)) {
+            this["thetaStart"] = 0;
+        }
+        if (!("rAxis" in $$source)) {
+            this["rAxis"] = "";
+        }
+        if (!("thetaAxis" in $$source)) {
+            this["thetaAxis"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new FanLayout instance from a string or object.
+     */
+    static createFrom($$source: any = {}): FanLayout {
+        const $$createField0_0 = $$createType17;
+        const $$createField1_0 = $$createType17;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("rSteps" in $$parsedSource) {
+            $$parsedSource["rSteps"] = $$createField0_0($$parsedSource["rSteps"]);
+        }
+        if ("thetaSteps" in $$parsedSource) {
+            $$parsedSource["thetaSteps"] = $$createField1_0($$parsedSource["thetaSteps"]);
+        }
+        return new FanLayout($$parsedSource as Partial<FanLayout>);
+    }
+}
+
+/**
  * FiveHoleCalibFileInfo 五孔校准文件信息（.cal 文件：首行 13 13，后接 169 行 ka kb cpt cps alpha beta）
  */
 export class FiveHoleCalibFileInfo {
@@ -785,7 +861,7 @@ export class FiveHoleCalibFileInfo {
      * Creates a new FiveHoleCalibFileInfo instance from a string or object.
      */
     static createFrom($$source: any = {}): FiveHoleCalibFileInfo {
-        const $$createField3_0 = $$createType16;
+        const $$createField3_0 = $$createType18;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("validRange" in $$parsedSource) {
             $$parsedSource["validRange"] = $$createField3_0($$parsedSource["validRange"]);
@@ -1180,14 +1256,14 @@ export class FiveHoleProbeConfig {
     "probeChannels": FiveHoleProbeChannelConfig[];
 
     /**
-     * α 轴：位移机构 + 轴号
+     * X 方向：位移机构 + 轴号
      */
-    "motionAlpha": FiveHoleMotionAxisMapping;
+    "motionX": FiveHoleMotionAxisMapping;
 
     /**
-     * β 轴：位移机构 + 轴号
+     * Y 方向：位移机构 + 轴号
      */
-    "motionBeta": FiveHoleMotionAxisMapping;
+    "motionY": FiveHoleMotionAxisMapping;
 
     /**
      * .cal 校准文件（每探针独立载入）
@@ -1205,11 +1281,11 @@ export class FiveHoleProbeConfig {
         if (!("probeChannels" in $$source)) {
             this["probeChannels"] = [];
         }
-        if (!("motionAlpha" in $$source)) {
-            this["motionAlpha"] = (new FiveHoleMotionAxisMapping());
+        if (!("motionX" in $$source)) {
+            this["motionX"] = (new FiveHoleMotionAxisMapping());
         }
-        if (!("motionBeta" in $$source)) {
-            this["motionBeta"] = (new FiveHoleMotionAxisMapping());
+        if (!("motionY" in $$source)) {
+            this["motionY"] = (new FiveHoleMotionAxisMapping());
         }
         if (!("calibFiles" in $$source)) {
             this["calibFiles"] = [];
@@ -1222,19 +1298,19 @@ export class FiveHoleProbeConfig {
      * Creates a new FiveHoleProbeConfig instance from a string or object.
      */
     static createFrom($$source: any = {}): FiveHoleProbeConfig {
-        const $$createField2_0 = $$createType18;
-        const $$createField3_0 = $$createType19;
-        const $$createField4_0 = $$createType19;
-        const $$createField5_0 = $$createType21;
+        const $$createField2_0 = $$createType20;
+        const $$createField3_0 = $$createType21;
+        const $$createField4_0 = $$createType21;
+        const $$createField5_0 = $$createType23;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("probeChannels" in $$parsedSource) {
             $$parsedSource["probeChannels"] = $$createField2_0($$parsedSource["probeChannels"]);
         }
-        if ("motionAlpha" in $$parsedSource) {
-            $$parsedSource["motionAlpha"] = $$createField3_0($$parsedSource["motionAlpha"]);
+        if ("motionX" in $$parsedSource) {
+            $$parsedSource["motionX"] = $$createField3_0($$parsedSource["motionX"]);
         }
-        if ("motionBeta" in $$parsedSource) {
-            $$parsedSource["motionBeta"] = $$createField4_0($$parsedSource["motionBeta"]);
+        if ("motionY" in $$parsedSource) {
+            $$parsedSource["motionY"] = $$createField4_0($$parsedSource["motionY"]);
         }
         if ("calibFiles" in $$parsedSource) {
             $$parsedSource["calibFiles"] = $$createField5_0($$parsedSource["calibFiles"]);
@@ -1280,8 +1356,8 @@ export class FiveHoleProbeStatus {
      * Creates a new FiveHoleProbeStatus instance from a string or object.
      */
     static createFrom($$source: any = {}): FiveHoleProbeStatus {
-        const $$createField4_0 = $$createType22;
-        const $$createField5_0 = $$createType24;
+        const $$createField4_0 = $$createType24;
+        const $$createField5_0 = $$createType26;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("rawData" in $$parsedSource) {
             $$parsedSource["rawData"] = $$createField4_0($$parsedSource["rawData"]);
@@ -1437,8 +1513,8 @@ export class FiveHoleTraversalConfig {
      * Creates a new FiveHoleTraversalConfig instance from a string or object.
      */
     static createFrom($$source: any = {}): FiveHoleTraversalConfig {
-        const $$createField1_0 = $$createType25;
-        const $$createField10_0 = $$createType27;
+        const $$createField1_0 = $$createType27;
+        const $$createField10_0 = $$createType29;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("layout" in $$parsedSource) {
             $$parsedSource["layout"] = $$createField1_0($$parsedSource["layout"]);
@@ -1503,8 +1579,8 @@ export class FiveHoleTraversalTaskStatus {
      * Creates a new FiveHoleTraversalTaskStatus instance from a string or object.
      */
     static createFrom($$source: any = {}): FiveHoleTraversalTaskStatus {
-        const $$createField5_0 = $$createType29;
-        const $$createField6_0 = $$createType31;
+        const $$createField5_0 = $$createType31;
+        const $$createField6_0 = $$createType33;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("currentPoint" in $$parsedSource) {
             $$parsedSource["currentPoint"] = $$createField5_0($$parsedSource["currentPoint"]);
@@ -1545,35 +1621,51 @@ export class LimitStatus {
 }
 
 /**
- * LineLayout 直线布点配置
+ * LineLayout 直线布点配置（单轴）
+ * 沿 Axis 方向从 Start 到 End 按步长 Step 取点，另一轴固定为 Fixed
  */
 export class LineLayout {
-    "startX": number;
-    "startY": number;
-    "endX": number;
-    "endY": number;
-    "xSteps": StepSegment[];
-    "ySteps": StepSegment[];
+    /**
+     * 移动轴："x" 或 "y"
+     */
+    "axis": string;
+
+    /**
+     * 起点坐标（沿 Axis 方向）
+     */
+    "start": number;
+
+    /**
+     * 终点坐标（沿 Axis 方向）
+     */
+    "end": number;
+
+    /**
+     * 步长（>0，方向自动按 start→end）
+     */
+    "step": number;
+
+    /**
+     * 静止轴坐标值
+     */
+    "fixed": number;
 
     /** Creates a new LineLayout instance. */
     constructor($$source: Partial<LineLayout> = {}) {
-        if (!("startX" in $$source)) {
-            this["startX"] = 0;
+        if (!("axis" in $$source)) {
+            this["axis"] = "";
         }
-        if (!("startY" in $$source)) {
-            this["startY"] = 0;
+        if (!("start" in $$source)) {
+            this["start"] = 0;
         }
-        if (!("endX" in $$source)) {
-            this["endX"] = 0;
+        if (!("end" in $$source)) {
+            this["end"] = 0;
         }
-        if (!("endY" in $$source)) {
-            this["endY"] = 0;
+        if (!("step" in $$source)) {
+            this["step"] = 0;
         }
-        if (!("xSteps" in $$source)) {
-            this["xSteps"] = [];
-        }
-        if (!("ySteps" in $$source)) {
-            this["ySteps"] = [];
+        if (!("fixed" in $$source)) {
+            this["fixed"] = 0;
         }
 
         Object.assign(this, $$source);
@@ -1583,15 +1675,7 @@ export class LineLayout {
      * Creates a new LineLayout instance from a string or object.
      */
     static createFrom($$source: any = {}): LineLayout {
-        const $$createField4_0 = $$createType33;
-        const $$createField5_0 = $$createType33;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
-        if ("xSteps" in $$parsedSource) {
-            $$parsedSource["xSteps"] = $$createField4_0($$parsedSource["xSteps"]);
-        }
-        if ("ySteps" in $$parsedSource) {
-            $$parsedSource["ySteps"] = $$createField5_0($$parsedSource["ySteps"]);
-        }
         return new LineLayout($$parsedSource as Partial<LineLayout>);
     }
 }
@@ -1790,6 +1874,8 @@ export enum ProbeChannelRole {
 
 /**
  * RectangleLayout 矩形布点配置
+ * XAxis/YAxis 为五孔专用：X/Y 方向分别映射到的物理轴名（如 X/Y/Z/U）
+ * 三孔不使用这两个字段，保持默认空值即可
  */
 export class RectangleLayout {
     "xMin": number;
@@ -1798,6 +1884,16 @@ export class RectangleLayout {
     "yMax": number;
     "xSteps": StepSegment[];
     "ySteps": StepSegment[];
+
+    /**
+     * 五孔：X 方向物理轴名
+     */
+    "xAxis": string;
+
+    /**
+     * 五孔：Y 方向物理轴名
+     */
+    "yAxis": string;
 
     /** Creates a new RectangleLayout instance. */
     constructor($$source: Partial<RectangleLayout> = {}) {
@@ -1819,6 +1915,12 @@ export class RectangleLayout {
         if (!("ySteps" in $$source)) {
             this["ySteps"] = [];
         }
+        if (!("xAxis" in $$source)) {
+            this["xAxis"] = "";
+        }
+        if (!("yAxis" in $$source)) {
+            this["yAxis"] = "";
+        }
 
         Object.assign(this, $$source);
     }
@@ -1827,8 +1929,8 @@ export class RectangleLayout {
      * Creates a new RectangleLayout instance from a string or object.
      */
     static createFrom($$source: any = {}): RectangleLayout {
-        const $$createField4_0 = $$createType33;
-        const $$createField5_0 = $$createType33;
+        const $$createField4_0 = $$createType17;
+        const $$createField5_0 = $$createType17;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("xSteps" in $$parsedSource) {
             $$parsedSource["xSteps"] = $$createField4_0($$parsedSource["xSteps"]);
@@ -2230,7 +2332,7 @@ export class ThreeHoleTraversalConfig {
      * Creates a new ThreeHoleTraversalConfig instance from a string or object.
      */
     static createFrom($$source: any = {}): ThreeHoleTraversalConfig {
-        const $$createField3_0 = $$createType25;
+        const $$createField3_0 = $$createType27;
         const $$createField4_0 = $$createType39;
         const $$createField5_0 = $$createType40;
         const $$createField6_0 = $$createType40;
@@ -2352,7 +2454,7 @@ export class ThreeHoleTraversalTaskStatus {
      * Creates a new ThreeHoleTraversalTaskStatus instance from a string or object.
      */
     static createFrom($$source: any = {}): ThreeHoleTraversalTaskStatus {
-        const $$createField5_0 = $$createType29;
+        const $$createField5_0 = $$createType31;
         const $$createField6_0 = $$createType46;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("currentPoint" in $$parsedSource) {
@@ -2372,6 +2474,7 @@ export class TraversalLayout {
     "pattern": TraversalPattern;
     "line"?: LineLayout | null;
     "rectangle"?: RectangleLayout | null;
+    "fan"?: FanLayout | null;
     "customPoints"?: TraversalPoint[];
 
     /** Creates a new TraversalLayout instance. */
@@ -2389,7 +2492,8 @@ export class TraversalLayout {
     static createFrom($$source: any = {}): TraversalLayout {
         const $$createField1_0 = $$createType48;
         const $$createField2_0 = $$createType50;
-        const $$createField3_0 = $$createType51;
+        const $$createField3_0 = $$createType52;
+        const $$createField4_0 = $$createType53;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("line" in $$parsedSource) {
             $$parsedSource["line"] = $$createField1_0($$parsedSource["line"]);
@@ -2397,8 +2501,11 @@ export class TraversalLayout {
         if ("rectangle" in $$parsedSource) {
             $$parsedSource["rectangle"] = $$createField2_0($$parsedSource["rectangle"]);
         }
+        if ("fan" in $$parsedSource) {
+            $$parsedSource["fan"] = $$createField3_0($$parsedSource["fan"]);
+        }
         if ("customPoints" in $$parsedSource) {
-            $$parsedSource["customPoints"] = $$createField3_0($$parsedSource["customPoints"]);
+            $$parsedSource["customPoints"] = $$createField4_0($$parsedSource["customPoints"]);
         }
         return new TraversalLayout($$parsedSource as Partial<TraversalLayout>);
     }
@@ -2416,6 +2523,7 @@ export enum TraversalPattern {
     TraversalPatternLine = "line",
     TraversalPatternRectangle = "rectangle",
     TraversalPatternCustom = "custom",
+    TraversalPatternFan = "fan",
 };
 
 /**
@@ -2493,6 +2601,65 @@ export enum ValveState {
     ValveStateUnknown = "Unknown",
 };
 
+/**
+ * ZeroCalibrateResult 批量校零的单设备结果
+ */
+export class ZeroCalibrateResult {
+    /**
+     * 设备ID
+     */
+    "deviceId": string;
+
+    /**
+     * 设备名称
+     */
+    "deviceName": string;
+
+    /**
+     * 是否校零成功
+     */
+    "success": boolean;
+
+    /**
+     * 校零的通道数（失败时为0）
+     */
+    "channels": number;
+
+    /**
+     * 失败原因（成功时为空）
+     */
+    "error": string;
+
+    /** Creates a new ZeroCalibrateResult instance. */
+    constructor($$source: Partial<ZeroCalibrateResult> = {}) {
+        if (!("deviceId" in $$source)) {
+            this["deviceId"] = "";
+        }
+        if (!("deviceName" in $$source)) {
+            this["deviceName"] = "";
+        }
+        if (!("success" in $$source)) {
+            this["success"] = false;
+        }
+        if (!("channels" in $$source)) {
+            this["channels"] = 0;
+        }
+        if (!("error" in $$source)) {
+            this["error"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ZeroCalibrateResult instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ZeroCalibrateResult {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new ZeroCalibrateResult($$parsedSource as Partial<ZeroCalibrateResult>);
+    }
+}
+
 // Private type creation functions
 const $$createType0 = EncoderCompensationConfig.createFrom;
 const $$createType1 = ProbeChannelConfig.createFrom;
@@ -2510,23 +2677,23 @@ const $$createType12 = $Create.Array($Create.Any);
 const $$createType13 = $Create.Array($Create.Any);
 const $$createType14 = ChannelConfig.createFrom;
 const $$createType15 = $Create.Array($$createType14);
-const $$createType16 = FiveHoleCalibRange.createFrom;
-const $$createType17 = FiveHoleProbeChannelConfig.createFrom;
-const $$createType18 = $Create.Array($$createType17);
-const $$createType19 = FiveHoleMotionAxisMapping.createFrom;
-const $$createType20 = FiveHoleCalibFileInfo.createFrom;
-const $$createType21 = $Create.Array($$createType20);
-const $$createType22 = $Create.Nullable($$createType6);
-const $$createType23 = FiveHoleInterpolationResult.createFrom;
-const $$createType24 = $Create.Nullable($$createType23);
-const $$createType25 = TraversalLayout.createFrom;
-const $$createType26 = FiveHoleProbeConfig.createFrom;
-const $$createType27 = $Create.Array($$createType26);
-const $$createType28 = TraversalPoint.createFrom;
-const $$createType29 = $Create.Nullable($$createType28);
-const $$createType30 = FiveHoleProbeStatus.createFrom;
-const $$createType31 = $Create.Array($$createType30);
-const $$createType32 = StepSegment.createFrom;
+const $$createType16 = StepSegment.createFrom;
+const $$createType17 = $Create.Array($$createType16);
+const $$createType18 = FiveHoleCalibRange.createFrom;
+const $$createType19 = FiveHoleProbeChannelConfig.createFrom;
+const $$createType20 = $Create.Array($$createType19);
+const $$createType21 = FiveHoleMotionAxisMapping.createFrom;
+const $$createType22 = FiveHoleCalibFileInfo.createFrom;
+const $$createType23 = $Create.Array($$createType22);
+const $$createType24 = $Create.Nullable($$createType6);
+const $$createType25 = FiveHoleInterpolationResult.createFrom;
+const $$createType26 = $Create.Nullable($$createType25);
+const $$createType27 = TraversalLayout.createFrom;
+const $$createType28 = FiveHoleProbeConfig.createFrom;
+const $$createType29 = $Create.Array($$createType28);
+const $$createType30 = TraversalPoint.createFrom;
+const $$createType31 = $Create.Nullable($$createType30);
+const $$createType32 = FiveHoleProbeStatus.createFrom;
 const $$createType33 = $Create.Array($$createType32);
 const $$createType34 = AxisConfig.createFrom;
 const $$createType35 = $Create.Array($$createType34);
@@ -2545,4 +2712,6 @@ const $$createType47 = LineLayout.createFrom;
 const $$createType48 = $Create.Nullable($$createType47);
 const $$createType49 = RectangleLayout.createFrom;
 const $$createType50 = $Create.Nullable($$createType49);
-const $$createType51 = $Create.Array($$createType28);
+const $$createType51 = FanLayout.createFrom;
+const $$createType52 = $Create.Nullable($$createType51);
+const $$createType53 = $Create.Array($$createType30);

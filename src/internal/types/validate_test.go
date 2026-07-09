@@ -16,10 +16,11 @@ func validThreeHoleConfig() ThreeHoleTraversalConfig {
 		Layout: TraversalLayout{
 			Pattern: TraversalPatternLine,
 			Line: &LineLayout{
-				StartX: 0,
-				EndX:   10,
-				StartY: 0,
-				EndY:   5,
+				Axis:  LineAxisX,
+				Start: 0,
+				End:   10,
+				Step:  5,
+				Fixed: 0,
 			},
 		},
 		ProbeChannels: []ThreeHoleProbeChannelConfig{
@@ -90,14 +91,24 @@ func TestThreeHoleValidate_Layout(t *testing.T) {
 			"Line配置",
 		},
 		{
-			"line no X config",
+			"line empty axis",
 			func(c *ThreeHoleTraversalConfig) {
 				c.Layout = TraversalLayout{
 					Pattern: TraversalPatternLine,
-					Line:    &LineLayout{StartY: 0, EndY: 5},
+					Line:    &LineLayout{Axis: "", Start: 0, End: 10, Step: 5, Fixed: 0},
 				}
 			},
-			"X方向",
+			"Axis",
+		},
+		{
+			"line zero step",
+			func(c *ThreeHoleTraversalConfig) {
+				c.Layout = TraversalLayout{
+					Pattern: TraversalPatternLine,
+					Line:    &LineLayout{Axis: LineAxisX, Start: 0, End: 10, Step: 0, Fixed: 0},
+				}
+			},
+			"Step",
 		},
 		{
 			"rectangle nil",
@@ -231,14 +242,20 @@ func validFiveHoleConfig() FiveHoleTraversalConfig {
 					{Role: Role5H_P4, DeviceID: "d1", Channel: 3, Enabled: true},
 					{Role: Role5H_P5, DeviceID: "d1", Channel: 4, Enabled: true},
 				},
-				MotionAlpha: FiveHoleMotionAxisMapping{ControllerID: "mc-1", Axis: AxisX},
-				MotionBeta:  FiveHoleMotionAxisMapping{ControllerID: "mc-1", Axis: AxisY},
+				MotionX: FiveHoleMotionAxisMapping{ControllerID: "mc-1", Axis: AxisX},
+				MotionY: FiveHoleMotionAxisMapping{ControllerID: "mc-1", Axis: AxisY},
 				CalibFiles:  []FiveHoleCalibFileInfo{{FilePath: "a.cal", FileName: "a.cal"}},
 			},
 		},
 		Layout: TraversalLayout{
 			Pattern: TraversalPatternLine,
-			Line:    &LineLayout{StartX: 0, EndX: 10, StartY: 0, EndY: 5},
+			Line: &LineLayout{
+				Axis:  string(AxisX),
+				Start: 0,
+				End:   10,
+				Step:  5,
+				Fixed: 0,
+			},
 		},
 		SavePath:     "/tmp",
 		SaveFileName: "out.csv",
@@ -330,24 +347,24 @@ func TestFiveHoleValidate_Probes(t *testing.T) {
 			"fiveHole.p5",
 		},
 		{
-			"empty alpha controllerID",
-			func(c *FiveHoleTraversalConfig) { c.Probes[0].MotionAlpha.ControllerID = "" },
-			"α轴",
+			"empty x controllerID",
+			func(c *FiveHoleTraversalConfig) { c.Probes[0].MotionX.ControllerID = "" },
+			"X方向",
 		},
 		{
-			"empty alpha axis",
-			func(c *FiveHoleTraversalConfig) { c.Probes[0].MotionAlpha.Axis = "" },
-			"α轴号",
+			"empty x axis",
+			func(c *FiveHoleTraversalConfig) { c.Probes[0].MotionX.Axis = "" },
+			"X方向轴号",
 		},
 		{
-			"empty beta controllerID",
-			func(c *FiveHoleTraversalConfig) { c.Probes[0].MotionBeta.ControllerID = "" },
-			"β轴",
+			"empty y controllerID",
+			func(c *FiveHoleTraversalConfig) { c.Probes[0].MotionY.ControllerID = "" },
+			"Y方向",
 		},
 		{
-			"empty beta axis",
-			func(c *FiveHoleTraversalConfig) { c.Probes[0].MotionBeta.Axis = "" },
-			"β轴号",
+			"empty y axis",
+			func(c *FiveHoleTraversalConfig) { c.Probes[0].MotionY.Axis = "" },
+			"Y方向轴号",
 		},
 		{
 			"no calib files",

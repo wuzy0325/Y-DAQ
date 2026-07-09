@@ -17,10 +17,11 @@ func TestStopRestart(t *testing.T) {
 		Layout: types.TraversalLayout{
 			Pattern: types.TraversalPatternLine,
 			Line: &types.LineLayout{
-				StartX: 0,
-				EndX:   10,
-				StartY: 0,
-				EndY:   5,
+				Axis:  types.LineAxisX,
+				Start: 0,
+				End:   10,
+				Step:  5,
+				Fixed: 0,
 			},
 		},
 	}
@@ -97,10 +98,11 @@ func TestStopRestartRaceCondition(t *testing.T) {
 		Layout: types.TraversalLayout{
 			Pattern: types.TraversalPatternLine,
 			Line: &types.LineLayout{
-				StartX: 0,
-				EndX:   10,
-				StartY: 0,
-				EndY:   5,
+				Axis:  types.LineAxisX,
+				Start: 0,
+				End:   10,
+				Step:  5,
+				Fixed: 0,
 			},
 		},
 	}
@@ -143,10 +145,11 @@ func TestStopRestartWithConfigChange(t *testing.T) {
 		Layout: types.TraversalLayout{
 			Pattern: types.TraversalPatternLine,
 			Line: &types.LineLayout{
-				StartX: 0,
-				EndX:   10,
-				StartY: 0,
-				EndY:   5,
+				Axis:  types.LineAxisX,
+				Start: 0,
+				End:   10,
+				Step:  5,
+				Fixed: 0,
 			},
 		},
 	}

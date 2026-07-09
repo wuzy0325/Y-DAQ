@@ -20,6 +20,7 @@ export {
     DeviceType,
     DiscoveredDevice,
     EncoderCompensationConfig,
+    FanLayout,
     FiveHoleCalibFileInfo,
     FiveHoleCalibRange,
     FiveHoleChannelRole,
@@ -55,5 +56,6 @@ export {
     TraversalPattern,
     TraversalPoint,
     TraversalTestStatus,
-    ValveState
+    ValveState,
+    ZeroCalibrateResult
 } from "./models";

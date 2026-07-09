@@ -110,6 +110,11 @@ func (s *DeviceService) ZeroCalibrate(id string) error {
 	return s.Core.DeviceManager.ZeroCalibrate(id)
 }
 
+// ZeroCalibrateAll 对所有已连接且正在采集的压力采集设备批量执行零位校准
+func (s *DeviceService) ZeroCalibrateAll() []types.ZeroCalibrateResult {
+	return s.Core.DeviceManager.ZeroCalibrateAll()
+}
+
 // ZeroCalibrateChannel 对指定设备的单个通道执行零位校准
 func (s *DeviceService) ZeroCalibrateChannel(id string, channelIndex int) error {
 	return s.Core.DeviceManager.ZeroCalibrateChannel(id, channelIndex)

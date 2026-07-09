@@ -21,8 +21,8 @@ export interface FiveHoleInterpolationResult {
 
 export interface FiveHoleTraversalDataPoint {
   pointId: string; probeId: string; x: number; y: number
-  alphaControllerId: string; alphaAxis: AxisNameValue
-  betaControllerId: string; betaAxis: AxisNameValue
+  xControllerName: string; xAxis: AxisNameValue
+  yControllerName: string; yAxis: AxisNameValue
   rawData: FiveHoleRawData; interpResult: FiveHoleInterpolationResult
   sampleCount: number; timestamp: number
 }
@@ -79,19 +79,34 @@ export interface StepSegment {
 }
 
 export interface LineLayout {
-  startX: number; startY: number; endX: number; endY: number
-  xSteps: StepSegment[]; ySteps: StepSegment[]
+  axis: AxisNameValue // 移动物理轴名（X/Y/Z/U）
+  start: number       // 起点坐标（沿 axis 方向）
+  end: number         // 终点坐标（沿 axis 方向）
+  step: number        // 步长（>0，方向自动按 start→end）
+  fixed: number       // 静止轴坐标值
 }
 
 export interface RectangleLayout {
   xMin: number; xMax: number; yMin: number; yMax: number
   xSteps: StepSegment[]; ySteps: StepSegment[]
+  xAxis: AxisNameValue // X 方向物理轴名
+  yAxis: AxisNameValue // Y 方向物理轴名
+}
+
+export interface FanLayout {
+  rSteps: StepSegment[]
+  thetaSteps: StepSegment[]
+  rStart: number
+  thetaStart: number
+  rAxis: AxisNameValue
+  thetaAxis: AxisNameValue
 }
 
 export interface TraversalLayout {
   pattern: TraversalPatternValue
   line?: LineLayout
   rectangle?: RectangleLayout
+  fan?: FanLayout
   customPoints?: { id: string; x: number; y: number }[]
 }
 
@@ -125,8 +140,8 @@ export interface FiveHoleProbeConfig {
   probeId: string // probe1/probe2/probe3
   enabled: boolean // 配几根跑几根
   probeChannels: FiveHoleProbeChannelConfig[]
-  motionAlpha: FiveHoleMotionAxisMapping
-  motionBeta: FiveHoleMotionAxisMapping
+  motionX: FiveHoleMotionAxisMapping // X 方向：位移机构 + 轴号
+  motionY: FiveHoleMotionAxisMapping // Y 方向：位移机构 + 轴号
   calibFiles: FiveHoleCalibFileInfo[]
 }
 

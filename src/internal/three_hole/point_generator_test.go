@@ -15,135 +15,163 @@ func TestGeneratePoints_EmptyLayout(t *testing.T) {
 	}
 }
 
-// TestGeneratePoints_LineBasic 测试基本直线布点
+// TestGeneratePoints_LineBasic 测试 X 轴直线布点
 func TestGeneratePoints_LineBasic(t *testing.T) {
 	layout := types.TraversalLayout{
 		Pattern: types.TraversalPatternLine,
 		Line: &types.LineLayout{
-			StartX: 0,
-			EndX:   10,
-			StartY: 0,
-			EndY:   5,
+			Axis:  types.LineAxisX,
+			Start: 0,
+			End:   10,
+			Step:  5,
+			Fixed: 0,
 		},
 	}
 
 	points := generatePoints(layout)
-	if len(points) != 2 {
-		t.Errorf("Expected 2 points for basic line, got %d", len(points))
+	if len(points) != 3 { // 0, 5, 10
+		t.Fatalf("Expected 3 points for X-axis line, got %d", len(points))
 	}
 
-	// 验证点位
-	if points[0].ID != "pt-0" {
-		t.Errorf("Expected first point ID 'pt-0', got '%s'", points[0].ID)
+	// 验证点位：(0,0), (5,0), (10,0)
+	expected := []struct {
+		x, y float64
+	}{
+		{0, 0}, {5, 0}, {10, 0},
 	}
-	if points[0].X != 0 || points[0].Y != 0 {
-		t.Errorf("Expected first point (0, 0), got (%.1f, %.1f)", points[0].X, points[0].Y)
-	}
-
-	if points[1].ID != "pt-1" {
-		t.Errorf("Expected second point ID 'pt-1', got '%s'", points[1].ID)
-	}
-	if points[1].X != 10 || points[1].Y != 5 {
-		t.Errorf("Expected second point (10, 5), got (%.1f, %.1f)", points[1].X, points[1].Y)
-	}
-}
-
-// TestGeneratePoints_LineWithSteps 测试带步长的直线布点
-func TestGeneratePoints_LineWithSteps(t *testing.T) {
-	layout := types.TraversalLayout{
-		Pattern: types.TraversalPatternLine,
-		Line: &types.LineLayout{
-			StartX: 0,
-			EndX:   10,
-			StartY: 0,
-			EndY:   4,
-			XSteps: []types.StepSegment{{Start: 0, End: 10, Step: 2}},
-			YSteps: []types.StepSegment{{Start: 0, End: 4, Step: 2}},
-		},
-	}
-
-	points := generatePoints(layout)
-	if len(points) != 18 { // 6 X * 3 Y = 18 points
-		t.Errorf("Expected 18 points for line with steps, got %d", len(points))
-	}
-
-	// 验证部分网格点（18个点太多，只验证前几个）
-	expectedPoints := map[string][2]float64{
-		"pt-0":  {0, 0},
-		"pt-1":  {0, 2},
-		"pt-2":  {0, 4},
-		"pt-3":  {2, 0},
-		"pt-4":  {2, 2},
-		"pt-5":  {2, 4},
-		"pt-6":  {4, 0},
-		"pt-7":  {4, 2},
-		"pt-8":  {4, 4},
-		"pt-9":  {6, 0},
-		"pt-10": {6, 2},
-		"pt-11": {6, 4},
-		"pt-12": {8, 0},
-		"pt-13": {8, 2},
-		"pt-14": {8, 4},
-		"pt-15": {10, 0},
-		"pt-16": {10, 2},
-		"pt-17": {10, 4},
-	}
-
-	for _, point := range points {
-		expected, exists := expectedPoints[point.ID]
-		if !exists {
-			t.Errorf("Unexpected point ID: %s", point.ID)
-			continue
-		}
-		if point.X != expected[0] || point.Y != expected[1] {
-			t.Errorf("Point %s: expected (%.1f, %.1f), got (%.1f, %.1f)",
-				point.ID, expected[0], expected[1], point.X, point.Y)
+	for i, pt := range points {
+		if pt.X != expected[i].x || pt.Y != expected[i].y {
+			t.Errorf("Point %d: expected (%.1f, %.1f), got (%.1f, %.1f)",
+				i, expected[i].x, expected[i].y, pt.X, pt.Y)
 		}
 	}
 }
 
-// TestGeneratePoints_LineInvalidStep 测试无效步长
-func TestGeneratePoints_LineInvalidStep(t *testing.T) {
+// TestGeneratePoints_LineYAxis 测试 Y 轴直线布点
+func TestGeneratePoints_LineYAxis(t *testing.T) {
 	layout := types.TraversalLayout{
 		Pattern: types.TraversalPatternLine,
 		Line: &types.LineLayout{
-			StartX: 0,
-			EndX:   10,
-			StartY: 0,
-			EndY:   5,
-			XSteps: []types.StepSegment{{Start: 10, End: 0, Step: 2}}, // 倒序
+			Axis:  types.LineAxisY,
+			Start: 0,
+			End:   10,
+			Step:  5,
+			Fixed: 7,
 		},
 	}
 
 	points := generatePoints(layout)
-	// 倒序步长被忽略，但仍会生成起止点
-	if len(points) != 2 {
-		t.Errorf("Expected 2 points for invalid step direction (start and end points), got %d", len(points))
+	if len(points) != 3 {
+		t.Fatalf("Expected 3 points for Y-axis line, got %d", len(points))
 	}
 
-	// 验证是起止点
-	if points[0].X != 0 || points[1].X != 10 {
-		t.Errorf("Expected start and end points, got (%.1f, %.1f) and (%.1f, %.1f)",
-			points[0].X, points[0].Y, points[1].X, points[1].Y)
+	// 验证点位：(7,0), (7,5), (7,10)
+	expected := []struct {
+		x, y float64
+	}{
+		{7, 0}, {7, 5}, {7, 10},
+	}
+	for i, pt := range points {
+		if pt.X != expected[i].x || pt.Y != expected[i].y {
+			t.Errorf("Point %d: expected (%.1f, %.1f), got (%.1f, %.1f)",
+				i, expected[i].x, expected[i].y, pt.X, pt.Y)
+		}
 	}
 }
 
-// TestGeneratePoints_LineZeroStep 测试零步长
+// TestGeneratePoints_LineReverse 测试反向直线（start > end）
+func TestGeneratePoints_LineReverse(t *testing.T) {
+	layout := types.TraversalLayout{
+		Pattern: types.TraversalPatternLine,
+		Line: &types.LineLayout{
+			Axis:  types.LineAxisX,
+			Start: 10,
+			End:   0,
+			Step:  5,
+			Fixed: 0,
+		},
+	}
+
+	points := generatePoints(layout)
+	if len(points) != 3 { // 10, 5, 0
+		t.Fatalf("Expected 3 points for reverse line, got %d", len(points))
+	}
+
+	expected := []float64{10, 5, 0}
+	for i, pt := range points {
+		if pt.X != expected[i] {
+			t.Errorf("Point %d: expected X=%.1f, got %.1f", i, expected[i], pt.X)
+		}
+	}
+}
+
+// TestGeneratePoints_LineNotDivisible 测试步长不整除时强制包含终点
+func TestGeneratePoints_LineNotDivisible(t *testing.T) {
+	layout := types.TraversalLayout{
+		Pattern: types.TraversalPatternLine,
+		Line: &types.LineLayout{
+			Axis:  types.LineAxisX,
+			Start: 0,
+			End:   10,
+			Step:  3,
+			Fixed: 0,
+		},
+	}
+
+	points := generatePoints(layout)
+	// 0, 3, 6, 9, 10（最后一点强制为 end=10）
+	if len(points) != 5 {
+		t.Fatalf("Expected 5 points (step not divisible, end included), got %d", len(points))
+	}
+	if points[0].X != 0 {
+		t.Errorf("Expected first X=0, got %.1f", points[0].X)
+	}
+	if points[len(points)-1].X != 10 {
+		t.Errorf("Expected last X=10 (end forced), got %.1f", points[len(points)-1].X)
+	}
+}
+
+// TestGeneratePoints_LineZeroStep 测试步长 <= 0（仅起点）
 func TestGeneratePoints_LineZeroStep(t *testing.T) {
 	layout := types.TraversalLayout{
 		Pattern: types.TraversalPatternLine,
 		Line: &types.LineLayout{
-			StartX: 0,
-			EndX:   10,
-			StartY: 0,
-			EndY:   5,
-			XSteps: []types.StepSegment{{Start: 0, End: 10, Step: 0}}, // 零步长
+			Axis:  types.LineAxisX,
+			Start: 0,
+			End:   10,
+			Step:  0, // 零步长
+			Fixed: 0,
 		},
 	}
 
 	points := generatePoints(layout)
-	if len(points) != 2 {
-		t.Errorf("Expected 2 points for zero step (just endpoints), got %d", len(points))
+	if len(points) != 1 {
+		t.Fatalf("Expected 1 point for zero step, got %d", len(points))
+	}
+	if points[0].X != 0 {
+		t.Errorf("Expected X=0, got %.1f", points[0].X)
+	}
+}
+
+// TestGeneratePoints_LineStartEqualsEnd 测试起点等于终点
+func TestGeneratePoints_LineStartEqualsEnd(t *testing.T) {
+	layout := types.TraversalLayout{
+		Pattern: types.TraversalPatternLine,
+		Line: &types.LineLayout{
+			Axis:  types.LineAxisX,
+			Start: 5,
+			End:   5,
+			Step:  1,
+			Fixed: 3,
+		},
+	}
+
+	points := generatePoints(layout)
+	if len(points) != 1 {
+		t.Fatalf("Expected 1 point for start==end, got %d", len(points))
+	}
+	if points[0].X != 5 || points[0].Y != 3 {
+		t.Errorf("Expected (5, 3), got (%.1f, %.1f)", points[0].X, points[0].Y)
 	}
 }
 
@@ -284,41 +312,42 @@ func TestGenerateLinePoints_Empty(t *testing.T) {
 	}
 }
 
-// TestGenerateLinePoints_NoSteps 测试无步长的直线
+// TestGenerateLinePoints_NoSteps 测试步长 > 距离（仅起止两点，中间无点）
 func TestGenerateLinePoints_NoSteps(t *testing.T) {
 	line := &types.LineLayout{
-		StartX: 0,
-		EndX:   10,
-		StartY: 0,
-		EndY:   5,
+		Axis:  types.LineAxisX,
+		Start: 0,
+		End:   10,
+		Step:  20, // 步长 > 距离，仅 start 和 end
+		Fixed: 0,
 	}
 
 	points := generateLinePoints(line)
 	if len(points) != 2 {
-		t.Errorf("Expected 2 points for no steps, got %d", len(points))
+		t.Fatalf("Expected 2 points (step > delta), got %d", len(points))
+	}
+	if points[0].X != 0 || points[1].X != 10 {
+		t.Errorf("Expected (0, 10), got (%.1f, %.1f)", points[0].X, points[1].X)
 	}
 }
 
-// TestGenerateLinePoints_NegativeStep 测试负步长
+// TestGenerateLinePoints_NegativeStep 测试负步长（视为无效，仅起点）
 func TestGenerateLinePoints_NegativeStep(t *testing.T) {
 	line := &types.LineLayout{
-		StartX: 0,
-		EndX:   10,
-		StartY: 0,
-		EndY:   5,
-		XSteps: []types.StepSegment{{Start: 0, End: 10, Step: -1}},
+		Axis:  types.LineAxisX,
+		Start: 0,
+		End:   10,
+		Step:  -1, // 负步长
+		Fixed: 0,
 	}
 
 	points := generateLinePoints(line)
-	// 负步长被忽略，但仍会生成起止点
-	if len(points) != 2 {
-		t.Errorf("Expected 2 points for negative step (start and end points), got %d", len(points))
+	// 负步长视为无效，仅生成起点
+	if len(points) != 1 {
+		t.Fatalf("Expected 1 point for negative step, got %d", len(points))
 	}
-
-	// 验证是起止点
-	if points[0].X != 0 || points[1].X != 10 {
-		t.Errorf("Expected start and end points, got (%.1f, %.1f) and (%.1f, %.1f)",
-			points[0].X, points[0].Y, points[1].X, points[1].Y)
+	if points[0].X != 0 {
+		t.Errorf("Expected X=0, got %.1f", points[0].X)
 	}
 }
 
@@ -412,19 +441,25 @@ func TestGeneratePoints_LargeDataset(t *testing.T) {
 	}
 }
 
-// TestGeneratePoints_ExactBoundary 测试精确边界值
+// TestGeneratePoints_ExactBoundary 测试整除场景（终点正好落在步长上）
 func TestGeneratePoints_ExactBoundary(t *testing.T) {
 	layout := types.TraversalLayout{
 		Pattern: types.TraversalPatternLine,
 		Line: &types.LineLayout{
-			StartX: 0,
-			EndX:   0, // X相同
-			YSteps: []types.StepSegment{{Start: 0, End: 5, Step: 5}},
+			Axis:  types.LineAxisX,
+			Start: 0,
+			End:   10,
+			Step:  5, // 整除：0, 5, 10
+			Fixed: 0,
 		},
 	}
 
 	points := generatePoints(layout)
-	if len(points) != 2 {
-		t.Errorf("Expected 2 points for same X, got %d", len(points))
+	if len(points) != 3 {
+		t.Errorf("Expected 3 points for exact boundary, got %d", len(points))
+	}
+	// 终点必须包含
+	if points[len(points)-1].X != 10 {
+		t.Errorf("Expected last X=10, got %.1f", points[len(points)-1].X)
 	}
 }

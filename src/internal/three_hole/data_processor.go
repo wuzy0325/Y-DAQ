@@ -158,6 +158,7 @@ func (dp *DataProcessor) RunSinglePoint(point types.TraversalPoint) (types.Three
 }
 
 // MoveToPoint 运动到指定点位
+// 直线单轴模式：根据 cfg.Layout.Line.Axis 跳过静止轴（已由 PrePositionStationaryAxis 预定位到 line.Fixed）
 func (dp *DataProcessor) MoveToPoint(point types.TraversalPoint) error {
 	if dp.testManager == nil {
 		return fmt.Errorf("test manager not initialized")
@@ -174,27 +175,34 @@ func (dp *DataProcessor) MoveToPoint(point types.TraversalPoint) error {
 	// 加锁获取 config 副本，避免与 StartRealtimeMonitor 写入 config 产生数据竞争
 	cfg := dp.testManager.GetConfig()
 
+	// 直线单轴模式：判断是否跳过 α/β 轴
+	skipAlpha, skipBeta := computeThreeHoleAxisSkip(cfg.Layout)
+
 	// 并行控制Alpha和Beta轴
 	var wg sync.WaitGroup
 	errChan := make(chan error, 2)
 
 	// Alpha轴控制
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if err := dp.motionCtrl(cfg.MotionAlpha.Axis, point.X); err != nil {
-			errChan <- fmt.Errorf("move α axis to %.2f failed: %w", point.X, err)
-		}
-	}()
+	if !skipAlpha {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := dp.motionCtrl(cfg.MotionAlpha.Axis, point.X); err != nil {
+				errChan <- fmt.Errorf("move α axis to %.2f failed: %w", point.X, err)
+			}
+		}()
+	}
 
 	// Beta轴控制
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if err := dp.motionCtrl(cfg.MotionBeta.Axis, point.Y); err != nil {
-			errChan <- fmt.Errorf("move β axis to %.2f failed: %w", point.Y, err)
-		}
-	}()
+	if !skipBeta {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := dp.motionCtrl(cfg.MotionBeta.Axis, point.Y); err != nil {
+				errChan <- fmt.Errorf("move β axis to %.2f failed: %w", point.Y, err)
+			}
+		}()
+	}
 
 	wg.Wait()
 	close(errChan)
@@ -212,30 +220,130 @@ func (dp *DataProcessor) MoveToPoint(point types.TraversalPoint) error {
 		}
 
 		wg = sync.WaitGroup{}
-		wg.Add(2)
 
 		// Alpha轴等待
-		go func() {
-			defer wg.Done()
-			if err := dp.motionWaiter(cfg.MotionAlpha.Axis, motionTimeout); err != nil {
-				dp.testManager.EmitPointError(fmt.Sprintf("α轴运动超时: %v", err))
-				slog.Warn("motion waiter α axis timeout", "axis", cfg.MotionAlpha.Axis, "err", err)
-			}
-		}()
+		if !skipAlpha {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				if err := dp.motionWaiter(cfg.MotionAlpha.Axis, motionTimeout); err != nil {
+					dp.testManager.EmitPointError(fmt.Sprintf("α轴运动超时: %v", err))
+					slog.Warn("motion waiter α axis timeout", "axis", cfg.MotionAlpha.Axis, "err", err)
+				}
+			}()
+		}
 
 		// Beta轴等待
-		go func() {
-			defer wg.Done()
-			if err := dp.motionWaiter(cfg.MotionBeta.Axis, motionTimeout); err != nil {
-				dp.testManager.EmitPointError(fmt.Sprintf("β轴运动超时: %v", err))
-				slog.Warn("motion waiter β axis timeout", "axis", cfg.MotionBeta.Axis, "err", err)
-			}
-		}()
+		if !skipBeta {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				if err := dp.motionWaiter(cfg.MotionBeta.Axis, motionTimeout); err != nil {
+					dp.testManager.EmitPointError(fmt.Sprintf("β轴运动超时: %v", err))
+					slog.Warn("motion waiter β axis timeout", "axis", cfg.MotionBeta.Axis, "err", err)
+				}
+			}()
+		}
 
 		wg.Wait()
 	}
 
 	return nil
+}
+
+// PrePositionStationaryAxis 直线单轴模式：将静止轴预定位到 line.Fixed
+// 必须在主循环开始前调用一次，建立"静止轴 = Fixed"不变量
+// 变化轴不动（由主循环第一个点的 MoveToPoint 处理）
+// 非直线模式直接返回 nil（无需预定位）
+func (dp *DataProcessor) PrePositionStationaryAxis(config types.ThreeHoleTraversalConfig) error {
+	if config.Layout.Pattern != types.TraversalPatternLine || config.Layout.Line == nil {
+		return nil
+	}
+	if dp.motionCtrl == nil {
+		return fmt.Errorf("motion controller not set")
+	}
+
+	skipAlpha, skipBeta := computeThreeHoleAxisSkip(config.Layout)
+	if !skipAlpha && !skipBeta {
+		return nil
+	}
+
+	fixed := config.Layout.Line.Fixed
+	motionTimeout := config.MotionTimeoutMs
+	if motionTimeout <= 0 {
+		motionTimeout = 30000
+	}
+
+	// 静止轴预定位（与 MoveToPoint 相同：先发指令，再等待完成）
+	var wg sync.WaitGroup
+	errChan := make(chan error, 2)
+
+	if skipAlpha {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := dp.motionCtrl(config.MotionAlpha.Axis, fixed); err != nil {
+				errChan <- fmt.Errorf("α轴预定位到 %.2f 失败: %w", fixed, err)
+			}
+		}()
+	}
+	if skipBeta {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := dp.motionCtrl(config.MotionBeta.Axis, fixed); err != nil {
+				errChan <- fmt.Errorf("β轴预定位到 %.2f 失败: %w", fixed, err)
+			}
+		}()
+	}
+
+	wg.Wait()
+	close(errChan)
+
+	for err := range errChan {
+		return err
+	}
+
+	// 等待静止轴运动完成
+	if dp.motionWaiter != nil {
+		wg = sync.WaitGroup{}
+		if skipAlpha {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				if err := dp.motionWaiter(config.MotionAlpha.Axis, motionTimeout); err != nil {
+					slog.Warn("motion waiter α axis pre-position timeout", "axis", config.MotionAlpha.Axis, "err", err)
+				}
+			}()
+		}
+		if skipBeta {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				if err := dp.motionWaiter(config.MotionBeta.Axis, motionTimeout); err != nil {
+					slog.Warn("motion waiter β axis pre-position timeout", "axis", config.MotionBeta.Axis, "err", err)
+				}
+			}()
+		}
+		wg.Wait()
+	}
+
+	return nil
+}
+
+// computeThreeHoleAxisSkip 根据布点配置计算是否跳过 α/β 轴
+// 直线单轴模式：Axis=x 时跳过 β 轴（Y 不动），Axis=y 时跳过 α 轴（X 不动）
+func computeThreeHoleAxisSkip(layout types.TraversalLayout) (skipAlpha, skipBeta bool) {
+	if layout.Pattern != types.TraversalPatternLine || layout.Line == nil {
+		return false, false
+	}
+	switch layout.Line.Axis {
+	case types.LineAxisX:
+		return false, true
+	case types.LineAxisY:
+		return true, false
+	}
+	return false, false
 }
 
 // DwellWithRealtimeUpdate 在驻留等待期间持续推送实时数据

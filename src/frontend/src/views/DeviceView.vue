@@ -4,6 +4,13 @@
       <template #actions>
         <el-button type="primary" size="small" @click="openAddDialog">添加设备</el-button>
         <el-button size="small" @click="scanDevices">扫描设备</el-button>
+        <el-button
+          type="warning"
+          size="small"
+          :loading="batchZeroCalibrating"
+          :disabled="!batchZeroCalibrating && !canBatchZeroCalibrate"
+          @click="handleBatchZeroCalibrate"
+        >批量校零</el-button>
       </template>
       <el-table :data="deviceStore.statuses" class="device-table">
         <el-table-column prop="name" label="设备名称" min-width="140">
@@ -31,40 +38,55 @@
             <span v-else class="idle-badge">--</span>
           </template>
         </el-table-column>
-        <el-table-column label="阀位" width="110" align="center">
+        <el-table-column label="阀位" width="120" align="center">
           <template #default="{ row }">
-            <el-tooltip
+            <el-select
               v-if="isValveSupported(row.type)"
-              :content="valveTooltip(row)"
-              :disabled="!valveDisabledReason(row)"
-              placement="top"
+              :model-value="valveStates[row.id]"
+              :loading="valveLoading[row.id]"
+              :disabled="!!valveDisabledReason(row)"
+              size="small"
+              style="width: 95px"
+              :placeholder="valvePlaceholder(row.id)"
+              @change="(val) => handleSetValve(row, val)"
             >
-              <el-button
-                size="small"
-                :type="valveBtnType(row.id)"
-                :loading="valveLoading[row.id]"
-                :disabled="!!valveDisabledReason(row)"
-                @click="handleToggleValve(row)"
-              >
-                {{ valveLabel(row.id) }}
-              </el-button>
-            </el-tooltip>
+              <el-option
+                v-for="opt in valveOptions"
+                :key="opt.value"
+                :label="opt.label"
+                :value="opt.value"
+              />
+            </el-select>
             <span v-else class="readonly-text">--</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="220" align="right">
+        <el-table-column label="操作" width="260" align="right">
           <template #default="{ row }">
             <el-button-group class="action-group">
-              <el-button size="small" @click="openEditDialog(row.id)">
+              <el-button title="编辑设备" size="small" @click="openEditDialog(row.id)">
                 <el-icon><Edit /></el-icon>
               </el-button>
-              <el-button v-if="row.status !== 'Connected'" type="primary" size="small" :loading="deviceStore.isDeviceConnecting(row.id)" @click="handleConnect(row.id)">
+              <el-button v-if="row.status !== 'Connected'" title="连接设备" type="primary" size="small" :loading="deviceStore.isDeviceConnecting(row.id)" @click="handleConnect(row.id)">
                 <el-icon v-if="!deviceStore.isDeviceConnecting(row.id)"><Link /></el-icon>
               </el-button>
-              <el-button v-else type="warning" size="small" @click="handleDisconnect(row.id)">
+              <el-button v-else title="断开连接" type="warning" size="small" @click="handleDisconnect(row.id)">
                 <el-icon><CircleClose /></el-icon>
               </el-button>
-              <el-button size="small" type="danger" :disabled="deviceStore.isDeviceConnecting(row.id)" @click="removeDevice(row.id)">
+              <el-button
+                v-if="row.status === 'Connected' || row.acquiring"
+                :title="row.acquiring ? '停止采集' : '启动采集'"
+                :type="row.acquiring ? 'warning' : 'success'"
+                size="small"
+                :loading="deviceStore.isAcqBusy(row.id)"
+                :disabled="deviceStore.isAcqBusy(row.id)"
+                @click="handleToggleAcq(row.id)"
+              >
+                <el-icon v-if="!deviceStore.isAcqBusy(row.id)">
+                  <VideoPause v-if="row.acquiring" />
+                  <VideoPlay v-else />
+                </el-icon>
+              </el-button>
+              <el-button title="删除设备" size="small" type="danger" :disabled="deviceStore.isDeviceConnecting(row.id)" @click="removeDevice(row.id)">
                 <el-icon><Delete /></el-icon>
               </el-button>
             </el-button-group>
@@ -122,7 +144,7 @@
           <div class="form-group">
             <label class="group-label">采样频率</label>
             <div class="input-with-unit">
-              <el-input-number v-model="newDevice.publishRate" :min="1" :max="100" :step="1" size="small" style="width: 90px" controls-position="right" />
+              <el-input-number v-model="newDevice.publishRate" :min="1" :max="1000" :step="1" size="small" style="width: 90px" controls-position="right" />
               <span class="unit">Hz</span>
             </div>
           </div>
@@ -168,7 +190,7 @@
           <div class="form-group">
             <label class="group-label">采样频率</label>
             <div class="input-with-unit">
-              <el-input-number v-model="editForm.publishRate" :min="1" :max="100" :step="1" size="small" style="width: 90px" controls-position="right" />
+              <el-input-number v-model="editForm.publishRate" :min="1" :max="1000" :step="1" size="small" style="width: 90px" controls-position="right" />
               <span class="unit">Hz</span>
             </div>
           </div>
@@ -316,15 +338,48 @@
         <el-button type="primary" :loading="saving" @click="saveEdit">保存</el-button>
       </template>
     </el-dialog>
+
+    <!-- 批量校零结果对话框 -->
+    <el-dialog v-model="showBatchZeroResult" title="批量校零结果" width="720px" :append-to-body="true" class="device-dialog">
+      <div class="batch-zero-summary">
+        <span class="summary-item success">成功 {{ batchZeroSummary.success }}</span>
+        <span class="summary-item failed">失败 {{ batchZeroSummary.failed }}</span>
+      </div>
+      <el-table :data="batchZeroResults" size="small" class="channel-table" :max-height="320">
+        <el-table-column prop="deviceName" label="设备" min-width="140" />
+        <el-table-column label="结果" width="100" align="center">
+          <template #default="{ row }">
+            <el-tag v-if="row.success" type="success" size="small">成功</el-tag>
+            <el-tag v-else type="danger" size="small">失败</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="通道数" width="80" align="center">
+          <template #default="{ row }">
+            <span v-if="row.success">{{ row.channels }}</span>
+            <span v-else class="readonly-text">--</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="error" label="错误信息" min-width="180">
+          <template #default="{ row }">
+            <span v-if="row.error" class="error-text">{{ row.error }}</span>
+            <span v-else class="readonly-text">--</span>
+          </template>
+        </el-table-column>
+      </el-table>
+      <template #footer>
+        <el-button type="primary" @click="showBatchZeroResult = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
-import { Edit, Link, CircleClose, Delete } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { ref, watch, computed, reactive } from 'vue'
+import { Edit, Link, CircleClose, Delete, VideoPlay, VideoPause } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useDeviceStore } from '../stores/device'
-import { getDeviceInfo, thermocoupleTypeOptions } from '../api/enums'
+import type { ZeroCalibrateResult } from '../stores/device'
+import { getDeviceInfo, thermocoupleTypeOptions, getThermocoupleRange } from '../api/enums'
 import type { DeviceTypeValue } from '../api/enums'
 import GlassCard from '../components/GlassCard.vue'
 import { DeviceService, DataService } from '@bindings/yx-daq/internal/app'
@@ -340,48 +395,42 @@ function isPressureDAQ(type: string): boolean {
 // ==================== 阀位控制 ====================
 // 阀位状态按需查询：设备已连接时从硬件读取，未连接或读取失败显示"未知"
 // 阀位不持久化到本地，每次重新连接后需重新查询
+// 仅压力设备（EA2508A/EA2516A/SIMULATED）支持阀控，EA2516T 温度设备不支持
 const valveStates = reactive<Record<string, string>>({}) // id -> 'Calibration' | 'Measurement' | 'Unknown'
 const valveLoading = reactive<Record<string, boolean>>({})
 
-// 仅 EA2508A/EA2516A/SIMULATED 支持阀控，EA2516T（温度设备）不支持
+// 可选阀位枚举（Unknown 不作为可选项，仅作为查询失败/未初始化的占位显示）
+const valveOptions = [
+  { label: '测量位', value: 'Measurement' },
+  { label: '校准位', value: 'Calibration' },
+]
+
 function isValveSupported(type: string): boolean {
-  return type !== 'EA2516T'
+  // 仅真实压力设备支持阀控（EA2508A/EA2516A），排除温度设备和模拟设备
+  const info = getDeviceInfo(type as DeviceTypeValue)
+  return info.isRealDAQ && !info.isTemperature
 }
 
-function valveLabel(id: string): string {
-  const s = valveStates[id]
-  if (s === 'Calibration') return '校准位'
-  if (s === 'Measurement') return '测量位'
-  return '未知'
+// placeholder：阀位已知时为空（select 显示已选值），未知时显示"未知"
+function valvePlaceholder(id: string): string {
+  return valveStates[id] ? '' : '未知'
 }
 
-function valveBtnType(id: string): '' | 'success' | 'warning' | 'danger' {
-  const s = valveStates[id]
-  if (s === 'Calibration') return 'danger'  // 校准位=数据无效，红色警示
-  if (s === 'Measurement') return 'success' // 测量位=数据有效，绿色
-  return 'warning' // 未知=黄色，提示需查询
-}
-
-// 禁用原因：返回非空字符串时按钮禁用并显示 tooltip
+// 禁用原因：返回非空字符串时 select 禁用
 function valveDisabledReason(row: { id: string; status: string; acquiring: boolean }): string {
   if (row.status !== 'Connected') return '设备未连接'
   if (row.acquiring) return '采集进行中，不允许切换阀位'
   return ''
 }
 
-function valveTooltip(row: { id: string; status: string; acquiring: boolean }): string {
-  return valveDisabledReason(row) || '点击切换阀位'
-}
-
-// 切换阀位：校准↔测量；未知状态点击默认切到测量位
-async function handleToggleValve(row: { id: string; status: string; acquiring: boolean }) {
+// 选择阀位（来自下拉枚举）
+async function handleSetValve(row: { id: string; status: string; acquiring: boolean }, target: string) {
   const reason = valveDisabledReason(row)
   if (reason) {
     ElMessage.warning(reason)
     return
   }
-  const current = valveStates[row.id]
-  const target = current === 'Calibration' ? 'Measurement' : 'Calibration'
+  if (target !== 'Calibration' && target !== 'Measurement') return
   valveLoading[row.id] = true
   try {
     await DeviceService.SetValveState(row.id, target as any)
@@ -423,7 +472,7 @@ watch(
 watch(
   () => deviceStore.statuses.map(s => `${s.id}:${s.status}`).join(','),
   () => {
-    for (const [id, state] of Object.entries(valveStates)) {
+    for (const [id] of Object.entries(valveStates)) {
       const ds = deviceStore.statuses.find(s => s.id === id)
       if (!ds || ds.status !== 'Connected') {
         delete valveStates[id]
@@ -510,14 +559,15 @@ async function addDevice() {
     const totalCh = info.totalChCount
     for (let i = 0; i < totalCh; i++) {
       if (info.isTemperature) {
+        const tcRange = getThermocoupleRange('K')
         channels.push({
           index: i,
           name: `CH${i+1}`,
           enabled: true,
           unit: '°C',
           precision: newDevice.value.precision,
-          rangeMin: -100,
-          rangeMax: 300,
+          rangeMin: tcRange.min,
+          rangeMax: tcRange.max,
           thermocoupleType: 'K',
         })
       } else {
@@ -675,16 +725,22 @@ function syncPrecisionToChannels() {
   }
 }
 
-// 当统一热电偶类型变化时，同步到通道表格
+// 当统一热电偶类型变化时，同步到通道表格（含温度量程）
 function syncThermocoupleTypeToChannels() {
   if (editProfileType.value !== 'EA2516T') return
+  const range = getThermocoupleRange(editForm.value.thermocoupleType)
   for (const ch of editChannels.value) {
     ch.thermocoupleType = editForm.value.thermocoupleType
+    ch.rangeMin = range.min
+    ch.rangeMax = range.max
   }
 }
 
-// 单个通道热电偶类型变化
-function onChannelThermocoupleChange(_row: EditChannel) {
+// 单个通道热电偶类型变化（同步更新该通道温度量程）
+function onChannelThermocoupleChange(row: EditChannel) {
+  const range = getThermocoupleRange(row.thermocoupleType)
+  row.rangeMin = range.min
+  row.rangeMax = range.max
   const types = new Set(editChannels.value.map(c => c.thermocoupleType))
   if (types.size === 1) {
     editForm.value.thermocoupleType = editChannels.value[0].thermocoupleType
@@ -771,6 +827,73 @@ async function handleClearZeroOffset(channelIndex: number) {
   } else {
     ElMessage.success('零位已清除')
     await syncZeroOffsetsFromProfile()
+  }
+}
+
+// ==================== 跨设备批量校零 ====================
+const batchZeroCalibrating = ref(false)
+const showBatchZeroResult = ref(false)
+const batchZeroResults = ref<ZeroCalibrateResult[]>([])
+
+// 批量校零结果汇总（成功/失败）
+const batchZeroSummary = computed(() => {
+  let success = 0, failed = 0
+  for (const r of batchZeroResults.value) {
+    if (r.success) success++
+    else failed++
+  }
+  return { success, failed }
+})
+
+// 是否存在可批量校零的设备（已连接 + 采集中 + 压力DAQ）
+const canBatchZeroCalibrate = computed(() => {
+  return deviceStore.statuses.some(s => {
+    if (s.status !== 'Connected' || !s.acquiring) return false
+    return isPressureDAQ(s.type)
+  })
+})
+
+async function handleBatchZeroCalibrate() {
+  if (!canBatchZeroCalibrate.value) {
+    ElMessage.warning('没有可批量校零的设备（需已连接且正在采集的压力设备）')
+    return
+  }
+  try {
+    await ElMessageBox.confirm(
+      '将对所有已连接且正在采集的压力设备执行零位校准，请确保所有设备静止并处于测量位。是否继续？',
+      '批量校零确认',
+      { confirmButtonText: '开始校零', cancelButtonText: '取消', type: 'warning' },
+    )
+  } catch {
+    return // 用户取消
+  }
+
+  batchZeroCalibrating.value = true
+  ElMessage({ message: '请保持所有设备静止，正在并行采样...', type: 'warning', duration: 1500 })
+  try {
+    const ret = await deviceStore.zeroCalibrateAll()
+    // 整体调用失败（后端异常等）：明确提示错误，不与"无符合条件设备"混淆
+    if (!ret.success) {
+      ElMessage.error(`批量校零调用失败: ${ret.error || '未知错误'}`)
+      return
+    }
+    const results = ret.results || []
+    batchZeroResults.value = results
+    if (results.length === 0) {
+      ElMessage.warning('批量校零未执行：没有符合条件的设备（需已连接且正在采集的压力设备）')
+      return
+    }
+    const summary = batchZeroSummary.value
+    if (summary.failed === 0) {
+      ElMessage.success(`批量校零完成：全部 ${summary.success} 台设备成功`)
+    } else if (summary.success === 0) {
+      ElMessage.error(`批量校零失败：全部 ${summary.failed} 台设备失败`)
+    } else {
+      ElMessage.warning(`批量校零完成：成功 ${summary.success} 台，失败 ${summary.failed} 台`)
+    }
+    showBatchZeroResult.value = true
+  } finally {
+    batchZeroCalibrating.value = false
   }
 }
 
@@ -883,6 +1006,16 @@ async function handleDisconnect(id: string) {
     ElMessage.error(`断开失败: ${err}`)
   } else {
     ElMessage.success('设备已断开')
+  }
+}
+
+// 单设备采集启停：busy 状态由 store 统一管理，view 只负责提示
+async function handleToggleAcq(id: string) {
+  const { error, name, wasAcquiring } = await deviceStore.toggleAcquisition(id)
+  if (error) {
+    ElMessage.error(`${wasAcquiring ? '停止' : '开始'}采集失败：${name} - ${error}`)
+  } else {
+    ElMessage.success(`${wasAcquiring ? '已停止' : '已开始'}采集：${name}`)
   }
 }
 
@@ -1194,6 +1327,30 @@ async function removeDevice(id: string) {
     font-size: $font-size-xs;
     color: rgba(255,255,255,0.4);
   }
+}
+
+// ==================== 批量校零结果 ====================
+.batch-zero-summary {
+  display: flex;
+  gap: $spacing-lg;
+  margin-bottom: $spacing-md;
+  padding: $spacing-sm $spacing-lg;
+  background: $bg-tertiary;
+  border-radius: 6px;
+  border: 1px solid $glass-border-light;
+
+  .summary-item {
+    font-size: 13px;
+    font-weight: 600;
+    &.success { color: $color-success; }
+    &.failed { color: $color-danger; }
+  }
+}
+
+.error-text {
+  font-size: 11px;
+  color: rgba($color-danger, 0.85);
+  word-break: break-all;
 }
 
 .channel-table {

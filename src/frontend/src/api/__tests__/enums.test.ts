@@ -116,11 +116,12 @@ describe('enums', () => {
   })
 
   describe('TraversalPattern', () => {
-    it('应有 3 种模式', () => {
-      expect(Object.keys(TraversalPattern)).toHaveLength(3)
+    it('应有 4 种模式', () => {
+      expect(Object.keys(TraversalPattern)).toHaveLength(4)
       expect(TraversalPattern.LINE).toBe('line')
       expect(TraversalPattern.RECTANGLE).toBe('rectangle')
       expect(TraversalPattern.CUSTOM).toBe('custom')
+      expect(TraversalPattern.FAN).toBe('fan')
     })
 
     it('Labels 应覆盖所有模式', () => {

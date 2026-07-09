@@ -44,6 +44,16 @@ interface DataPayload {
   channelIndices: number[]
 }
 
+// 批量校零单设备结果（与后端 types.ZeroCalibrateResult 对应）
+// 导出供 View 复用，避免在 View 中重复声明（coding-standards 反"重复代码"）
+export interface ZeroCalibrateResult {
+  deviceId: string
+  deviceName: string
+  success: boolean
+  channels: number
+  error: string
+}
+
 /**
  * 确保指定设备列表已连接并启动采集
  * 三孔/五孔测试在选择校准文件后调用，自动恢复中断的设备状态。
@@ -172,6 +182,22 @@ export const useDeviceStore = defineStore('device', () => {
     return withDeviceAction('clearAllZeroOffsets', () => DeviceService.ClearAllZeroOffsets(id), fetchProfiles)
   }
 
+  // 批量校零所有符合条件的设备（已连接+采集中+压力DAQ设备）
+  // 遵循 coding-standards §2.1 复杂操作返回约定：{ success, results?, error? }
+  // - success=true：整体调用成功，results 为各设备结果数组（可能为空=无符合条件设备）
+  // - success=false：整体调用失败（如后端异常），error 为错误消息；results 仍可能包含已采集结果
+  // 单个设备失败仅记录在对应 results[i].error 中，不影响 success
+  async function zeroCalibrateAll(): Promise<{ success: boolean; results?: ZeroCalibrateResult[]; error?: string }> {
+    try {
+      const results = await DeviceService.ZeroCalibrateAll() as ZeroCalibrateResult[]
+      await fetchProfiles()
+      return { success: true, results: results || [] }
+    } catch (e: any) {
+      const msg = e?.message || String(e)
+      return { success: false, error: msg }
+    }
+  }
+
   async function connectDevice(id: string): Promise<string | null> {
     connectingIds.value = new Set([...connectingIds.value, id])
     try {
@@ -197,6 +223,33 @@ export const useDeviceStore = defineStore('device', () => {
 
   async function stopAcquisition(id: string): Promise<string | null> {
     return withDeviceAction('stopAcquisition', () => DeviceService.StopAcquisition(id), fetchStatuses)
+  }
+
+  // 单设备采集启停 busy 状态（按设备ID隔离，避免并发点击）
+  const acqBusyIds = ref<Set<string>>(new Set())
+
+  function isAcqBusy(id: string): boolean {
+    return acqBusyIds.value.has(id)
+  }
+
+  // 切换单设备采集状态：根据当前 acquiring 决定 start/stop，内部管理 busy
+  // 返回 { error, name, wasAcquiring } 供调用方组装提示
+  async function toggleAcquisition(id: string): Promise<{ error: string | null; name: string; wasAcquiring: boolean }> {
+    const ds = getDeviceStatus(id)
+    const name = ds?.name ?? id
+    const wasAcquiring = ds?.acquiring ?? false
+    if (acqBusyIds.value.has(id)) return { error: null, name, wasAcquiring }
+    acqBusyIds.value = new Set([...acqBusyIds.value, id])
+    try {
+      const err = wasAcquiring
+        ? await stopAcquisition(id)
+        : await startAcquisition(id)
+      return { error: err, name, wasAcquiring }
+    } finally {
+      const newSet = new Set(acqBusyIds.value)
+      newSet.delete(id)
+      acqBusyIds.value = newSet
+    }
   }
 
   const eventListener = createWailsEventListener('device', [
@@ -236,8 +289,10 @@ export const useDeviceStore = defineStore('device', () => {
     fetchProfiles, fetchStatuses, updateProfile, setUnit,
     setThermocoupleType, setSingleThermocoupleType,
     zeroCalibrate, zeroCalibrateChannel, clearZeroOffset, clearAllZeroOffsets,
+    zeroCalibrateAll,
     connectDevice, disconnectDevice,
     startAcquisition, stopAcquisition,
+    acqBusyIds, isAcqBusy, toggleAcquisition,
     startListening, stopListening,
   }
 })

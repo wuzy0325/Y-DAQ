@@ -111,6 +111,7 @@ export const TraversalPattern = {
   LINE: 'line',
   RECTANGLE: 'rectangle',
   CUSTOM: 'custom',
+  FAN: 'fan',
 } as const
 
 export type TraversalPatternValue = typeof TraversalPattern[keyof typeof TraversalPattern]
@@ -120,6 +121,7 @@ export const TraversalPatternLabels: Record<TraversalPatternValue, string> = {
   [TraversalPattern.LINE]: '直线',
   [TraversalPattern.RECTANGLE]: '矩形',
   [TraversalPattern.CUSTOM]: '自定义',
+  [TraversalPattern.FAN]: '扇形',
 }
 
 // 运动轴名
@@ -166,3 +168,21 @@ export const thermocoupleTypeOptions: { value: string; label: string }[] =
     value,
     label,
   }))
+
+// 各热电偶类型的量程范围（°C），用于根据热电偶类型同步温度量程
+export const ThermocoupleRanges: Record<string, { min: number; max: number }> = {
+  [ThermocoupleType.K]: { min: -200, max: 1260 },
+  [ThermocoupleType.J]: { min: -210, max: 760 },
+  [ThermocoupleType.T]: { min: -200, max: 350 },
+  [ThermocoupleType.E]: { min: -200, max: 900 },
+  [ThermocoupleType.N]: { min: -270, max: 1300 },
+  [ThermocoupleType.S]: { min: 0, max: 1450 },
+  [ThermocoupleType.R]: { min: 0, max: 1480 },
+  [ThermocoupleType.B]: { min: 0, max: 1700 },
+  [ThermocoupleType.C]: { min: 0, max: 2315 },
+}
+
+// 获取热电偶类型的量程，未知类型回退到 K 型
+export function getThermocoupleRange(tcType: string): { min: number; max: number } {
+  return ThermocoupleRanges[tcType] || ThermocoupleRanges[ThermocoupleType.K]
+}

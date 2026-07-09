@@ -48,20 +48,26 @@ func (d *YXDAQTDriver) Connect() error {
 }
 
 // initAfterConnect 连接建立后的初始化逻辑（首次连接与重连均调用）
-// 包含：重置 configSyncDone、延迟执行 syncHardwareConfig、启动数据接收协程
 func (d *YXDAQTDriver) initAfterConnect() error {
 	d.mu.Lock()
 	d.configSyncDone = false
 	d.mu.Unlock()
 
-	// 延迟后自动执行配置同步
+	// 设备 TCP 连接后自动持续流数据，必须先用 @f1 停止，
+	// 否则后续 syncHardwareConfig 的命令响应会被数据帧污染。
+	// 停止命令失败仅记录警告：设备可能本就处于停止态，连接不应因此失败
+	if err := d.writeCmdOnly("@f1"); err != nil {
+		slog.Warn("DAQ-T: 连接后发送 @f1 停止命令失败", "host", d.Host, "port", d.Port, "err", err)
+	}
+
+	// 启动数据接收协程
+	d.StartReceiveLoop(d.processData)
+
+	// 延迟后自动执行配置同步（此时设备已停止流数据，响应纯净）
 	go func() {
 		time.Sleep(time.Duration(types.DAQTConfigSyncDelayMs) * time.Millisecond)
 		d.syncHardwareConfig()
 	}()
-
-	// 启动数据接收协程
-	d.StartReceiveLoop(d.processData)
 
 	return nil
 }
@@ -83,12 +89,11 @@ func (d *YXDAQTDriver) StartAcquisition(periodMs int) error {
 		return nil
 	}
 
-	// 等待配置同步完成（带超时保护，避免因丢失唤醒或设备无响应导致 UI 永久卡死）
 	const configSyncWaitTimeout = 10 * time.Second
 	deadline := time.Now().Add(configSyncWaitTimeout)
 	timer := time.AfterFunc(configSyncWaitTimeout, func() {
 		d.mu.Lock()
-		d.configSyncCond.Broadcast() // 超时强制唤醒，打破可能的丢失唤醒
+		d.configSyncCond.Broadcast()
 		d.mu.Unlock()
 	})
 	defer timer.Stop()
@@ -104,15 +109,10 @@ func (d *YXDAQTDriver) StartAcquisition(periodMs int) error {
 		d.configSyncCond.Wait()
 	}
 
-	// 配置归一化
 	if err := d.applyNormalizedConfig(); err != nil {
 		return fmt.Errorf("apply normalized config failed: %w", err)
 	}
 
-	// 启动前准备
-	d.writeCmdOnly("@f1")
-	time.Sleep(100 * time.Millisecond)
-	d.DrainConnection(100)
 	d.frameReader.Reset()
 	d.frameReader.SetBinaryMode(d.hwConfig.BinaryFormat)
 	d.frameReader.SetMetadataMode(d.hwConfig.ShowTimestamp || d.hwConfig.ShowSequence)
@@ -122,7 +122,10 @@ func (d *YXDAQTDriver) StartAcquisition(periodMs int) error {
 		return fmt.Errorf("start acquisition failed: %w", err)
 	}
 
-	d.ConsumeOptionalACK(types.DAQTACKTimeoutMs)
+	// 等待 @f0 的 ACK 到达并消费掉，防止 'A' 字节污染帧对齐。
+	time.Sleep(150 * time.Millisecond)
+	d.frameReader.Reset()
+
 	d.acquiring.Store(true)
 	return nil
 }
@@ -139,15 +142,13 @@ func (d *YXDAQTDriver) StopAcquisition() error {
 		return nil
 	}
 
+	// 先发硬件停止命令，否则设备会持续流数据，导致后续响应被污染
+	// 命令失败仍继续清理本地状态，避免 UI 卡死
+	if err := d.writeCmdOnly("@f1"); err != nil {
+		slog.Warn("DAQ-T: 停止采集命令 @f1 发送失败", "host", d.Host, "port", d.Port, "err", err)
+	}
+
 	d.acquiring.Store(false)
-	d.draining.Store(true)
-	d.writeCmdOnly("@f1")
-
-	go func() {
-		time.Sleep(200 * time.Millisecond)
-		d.draining.Store(false)
-	}()
-
 	d.frameReader.Reset()
 	return nil
 }
@@ -164,11 +165,6 @@ func (d *YXDAQTDriver) OnConfigSynced(cb func(DAQTHardwareConfig)) {
 
 // processData DAQ-T 特有的数据处理（帧读取器 + 策略解析器）
 func (d *YXDAQTDriver) processData(data []byte) {
-	if d.draining.Load() {
-		d.RecvBuffer = d.RecvBuffer[:0]
-		return
-	}
-
 	if !d.acquiring.Load() {
 		// Non-acquiring mode: route to response handler
 		d.handleCommandResponse(data)

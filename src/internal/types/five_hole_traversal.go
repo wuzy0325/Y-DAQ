@@ -62,8 +62,8 @@ type FiveHoleProbeConfig struct {
 	ProbeID       string                       `json:"probeId"`       // probe1/probe2/probe3
 	Enabled       bool                         `json:"enabled"`       // 是否启用（配几根跑几根）
 	ProbeChannels []FiveHoleProbeChannelConfig `json:"probeChannels"` // P1-P5 各自数据源
-	MotionAlpha   FiveHoleMotionAxisMapping    `json:"motionAlpha"`   // α 轴：位移机构 + 轴号
-	MotionBeta    FiveHoleMotionAxisMapping    `json:"motionBeta"`    // β 轴：位移机构 + 轴号
+	MotionX       FiveHoleMotionAxisMapping    `json:"motionX"`       // X 方向：位移机构 + 轴号
+	MotionY       FiveHoleMotionAxisMapping    `json:"motionY"`       // Y 方向：位移机构 + 轴号
 	CalibFiles    []FiveHoleCalibFileInfo       `json:"calibFiles"`    // .cal 校准文件（每探针独立载入）
 }
 
@@ -119,18 +119,18 @@ type FiveHoleInterpolationResult struct {
 
 // FiveHoleTraversalDataPoint 五孔移位测试数据点（每探针一份）
 type FiveHoleTraversalDataPoint struct {
-	PointID           string                      `json:"pointId"`
-	ProbeID           string                      `json:"probeId"`
-	X                 float64                     `json:"x"`
-	Y                 float64                     `json:"y"`
-	AlphaControllerID string                      `json:"alphaControllerId"` // α 轴位移机构ID（用于区分轴来自哪个运动控制器）
-	AlphaAxis         AxisName                    `json:"alphaAxis"`         // α 轴号
-	BetaControllerID  string                      `json:"betaControllerId"`  // β 轴位移机构ID
-	BetaAxis          AxisName                    `json:"betaAxis"`          // β 轴号
-	RawData           FiveHoleRawData             `json:"rawData"`
-	InterpResult      FiveHoleInterpolationResult `json:"interpResult"`
-	SampleCount       int                         `json:"sampleCount"`
-	Timestamp         int64                       `json:"timestamp"`
+	PointID         string                      `json:"pointId"`
+	ProbeID         string                      `json:"probeId"`
+	X               float64                     `json:"x"`
+	Y               float64                     `json:"y"`
+	XControllerName string                      `json:"xControllerName"` // X 方向位移机构名
+	XAxis           AxisName                    `json:"xAxis"`           // X 方向轴号
+	YControllerName string                      `json:"yControllerName"` // Y 方向位移机构名
+	YAxis           AxisName                    `json:"yAxis"`           // Y 方向轴号
+	RawData         FiveHoleRawData             `json:"rawData"`
+	InterpResult    FiveHoleInterpolationResult `json:"interpResult"`
+	SampleCount     int                         `json:"sampleCount"`
+	Timestamp       int64                       `json:"timestamp"`
 }
 
 // ==================== 五孔测试状态 ====================
@@ -307,18 +307,18 @@ func (c *FiveHoleTraversalConfig) Validate() error {
 			}
 		}
 
-		// 运动轴配置验证（α、β 各自选位移机构+轴号）
-		if p.MotionAlpha.ControllerID == "" {
-			return fmt.Errorf("探针%s的α轴未选择位移机构", p.ProbeID)
+		// 运动轴配置验证（X、Y 方向各自选位移机构+轴号）
+		if p.MotionX.ControllerID == "" {
+			return fmt.Errorf("探针%s的X方向未选择位移机构", p.ProbeID)
 		}
-		if p.MotionAlpha.Axis == "" {
-			return fmt.Errorf("探针%s的α轴号不能为空", p.ProbeID)
+		if p.MotionX.Axis == "" {
+			return fmt.Errorf("探针%s的X方向轴号不能为空", p.ProbeID)
 		}
-		if p.MotionBeta.ControllerID == "" {
-			return fmt.Errorf("探针%s的β轴未选择位移机构", p.ProbeID)
+		if p.MotionY.ControllerID == "" {
+			return fmt.Errorf("探针%s的Y方向未选择位移机构", p.ProbeID)
 		}
-		if p.MotionBeta.Axis == "" {
-			return fmt.Errorf("探针%s的β轴号不能为空", p.ProbeID)
+		if p.MotionY.Axis == "" {
+			return fmt.Errorf("探针%s的Y方向轴号不能为空", p.ProbeID)
 		}
 
 		// 校准文件验证（启用探针必须载入至少一个 .cal）
@@ -331,15 +331,14 @@ func (c *FiveHoleTraversalConfig) Validate() error {
 		return fmt.Errorf("必须启用至少1根探针")
 	}
 
-	// 布局配置验证（照三孔）
+	// 布局配置验证
 	switch c.Layout.Pattern {
 	case TraversalPatternLine:
 		if c.Layout.Line == nil {
 			return fmt.Errorf("直线布点需要Line配置")
 		}
-		if c.Layout.Line.StartX == 0 && c.Layout.Line.EndX == 0 &&
-			len(c.Layout.Line.XSteps) == 0 {
-			return fmt.Errorf("直线布点必须有X方向配置")
+		if c.Layout.Line.Step <= 0 {
+			return fmt.Errorf("直线布点Step必须>0")
 		}
 	case TraversalPatternRectangle:
 		if c.Layout.Rectangle == nil {
@@ -351,9 +350,28 @@ func (c *FiveHoleTraversalConfig) Validate() error {
 		if c.Layout.Rectangle.YMin > c.Layout.Rectangle.YMax {
 			return fmt.Errorf("YMin必须≤YMax")
 		}
+		// 矩形模式：每根启用探针 MotionX/MotionY 不能指向同一根物理轴
+		for _, p := range c.Probes {
+			if !p.Enabled {
+				continue
+			}
+			if p.MotionX.ControllerID == p.MotionY.ControllerID && p.MotionX.Axis == p.MotionY.Axis {
+				return fmt.Errorf("探针%s的X/Y方向不能指向同一根物理轴", p.ProbeID)
+			}
+		}
 	case TraversalPatternCustom:
 		if len(c.Layout.CustomPoints) == 0 {
 			return fmt.Errorf("自定义布点需要至少1个点位")
+		}
+	case TraversalPatternFan:
+		if c.Layout.Fan == nil {
+			return fmt.Errorf("扇形布点需要Fan配置")
+		}
+		if len(c.Layout.Fan.RSteps) == 0 {
+			return fmt.Errorf("扇形布点R方向步进不能为空")
+		}
+		if len(c.Layout.Fan.ThetaSteps) == 0 {
+			return fmt.Errorf("扇形布点θ方向步进不能为空")
 		}
 	default:
 		return fmt.Errorf("不支持的布点模式: %s", c.Layout.Pattern)

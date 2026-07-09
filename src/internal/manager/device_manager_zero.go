@@ -3,6 +3,8 @@ package manager
 import (
 	"fmt"
 	"log/slog"
+	"sort"
+	"sync"
 	"time"
 
 	"yx-daq/internal/types"
@@ -281,4 +283,88 @@ func (m *DeviceManager) ClearAllZeroOffsets(id string) error {
 	m.Unlock()
 	m.saveProfilesWithLog("device")
 	return nil
+}
+
+// ZeroCalibrateAll 对所有已连接且正在采集的压力采集设备并行执行零位校准。
+// 仅校准类型为压力 DAQ（IsDAQDevice && !IsTemperatureDevice）、已连接且正在采集的设备。
+// 各设备独立采样，错误收集合并返回（不因单个设备失败而中断其他设备）。
+// 返回结果按 DeviceID 排序，保证顺序稳定。
+func (m *DeviceManager) ZeroCalibrateAll() []types.ZeroCalibrateResult {
+	type eligible struct {
+		id   string
+		name string
+		drv  DeviceDriver
+	}
+	candidates := make([]eligible, 0, len(m.profiles))
+	m.RLock()
+	// 锁内仅读取自身数据（profile + instance 指针），不调用 driver 外部方法，
+	// 避免"持锁调用外部函数"违规。driver 状态检查放到锁外。
+	for id, profile := range m.profiles {
+		if !profile.Type.IsDAQDevice() || profile.Type.IsTemperatureDevice() {
+			continue
+		}
+		drv, ok := m.instances[id]
+		if !ok {
+			continue
+		}
+		candidates = append(candidates, eligible{id: id, name: profile.Name, drv: drv})
+	}
+	m.RUnlock()
+
+	// 锁外检查 driver 状态：仅保留已连接且正在采集的设备
+	list := make([]eligible, 0, len(candidates))
+	for _, c := range candidates {
+		if !c.drv.IsConnected() || !c.drv.IsAcquiring() {
+			continue
+		}
+		list = append(list, c)
+	}
+
+	if len(list) == 0 {
+		return []types.ZeroCalibrateResult{}
+	}
+
+	// 按 ID 排序保证返回顺序稳定
+	sort.Slice(list, func(i, j int) bool { return list[i].id < list[j].id })
+
+	results := make([]types.ZeroCalibrateResult, len(list))
+	var wg sync.WaitGroup
+	for i, e := range list {
+		wg.Add(1)
+		go func(idx int, id, name string) {
+			defer wg.Done()
+			res := types.ZeroCalibrateResult{DeviceID: id, DeviceName: name}
+
+			targets, err := m.collectZeroCalibTargets(id, -1)
+			if err != nil {
+				res.Error = err.Error()
+				results[idx] = res
+				return
+			}
+			frames, err := m.sampleFrames(id, ZeroCalibrateSamples, zeroCalibTimeout)
+			if err != nil {
+				res.Error = err.Error()
+				results[idx] = res
+				return
+			}
+			if err := m.applyZeroCalibResult(id, targets, frames); err != nil {
+				res.Error = err.Error()
+				results[idx] = res
+				return
+			}
+			res.Success = true
+			res.Channels = len(targets)
+			results[idx] = res
+		}(i, e.id, e.name)
+	}
+	wg.Wait()
+
+	successCount := 0
+	for _, r := range results {
+		if r.Success {
+			successCount++
+		}
+	}
+	slog.Info("zero calibrate all done", "total", len(results), "success", successCount)
+	return results
 }

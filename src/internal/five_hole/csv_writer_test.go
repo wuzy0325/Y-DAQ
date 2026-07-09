@@ -24,14 +24,14 @@ func TestFiveHoleCsvWriter_HeaderAndDataPoint(t *testing.T) {
 
 	// 写入数据点
 	dp := types.FiveHoleTraversalDataPoint{
-		PointID:           "pt-0",
-		ProbeID:           "probe1",
-		X:                 10.5,
-		Y:                 20.3,
-		AlphaControllerID: "ctrl-α",
-		AlphaAxis:         "X",
-		BetaControllerID:  "ctrl-β",
-		BetaAxis:          "Y",
+		PointID:       "pt-0",
+		ProbeID:       "probe1",
+		X:             10.5,
+		Y:             20.3,
+		XControllerName: "ctrl-α",
+		XAxis:           "X",
+		YControllerName: "ctrl-β",
+		YAxis:           "Y",
 		RawData: types.FiveHoleRawData{
 			P1: 100.123456, P2: 101.654321, P3: 99.111111, P4: 100.222222, P5: 100.333333,
 			PAtm: 101.325, TAtm: 20.5,
@@ -78,11 +78,11 @@ func TestFiveHoleCsvWriter_HeaderAndDataPoint(t *testing.T) {
 	if !contains(str, "侧滑角Beta") {
 		t.Fatal("header missing 侧滑角Beta")
 	}
-	if !contains(str, "α位移机构ID") {
-		t.Fatal("header missing α位移机构ID")
+	if !contains(str, "X方向位移机构名") {
+		t.Fatal("header missing X方向位移机构名")
 	}
-	if !contains(str, "β位移机构ID") {
-		t.Fatal("header missing β位移机构ID")
+	if !contains(str, "Y方向位移机构名") {
+		t.Fatal("header missing Y方向位移机构名")
 	}
 	if !contains(str, "P4") {
 		t.Fatal("header missing P4")

@@ -5,7 +5,7 @@ import { createPinia, setActivePinia } from 'pinia'
 // fiveHoleTest store 依赖：
 //   - @bindings/.../app 的 FiveHoleService（无 ConfigService，配置走 FiveHoleService.SaveFiveHoleConfig/LoadFiveHoleConfig）
 //   - @wailsio/runtime 的 Events.On/Off（经 createWailsEventListener 间接调用）
-//   - ../motion 的 useMotionStore（用于检查每探针 motionAlpha/motionBeta 控制器连接状态）
+//   - ../motion 的 useMotionStore（用于检查每探针 motionX/motionY 控制器连接状态）
 //   - ../device 的 ensureDevicesAcquiring（聚合多设备 IDs 自动恢复采集）
 //   - ../utils/csv 的 downloadCSV（exportProbeCSV 按探针独立导出）
 //   - ../api/enums 的 FiveHoleChannelRole / TraversalPattern / AxisName（纯常量，直接 import 真实模块）
@@ -137,11 +137,11 @@ describe('stores/fiveHoleTest', () => {
       ])
     })
 
-    it('默认 layout.pattern=RECTANGLE，motionAlpha.axis=X, motionBeta.axis=Y', () => {
+    it('默认 layout.pattern=RECTANGLE，motionX.axis=X, motionY.axis=Y', () => {
       const store = useFiveHoleTestStore()
       expect(store.config.layout.pattern).toBe(TraversalPattern.RECTANGLE)
-      expect(store.config.probes[0].motionAlpha.axis).toBe(AxisName.X)
-      expect(store.config.probes[0].motionBeta.axis).toBe(AxisName.Y)
+      expect(store.config.probes[0].motionX.axis).toBe(AxisName.X)
+      expect(store.config.probes[0].motionY.axis).toBe(AxisName.Y)
     })
 
     it('默认 calibLoadedMap 三个探针均为 false，allCalibLoaded=false', () => {
@@ -324,10 +324,10 @@ describe('stores/fiveHoleTest', () => {
       expect(mockFiveHoleService.StartFiveHoleTraversal).not.toHaveBeenCalled()
     })
 
-    it('allCalibLoaded=true 但 probe1.motionAlpha.controllerId 非空且未在 statuses 中 → 拒绝', async () => {
+    it('allCalibLoaded=true 但 probe1.motionX.controllerId 非空且未在 statuses 中 → 拒绝', async () => {
       const store = useFiveHoleTestStore()
       store.calibLoadedMap = { probe1: true, probe2: true, probe3: true }
-      store.config.probes[0].motionAlpha.controllerId = 'mc-x'
+      store.config.probes[0].motionX.controllerId = 'mc-x'
       // motionStore.statuses 为空 → 未找到 mc-x
       await store.startTest()
       expect(store.lastError).toContain('probe1')
@@ -336,12 +336,12 @@ describe('stores/fiveHoleTest', () => {
       expect(mockFiveHoleService.StartFiveHoleTraversal).not.toHaveBeenCalled()
     })
 
-    it('motionAlpha 控制器已连接但 motionBeta 未连接 → 拒绝（带 probeId 与 beta controllerId）', async () => {
+    it('motionX 控制器已连接但 motionY 未连接 → 拒绝（带 probeId 与 y controllerId）', async () => {
       const store = useFiveHoleTestStore()
       store.calibLoadedMap = { probe1: true, probe2: true, probe3: true }
-      store.config.probes[0].motionAlpha.controllerId = 'mc-alpha'
-      store.config.probes[0].motionBeta.controllerId = 'mc-beta'
-      mockMotionStore.statuses = [{ id: 'mc-alpha', status: 'Connected' }] // beta 未在列表中
+      store.config.probes[0].motionX.controllerId = 'mc-alpha'
+      store.config.probes[0].motionY.controllerId = 'mc-beta'
+      mockMotionStore.statuses = [{ id: 'mc-alpha', status: 'Connected' }] // y 未在列表中
       await store.startTest()
       expect(store.lastError).toContain('probe1')
       expect(store.lastError).toContain('mc-beta')
@@ -351,7 +351,7 @@ describe('stores/fiveHoleTest', () => {
     it('controllerId 存在但 status !== Connected → 拒绝', async () => {
       const store = useFiveHoleTestStore()
       store.calibLoadedMap = { probe1: true, probe2: true, probe3: true }
-      store.config.probes[1].motionAlpha.controllerId = 'mc-dis'
+      store.config.probes[1].motionX.controllerId = 'mc-dis'
       mockMotionStore.statuses = [{ id: 'mc-dis', status: 'Disconnected' }]
       await store.startTest()
       expect(store.lastError).toContain('probe2')
@@ -391,7 +391,7 @@ describe('stores/fiveHoleTest', () => {
       const store = useFiveHoleTestStore()
       store.calibLoadedMap = { probe1: true, probe2: true, probe3: true }
       // 预置旧数据
-      store.setCompleteData({ probe1: [{ pointId: 'old', probeId: 'probe1', x: 0, y: 0, alphaControllerId: 'ctrl-1', alphaAxis: AxisName.X, betaControllerId: 'ctrl-1', betaAxis: AxisName.Y, rawData: {} as any, interpResult: {} as any, sampleCount: 1, timestamp: 1 }] })
+      store.setCompleteData({ probe1: [{ pointId: 'old', probeId: 'probe1', x: 0, y: 0, xControllerName: 'ctrl-1', xAxis: AxisName.X, yControllerName: 'ctrl-1', yAxis: AxisName.Y, rawData: {} as any, interpResult: {} as any, sampleCount: 1, timestamp: 1 }] })
       expect(store.completeProbeDataPoints).not.toBeNull()
       mockFiveHoleService.StartFiveHoleTraversal.mockResolvedValue('task-1')
       mockFiveHoleService.GetFiveHoleTraversalStatus.mockResolvedValue({ status: 'running' })
@@ -643,7 +643,7 @@ describe('stores/fiveHoleTest', () => {
   describe('setCompleteData + exportProbeCSV（按探针独立导出）', () => {
     it('setCompleteData 写入 completeProbeDataPoints', () => {
       const store = useFiveHoleTestStore()
-      const data = { probe1: [{ pointId: 'p1', probeId: 'probe1', x: 1, y: 2, alphaControllerId: 'ctrl-1', alphaAxis: AxisName.X, betaControllerId: 'ctrl-1', betaAxis: AxisName.Y, rawData: {} as any, interpResult: {} as any, sampleCount: 1, timestamp: 1 }] }
+      const data = { probe1: [{ pointId: 'p1', probeId: 'probe1', x: 1, y: 2, xControllerName: 'ctrl-1', xAxis: AxisName.X, yControllerName: 'ctrl-1', yAxis: AxisName.Y, rawData: {} as any, interpResult: {} as any, sampleCount: 1, timestamp: 1 }] }
       store.setCompleteData(data)
       // Pinia ref 解包后是 reactive proxy，不保留原引用 → 用 toStrictEqual 做深比较
       expect(store.completeProbeDataPoints).toStrictEqual(data)
@@ -667,7 +667,7 @@ describe('stores/fiveHoleTest', () => {
       store.setCompleteData({
         probe2: [{
           pointId: 'p1', probeId: 'probe2', x: 1.5, y: 2.5,
-          alphaControllerId: 'ctrl-1', alphaAxis: AxisName.X, betaControllerId: 'ctrl-1', betaAxis: AxisName.Y,
+          xControllerName: 'ctrl-1', xAxis: AxisName.X, yControllerName: 'ctrl-1', yAxis: AxisName.Y,
           rawData: { p1: 100, p2: 101, p3: 102, p4: 103, p5: 104, pAtm: 90, tAtm: 25 },
           interpResult: {
             ptProbe: 1, psProbe: 2, machProbe: 0.5, alphaProbe: 5, betaProbe: -3,
@@ -733,7 +733,7 @@ describe('stores/fiveHoleTest', () => {
     it('后端返回有效配置 → 写入 config + 同步 localStorage，不读 localStorage', async () => {
       const loaded = {
         name: 'from-backend',
-        probes: [{ probeId: 'probe1', enabled: true, probeChannels: [], motionAlpha: { controllerId: '', axis: 'X' }, motionBeta: { controllerId: '', axis: 'Y' }, calibFiles: [] }],
+        probes: [{ probeId: 'probe1', enabled: true, probeChannels: [], motionX: { controllerId: '', axis: 'X' }, motionY: { controllerId: '', axis: 'Y' }, calibFiles: [] }],
         layout: { pattern: 'rectangle' },
       }
       mockFiveHoleService.LoadFiveHoleConfig.mockResolvedValue(loaded)
@@ -747,7 +747,7 @@ describe('stores/fiveHoleTest', () => {
 
     it('后端返回空配置（probes 为空）→ 回退到 localStorage', async () => {
       mockFiveHoleService.LoadFiveHoleConfig.mockResolvedValue({ probes: [] })
-      localStorage.setItem('fiveHoleTestConfig', JSON.stringify({ name: 'from-local', probes: [{ probeId: 'probe1', enabled: true, probeChannels: [], motionAlpha: { controllerId: '', axis: 'X' }, motionBeta: { controllerId: '', axis: 'Y' }, calibFiles: [] }] }))
+      localStorage.setItem('fiveHoleTestConfig', JSON.stringify({ name: 'from-local', probes: [{ probeId: 'probe1', enabled: true, probeChannels: [], motionX: { controllerId: '', axis: 'X' }, motionY: { controllerId: '', axis: 'Y' }, calibFiles: [] }] }))
       const store = useFiveHoleTestStore()
       await store.loadConfig()
       expect(store.config.name).toBe('from-local')
@@ -755,7 +755,7 @@ describe('stores/fiveHoleTest', () => {
 
     it('LoadFiveHoleConfig 抛错 → 回退到 localStorage', async () => {
       mockFiveHoleService.LoadFiveHoleConfig.mockRejectedValue(new Error('rpc err'))
-      localStorage.setItem('fiveHoleTestConfig', JSON.stringify({ name: 'fallback', probes: [{ probeId: 'probe1', enabled: true, probeChannels: [], motionAlpha: { controllerId: '', axis: 'X' }, motionBeta: { controllerId: '', axis: 'Y' }, calibFiles: [] }] }))
+      localStorage.setItem('fiveHoleTestConfig', JSON.stringify({ name: 'fallback', probes: [{ probeId: 'probe1', enabled: true, probeChannels: [], motionX: { controllerId: '', axis: 'X' }, motionY: { controllerId: '', axis: 'Y' }, calibFiles: [] }] }))
       const store = useFiveHoleTestStore()
       await store.loadConfig()
       expect(store.config.name).toBe('fallback')
@@ -767,11 +767,11 @@ describe('stores/fiveHoleTest', () => {
         probes: [
           {
             probeId: 'probe1', enabled: true, probeChannels: [],
-            motionAlpha: { controllerId: '', axis: 'X' }, motionBeta: { controllerId: '', axis: 'Y' },
+            motionX: { controllerId: '', axis: 'X' }, motionY: { controllerId: '', axis: 'Y' },
             calibFiles: [{ filePath: 'C:/saved.prb', fileName: 'saved.prb', cMa: 0, validRange: { alphaMin: -30, alphaMax: 30, betaMin: -30, betaMax: 30, machMin: 0, machMax: 0 } }],
           },
-          { probeId: 'probe2', enabled: true, probeChannels: [], motionAlpha: { controllerId: '', axis: 'X' }, motionBeta: { controllerId: '', axis: 'Y' }, calibFiles: [] },
-          { probeId: 'probe3', enabled: true, probeChannels: [], motionAlpha: { controllerId: '', axis: 'X' }, motionBeta: { controllerId: '', axis: 'Y' }, calibFiles: [] },
+          { probeId: 'probe2', enabled: true, probeChannels: [], motionX: { controllerId: '', axis: 'X' }, motionY: { controllerId: '', axis: 'Y' }, calibFiles: [] },
+          { probeId: 'probe3', enabled: true, probeChannels: [], motionX: { controllerId: '', axis: 'X' }, motionY: { controllerId: '', axis: 'Y' }, calibFiles: [] },
         ],
         layout: { pattern: 'rectangle' },
       }
@@ -797,11 +797,11 @@ describe('stores/fiveHoleTest', () => {
         probes: [
           {
             probeId: 'probe1', enabled: true, probeChannels: [],
-            motionAlpha: { controllerId: '', axis: 'X' }, motionBeta: { controllerId: '', axis: 'Y' },
+            motionX: { controllerId: '', axis: 'X' }, motionY: { controllerId: '', axis: 'Y' },
             calibFiles: [{ filePath: 'C:/gone.prb', fileName: 'gone.prb', cMa: 0, validRange: { alphaMin: -30, alphaMax: 30, betaMin: -30, betaMax: 30, machMin: 0, machMax: 0 } }],
           },
-          { probeId: 'probe2', enabled: true, probeChannels: [], motionAlpha: { controllerId: '', axis: 'X' }, motionBeta: { controllerId: '', axis: 'Y' }, calibFiles: [] },
-          { probeId: 'probe3', enabled: true, probeChannels: [], motionAlpha: { controllerId: '', axis: 'X' }, motionBeta: { controllerId: '', axis: 'Y' }, calibFiles: [] },
+          { probeId: 'probe2', enabled: true, probeChannels: [], motionX: { controllerId: '', axis: 'X' }, motionY: { controllerId: '', axis: 'Y' }, calibFiles: [] },
+          { probeId: 'probe3', enabled: true, probeChannels: [], motionX: { controllerId: '', axis: 'X' }, motionY: { controllerId: '', axis: 'Y' }, calibFiles: [] },
         ],
         layout: { pattern: 'rectangle' },
       }

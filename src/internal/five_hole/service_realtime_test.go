@@ -48,8 +48,8 @@ func makeRealtimeProbe5H(probeID string) types.FiveHoleProbeConfig {
 			{Role: types.Role5H_P4, DeviceID: "d1", Channel: 3, Enabled: true},
 			{Role: types.Role5H_P5, DeviceID: "d1", Channel: 4, Enabled: true},
 		},
-		MotionAlpha: types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "X"},
-		MotionBeta:  types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "Y"},
+		MotionX: types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "X"},
+		MotionY: types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "Y"},
 	}
 }
 

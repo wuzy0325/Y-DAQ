@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+
+	"yx-daq/internal/types"
 )
 
 // FrameParser 帧解析策略接口
@@ -154,8 +156,14 @@ func (r *DAQTFrameReader) Feed(data []byte) {
 }
 
 // HasCompleteFrame 检查缓冲区中是否有完整帧
+// BIN=1 + TIME/HEAD=1: 带时间戳定长帧（8B 时间戳 + 64B float32 = 72B）
+// BIN=0 + TIME/HEAD=1: 变长 ASCII 帧
+// 否则: frameSize 定长帧（64B binary 或 192B ASCII）
 func (r *DAQTFrameReader) HasCompleteFrame() bool {
 	if r.metadataMode {
+		if r.frameSize == types.DAQTBinaryFrameSize {
+			return len(r.buffer) >= types.DAQTBinaryFrameSizeWithTs
+		}
 		return r.hasVariableFrame()
 	}
 	return len(r.buffer) >= r.frameSize
@@ -164,6 +172,9 @@ func (r *DAQTFrameReader) HasCompleteFrame() bool {
 // ReadFrame 读取一帧数据（从缓冲区移除）
 func (r *DAQTFrameReader) ReadFrame() []byte {
 	if r.metadataMode {
+		if r.frameSize == types.DAQTBinaryFrameSize {
+			return r.readBinaryTimestampFrame()
+		}
 		return r.readVariableFrame()
 	}
 	return r.readFixedFrame()
@@ -181,6 +192,20 @@ func (r *DAQTFrameReader) readFixedFrame() []byte {
 	frame := make([]byte, r.frameSize)
 	copy(frame, r.buffer[:r.frameSize])
 	r.buffer = r.buffer[r.frameSize:]
+	return frame
+}
+
+// readBinaryTimestampFrame 读取带时间戳的二进制帧（BIN=1 + TIME/HEAD=1）
+// 剥离 8 字节时间戳头，返回纯 float32 数据
+// 帧总长 = DAQTBinaryFrameSizeWithTs，数据部分 = DAQTBinaryFrameSize
+func (r *DAQTFrameReader) readBinaryTimestampFrame() []byte {
+	if len(r.buffer) < types.DAQTBinaryFrameSizeWithTs {
+		return nil
+	}
+	frame := make([]byte, types.DAQTBinaryFrameSize)
+	tsHdr := types.DAQTBinaryFrameSizeWithTs - types.DAQTBinaryFrameSize // 8 字节时间戳头
+	copy(frame, r.buffer[tsHdr:types.DAQTBinaryFrameSizeWithTs])
+	r.buffer = r.buffer[types.DAQTBinaryFrameSizeWithTs:]
 	return frame
 }
 

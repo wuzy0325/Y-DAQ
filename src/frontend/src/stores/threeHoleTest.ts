@@ -11,6 +11,7 @@ import {
 import { useMotionStore } from './motion'
 import { ensureDevicesAcquiring } from './device'
 import { downloadCSV } from '../utils/csv'
+import type { LineLayout } from './threeHoleTest/types'
 
 // ==================== 类型定义 ====================
 
@@ -61,11 +62,6 @@ interface ThreeHoleTraversalErrorEvent {
 
 interface StepSegment {
   start: number; end: number; step: number
-}
-
-interface LineLayout {
-  startX: number; startY: number; endX: number; endY: number
-  xSteps: StepSegment[]; ySteps: StepSegment[]
 }
 
 interface RectangleLayout {
@@ -140,6 +136,7 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
         xSteps: [{ start: -20, end: 20, step: 5 }],
         ySteps: [{ start: -20, end: 20, step: 5 }],
       },
+      line: { axis: 'x', start: -20, end: 20, step: 5, fixed: 0 },
     },
     probeChannels: [
       { name: 'P1', role: ThreeHoleChannelRole.P1, channel: 0, enabled: true },

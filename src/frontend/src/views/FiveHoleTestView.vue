@@ -242,6 +242,8 @@
                     <el-input-number v-model="store.config.layout.rectangle.xMax" :step="5" size="small" style="width:90px" />
                   </div>
                 </div>
+              </div>
+              <div class="form-row">
                 <div class="form-group">
                   <label class="group-label">Y范围</label>
                   <div class="range-inputs">
@@ -263,32 +265,56 @@
               </div>
             </template>
 
-            <!-- 直线布点 -->
+            <!-- 直线布点（单轴） -->
             <template v-if="store.config.layout.pattern === TraversalPattern.LINE && store.config.layout.line">
               <div class="form-row">
                 <div class="form-group">
-                  <label class="group-label">起点</label>
-                  <div class="point-inputs">
-                    <el-input-number v-model="store.config.layout.line.startX" :step="5" size="small" style="width:90px" />
-                    <el-input-number v-model="store.config.layout.line.startY" :step="5" size="small" style="width:90px" />
+                  <label class="group-label">步长</label>
+                  <el-input-number v-model="store.config.layout.line.step" :min="0.1" :step="1" size="small" style="width:100px" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="group-label">范围</label>
+                  <div class="range-inputs">
+                    <el-input-number v-model="store.config.layout.line.start" :step="1" size="small" style="width:110px" />
+                    <span class="range-separator">~</span>
+                    <el-input-number v-model="store.config.layout.line.end" :step="1" size="small" style="width:110px" />
                   </div>
                 </div>
+              </div>
+            </template>
+
+            <!-- 扇形布点 -->
+            <template v-if="store.config.layout.pattern === TraversalPattern.FAN && store.config.layout.fan">
+              <div class="form-row">
                 <div class="form-group">
-                  <label class="group-label">终点</label>
-                  <div class="point-inputs">
-                    <el-input-number v-model="store.config.layout.line.endX" :step="5" size="small" style="width:90px" />
-                    <el-input-number v-model="store.config.layout.line.endY" :step="5" size="small" style="width:90px" />
+                  <label class="group-label">R 范围</label>
+                  <div class="range-inputs">
+                    <el-input-number v-model="store.config.layout.fan.rSteps[0].start" :step="5" size="small" style="width:90px" />
+                    <span class="range-separator">~</span>
+                    <el-input-number v-model="store.config.layout.fan.rSteps[0].end" :step="5" size="small" style="width:90px" />
                   </div>
                 </div>
               </div>
               <div class="form-row">
                 <div class="form-group">
-                  <label class="group-label">X步长</label>
-                  <el-input-number v-model="lineXStep" :min="1" :step="1" size="small" style="width:100px" />
+                  <label class="group-label">θ 范围</label>
+                  <div class="range-inputs">
+                    <el-input-number v-model="store.config.layout.fan.thetaSteps[0].start" :step="15" size="small" style="width:90px" />
+                    <span class="range-separator">~</span>
+                    <el-input-number v-model="store.config.layout.fan.thetaSteps[0].end" :step="15" size="small" style="width:90px" />
+                  </div>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="group-label">R 步长</label>
+                  <el-input-number v-model="fanRStep" :min="1" :step="1" size="small" style="width:100px" />
                 </div>
                 <div class="form-group">
-                  <label class="group-label">Y步长</label>
-                  <el-input-number v-model="lineYStep" :min="1" :step="1" size="small" style="width:100px" />
+                  <label class="group-label">θ 步长</label>
+                  <el-input-number v-model="fanThetaStep" :min="1" :step="1" size="small" style="width:100px" />
                 </div>
               </div>
             </template>
@@ -478,27 +504,27 @@
                   <div class="block-label">运动轴映射</div>
                   <div class="form-row">
                     <div class="form-group" style="flex:1">
-                      <label class="group-label">α 轴 控制器</label>
-                      <el-select v-model="probe.motionAlpha.controllerId" placeholder="选择运动控制器" size="small" clearable filterable style="width: 100%">
+                      <label class="group-label">{{ motionXLabel }} 控制器</label>
+                      <el-select v-model="probe.motionX.controllerId" placeholder="选择运动控制器" size="small" clearable filterable style="width: 100%">
                         <el-option v-for="mc in motionStore.profiles" :key="mc.id" :label="`${mc.name} (${mc.type})`" :value="mc.id" />
                       </el-select>
                     </div>
                     <div class="form-group">
-                      <label class="group-label">α 轴</label>
-                      <el-select v-model="probe.motionAlpha.axis" size="small" style="width: 70px">
-                        <el-option v-for="axis in getAxisOptions(probe.motionAlpha.controllerId)" :key="axis" :label="axis" :value="axis" />
+                      <label class="group-label">{{ motionXAxisLabel }}</label>
+                      <el-select v-model="probe.motionX.axis" size="small" style="width: 70px">
+                        <el-option v-for="axis in getAxisOptions(probe.motionX.controllerId)" :key="axis" :label="axis" :value="axis" />
                       </el-select>
                     </div>
-                    <div class="form-group" style="flex:1">
-                      <label class="group-label">β 轴 控制器</label>
-                      <el-select v-model="probe.motionBeta.controllerId" placeholder="选择运动控制器" size="small" clearable filterable style="width: 100%">
+                    <div v-if="store.config.layout.pattern !== TraversalPattern.LINE" class="form-group" style="flex:1">
+                      <label class="group-label">{{ motionYLabel }} 控制器</label>
+                      <el-select v-model="probe.motionY.controllerId" placeholder="选择运动控制器" size="small" clearable filterable style="width: 100%">
                         <el-option v-for="mc in motionStore.profiles" :key="mc.id" :label="`${mc.name} (${mc.type})`" :value="mc.id" />
                       </el-select>
                     </div>
-                    <div class="form-group">
-                      <label class="group-label">β 轴</label>
-                      <el-select v-model="probe.motionBeta.axis" size="small" style="width: 70px">
-                        <el-option v-for="axis in getAxisOptions(probe.motionBeta.controllerId)" :key="axis" :label="axis" :value="axis" />
+                    <div v-if="store.config.layout.pattern !== TraversalPattern.LINE" class="form-group">
+                      <label class="group-label">{{ motionYLabel }}轴</label>
+                      <el-select v-model="probe.motionY.axis" size="small" style="width: 70px">
+                        <el-option v-for="axis in getAxisOptions(probe.motionY.controllerId)" :key="axis" :label="axis" :value="axis" />
                       </el-select>
                     </div>
                   </div>
@@ -642,6 +668,27 @@ function getChannelOptions(deviceId: string): number[] {
     .sort((a, b) => a - b)
 }
 
+// 探针运动轴标签随布点模式动态变化
+// 直线：移动轴（仅 MotionX，MotionY 隐藏）；矩形：X/Y 方向；扇面：R/θ 方向
+const motionXLabel = computed(() => {
+  switch (store.config.layout.pattern) {
+    case TraversalPattern.LINE: return '移动轴'
+    case TraversalPattern.FAN: return 'R 方向'
+    default: return 'X 方向'
+  }
+})
+const motionYLabel = computed(() => {
+  switch (store.config.layout.pattern) {
+    case TraversalPattern.FAN: return 'θ 方向'
+    default: return 'Y 方向'
+  }
+})
+// motionX 轴标签（含"轴"后缀，用于轴选择下拉的 label）
+const motionXAxisLabel = computed(() => {
+  const label = motionXLabel.value
+  return label.endsWith('轴') ? label : label + '轴'
+})
+
 // 运动控制器可用轴
 function getAxisOptions(controllerId: string): AxisNameValue[] {
   if (!controllerId) return [AxisName.X, AxisName.Y]
@@ -665,9 +712,41 @@ const phaseLabel = computed(() => {
   return map[store.progress?.phase || ''] || '采集中'
 })
 
-// 步长快捷设置（同步到 xSteps/ySteps 分段）
-const { rectXStep, rectYStep, lineXStep, lineYStep } = useLayoutStepSync(
+// 步长快捷设置（同步到矩形 xSteps/ySteps 分段）
+const { rectXStep, rectYStep } = useLayoutStepSync(
   computed(() => store.config.layout),
+)
+
+// 扇形步长快捷设置（同步到 fan.rSteps/thetaSteps 分段，并同步起始值）
+const fanRStep = ref(5)
+const fanThetaStep = ref(15)
+watch(
+  () => {
+    const fan = store.config.layout.fan
+    if (!fan) return null
+    return {
+      rStart: fan.rSteps[0]?.start ?? 0,
+      rEnd: fan.rSteps[0]?.end ?? 0,
+      thetaStart: fan.thetaSteps[0]?.start ?? 0,
+      thetaEnd: fan.thetaSteps[0]?.end ?? 0,
+      rStep: fanRStep.value,
+      thetaStep: fanThetaStep.value,
+    }
+  },
+  (val, oldVal) => {
+    if (!val) return
+    // 防止自递归：callback 写入 fan.rSteps 会触发 source 重新求值并返回新对象，
+    // 若仅按引用比较必然不等。这里按值比较，值未变化时跳过写入。
+    const keys = ['rStart','rEnd','thetaStart','thetaEnd','rStep','thetaStep'] as const
+    if (oldVal && keys.every(k => val[k] === oldVal[k])) return
+    const fan = store.config.layout.fan
+    if (!fan) return
+    fan.rSteps = [{ start: val.rStart, end: val.rEnd, step: val.rStep }]
+    fan.thetaSteps = [{ start: val.thetaStart, end: val.thetaEnd, step: val.thetaStep }]
+    fan.rStart = val.rStart
+    fan.thetaStart = val.thetaStart
+  },
+  { immediate: true, deep: true },
 )
 
 // 自定义点编辑器（双向绑定到 store.config.layout.customPoints）
@@ -710,6 +789,17 @@ watch(
     nextTick(drawPointCanvas)
   },
   { deep: true }
+)
+
+// 直线模式固定坐标恒为 0：直线布点只用 MotionX，point.Y 恒为 0
+// Fixed 控件已删除，但字段保留在类型中；切到直线模式时重置为 0 以保证预览正确
+watch(
+  () => store.config.layout.pattern,
+  (pattern) => {
+    if (pattern === TraversalPattern.LINE && store.config.layout.line) {
+      store.config.layout.line.fixed = 0
+    }
+  },
 )
 
 // ==================== 生命周期 ====================

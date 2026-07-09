@@ -1,10 +1,27 @@
 package five_hole
 
 import (
+	"math"
 	"testing"
 
 	"yx-daq/internal/types"
 )
+
+const floatEpsilon = 1e-9
+
+// makePGConfig 把布点布局包装成五孔 generatePoints 所需的最小配置
+func makePGConfig(layout types.TraversalLayout) types.FiveHoleTraversalConfig {
+	return types.FiveHoleTraversalConfig{
+		Layout: layout,
+		Probes: []types.FiveHoleProbeConfig{
+			{
+				ProbeID: "p1", Enabled: true,
+				MotionX: types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "X"},
+				MotionY: types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "Y"},
+			},
+		},
+	}
+}
 
 func TestGeneratePoints_Rectangle(t *testing.T) {
 	layout := types.TraversalLayout{
@@ -12,11 +29,11 @@ func TestGeneratePoints_Rectangle(t *testing.T) {
 		Rectangle: &types.RectangleLayout{
 			XMin: 0, XMax: 10,
 			YMin: 0, YMax: 10,
-			XSteps: []types.StepSegment{{Start: 0, End: 10, Step: 5}},  // 0,5,10 = 3 点
-			YSteps: []types.StepSegment{{Start: 0, End: 10, Step: 5}},  // 0,5,10 = 3 点
+			XSteps: []types.StepSegment{{Start: 0, End: 10, Step: 5}}, // 0,5,10 = 3 点
+			YSteps: []types.StepSegment{{Start: 0, End: 10, Step: 5}}, // 0,5,10 = 3 点
 		},
 	}
-	points, err := generatePoints(layout)
+	points, err := generatePoints(makePGConfig(layout))
 	if err != nil {
 		t.Fatalf("generatePoints failed: %v", err)
 	}
@@ -26,74 +43,166 @@ func TestGeneratePoints_Rectangle(t *testing.T) {
 	}
 }
 
-func TestGeneratePoints_Line_SingleAxisX(t *testing.T) {
-	// 单轴直线：仅 X 方向变化
+func TestGeneratePoints_Line_XAxis(t *testing.T) {
+	// X 方向直线：axis=X, start=0, end=10, step=5, fixed=0
 	layout := types.TraversalLayout{
 		Pattern: types.TraversalPatternLine,
 		Line: &types.LineLayout{
-			StartX: 0, StartY: 5,
-			EndX: 10, EndY: 5,
-			XSteps: []types.StepSegment{{Start: 0, End: 10, Step: 5}},  // 0,5,10
-			YSteps: nil,
+			Axis:  "X",
+			Start: 0,
+			End:   10,
+			Step:  5,
+			Fixed: 0,
 		},
 	}
-	points, err := generatePoints(layout)
+	points, err := generatePoints(makePGConfig(layout))
+	if err != nil {
+		t.Fatalf("generatePoints failed: %v", err)
+	}
+	if len(points) != 3 { // 0, 5, 10
+		t.Fatalf("expected 3 points, got %d", len(points))
+	}
+	// 验证 Y 固定为 0
+	for _, p := range points {
+		if p.Y != 0 {
+			t.Fatalf("expected Y=0, got %f", p.Y)
+		}
+	}
+	// 验证 X 序列
+	expectedX := []float64{0, 5, 10}
+	for i, p := range points {
+		if p.X != expectedX[i] {
+			t.Fatalf("point %d: expected X=%f, got %f", i, expectedX[i], p.X)
+		}
+	}
+}
+
+func TestGeneratePoints_Line_AxisIgnored(t *testing.T) {
+	// 直线模式不再读 Axis 字段：Axis=Y 也仍然 X 变化、Y=0
+	layout := types.TraversalLayout{
+		Pattern: types.TraversalPatternLine,
+		Line: &types.LineLayout{
+			Axis:  "Y",
+			Start: 0,
+			End:   10,
+			Step:  5,
+			Fixed: 5,
+		},
+	}
+	points, err := generatePoints(makePGConfig(layout))
 	if err != nil {
 		t.Fatalf("generatePoints failed: %v", err)
 	}
 	if len(points) != 3 {
 		t.Fatalf("expected 3 points, got %d", len(points))
 	}
-	// 验证 Y 固定为 5
-	for _, p := range points {
-		if p.Y != 5 {
-			t.Fatalf("expected Y=5, got %f", p.Y)
+	// Axis 字段被忽略，永远是 X 变化、Y=0
+	expectedX := []float64{0, 5, 10}
+	for i, p := range points {
+		if p.X != expectedX[i] {
+			t.Fatalf("point %d: expected X=%f, got %f", i, expectedX[i], p.X)
+		}
+		if p.Y != 0 {
+			t.Fatalf("point %d: expected Y=0, got %f", i, p.Y)
 		}
 	}
 }
 
-func TestGeneratePoints_Line_SingleAxisY(t *testing.T) {
-	// 单轴直线：仅 Y 方向变化
+func TestGeneratePoints_Line_Reverse(t *testing.T) {
+	// 反向直线：start=10, end=0
 	layout := types.TraversalLayout{
 		Pattern: types.TraversalPatternLine,
 		Line: &types.LineLayout{
-			StartX: 5, StartY: 0,
-			EndX: 5, EndY: 10,
-			XSteps: nil,
-			YSteps: []types.StepSegment{{Start: 0, End: 10, Step: 5}},
+			Axis:  "X",
+			Start: 10,
+			End:   0,
+			Step:  5,
+			Fixed: 0,
 		},
 	}
-	points, err := generatePoints(layout)
+	points, err := generatePoints(makePGConfig(layout))
 	if err != nil {
 		t.Fatalf("generatePoints failed: %v", err)
 	}
-	if len(points) != 3 {
-		t.Fatalf("expected 3 points, got %d", len(points))
+	if len(points) != 3 { // 10, 5, 0
+		t.Fatalf("expected 3 points for reverse, got %d", len(points))
 	}
-	for _, p := range points {
-		if p.X != 5 {
-			t.Fatalf("expected X=5, got %f", p.X)
+	expectedX := []float64{10, 5, 0}
+	for i, p := range points {
+		if p.X != expectedX[i] {
+			t.Fatalf("point %d: expected X=%f, got %f", i, expectedX[i], p.X)
 		}
 	}
 }
 
-func TestGeneratePoints_Line_TwoAxis(t *testing.T) {
-	// 双轴网格直线
+func TestGeneratePoints_Line_NotDivisible(t *testing.T) {
+	// 步长不整除：start=0, end=10, step=3 → 0,3,6,9,10（强制包含终点）
 	layout := types.TraversalLayout{
 		Pattern: types.TraversalPatternLine,
 		Line: &types.LineLayout{
-			StartX: 0, StartY: 0,
-			EndX: 10, EndY: 10,
-			XSteps: []types.StepSegment{{Start: 0, End: 10, Step: 5}},  // 3 点
-			YSteps: []types.StepSegment{{Start: 0, End: 10, Step: 5}},  // 3 点
+			Axis:  "X",
+			Start: 0,
+			End:   10,
+			Step:  3,
+			Fixed: 0,
 		},
 	}
-	points, err := generatePoints(layout)
+	points, err := generatePoints(makePGConfig(layout))
 	if err != nil {
 		t.Fatalf("generatePoints failed: %v", err)
 	}
-	if len(points) != 9 {
-		t.Fatalf("expected 9 points, got %d", len(points))
+	if len(points) != 5 {
+		t.Fatalf("expected 5 points (end forced), got %d", len(points))
+	}
+	if points[0].X != 0 {
+		t.Fatalf("expected first X=0, got %f", points[0].X)
+	}
+	if points[len(points)-1].X != 10 {
+		t.Fatalf("expected last X=10 (end forced), got %f", points[len(points)-1].X)
+	}
+}
+
+func TestGeneratePoints_Line_StartEqualsEnd(t *testing.T) {
+	layout := types.TraversalLayout{
+		Pattern: types.TraversalPatternLine,
+		Line: &types.LineLayout{
+			Axis:  "X",
+			Start: 5,
+			End:   5,
+			Step:  1,
+			Fixed: 3,
+		},
+	}
+	points, err := generatePoints(makePGConfig(layout))
+	if err != nil {
+		t.Fatalf("generatePoints failed: %v", err)
+	}
+	if len(points) != 1 {
+		t.Fatalf("expected 1 point for start==end, got %d", len(points))
+	}
+	if points[0].X != 5 || points[0].Y != 0 {
+		t.Fatalf("expected (5, 0), got (%f, %f)", points[0].X, points[0].Y)
+	}
+}
+
+func TestGeneratePoints_Line_ZeroStep(t *testing.T) {
+	// 步长 <= 0：仅起点
+	layout := types.TraversalLayout{
+		Pattern: types.TraversalPatternLine,
+		Line: &types.LineLayout{
+			Axis:  "X",
+			Start: 0,
+			End:   10,
+			Step:  0,
+			Fixed: 0,
+		},
+	}
+	points, err := generatePoints(makePGConfig(layout))
+	if err != nil {
+		t.Fatalf("generatePoints failed: %v", err)
+	}
+	if len(points) != 1 {
+		t.Fatalf("expected 1 point for zero step, got %d", len(points))
 	}
 }
 
@@ -105,7 +214,7 @@ func TestGeneratePoints_Custom(t *testing.T) {
 			{ID: "c2", X: 3, Y: 4},
 		},
 	}
-	points, err := generatePoints(layout)
+	points, err := generatePoints(makePGConfig(layout))
 	if err != nil {
 		t.Fatalf("generatePoints failed: %v", err)
 	}
@@ -116,51 +225,129 @@ func TestGeneratePoints_Custom(t *testing.T) {
 
 func TestGeneratePoints_EmptyLayout(t *testing.T) {
 	layout := types.TraversalLayout{Pattern: types.TraversalPatternCustom}
-	_, err := generatePoints(layout)
+	_, err := generatePoints(makePGConfig(layout))
 	if err == nil {
 		t.Fatal("expected error for empty points")
 	}
 }
 
-func TestIsLineSingleAxis_XChange(t *testing.T) {
-	line := &types.LineLayout{
-		StartX: 0, StartY: 5,
-		EndX:   10, EndY: 5,
-		XSteps: []types.StepSegment{{Start: 0, End: 10, Step: 5}},
+func TestGeneratePoints_Fan_SingleRadiusSingleAngle(t *testing.T) {
+	layout := types.TraversalLayout{
+		Pattern: types.TraversalPatternFan,
+		Fan: &types.FanLayout{
+			RSteps:     []types.StepSegment{{Start: 10, End: 10, Step: 1}},
+			ThetaSteps: []types.StepSegment{{Start: 30, End: 30, Step: 1}},
+			RStart:     10,
+			ThetaStart: 30,
+			RAxis:      "X",
+			ThetaAxis:  "U",
+		},
 	}
-	single, isX := isLineSingleAxis(line)
-	if !single {
-		t.Fatal("expected single axis")
+	points, err := generatePoints(makePGConfig(layout))
+	if err != nil {
+		t.Fatalf("generatePoints failed: %v", err)
 	}
-	if !isX {
-		t.Fatal("expected X change")
+	if len(points) != 1 {
+		t.Fatalf("expected 1 point, got %d", len(points))
 	}
-}
-
-func TestIsLineSingleAxis_YChange(t *testing.T) {
-	line := &types.LineLayout{
-		StartX: 5, StartY: 0,
-		EndX:   5, EndY: 10,
-		YSteps: []types.StepSegment{{Start: 0, End: 10, Step: 5}},
-	}
-	single, isX := isLineSingleAxis(line)
-	if !single {
-		t.Fatal("expected single axis")
-	}
-	if isX {
-		t.Fatal("expected Y change (isX=false)")
+	if points[0].X != 0 || points[0].Y != 0 {
+		t.Fatalf("first point should be relative origin, got (%f, %f)", points[0].X, points[0].Y)
 	}
 }
 
-func TestIsLineSingleAxis_TwoAxis(t *testing.T) {
-	line := &types.LineLayout{
-		StartX: 0, StartY: 0,
-		EndX:   10, EndY: 10,
-		XSteps: []types.StepSegment{{Start: 0, End: 10, Step: 5}},
-		YSteps: []types.StepSegment{{Start: 0, End: 10, Step: 5}},
+func approxEqual(a, b float64) bool {
+	return math.Abs(a-b) <= floatEpsilon
+}
+
+func TestGeneratePoints_Fan_MultiRadiusSingleAngle(t *testing.T) {
+	layout := types.TraversalLayout{
+		Pattern: types.TraversalPatternFan,
+		Fan: &types.FanLayout{
+			RSteps:     []types.StepSegment{{Start: 0, End: 10, Step: 5}}, // 0, 5, 10
+			ThetaSteps: []types.StepSegment{{Start: 0, End: 0, Step: 1}},   // 0
+			RStart:     0,
+			ThetaStart: 0,
+			RAxis:      "X",
+			ThetaAxis:  "U",
+		},
 	}
-	single, _ := isLineSingleAxis(line)
-	if single {
-		t.Fatal("expected not single axis")
+	points, err := generatePoints(makePGConfig(layout))
+	if err != nil {
+		t.Fatalf("generatePoints failed: %v", err)
+	}
+	if len(points) != 3 {
+		t.Fatalf("expected 3 points, got %d", len(points))
+	}
+	expected := []types.TraversalPoint{
+		{X: 0, Y: 0},
+		{X: 5, Y: 0},
+		{X: 10, Y: 0},
+	}
+	for i, p := range points {
+		if !approxEqual(p.X, expected[i].X) || !approxEqual(p.Y, expected[i].Y) {
+			t.Fatalf("point %d: expected (%f, %f), got (%f, %f)", i, expected[i].X, expected[i].Y, p.X, p.Y)
+		}
+	}
+}
+
+func TestGeneratePoints_Fan_MultiRadiusMultiAngle(t *testing.T) {
+	layout := types.TraversalLayout{
+		Pattern: types.TraversalPatternFan,
+		Fan: &types.FanLayout{
+			RSteps:     []types.StepSegment{{Start: 0, End: 10, Step: 10}}, // 0, 10
+			ThetaSteps: []types.StepSegment{{Start: 0, End: 90, Step: 90}},  // 0, 90
+			RStart:     0,
+			ThetaStart: 0,
+			RAxis:      "X",
+			ThetaAxis:  "U",
+		},
+	}
+	points, err := generatePoints(makePGConfig(layout))
+	if err != nil {
+		t.Fatalf("generatePoints failed: %v", err)
+	}
+	if len(points) != 4 {
+		t.Fatalf("expected 4 points, got %d", len(points))
+	}
+	// 顺序：先遍历 θ，再遍历 R（与矩形保持一致）
+	expected := []types.TraversalPoint{
+		{X: 0, Y: 0},  // R=0, θ=0
+		{X: 0, Y: 0},  // R=0, θ=90
+		{X: 10, Y: 0}, // R=10, θ=0
+		{X: 0, Y: 10}, // R=10, θ=90
+	}
+	for i, p := range points {
+		if !approxEqual(p.X, expected[i].X) || !approxEqual(p.Y, expected[i].Y) {
+			t.Fatalf("point %d: expected (%f, %f), got (%f, %f)", i, expected[i].X, expected[i].Y, p.X, p.Y)
+		}
+	}
+}
+
+func TestGeneratePoints_Fan_NonZeroStart(t *testing.T) {
+	// 起始半径 5、起始角度 30°，验证相对原点行为
+	layout := types.TraversalLayout{
+		Pattern: types.TraversalPatternFan,
+		Fan: &types.FanLayout{
+			RSteps:     []types.StepSegment{{Start: 5, End: 15, Step: 10}}, // 5, 15
+			ThetaSteps: []types.StepSegment{{Start: 30, End: 30, Step: 1}},  // 30
+			RStart:     5,
+			ThetaStart: 30,
+			RAxis:      "X",
+			ThetaAxis:  "U",
+		},
+	}
+	points, err := generatePoints(makePGConfig(layout))
+	if err != nil {
+		t.Fatalf("generatePoints failed: %v", err)
+	}
+	if len(points) != 2 {
+		t.Fatalf("expected 2 points, got %d", len(points))
+	}
+	if !approxEqual(points[0].X, 0) || !approxEqual(points[0].Y, 0) {
+		t.Fatalf("first point should be relative origin, got (%f, %f)", points[0].X, points[0].Y)
+	}
+	// 第二点：ΔR=10，角度相对 0°，沿起始角度方向
+	if !approxEqual(points[1].X, 10) || !approxEqual(points[1].Y, 0) {
+		t.Fatalf("second point should be (10, 0), got (%f, %f)", points[1].X, points[1].Y)
 	}
 }

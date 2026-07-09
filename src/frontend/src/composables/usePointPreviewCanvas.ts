@@ -16,12 +16,11 @@ interface RectangleLike {
 }
 
 interface LineLike {
-  startX: number
-  startY: number
-  endX: number
-  endY: number
-  xSteps: StepSegment[]
-  ySteps: StepSegment[]
+  axis: string // 物理轴名（如 X/Y/Z/U）或三孔的 'x'/'y'
+  start: number
+  end: number
+  step: number
+  fixed: number
 }
 
 interface CustomPointLike {
@@ -30,10 +29,18 @@ interface CustomPointLike {
   y: number
 }
 
+interface FanLayoutLike {
+  rSteps: StepSegment[]
+  thetaSteps: StepSegment[]
+  rStart: number
+  thetaStart: number
+}
+
 interface LayoutLike {
   pattern: string
   rectangle?: RectangleLike | null
   line?: LineLike | null
+  fan?: FanLayoutLike | null
   customPoints?: CustomPointLike[]
 }
 
@@ -64,6 +71,9 @@ export interface UsePointPreviewCanvasOptions {
   pointRadiusFactor?: number
   // 是否支持 'custom' 布点模式（五孔支持，三孔不支持）
   supportCustomPattern?: boolean
+  // 直线布点 axis 为物理轴名时，调用此函数判断是 X 方向（返回 true）还是 Y 方向（返回 false）
+  // 不传时按三孔语义：'x' -> true, 'y' -> false，其他兜底 true
+  lineAxisResolver?: (axis: string) => boolean
 }
 
 /**
@@ -89,6 +99,33 @@ export function expandSteps(steps: StepSegment[]): number[] {
     for (let i = 0; i <= n; i++) {
       values.push(seg.start + i * seg.step)
     }
+  }
+  return values
+}
+
+/**
+ * 沿单轴方向展开点位坐标（与后端 expandLineAxisValues 逻辑一致）
+ * - 支持 start>end 反向（步长恒为正，方向自动跟随 start→end）
+ * - 步长不整除时强制包含 end（最后一点用 end 替代，避免浮点漂移）
+ */
+export function expandLineAxisValues(start: number, end: number, step: number): number[] {
+  if (step <= 0) return [start]
+  if (start === end) return [start]
+
+  const direction = end < start ? -1 : 1
+  const absStep = step
+  let absDelta = end - start
+  if (absDelta < 0) absDelta = -absDelta
+
+  // n = floor(absDelta/absStep)，整数步数
+  const n = Math.floor(absDelta / absStep)
+  const values: number[] = [start]
+  for (let i = 1; i <= n; i++) {
+    values.push(start + direction * i * absStep)
+  }
+  // 若 n 步尚未抵达 end，追加 end 作为终点
+  if (n * absStep < absDelta) {
+    values.push(end)
   }
   return values
 }
@@ -134,18 +171,24 @@ export function usePointPreviewCanvas(options: UsePointPreviewCanvasOptions): {
       }
     } else if (layout.pattern === 'line' && layout.line) {
       const l = layout.line
-      const xValues = expandSteps(l.xSteps)
-      const yValues = expandSteps(l.ySteps)
-      if (xValues.length === 0 && yValues.length === 0) {
-        points.push({ x: l.startX, y: l.startY, state: 'pending' })
-        points.push({ x: l.endX, y: l.endY, state: 'pending' })
-      } else {
-        if (yValues.length === 0) { yValues.push(l.startY) }
-        if (xValues.length === 0) { xValues.push(l.startX) }
-        for (const x of xValues) {
-          for (const y of yValues) {
-            points.push({ x, y, state: 'pending' })
-          }
+      const values = expandLineAxisValues(l.start, l.end, l.step)
+      const isX = l.axis === 'x' || (l.axis !== 'y' && options.lineAxisResolver?.(l.axis) !== false)
+      for (const v of values) {
+        if (isX) {
+          points.push({ x: v, y: l.fixed, state: 'pending' })
+        } else {
+          points.push({ x: l.fixed, y: v, state: 'pending' })
+        }
+      }
+    } else if (layout.pattern === 'fan' && layout.fan) {
+      const f = layout.fan
+      const rValues = expandSteps(f.rSteps)
+      const thetaValues = expandSteps(f.thetaSteps)
+      for (const r of rValues) {
+        for (const thetaDeg of thetaValues) {
+          const theta = (thetaDeg - f.thetaStart) * Math.PI / 180
+          const dr = r - f.rStart
+          points.push({ x: dr * Math.cos(theta), y: dr * Math.sin(theta), state: 'pending' })
         }
       }
     } else if (supportCustomPattern && layout.pattern === 'custom' && layout.customPoints) {

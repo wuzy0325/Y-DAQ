@@ -129,11 +129,11 @@ func (s *FiveHoleService) StopFiveHoleTraversal() {
 		if !probe.Enabled {
 			continue
 		}
-		if probe.MotionAlpha.ControllerID != "" {
-			controllerIDs[probe.MotionAlpha.ControllerID] = true
+		if probe.MotionX.ControllerID != "" {
+			controllerIDs[probe.MotionX.ControllerID] = true
 		}
-		if probe.MotionBeta.ControllerID != "" {
-			controllerIDs[probe.MotionBeta.ControllerID] = true
+		if probe.MotionY.ControllerID != "" {
+			controllerIDs[probe.MotionY.ControllerID] = true
 		}
 	}
 	for mcID := range controllerIDs {
@@ -250,18 +250,18 @@ func (c *Core) CheckFiveHoleMotionConflict(config types.FiveHoleTraversalConfig)
 		if !probe.Enabled {
 			continue
 		}
-		alphaKey := probe.MotionAlpha.ControllerID + ":" + string(probe.MotionAlpha.Axis)
-		if owner, exists := axisMap[alphaKey]; exists {
+		xKey := probe.MotionX.ControllerID + ":" + string(probe.MotionX.Axis)
+		if owner, exists := axisMap[xKey]; exists {
 			return fmt.Errorf("位移机构 %s 的 %s 轴同时被探针 %s 和 %s 使用",
-				probe.MotionAlpha.ControllerID, probe.MotionAlpha.Axis, owner, probe.ProbeID)
+				probe.MotionX.ControllerID, probe.MotionX.Axis, owner, probe.ProbeID)
 		}
-		axisMap[alphaKey] = probe.ProbeID
-		betaKey := probe.MotionBeta.ControllerID + ":" + string(probe.MotionBeta.Axis)
-		if owner, exists := axisMap[betaKey]; exists {
+		axisMap[xKey] = probe.ProbeID
+		yKey := probe.MotionY.ControllerID + ":" + string(probe.MotionY.Axis)
+		if owner, exists := axisMap[yKey]; exists {
 			return fmt.Errorf("位移机构 %s 的 %s 轴同时被探针 %s 和 %s 使用",
-				probe.MotionBeta.ControllerID, probe.MotionBeta.Axis, owner, probe.ProbeID)
+				probe.MotionY.ControllerID, probe.MotionY.Axis, owner, probe.ProbeID)
 		}
-		axisMap[betaKey] = probe.ProbeID
+		axisMap[yKey] = probe.ProbeID
 	}
 	return nil
 }

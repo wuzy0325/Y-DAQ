@@ -2,6 +2,7 @@ package five_hole
 
 import (
 	"fmt"
+	"math"
 
 	"yx-daq/internal/types"
 )
@@ -9,19 +10,21 @@ import (
 // maxTraversalPoints 最大点位数量限制，防止配置不当导致内存溢出
 const maxTraversalPoints = 50000
 
-// generatePoints 根据布点配置生成测试点位
-// 复用三孔 point_generator 逻辑（TraversalLayout 是共享类型）
-func generatePoints(layout types.TraversalLayout) ([]types.TraversalPoint, error) {
+// generatePoints 根据五孔测试配置生成测试点位
+// 五孔直线布点只用 MotionX（单轴），生成 point{X: v, Y: 0}；物理轴由每根探针的 MotionX 决定
+func generatePoints(config types.FiveHoleTraversalConfig) ([]types.TraversalPoint, error) {
 	var points []types.TraversalPoint
-	switch layout.Pattern {
+	switch config.Layout.Pattern {
 	case types.TraversalPatternLine:
-		points = generateLinePoints(layout.Line)
+		points = generateLinePoints(config.Layout.Line)
 	case types.TraversalPatternRectangle:
-		points = generateRectanglePoints(layout.Rectangle)
+		points = generateRectanglePoints(config.Layout.Rectangle)
+	case types.TraversalPatternFan:
+		points = generateFanPoints(config.Layout.Fan)
 	case types.TraversalPatternCustom:
-		points = layout.CustomPoints
+		points = config.Layout.CustomPoints
 	default:
-		return nil, fmt.Errorf("不支持的布点模式: %s", layout.Pattern)
+		return nil, fmt.Errorf("不支持的布点模式: %s", config.Layout.Pattern)
 	}
 
 	if len(points) == 0 {
@@ -33,43 +36,20 @@ func generatePoints(layout types.TraversalLayout) ([]types.TraversalPoint, error
 	return points, nil
 }
 
-// generateLinePoints 直线/网格布点（当XSteps和YSteps都有值时生成X*Y网格点）
+// generateLinePoints 直线布点（单轴）
+// 直线模式只用 MotionX，沿 Start→End 按步长 Step 取点，生成 point{X: v, Y: 0}
+// 物理轴由每根探针的 MotionX 决定，line.Axis 字段不再使用
 func generateLinePoints(line *types.LineLayout) []types.TraversalPoint {
 	if line == nil {
 		return nil
 	}
 
-	var points []types.TraversalPoint
-	id := 0
+	values := types.ExpandLineAxisValues(line.Start, line.End, line.Step)
 
-	xValues := expandStepSegments(line.XSteps)
-	yValues := expandStepSegments(line.YSteps)
-
-	if len(xValues) == 0 && len(yValues) == 0 {
-		points = append(points, types.TraversalPoint{ID: fmt.Sprintf("pt-%d", id), X: line.StartX, Y: line.StartY})
-		id++
-		points = append(points, types.TraversalPoint{ID: fmt.Sprintf("pt-%d", id), X: line.EndX, Y: line.EndY})
-		return points
+	points := make([]types.TraversalPoint, 0, len(values))
+	for i, v := range values {
+		points = append(points, types.TraversalPoint{ID: fmt.Sprintf("pt-%d", i), X: v, Y: 0})
 	}
-
-	if len(yValues) == 0 {
-		yValues = []float64{line.StartY}
-	}
-	if len(xValues) == 0 {
-		xValues = []float64{line.StartX}
-	}
-
-	for _, x := range xValues {
-		for _, y := range yValues {
-			points = append(points, types.TraversalPoint{
-				ID: fmt.Sprintf("pt-%d", id),
-				X:  x,
-				Y:  y,
-			})
-			id++
-		}
-	}
-
 	return points
 }
 
@@ -109,6 +89,38 @@ func generateRectanglePoints(rect *types.RectangleLayout) []types.TraversalPoint
 	return points
 }
 
+// generateFanPoints 扇形布点
+// R 方向为线性轴，θ 方向为旋转轴；第一点位为相对原点（当前位置），后续点位相对于第一点递增
+// 角度使用数学极坐标：0° 沿 +X，逆时针为正
+func generateFanPoints(fan *types.FanLayout) []types.TraversalPoint {
+	if fan == nil {
+		return nil
+	}
+
+	rValues := expandStepSegments(fan.RSteps)
+	thetaValues := expandStepSegments(fan.ThetaSteps)
+	if len(rValues) == 0 || len(thetaValues) == 0 {
+		return nil
+	}
+
+	points := make([]types.TraversalPoint, 0, len(rValues)*len(thetaValues))
+	id := 0
+	for _, r := range rValues {
+		for _, thetaDeg := range thetaValues {
+			theta := (thetaDeg - fan.ThetaStart) * math.Pi / 180
+			dr := r - fan.RStart
+			points = append(points, types.TraversalPoint{
+				ID: fmt.Sprintf("pt-%d", id),
+				X:  dr * math.Cos(theta),
+				Y:  dr * math.Sin(theta),
+			})
+			id++
+		}
+	}
+
+	return points
+}
+
 // expandStepSegments 展开分段步长为具体数值列表
 // 使用整数步数计算，避免浮点累加精度问题（照三孔实现）
 func expandStepSegments(segments []types.StepSegment) []float64 {
@@ -135,17 +147,3 @@ func expandStepSegments(segments []types.StepSegment) []float64 {
 	return values
 }
 
-// isLineSingleAxis 判断直线布点是否为单轴（仅一个方向变化）
-// 用于 motion_coordinator 跳过静止轴
-func isLineSingleAxis(line *types.LineLayout) (singleAxis bool, isXChange bool) {
-	if line == nil {
-		return false, false
-	}
-	xChange := line.StartX != line.EndX || len(line.XSteps) > 0
-	yChange := line.StartY != line.EndY || len(line.YSteps) > 0
-	// 仅一个方向变化 = 单轴
-	if xChange != yChange {
-		return true, xChange
-	}
-	return false, false
-}

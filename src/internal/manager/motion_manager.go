@@ -567,6 +567,22 @@ func (m *MotionControllerManager) WaitForMotionComplete(id string, axis types.Ax
 	return ctrl.WaitForMotionComplete(axis, timeoutMs)
 }
 
+// GetAxisPosition 获取指定控制器指定轴的当前位置（实时查询控制器）
+// 用于五孔测试开始前保存初始位置、测试结束后回到初始位置
+func (m *MotionControllerManager) GetAxisPosition(id string, axis types.AxisName) (float64, error) {
+	m.RLock()
+	ctrl, ok := m.instances[id]
+	m.RUnlock()
+	if !ok {
+		return 0, fmt.Errorf("motion controller not connected: %s", id)
+	}
+	status, err := ctrl.GetAxisStatus(axis)
+	if err != nil {
+		return 0, err
+	}
+	return status.Position, nil
+}
+
 // MotorOff 关闭电机
 func (m *MotionControllerManager) MotorOff(id string) error {
 	m.RLock()
