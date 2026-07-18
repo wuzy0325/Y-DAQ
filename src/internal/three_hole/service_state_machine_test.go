@@ -556,6 +556,7 @@ func TestService_RealtimeMonitor_Stops_OnTestStart(t *testing.T) {
 	// 启动 realtime monitor
 	cfg := makeServiceConfig(t)
 	service.StartRealtimeMonitor(cfg)
+	defer service.StopRealtimeMonitor()
 
 	// 等待 monitor 的 realtime 事件出现
 	time.Sleep(250 * time.Millisecond)
@@ -584,15 +585,18 @@ func TestService_RealtimeMonitor_Stops_OnTestStart(t *testing.T) {
 
 	// 测试结束后恢复 monitor
 	service.Stop()
-	time.Sleep(200 * time.Millisecond)
+	waitForStatusEventually(t, service, types.TraversalStatusIdle, 2*time.Second)
 
-	// Stop 内部调用 StopRealtimeMonitor，所以需要重新启动 monitor
-	service.StartRealtimeMonitor(cfg)
-	defer service.StopRealtimeMonitor()
-	time.Sleep(250 * time.Millisecond)
+	// Stop 后等 runTestLoop defer 与 in-flight 事件落定，再清空
+	time.Sleep(150 * time.Millisecond)
+	publisher.Clear()
+	// 等待监控 ticker 触发（100ms × 2 + 缓冲）
+	time.Sleep(350 * time.Millisecond)
+
+	// Stop 不再杀 monitor goroutine，testRunning=false 后应自动恢复推送
 	restartCount := countMonitorRealtimeEvents(publisher.GetRealtimeEvents())
 	if restartCount == 0 {
-		t.Error("Stop 后重新启动 monitor 应能继续推送 realtime 事件")
+		t.Error("Stop 后 monitor 应继续推送 realtime 事件（无需重新 StartRealtimeMonitor）")
 	}
 }
 
@@ -625,16 +629,17 @@ func TestService_RealtimeMonitor_Restarts_OnTestStop(t *testing.T) {
 		t.Errorf("测试运行期间 monitor 不应推送，实际 %d 个", cnt)
 	}
 
-	// Stop 测试，testRunning 恢复 false，但 Stop 会调用 StopRealtimeMonitor
-	// 这里验证 Stop 后可以重新 StartRealtimeMonitor 并继续推送
+	// Stop 测试，testRunning 恢复 false，monitor goroutine 存活并自动恢复推送
 	service.Stop()
-	time.Sleep(200 * time.Millisecond)
+	waitForStatusEventually(t, service, types.TraversalStatusIdle, 2*time.Second)
 
-	// 重新启动 monitor
-	service.StartRealtimeMonitor(cfg)
-	time.Sleep(250 * time.Millisecond)
+	// Stop 后等 runTestLoop defer 与 in-flight 事件落定，再清空
+	time.Sleep(150 * time.Millisecond)
+	publisher.Clear()
+	// 等待监控 ticker 触发（100ms × 2 + 缓冲）
+	time.Sleep(350 * time.Millisecond)
 	afterCount := countMonitorRealtimeEvents(publisher.GetRealtimeEvents())
 	if afterCount == 0 {
-		t.Error("Stop 后重新启动 monitor 应能继续推送 realtime 事件")
+		t.Error("Stop 后 monitor 应继续推送 realtime 事件（无需重新 StartRealtimeMonitor）")
 	}
 }

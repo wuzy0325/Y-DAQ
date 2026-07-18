@@ -184,13 +184,20 @@ func (s *ThreeHoleTraversalService) Resume() {
 }
 
 // Stop 停止测试
+// 注意：不调用 StopRealtimeMonitor()——与 runTestLoop defer 自然完成路径行为一致，
+// 让 testRunning=false 后实时监控 goroutine 自动恢复推送 three-hole:realtime 事件，
+// 避免用户点击"停止"后三孔界面实时数值不再刷新。
+// 资源清理由 Core.Shutdown() 兜底调用 StopRealtimeMonitor() 完成。
+//
+// 有意覆盖 coding-standards.md §1.10「资源清理」：用户主动 Stop 后实时监控 goroutine
+// 仍存活属设计意图（保持画面实时数据流），不属于"资源泄漏"。reviewer 请勿仅据 §1.10
+// 自动恢复 StopRealtimeMonitor() 调用——需先确认该 UX 决策已被废弃。
 func (s *ThreeHoleTraversalService) Stop() {
 	s.testManager.Stop()
 
 	time.Sleep(100 * time.Millisecond)
 
 	s.dataProcessor.testRunning.Store(false)
-	s.dataProcessor.StopRealtimeMonitor()
 }
 
 // GetStatus 获取测试状态
@@ -219,7 +226,12 @@ func (s *ThreeHoleTraversalService) runTestLoop(taskID string, config types.Thre
 		return
 	}
 
-	defer func() { s.eventHandler.OnTestComplete(taskID, s.testManager.GetStatus().Status) }()
+	// 测试循环退出时（自然完成 / 取消 / 致命错误）必须重置 testRunning，
+	// 否则 runRealtimeMonitor 会因 testRunning=true 永远 continue，导致测试完成后画面数据不再更新
+	defer func() {
+		s.dataProcessor.testRunning.Store(false)
+		s.eventHandler.OnTestComplete(taskID, s.testManager.GetStatus().Status)
+	}()
 
 	// 保存当前代际号，用于检测是否被新测试取代
 	myGen := s.testManager.testGen.Load()
