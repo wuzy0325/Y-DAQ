@@ -80,6 +80,8 @@ type FiveHoleRawData struct {
 	PAtm   float64  `json:"pAtm"`
 	TAtm   float64  `json:"tAtm"`
 	PTotal *float64 `json:"pTotal,omitempty"`
+	// TTotal 总温（TAT）：nil 表示未配置或读取失败，插值公式回退用 TAtm
+	TTotal *float64 `json:"tTotal,omitempty"`
 }
 
 // FiveHoleCoefficients 五孔系数

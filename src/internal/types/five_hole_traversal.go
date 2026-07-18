@@ -82,6 +82,9 @@ type FiveHoleTraversalConfig struct {
 	PAtmChannel      int                  `json:"pAtmChannel"`
 	TAtmDeviceID     string               `json:"tAtmDeviceId"`
 	TAtmChannel      int                  `json:"tAtmChannel"`
+	// TTotal（总温 TAT）可选全局数据源：未配置（deviceID 为空）时插值公式回退用 TAtm
+	TTotalDeviceID   string               `json:"tTotalDeviceId"`
+	TTotalChannel    int                  `json:"tTotalChannel"`
 	// 1-3 根探针（配几根跑几根）
 	Probes           []FiveHoleProbeConfig `json:"probes"`
 	SavePath         string               `json:"savePath"`
@@ -236,6 +239,11 @@ func (c *FiveHoleTraversalConfig) Validate() error {
 	}
 	if c.TAtmChannel < 0 {
 		return fmt.Errorf("大气温度通道号必须≥0")
+	}
+
+	// TTotal 可选：未配置（deviceID 为空）时跳过校验，插值公式回退用 TAtm
+	if c.TTotalDeviceID != "" && c.TTotalChannel < 0 {
+		return fmt.Errorf("总温通道号必须≥0")
 	}
 
 	// 探针配置验证

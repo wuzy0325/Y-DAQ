@@ -284,6 +284,10 @@ func TestFiveHoleValidate_BasicFields(t *testing.T) {
 		{"negative pAtm channel", func(c *FiveHoleTraversalConfig) { c.PAtmChannel = -1 }, "大气压通道"},
 		{"empty tAtm deviceID", func(c *FiveHoleTraversalConfig) { c.TAtmDeviceID = "" }, "大气温度采集设备"},
 		{"negative tAtm channel", func(c *FiveHoleTraversalConfig) { c.TAtmChannel = -1 }, "大气温度通道"},
+		{"negative tTotal channel", func(c *FiveHoleTraversalConfig) {
+			c.TTotalDeviceID = "dev-ttotal"
+			c.TTotalChannel = -1
+		}, "总温通道"},
 		{"no probes", func(c *FiveHoleTraversalConfig) { c.Probes = nil }, "探针"},
 		{"empty savePath", func(c *FiveHoleTraversalConfig) { c.SavePath = "" }, "保存路径"},
 		{"empty saveFileName", func(c *FiveHoleTraversalConfig) { c.SaveFileName = "" }, "保存文件名"},
@@ -404,6 +408,21 @@ func TestFiveHoleValidate_NoEnabledProbes(t *testing.T) {
 	err := c.Validate()
 	if err == nil || !strings.Contains(err.Error(), "至少1根") {
 		t.Fatalf("expected 至少1根 error, got %v", err)
+	}
+}
+
+// TestFiveHoleValidate_TTotal_Optional TTotal 未配置时应通过（回退用 TAtm）
+func TestFiveHoleValidate_TTotal_Optional(t *testing.T) {
+	c := validFiveHoleConfig()
+	// 默认 TTotalDeviceID 为空，应通过
+	if err := c.Validate(); err != nil {
+		t.Fatalf("TTotal 未配置时应通过，got %v", err)
+	}
+	// 显式配置 TTotal 也应通过
+	c.TTotalDeviceID = "dev-ttotal"
+	c.TTotalChannel = 5
+	if err := c.Validate(); err != nil {
+		t.Fatalf("TTotal 已配置且通道合法时应通过，got %v", err)
 	}
 }
 

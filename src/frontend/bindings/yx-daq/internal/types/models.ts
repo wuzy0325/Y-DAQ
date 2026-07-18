@@ -1382,6 +1382,11 @@ export class FiveHoleRawData {
     "tAtm": number;
     "pTotal"?: number | null;
 
+    /**
+     * TTotal 总温（可选，nil 表示未配置→公式回退用 TAtm 计算 SAT）
+     */
+    "tTotal"?: number | null;
+
     /** Creates a new FiveHoleRawData instance. */
     constructor($$source: Partial<FiveHoleRawData> = {}) {
         if (!("p1" in $$source)) {
@@ -1458,6 +1463,13 @@ export class FiveHoleTraversalConfig {
     "tAtmChannel": number;
 
     /**
+     * TTotal 全局共享总温源（三根共用，可选）
+     * 配置时 CalculateSAT 使用 TTotal；未配置时回退用 TAtm（保旧行为）
+     */
+    "tTotalDeviceId": string;
+    "tTotalChannel": number;
+
+    /**
      * 1-3 根探针（配几根跑几根）
      */
     "probes": FiveHoleProbeConfig[];
@@ -1496,6 +1508,12 @@ export class FiveHoleTraversalConfig {
         if (!("tAtmChannel" in $$source)) {
             this["tAtmChannel"] = 0;
         }
+        if (!("tTotalDeviceId" in $$source)) {
+            this["tTotalDeviceId"] = "";
+        }
+        if (!("tTotalChannel" in $$source)) {
+            this["tTotalChannel"] = 0;
+        }
         if (!("probes" in $$source)) {
             this["probes"] = [];
         }
@@ -1514,13 +1532,13 @@ export class FiveHoleTraversalConfig {
      */
     static createFrom($$source: any = {}): FiveHoleTraversalConfig {
         const $$createField1_0 = $$createType27;
-        const $$createField10_0 = $$createType29;
+        const $$createField12_0 = $$createType29;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("layout" in $$parsedSource) {
             $$parsedSource["layout"] = $$createField1_0($$parsedSource["layout"]);
         }
         if ("probes" in $$parsedSource) {
-            $$parsedSource["probes"] = $$createField10_0($$parsedSource["probes"]);
+            $$parsedSource["probes"] = $$createField12_0($$parsedSource["probes"]);
         }
         return new FiveHoleTraversalConfig($$parsedSource as Partial<FiveHoleTraversalConfig>);
     }

@@ -30,7 +30,7 @@ func (dp *DataProcessor) SetBatchGetter(getter FiveHoleMultiDeviceBatchGetter) {
 }
 
 // ReadAllProbesRawData 读取所有启用探针的原始数据
-//   - 全局 PAtm/TAtm 一次读取（三根共用）
+//   - 全局 PAtm/TAtm/TTotal 一次读取（三根共用）
 //   - 各探针 P1-P5 按设备分组并行读取
 //   - lastTimestamps: 上次采样各设备的 timestamp，用于判断新帧（首次传 nil）
 //   - 返回本次采样的 timestamps 供下次调用传入
@@ -38,6 +38,7 @@ func (dp *DataProcessor) ReadAllProbesRawData(
 	probes []types.FiveHoleProbeConfig,
 	pAtmDeviceID string, pAtmChannel int,
 	tAtmDeviceID string, tAtmChannel int,
+	tTotalDeviceID string, tTotalChannel int,
 	lastTimestamps map[string]int64,
 ) ([]*types.FiveHoleRawData, map[string]int64, error) {
 	if dp.batchGetter == nil {
@@ -46,13 +47,14 @@ func (dp *DataProcessor) ReadAllProbesRawData(
 
 	currentTimestamps := make(map[string]int64)
 
-	// 读取全局 PAtm/TAtm（同时返回 timestamp 用于后续去重）
+	// 读取全局 PAtm/TAtm/TTotal（同时返回 timestamp 用于后续去重）
 	// 语义：
-	//   - 未配置（deviceID 为空）：PAtm/TAtm = 0，无 err（实时监控阶段容忍未配置）
-	//   - 已配置但读取失败：PAtm/TAtm = 0，回传 err（samplePoint 视为致命走暂停；emitRealtime 仍用 results 容错推送）
+	//   - 未配置（deviceID 为空）：PAtm/TAtm = 0，TTotal = nil，无 err（实时监控阶段容忍未配置）
+	//   - 已配置但读取失败：PAtm/TAtm = 0，TTotal = nil，回传 err（samplePoint 视为致命走暂停；emitRealtime 仍用 results 容错推送）
 	//     results 中各探针 P1-P5 已填充完整，调用方可选用以实现"谁配置谁更新"
 	var pAtmVal, tAtmVal float64
-	var pAtmErr, tAtmErr error
+	var tTotalVal *float64
+	var pAtmErr, tAtmErr, tTotalErr error
 	if pAtmDeviceID != "" {
 		var pAtmTs int64
 		pAtmVal, pAtmTs, pAtmErr = dp.readSingleChannel(pAtmDeviceID, pAtmChannel)
@@ -68,8 +70,20 @@ func (dp *DataProcessor) ReadAllProbesRawData(
 			currentTimestamps[tAtmDeviceID] = tAtmTs
 		}
 	}
-	// errors.Join 合并 PAtm/TAtm 错误（Go 1.20+）
-	atmErr := errors.Join(pAtmErr, tAtmErr)
+	if tTotalDeviceID != "" {
+		var tTotalTs int64
+		var v float64
+		v, tTotalTs, tTotalErr = dp.readSingleChannel(tTotalDeviceID, tTotalChannel)
+		if tTotalErr == nil {
+			tTotalVal = &v
+			if tTotalDeviceID != pAtmDeviceID && tTotalDeviceID != tAtmDeviceID {
+				currentTimestamps[tTotalDeviceID] = tTotalTs
+			}
+		}
+		// 失败时 tTotalVal 保持 nil，下游插值回退用 TAtm
+	}
+	// errors.Join 合并 PAtm/TAtm/TTotal 错误（Go 1.20+）
+	atmErr := errors.Join(pAtmErr, tAtmErr, tTotalErr)
 
 	// 各探针并行读取 P1-P5
 	results := make([]*types.FiveHoleRawData, len(probes))
@@ -89,6 +103,7 @@ func (dp *DataProcessor) ReadAllProbesRawData(
 			}
 			rawData.PAtm = pAtmVal
 			rawData.TAtm = tAtmVal
+			rawData.TTotal = tTotalVal
 			mu.Lock()
 			results[idx] = rawData
 			for did, ts := range probeTimestamps {
@@ -101,7 +116,7 @@ func (dp *DataProcessor) ReadAllProbesRawData(
 	}
 
 	wg.Wait()
-	// PAtm/TAtm 读取失败时回传 err，但 results 仍填充完整 P1-P5 数据：
+	// PAtm/TAtm/TTotal 读取失败时回传 err，但 results 仍填充完整 P1-P5 数据：
 	//   - samplePoint: err 视为致命，丢弃 probeSamples + break，由下轮 WaitForFreshData 触发自动暂停
 	//   - emitRealtimeForAllProbes: 限频 WARN，仍用 results 推送（实现"谁配置谁更新"）
 	return results, currentTimestamps, atmErr

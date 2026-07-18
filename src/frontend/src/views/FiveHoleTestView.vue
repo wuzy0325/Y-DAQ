@@ -162,6 +162,10 @@
                   <div class="cell-label">T∞ (°C)</div>
                   <ValueDisplay :value="getProbeRaw(probe.probeId)?.tAtm" :precision="getAtmPrecision('t')" color="#00aaff" />
                 </div>
+                <div class="raw-cell">
+                  <div class="cell-label">T0 (°C)</div>
+                  <ValueDisplay :value="getProbeRaw(probe.probeId)?.tTotal ?? undefined" :precision="getAtmPrecision('tTotal')" color="#ffaa00" />
+                </div>
               </div>
             </div>
 
@@ -379,7 +383,7 @@
 
         <!-- 探针配置 -->
         <el-tab-pane label="探针配置">
-          <!-- 全局 PAtm/TAtm 数据源 -->
+          <!-- 全局 PAtm/TAtm/TTotal 数据源 -->
           <div class="settings-section">
             <div class="section-title">🌐 大气压/温度数据源（全局共享）</div>
             <div class="form-row atm-source-row">
@@ -426,6 +430,32 @@
                   >
                     <el-option
                       v-for="n in getChannelOptions(store.config.tAtmDeviceId)"
+                      :key="n"
+                      :label="String(n)"
+                      :value="n"
+                    />
+                  </el-select>
+                </div>
+              </div>
+              <!-- T0 总温设备 + 通道 配对（可选：未配置时公式回退用 T∞） -->
+              <div class="atm-pair">
+                <div class="form-group atm-device-group">
+                  <label class="group-label" title="总温 T0 设备（可选）。未配置时公式回退用大气温度 T∞ 计算 SAT，密度计算始终用 T∞。">总温 T0 设备（可选）</label>
+                  <el-select v-model="store.config.tTotalDeviceId" placeholder="未配置用 T∞" size="small" clearable filterable style="width: 100%">
+                    <el-option v-for="dev in deviceStore.profiles" :key="dev.id" :label="`${dev.name} (${dev.type})`" :value="dev.id" />
+                  </el-select>
+                </div>
+                <div class="form-group atm-channel-group">
+                  <label class="group-label">T0 通道</label>
+                  <el-select
+                    :model-value="store.config.tTotalChannel + 1"
+                    size="small"
+                    style="width:80px"
+                    :disabled="!store.config.tTotalDeviceId"
+                    @update:model-value="store.config.tTotalChannel = ($event as number) - 1"
+                  >
+                    <el-option
+                      v-for="n in getChannelOptions(store.config.tTotalDeviceId)"
                       :key="n"
                       :label="String(n)"
                       :value="n"
@@ -622,10 +652,20 @@ function getChPrecision(probeId: string, role: FiveHoleChannelRoleValue): number
   if (!ch) return 3
   return getDeviceChannelPrecision(ch.deviceId, ch.channel)
 }
-// 全局 P∞/T∞ 精度
-function getAtmPrecision(which: 'p' | 't'): number {
-  const deviceId = which === 'p' ? store.config.pAtmDeviceId : store.config.tAtmDeviceId
-  const channel = which === 'p' ? store.config.pAtmChannel : store.config.tAtmChannel
+// 全局 P∞/T∞/T0 精度
+function getAtmPrecision(which: 'p' | 't' | 'tTotal'): number {
+  let deviceId: string
+  let channel: number
+  if (which === 'p') {
+    deviceId = store.config.pAtmDeviceId
+    channel = store.config.pAtmChannel
+  } else if (which === 't') {
+    deviceId = store.config.tAtmDeviceId
+    channel = store.config.tAtmChannel
+  } else {
+    deviceId = store.config.tTotalDeviceId
+    channel = store.config.tTotalChannel
+  }
   return getDeviceChannelPrecision(deviceId, channel)
 }
 function getDeviceChannelPrecision(deviceId: string, channel: number): number {

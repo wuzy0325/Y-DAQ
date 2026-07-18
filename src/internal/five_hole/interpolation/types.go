@@ -40,13 +40,15 @@ type CalFileInfo struct {
 
 // InterpolationInput 插值输入（五孔探针压力数据）
 type InterpolationInput struct {
-	P1   float64 `json:"P1"`   // 下孔压力
-	P2   float64 `json:"P2"`   // 中心孔压力
-	P3   float64 `json:"P3"`   // 上孔压力
-	P4   float64 `json:"P4"`   // 左孔压力
-	P5   float64 `json:"P5"`   // 右孔压力
-	PAtm float64 `json:"Patm"` // 大气压力
-	TAtm float64 `json:"Tatm"` // 大气温度
+	P1   float64  `json:"P1"`   // 下孔压力
+	P2   float64  `json:"P2"`   // 中心孔压力
+	P3   float64  `json:"P3"`   // 上孔压力
+	P4   float64  `json:"P4"`   // 左孔压力
+	P5   float64  `json:"P5"`   // 右孔压力
+	PAtm float64  `json:"Patm"` // 大气压力
+	TAtm float64  `json:"Tatm"` // 大气温度
+	// TTotal 总温（TAT）：nil 表示未配置或读取失败，CalculateSAT 回退用 TAtm（旧行为）
+	TTotal *float64 `json:"Ttotal,omitempty"`
 }
 
 // Interpolator 通用插值器接口

@@ -6,6 +6,7 @@ export interface FiveHoleRawData {
   p1: number; p2: number; p3: number; p4: number; p5: number
   pAtm: number; tAtm: number
   pTotal?: number | null
+  tTotal?: number | null
 }
 
 export interface FiveHoleInterpolationResult {
@@ -159,6 +160,9 @@ export interface FiveHoleTraversalConfig {
   pAtmChannel: number
   tAtmDeviceId: string
   tAtmChannel: number
+  // TTotal（总温 TAT）可选全局数据源：未配置（deviceId 为空）时插值公式回退用 TAtm
+  tTotalDeviceId: string
+  tTotalChannel: number
   probes: FiveHoleProbeConfig[] // 1-3 根探针
   savePath: string
   saveFileName: string

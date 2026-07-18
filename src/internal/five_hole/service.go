@@ -597,6 +597,7 @@ func (s *FiveHoleTraversalService) samplePoint(taskID string, point types.Traver
 			config.Probes,
 			config.PAtmDeviceID, config.PAtmChannel,
 			config.TAtmDeviceID, config.TAtmChannel,
+			config.TTotalDeviceID, config.TTotalChannel,
 			lastTimestamps,
 		)
 		if err != nil {
@@ -667,6 +668,15 @@ func (s *FiveHoleTraversalService) aggregateProbeData(point types.TraversalPoint
 			P5:   OutlierFilteredAvg(mapField5H(samples, func(r types.FiveHoleRawData) float64 { return r.P5 })),
 			PAtm: OutlierFilteredAvg(mapField5H(samples, func(r types.FiveHoleRawData) float64 { return r.PAtm })),
 			TAtm: OutlierFilteredAvg(mapField5H(samples, func(r types.FiveHoleRawData) float64 { return r.TAtm })),
+		}
+		// TTotal 为可选项：所有样本共享同一全局值，3σ 滤波后取首个非 nil 样本的 TTotal
+		// 若所有样本 TTotal 均为 nil（未配置或全部读取失败），avgData.TTotal 保持 nil，公式回退用 TAtm
+		for _, sample := range samples {
+			if sample.TTotal != nil {
+				v := *sample.TTotal
+				avgData.TTotal = &v
+				break
+			}
 		}
 
 		// 对平均数据执行插值（占位，结果 invalid）
@@ -776,6 +786,7 @@ func (s *FiveHoleTraversalService) emitRealtimeForAllProbes(taskID, pointID, pha
 		config.Probes,
 		config.PAtmDeviceID, config.PAtmChannel,
 		config.TAtmDeviceID, config.TAtmChannel,
+		config.TTotalDeviceID, config.TTotalChannel,
 		nil,
 	)
 	if err != nil {
@@ -878,6 +889,7 @@ func CollectDeviceIDs(config types.FiveHoleTraversalConfig) []string {
 	}
 	add(config.PAtmDeviceID)
 	add(config.TAtmDeviceID)
+	add(config.TTotalDeviceID)
 	for _, probe := range config.Probes {
 		if !probe.Enabled {
 			continue

@@ -99,6 +99,9 @@ func TestFiveHoleCsvWriter_HeaderAndDataPoint(t *testing.T) {
 	if !contains(str, "速度Vz") {
 		t.Fatal("header missing 速度Vz")
 	}
+	if !contains(str, "T0") {
+		t.Fatal("header missing T0 (TTotal)")
+	}
 	// 验证旧字段已移除
 	if contains(str, "迭代次数") {
 		t.Fatal("header should not contain 迭代次数")

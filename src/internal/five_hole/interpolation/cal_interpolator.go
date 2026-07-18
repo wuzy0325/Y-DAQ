@@ -19,6 +19,9 @@ const (
 	minPressureDelta  = 1e-4                        // 最小压力差
 	gasConstantAir    = 287.06                      // 空气气体常数 J/(kg·K)
 	gamma             = 1.4                         // 空气比热比
+	// TAT 量程校验阈值：覆盖风洞工况范围（-50~200℃）
+	tatMinCelsius = -50.0
+	tatMaxCelsius = 200.0
 )
 
 // ==================== 核心数据结构 ====================
@@ -120,6 +123,8 @@ type runtimeInput struct {
 	AtmP         float64
 	AtmT         float64
 	FiveHoleData [5]float64
+	// TTotal 总温（TAT）：nil 表示未配置或读取失败，CalculateSAT 回退用 AtmT
+	TTotal *float64
 }
 
 // NewCalInterpolator 创建CAL插值器
@@ -903,6 +908,7 @@ func toRuntimeInput(input InterpolationInput) runtimeInput {
 		AtmP:         input.PAtm,
 		AtmT:         input.TAtm,
 		FiveHoleData: [5]float64{input.P1, input.P2, input.P3, input.P4, input.P5},
+		TTotal:       input.TTotal,
 	}
 }
 
@@ -915,22 +921,45 @@ func collectInputWarnings(input runtimeInput) []string {
 	if math.Abs(delta) < minPressureDelta {
 		warnings = append(warnings, "参考压力差接近零，插值使用了最小压力差钳位")
 	}
+	// TTotal 量程校验：仅在已配置（非 nil）时追加，超 -50~200℃ 视为可疑
+	// 不中断流程，由 toInterpolationResult 将 SAT 置零（依赖 tatToKelvin 的回退分支）
+	if input.TTotal != nil {
+		t := *input.TTotal
+		if !isFinite(t) || t < tatMinCelsius || t > tatMaxCelsius {
+			warnings = append(warnings, "总温 T0 超出量程范围 [-50, 200]℃")
+		}
+	}
 	return warnings
+}
+
+// tatToKelvin 按规则选择总温源并转为开尔文：
+//   - TTotal 非 nil 且有限：用 TTotal（真实总温）
+//   - TTotal 为 nil 或非有限：回退用 AtmT（旧行为，与升级前数值一致）
+func tatToKelvin(input runtimeInput) float64 {
+	if input.TTotal != nil && isFinite(*input.TTotal) {
+		return *input.TTotal + 273.15
+	}
+	return input.AtmT + 273.15
 }
 
 func toInterpolationResult(result interResult, input runtimeInput, validRange CalValidRange, warnings []string, atmCalc *AtmosphericDataCalculator) InterpolationResult {
 	dynamicPressure := result.Pt - result.Ps
-	tempK := input.AtmT + 273.15
+	tempK := tatToKelvin(input)
 	absPt := input.AtmP + result.Pt
 	absPs := input.AtmP + result.Ps
 	vx, vy, vz := calculateVelocityComponents(result.V, result.Alpha, result.Beta)
 
+	// density 计算保持用 AtmT（旧行为）：
+	//   - 新配置下：AtmT 作为静温参与 density 计算（语义正确）
+	//   - 旧配置回退路径下：AtmT 实际被当 TAT 用，density 仍按旧行为计算（保持数值一致）
 	var density float64
-	if isFinite(absPs) && absPs > 0 && tempK > 0 {
-		density = absPs / (gasConstantAir * tempK)
+	atmK := input.AtmT + 273.15
+	if isFinite(absPs) && absPs > 0 && atmK > 0 {
+		density = absPs / (gasConstantAir * atmK)
 	}
 
 	// 使用复用的 AtmosphericDataCalculator 计算 CAS 和 SAT
+	// SAT 用 tatToKelvin 选择的总温源（TTotal 优先，回退 AtmT）
 	var cas float64
 	var sat float64
 	if absPs > 0 && absPt > absPs && tempK > 0 {
