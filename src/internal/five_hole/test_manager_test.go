@@ -1,6 +1,7 @@
 package five_hole
 
 import (
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -123,7 +124,7 @@ func TestStart_AlreadyRunning(t *testing.T) {
 	if err == nil {
 		t.Fatal("Running 下第二次 Start 应返回错误")
 	}
-	if !contains(err.Error(), "already running") {
+	if !strings.Contains(err.Error(), "already running") {
 		t.Errorf("错误信息应包含 'already running'，实际: %v", err)
 	}
 }
@@ -139,7 +140,7 @@ func TestStart_GeneratesUniqueTaskID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("第一次 Start failed: %v", err)
 	}
-	if !startsWith(id1, "5h-traversal-") {
+	if !strings.HasPrefix(id1, "5h-traversal-") {
 		t.Errorf("taskID 前缀应为 '5h-traversal-'，实际 %s", id1)
 	}
 	tm.Stop()
@@ -172,7 +173,7 @@ func TestStart_GeneratesPointsError(t *testing.T) {
 	if err == nil {
 		t.Fatal("不支持的 Pattern 应返回错误")
 	}
-	if !contains(err.Error(), "生成布点失败") {
+	if !strings.Contains(err.Error(), "生成布点失败") {
 		t.Errorf("错误信息应包含 '生成布点失败'，实际: %v", err)
 	}
 
@@ -687,12 +688,4 @@ func TestConcurrent_PauseResumeStop_NoPanic(t *testing.T) {
 		tm.doneCh = nil
 	}
 	tm.mu.Unlock()
-}
-
-// startsWith 字符串前缀检查（contains 已在 csv_writer_test.go 中定义，复用之）
-func startsWith(s, prefix string) bool {
-	if len(s) < len(prefix) {
-		return false
-	}
-	return s[:len(prefix)] == prefix
 }

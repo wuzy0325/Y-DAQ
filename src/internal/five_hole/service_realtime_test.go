@@ -484,3 +484,63 @@ func TestService_RunRealtimeMonitor_PAtmReadFails_StillEmitsWithZero(t *testing.
 		}
 	}
 }
+
+// TestService_RealtimeMonitor_ResumesAfterUserStop 用户主动 Stop 后实时监控应继续推送数据
+// 回归测试：Stop() 不应调用 StopRealtimeMonitor() 杀掉监控 goroutine。
+// 与自然完成路径（runTestLoop defer 只重置 testRunning）行为一致——
+// 否则用户点击"停止"后五孔界面实时数值不再刷新（与 service.go runTestLoop defer 注释
+// "测试完成后画面数据应继续更新"的设计意图冲突）。
+// 资源清理由 Core.Shutdown() 兜底调用 StopRealtimeMonitor() 完成。
+func TestService_RealtimeMonitor_ResumesAfterUserStop(t *testing.T) {
+	publisher := &MockEventPublisher{}
+	service := setupService5H(t, publisher)
+	cfg := makeMultiPointConfig5H(t) // 多点位，确保 Stop 时测试仍在运行
+
+	// 启动实时监控
+	service.StartRealtimeMonitor(cfg)
+	defer service.StopRealtimeMonitor()
+
+	// 启动测试（testRunning=true，监控应停止推送）
+	if _, err := service.Start(cfg); err != nil {
+		t.Fatalf("Start failed: %v", err)
+	}
+
+	// 等 ticker 周期让 in-flight 事件完成，再清空
+	time.Sleep(150 * time.Millisecond)
+	publisher.Clear()
+
+	// 用户主动 Stop（testRunning 恢复 false，监控 goroutine 应存活并恢复推送）
+	service.Stop()
+	waitForStatusEventually5H(t, service, types.TraversalStatusIdle, 2*time.Second)
+
+	// 关键：Stop 之后再 Clear，确保后续断言的 events 只来自 monitor goroutine 的恢复推送，
+	// 而非 runTestLoop defer 残留的 in-flight realtime 事件（避免因错误原因通过）
+	time.Sleep(150 * time.Millisecond)
+	publisher.Clear()
+
+	// 轮询等待监控 ticker 触发推送（避免用 sleep 做同步断言，符合 coding-standards §1.9）
+	deadline := time.Now().Add(2 * time.Second)
+	var events []types.FiveHoleTraversalRealtimeEvent
+	for time.Now().Before(deadline) {
+		events = publisher.GetRealtimeEvents()
+		if len(events) > 0 {
+			break
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+
+	// 验证监控仍在推送数据
+	if len(events) == 0 {
+		t.Fatal("用户主动 Stop 后实时监控应继续推送数据，但实际未推送（Stop 误杀了 monitor goroutine）")
+	}
+
+	// 验证 testRunning 标志已被重置
+	if service.testRunning.Load() {
+		t.Error("Stop 后 testRunning 应为 false")
+	}
+
+	// 验证 monitor goroutine 仍在运行
+	if !service.monitorRunning.Load() {
+		t.Error("Stop 后 monitor goroutine 应仍运行（资源清理由 Core.Shutdown 兜底）")
+	}
+}
