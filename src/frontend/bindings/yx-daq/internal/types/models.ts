@@ -1241,7 +1241,7 @@ export class FiveHoleProbeChannelConfig {
  */
 export class FiveHoleProbeConfig {
     /**
-     * probe1/probe2/probe3
+     * probe1..probeN (N≤3，前端动态增删，复用最小未用序号)
      */
     "probeId": string;
 

@@ -59,7 +59,7 @@ type FiveHoleCalibFileInfo struct {
 
 // FiveHoleProbeConfig 单根五孔探针配置
 type FiveHoleProbeConfig struct {
-	ProbeID       string                       `json:"probeId"`       // probe1/probe2/probe3
+	ProbeID       string                       `json:"probeId"`       // probe1..probeN (N≤3，前端动态增删，复用最小未用序号)
 	Enabled       bool                         `json:"enabled"`       // 是否启用（配几根跑几根）
 	ProbeChannels []FiveHoleProbeChannelConfig `json:"probeChannels"` // P1-P5 各自数据源
 	MotionX       FiveHoleMotionAxisMapping    `json:"motionX"`       // X 方向：位移机构 + 轴号

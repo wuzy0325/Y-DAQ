@@ -115,7 +115,7 @@
           class="probe-card-wrapper"
           :class="{ disabled: !probe.enabled }"
         >
-          <GlassCard :title="probeLabels[probe.probeId] || probe.probeId" icon="🔬">
+          <GlassCard :title="probeLabel(probe.probeId)" icon="🔬">
             <template #actions>
               <span class="calib-indicator" :class="{ ok: store.calibLoadedMap[probe.probeId] }">
                 <span class="calib-dot" />
@@ -436,102 +436,126 @@
             </div>
           </div>
 
-          <!-- 每探针配置：3 个 tab 切换 -->
-          <el-tabs type="card" class="probe-tabs">
-            <el-tab-pane
-              v-for="probe in store.config.probes"
-              :key="probe.probeId"
-              :label="probeLabels[probe.probeId] || probe.probeId"
-            >
-              <div class="settings-section probe-config-section">
-                <div class="probe-config-header">
-                  <el-switch v-model="probe.enabled" size="small" :disabled="store.isRunning" />
-                  <span class="enable-label">启用</span>
-                  <el-button size="small" type="primary" plain style="margin-left: auto" @click="store.selectCalibFiles(probe.probeId)">
-                    选择校准文件
-                  </el-button>
-                </div>
-                <div class="calib-status-row">
-                  <span v-if="store.calibLoadedMap[probe.probeId]" class="calib-ok">
-                    ✓ 已加载 {{ store.calibFilesMap[probe.probeId]?.length || 0 }} 个校准文件
-                  </span>
-                  <span v-else class="calib-no">未加载校准文件</span>
-                </div>
+          <!-- 每探针配置：头部添加按钮 + tab 切换（上限 MAX_PROBES 根） -->
+          <div class="probe-tabs-wrapper">
+            <div class="probe-list-header">
+              <span class="probe-list-title">探针配置</span>
+              <el-button
+                type="primary"
+                size="small"
+                plain
+                :disabled="store.isRunning || store.config.probes.length >= store.maxProbes"
+                @click="store.addProbe()"
+              >
+                + 添加探针
+              </el-button>
+              <span class="probe-count-hint">{{ store.config.probes.length }} / {{ store.maxProbes }}</span>
+            </div>
+            <el-tabs type="card" class="probe-tabs">
+              <el-tab-pane
+                v-for="probe in store.config.probes"
+                :key="probe.probeId"
+                :label="probeLabel(probe.probeId)"
+              >
+                <div class="settings-section probe-config-section">
+                  <div class="probe-config-header">
+                    <el-switch v-model="probe.enabled" size="small" :disabled="store.isRunning" />
+                    <span class="enable-label">启用</span>
+                    <el-button size="small" type="primary" plain style="margin-left: auto" @click="store.selectCalibFiles(probe.probeId)">
+                      选择校准文件
+                    </el-button>
+                    <el-button
+                      size="small"
+                      type="danger"
+                      plain
+                      :disabled="store.isRunning || store.config.probes.length <= 1"
+                      @click="store.removeProbe(probe.probeId)"
+                    >
+                      删除
+                    </el-button>
+                  </div>
+                  <div class="calib-status-row">
+                    <span v-if="store.calibLoadedMap[probe.probeId]" class="calib-ok">
+                      ✓ 已加载 {{ store.calibFilesMap[probe.probeId]?.length || 0 }} 个校准文件
+                    </span>
+                    <span v-else class="calib-no">未加载校准文件</span>
+                  </div>
 
-                <!-- 通道映射 P1-P5 -->
-                <div class="channel-block">
-                  <div class="block-label">通道映射 (P1-P5)</div>
-                  <el-table :data="probe.probeChannels" size="small" class="channel-table" :header-cell-style="{background:'rgba(255,255,255,0.05)'}">
-                    <el-table-column label="通道" width="130" class-name="channel-label-cell">
-                      <template #default="{ row }">
-                        <span class="channel-label-text">{{ FiveHoleChannelRoleLabels[row.role as FiveHoleChannelRoleValue] || row.role }}</span>
-                      </template>
-                    </el-table-column>
-                    <el-table-column label="采集设备">
-                      <template #default="{ row }">
-                        <el-select v-model="row.deviceId" placeholder="选择设备" size="small" clearable filterable style="width: 100%">
-                          <el-option v-for="dev in deviceStore.profiles" :key="dev.id" :label="`${dev.name} (${dev.type})`" :value="dev.id" />
-                        </el-select>
-                      </template>
-                    </el-table-column>
-                    <el-table-column label="通道号" width="100">
-                      <template #default="{ row }">
-                        <el-select
-                          :model-value="row.channel + 1"
-                          size="small"
-                          style="width:85px"
-                          @update:model-value="row.channel = ($event as number) - 1"
-                        >
-                          <el-option
-                            v-for="n in getChannelOptions(row.deviceId)"
-                            :key="n"
-                            :label="String(n)"
-                            :value="n"
-                          />
-                        </el-select>
-                      </template>
-                    </el-table-column>
-                    <el-table-column label="启用" width="60" align="center">
-                      <template #default="{ row }">
-                        <el-switch v-model="row.enabled" size="small" />
-                      </template>
-                    </el-table-column>
-                  </el-table>
-                </div>
+                  <!-- 通道映射 P1-P5 -->
+                  <div class="channel-block">
+                    <div class="block-label">通道映射 (P1-P5)</div>
+                    <el-table :data="probe.probeChannels" size="small" class="channel-table" :header-cell-style="{background:'rgba(255,255,255,0.05)'}">
+                      <el-table-column label="通道" width="130" class-name="channel-label-cell">
+                        <template #default="{ row }">
+                          <span class="channel-label-text">{{ FiveHoleChannelRoleLabels[row.role as FiveHoleChannelRoleValue] || row.role }}</span>
+                        </template>
+                      </el-table-column>
+                      <el-table-column label="采集设备">
+                        <template #default="{ row }">
+                          <el-select v-model="row.deviceId" placeholder="选择设备" size="small" clearable filterable style="width: 100%">
+                            <el-option v-for="dev in deviceStore.profiles" :key="dev.id" :label="`${dev.name} (${dev.type})`" :value="dev.id" />
+                          </el-select>
+                        </template>
+                      </el-table-column>
+                      <el-table-column label="通道号" width="100">
+                        <template #default="{ row }">
+                          <el-select
+                            :model-value="row.channel + 1"
+                            size="small"
+                            style="width:85px"
+                            @update:model-value="row.channel = ($event as number) - 1"
+                          >
+                            <el-option
+                              v-for="n in getChannelOptions(row.deviceId)"
+                              :key="n"
+                              :label="String(n)"
+                              :value="n"
+                            />
+                          </el-select>
+                        </template>
+                      </el-table-column>
+                      <el-table-column label="启用" width="60" align="center">
+                        <template #default="{ row }">
+                          <el-switch v-model="row.enabled" size="small" />
+                        </template>
+                      </el-table-column>
+                    </el-table>
+                  </div>
 
-                <!-- 运动轴映射 -->
-                <div class="channel-block">
-                  <div class="block-label">运动轴映射</div>
-                  <div class="form-row">
-                    <div class="form-group" style="flex:1">
-                      <label class="group-label">{{ motionXLabel }} 控制器</label>
-                      <el-select v-model="probe.motionX.controllerId" placeholder="选择运动控制器" size="small" clearable filterable style="width: 100%">
-                        <el-option v-for="mc in motionStore.profiles" :key="mc.id" :label="`${mc.name} (${mc.type})`" :value="mc.id" />
-                      </el-select>
-                    </div>
-                    <div class="form-group">
-                      <label class="group-label">{{ motionXAxisLabel }}</label>
-                      <el-select v-model="probe.motionX.axis" size="small" style="width: 70px">
-                        <el-option v-for="axis in getAxisOptions(probe.motionX.controllerId)" :key="axis" :label="axis" :value="axis" />
-                      </el-select>
-                    </div>
-                    <div v-if="store.config.layout.pattern !== TraversalPattern.LINE" class="form-group" style="flex:1">
-                      <label class="group-label">{{ motionYLabel }} 控制器</label>
-                      <el-select v-model="probe.motionY.controllerId" placeholder="选择运动控制器" size="small" clearable filterable style="width: 100%">
-                        <el-option v-for="mc in motionStore.profiles" :key="mc.id" :label="`${mc.name} (${mc.type})`" :value="mc.id" />
-                      </el-select>
-                    </div>
-                    <div v-if="store.config.layout.pattern !== TraversalPattern.LINE" class="form-group">
-                      <label class="group-label">{{ motionYLabel }}轴</label>
-                      <el-select v-model="probe.motionY.axis" size="small" style="width: 70px">
-                        <el-option v-for="axis in getAxisOptions(probe.motionY.controllerId)" :key="axis" :label="axis" :value="axis" />
-                      </el-select>
+                  <!-- 运动轴映射 -->
+                  <div class="channel-block">
+                    <div class="block-label">运动轴映射</div>
+                    <div class="form-row">
+                      <div class="form-group" style="flex:1">
+                        <label class="group-label">{{ motionXLabel }} 控制器</label>
+                        <el-select v-model="probe.motionX.controllerId" placeholder="选择运动控制器" size="small" clearable filterable style="width: 100%">
+                          <el-option v-for="mc in motionStore.profiles" :key="mc.id" :label="`${mc.name} (${mc.type})`" :value="mc.id" />
+                        </el-select>
+                      </div>
+                      <div class="form-group">
+                        <label class="group-label">{{ motionXAxisLabel }}</label>
+                        <el-select v-model="probe.motionX.axis" size="small" style="width: 70px">
+                          <el-option v-for="axis in getAxisOptions(probe.motionX.controllerId)" :key="axis" :label="axis" :value="axis" />
+                        </el-select>
+                      </div>
+                      <div v-if="store.config.layout.pattern !== TraversalPattern.LINE" class="form-group" style="flex:1">
+                        <label class="group-label">{{ motionYLabel }} 控制器</label>
+                        <el-select v-model="probe.motionY.controllerId" placeholder="选择运动控制器" size="small" clearable filterable style="width: 100%">
+                          <el-option v-for="mc in motionStore.profiles" :key="mc.id" :label="`${mc.name} (${mc.type})`" :value="mc.id" />
+                        </el-select>
+                      </div>
+                      <div v-if="store.config.layout.pattern !== TraversalPattern.LINE" class="form-group">
+                        <label class="group-label">{{ motionYLabel }}轴</label>
+                        <el-select v-model="probe.motionY.axis" size="small" style="width: 70px">
+                          <el-option v-for="axis in getAxisOptions(probe.motionY.controllerId)" :key="axis" :label="axis" :value="axis" />
+                        </el-select>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </el-tab-pane>
-          </el-tabs>
+              </el-tab-pane>
+            </el-tabs>
+          </div>
         </el-tab-pane>
       </el-tabs>
 
@@ -546,13 +570,12 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { Setting, FolderOpened } from '@element-plus/icons-vue'
 import { useDeviceStore } from '../stores/device'
-import { useMotionStore } from '../stores/motion'
 import { useFiveHoleTestStore } from '../stores/fiveHoleTest'
-import { ConfigService, FiveHoleService } from '@bindings/yx-daq/internal/app'
-import { usePointPreviewCanvas } from '../composables/usePointPreviewCanvas'
-import { useLayoutStepSync } from '../composables/useLayoutStepSync'
-import { useTestRealtimeRecording } from '../composables/useTestRealtimeRecording'
-import { useAutoSaveConfig } from '../composables/useAutoSaveConfig'
+import type {
+  FiveHoleRawData,
+  FiveHoleInterpolationResult,
+} from '../stores/fiveHoleTest/types'
+import { useMotionStore } from '../stores/motion'
 import {
   TraversalPattern,
   TraversalPatternLabels,
@@ -564,19 +587,20 @@ import {
 } from '../api/enums'
 import GlassCard from '../components/GlassCard.vue'
 import ValueDisplay from '../components/ValueDisplay.vue'
-import type {
-  FiveHoleRawData,
-  FiveHoleInterpolationResult,
-} from '../stores/fiveHoleTest/types'
+import { useAutoSaveConfig } from '../composables/useAutoSaveConfig'
+import { useLayoutStepSync } from '../composables/useLayoutStepSync'
+import { usePointPreviewCanvas } from '../composables/usePointPreviewCanvas'
+import { useTestRealtimeRecording } from '../composables/useTestRealtimeRecording'
+import { ConfigService, FiveHoleService } from '@bindings/yx-daq/internal/app'
 
 const store = useFiveHoleTestStore()
 const deviceStore = useDeviceStore()
 const motionStore = useMotionStore()
 
-const probeLabels: Record<string, string> = {
-  probe1: '探针 1',
-  probe2: '探针 2',
-  probe3: '探针 3',
+// 根据探针 ID 推断显示名（probe1 → 探针 1，未匹配时回退到原 ID）
+function probeLabel(probeId: string): string {
+  const match = /^probe(\d+)$/.exec(probeId)
+  return match ? `探针 ${match[1]}` : probeId
 }
 
 // ==================== 实时数据提取 ====================
@@ -1437,6 +1461,33 @@ onUnmounted(() => {
     font-size: 12px;
     color: rgba(255,255,255,0.7);
   }
+}
+
+// 探针 tab 容器：防御性水平滚动（避免探针 tab 过多时挤压布局）
+.probe-tabs-wrapper {
+  overflow-x: auto;
+  margin-top: 10px;
+}
+
+// 探针列表头部：标题 + 添加按钮 + 计数提示
+.probe-list-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+
+  .probe-list-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.85);
+  }
+}
+
+.probe-count-hint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+  font-family: 'JetBrains Mono', monospace;
+  margin-left: auto;
 }
 
 // 探针 tab 切换

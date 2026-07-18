@@ -121,10 +121,10 @@ describe('stores/fiveHoleTest', () => {
       expect(store.statusText).toBe('weird')
     })
 
-    it('默认 config 包含 3 个 probes（probe1/probe2/probe3），均 enabled', () => {
+    it('默认 config 包含 1 个 probe（probe1），enabled=true', () => {
       const store = useFiveHoleTestStore()
-      expect(store.config.probes).toHaveLength(3)
-      expect(store.config.probes.map(p => p.probeId)).toEqual(['probe1', 'probe2', 'probe3'])
+      expect(store.config.probes).toHaveLength(1)
+      expect(store.config.probes.map(p => p.probeId)).toEqual(['probe1'])
       expect(store.config.probes.every(p => p.enabled)).toBe(true)
     })
 
@@ -144,19 +144,22 @@ describe('stores/fiveHoleTest', () => {
       expect(store.config.probes[0].motionY.axis).toBe(AxisName.Y)
     })
 
-    it('默认 calibLoadedMap 三个探针均为 false，allCalibLoaded=false', () => {
+    it('默认 calibLoadedMap 为空对象，allCalibLoaded=false（probe1 未加载）', () => {
       const store = useFiveHoleTestStore()
-      expect(store.calibLoadedMap).toEqual({ probe1: false, probe2: false, probe3: false })
+      expect(store.calibLoadedMap).toEqual({})
       expect(store.allCalibLoaded).toBe(false)
     })
 
-    it('enabledProbes 默认返回全部 3 个', () => {
+    it('enabledProbes 默认返回 1 个（probe1）', () => {
       const store = useFiveHoleTestStore()
-      expect(store.enabledProbes).toHaveLength(3)
+      expect(store.enabledProbes).toHaveLength(1)
     })
 
     it('禁用 probe3 后 enabledProbes 仅含 probe1/probe2，allCalibLoaded 仅依赖前两者', () => {
       const store = useFiveHoleTestStore()
+      // 默认 1 根，添加到 3 根
+      store.addProbe()
+      store.addProbe()
       store.config.probes[2].enabled = false
       expect(store.enabledProbes.map(p => p.probeId)).toEqual(['probe1', 'probe2'])
       // 设置 probe1/probe2 已加载，probe3 未加载 → allCalibLoaded=true（probe3 被排除）
@@ -204,6 +207,9 @@ describe('stores/fiveHoleTest', () => {
   describe('ensureDevicesAcquiring（聚合多设备 IDs）', () => {
     it('pAtm/tAtm + 多探针通道的设备 IDs 全部聚合传入 ensureDevicesAcquiringByIds', async () => {
       const store = useFiveHoleTestStore()
+      // 默认 1 根探针，扩展到 3 根以测试多探针场景
+      store.addProbe()
+      store.addProbe()
       store.config.pAtmDeviceId = 'dev-atm'
       store.config.tAtmDeviceId = 'dev-atm' // 与 pAtm 相同，应去重
       store.config.probes[0].probeChannels[0].deviceId = 'dev-p1'
@@ -220,6 +226,9 @@ describe('stores/fiveHoleTest', () => {
 
     it('禁用的探针通道不参与聚合', async () => {
       const store = useFiveHoleTestStore()
+      // 默认 1 根，扩展到 3 根以测试禁用 probe3 的场景
+      store.addProbe()
+      store.addProbe()
       store.config.probes[2].enabled = false
       store.config.probes[0].probeChannels[0].deviceId = 'dev-active'
       store.config.probes[2].probeChannels[0].deviceId = 'dev-disabled'
@@ -253,7 +262,7 @@ describe('stores/fiveHoleTest', () => {
       expect(mockFiveHoleService.LoadFiveHoleCalibFiles).not.toHaveBeenCalled()
       expect(mockFiveHoleService.GetFiveHoleCalibInfo).not.toHaveBeenCalled()
       expect(mockEnsureDevicesAcquiring).not.toHaveBeenCalled()
-      expect(store.calibLoadedMap.probe2).toBe(false)
+      expect(store.calibLoadedMap.probe2).toBeFalsy()
     })
 
     it('选择文件 → 加载 + 获取 calibInfo + calibLoadedMap[probeId]=true + 写入 config.probes[i].calibFiles + 触发 ensureDevicesAcquiring', async () => {
@@ -280,7 +289,7 @@ describe('stores/fiveHoleTest', () => {
       await store.selectCalibFiles('probe3')
       expect(store.lastError).toContain('probe3')
       expect(store.lastError).toContain('cancel')
-      expect(store.calibLoadedMap.probe3).toBe(false)
+      expect(store.calibLoadedMap.probe3).toBeFalsy()
       spy.mockRestore()
     })
 
@@ -291,7 +300,7 @@ describe('stores/fiveHoleTest', () => {
       const store = useFiveHoleTestStore()
       await store.selectCalibFiles('probe1')
       expect(store.lastError).toContain('load boom')
-      expect(store.calibLoadedMap.probe1).toBe(false)
+      expect(store.calibLoadedMap.probe1).toBeFalsy()
       spy.mockRestore()
     })
   })
@@ -350,7 +359,9 @@ describe('stores/fiveHoleTest', () => {
 
     it('controllerId 存在但 status !== Connected → 拒绝', async () => {
       const store = useFiveHoleTestStore()
-      store.calibLoadedMap = { probe1: true, probe2: true, probe3: true }
+      // 默认 1 根，添加 1 根以测试 probe2 的位移机构
+      store.addProbe()
+      store.calibLoadedMap = { probe1: true, probe2: true }
       store.config.probes[1].motionX.controllerId = 'mc-dis'
       mockMotionStore.statuses = [{ id: 'mc-dis', status: 'Disconnected' }]
       await store.startTest()
@@ -810,8 +821,166 @@ describe('stores/fiveHoleTest', () => {
       const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
       const store = useFiveHoleTestStore()
       await expect(store.loadConfig()).resolves.toBeUndefined()
-      expect(store.calibLoadedMap.probe1).toBe(false)
+      expect(store.calibLoadedMap.probe1).toBeFalsy()
       spy.mockRestore()
+    })
+  })
+
+  // ==================== addProbe / removeProbe 动态化 ====================
+  describe('addProbe / removeProbe 动态化', () => {
+    it('默认 1 根 probe1 → addProbe() 扩展到 2 根（probe1, probe2）', () => {
+      const store = useFiveHoleTestStore()
+      expect(store.config.probes.map(p => p.probeId)).toEqual(['probe1'])
+      store.addProbe()
+      expect(store.config.probes.map(p => p.probeId)).toEqual(['probe1', 'probe2'])
+      expect(store.config.probes[1].enabled).toBe(true)
+    })
+
+    it('addProbe() 在 3 根时 no-op（按钮禁用 + action 不变）', () => {
+      const store = useFiveHoleTestStore()
+      store.addProbe()
+      store.addProbe()
+      expect(store.config.probes).toHaveLength(3)
+      // 再次调用 → 不变
+      store.addProbe()
+      expect(store.config.probes).toHaveLength(3)
+      expect(store.config.probes.map(p => p.probeId)).toEqual(['probe1', 'probe2', 'probe3'])
+    })
+
+    it("removeProbe('probe2') 在 [probe1, probe2, probe3] 时 → [probe1, probe3]，且 probe1/probe3 的 calibFiles、通道配置、运动轴映射均不受影响", () => {
+      const store = useFiveHoleTestStore()
+      store.addProbe()
+      store.addProbe()
+      // 预置 probe1/probe3 的完整配置（calibFiles、通道、运动轴）
+      const probe1 = store.config.probes.find(p => p.probeId === 'probe1')!
+      probe1.calibFiles = [{ filePath: 'C:/p1.prb', fileName: 'p1.prb', cMa: 1.0, validRange: { alphaMin: -20, alphaMax: 20, betaMin: -15, betaMax: 15, machMin: 0, machMax: 0.8 } }]
+      probe1.probeChannels[0].deviceId = 'dev-p1'
+      probe1.probeChannels[0].channel = 7
+      probe1.motionX = { controllerId: 'mc1', axis: AxisName.X }
+      probe1.motionY = { controllerId: 'mc2', axis: AxisName.Y }
+      const probe3 = store.config.probes.find(p => p.probeId === 'probe3')!
+      probe3.probeChannels[2].deviceId = 'dev-p3'
+      probe3.motionX = { controllerId: 'mc3', axis: AxisName.Z }
+
+      store.removeProbe('probe2')
+
+      expect(store.config.probes.map(p => p.probeId)).toEqual(['probe1', 'probe3'])
+      // probe1 完整保留
+      const p1After = store.config.probes.find(p => p.probeId === 'probe1')!
+      expect(p1After.calibFiles).toHaveLength(1)
+      expect(p1After.calibFiles[0].filePath).toBe('C:/p1.prb')
+      expect(p1After.probeChannels[0].deviceId).toBe('dev-p1')
+      expect(p1After.probeChannels[0].channel).toBe(7)
+      expect(p1After.motionX).toEqual({ controllerId: 'mc1', axis: AxisName.X })
+      expect(p1After.motionY).toEqual({ controllerId: 'mc2', axis: AxisName.Y })
+      // probe3 完整保留
+      const p3After = store.config.probes.find(p => p.probeId === 'probe3')!
+      expect(p3After.probeChannels[2].deviceId).toBe('dev-p3')
+      expect(p3After.motionX).toEqual({ controllerId: 'mc3', axis: AxisName.Z })
+    })
+
+    it('removeProbe 在 1 根时 no-op（至少保留 1 根）', () => {
+      const store = useFiveHoleTestStore()
+      expect(store.config.probes).toHaveLength(1)
+      store.removeProbe('probe1')
+      expect(store.config.probes).toHaveLength(1)
+      expect(store.config.probes[0].probeId).toBe('probe1')
+    })
+
+    it('removeProbe 在 isRunning=true 时 no-op', () => {
+      const store = useFiveHoleTestStore()
+      store.addProbe()
+      store.addProbe()
+      store.taskStatus = { status: 'running' } as any
+      store.removeProbe('probe2')
+      // 应保留 3 根
+      expect(store.config.probes).toHaveLength(3)
+      expect(store.config.probes.map(p => p.probeId)).toEqual(['probe1', 'probe2', 'probe3'])
+    })
+
+    it('addProbe 在 isRunning=true 时 no-op', () => {
+      const store = useFiveHoleTestStore()
+      store.taskStatus = { status: 'running' } as any
+      store.addProbe()
+      expect(store.config.probes).toHaveLength(1)
+    })
+
+    it('删除 probe2 后 addProbe() → 复用 probe2 ID（最小未用编号）', () => {
+      const store = useFiveHoleTestStore()
+      store.addProbe()
+      store.addProbe()
+      // [probe1, probe2, probe3] → 删除 probe2 → [probe1, probe3]
+      store.removeProbe('probe2')
+      expect(store.config.probes.map(p => p.probeId)).toEqual(['probe1', 'probe3'])
+      // 再次 addProbe → 复用 probe2
+      store.addProbe()
+      expect(store.config.probes.map(p => p.probeId)).toEqual(['probe1', 'probe3', 'probe2'])
+    })
+
+    it('removeProbe 同步清理 calibLoadedMap / calibFilesMap 对应 key', () => {
+      const store = useFiveHoleTestStore()
+      store.addProbe()
+      store.addProbe()
+      // 预置 calib 缓存
+      store.calibLoadedMap = { probe1: true, probe2: true, probe3: true }
+      store.calibFilesMap = { probe1: ['a.prb'], probe2: ['b.prb'], probe3: ['c.prb'] }
+      store.removeProbe('probe2')
+      expect('probe2' in store.calibLoadedMap).toBe(false)
+      expect('probe2' in store.calibFilesMap).toBe(false)
+      // 其他探针的 calib 缓存不受影响
+      expect(store.calibLoadedMap.probe1).toBe(true)
+      expect(store.calibLoadedMap.probe3).toBe(true)
+      expect(store.calibFilesMap.probe1).toEqual(['a.prb'])
+      expect(store.calibFilesMap.probe3).toEqual(['c.prb'])
+    })
+
+    it('removeProbe 接收不存在的 probeId → no-op', () => {
+      const store = useFiveHoleTestStore()
+      store.addProbe()
+      store.removeProbe('probeX')
+      expect(store.config.probes).toHaveLength(2)
+      expect(store.config.probes.map(p => p.probeId)).toEqual(['probe1', 'probe2'])
+    })
+
+    it('配置持久化：保存 2 根配置 → 重新加载 → 仍是 2 根', async () => {
+      // 模拟用户已添加 1 根（共 2 根），保存到后端
+      mockFiveHoleService.LoadFiveHoleConfig.mockResolvedValue({
+        name: 'persisted',
+        probes: [
+          { probeId: 'probe1', enabled: true, probeChannels: [], motionX: { controllerId: '', axis: 'X' }, motionY: { controllerId: '', axis: 'Y' }, calibFiles: [] },
+          { probeId: 'probe3', enabled: true, probeChannels: [], motionX: { controllerId: '', axis: 'X' }, motionY: { controllerId: '', axis: 'Y' }, calibFiles: [] },
+        ],
+        layout: { pattern: 'rectangle' },
+      })
+      const store = useFiveHoleTestStore()
+      await store.loadConfig()
+      expect(store.config.probes).toHaveLength(2)
+      expect(store.config.probes.map(p => p.probeId)).toEqual(['probe1', 'probe3'])
+      expect(store.config.name).toBe('persisted')
+    })
+
+    it('配置持久化：保存 3 根配置 → 重新加载 → 仍是 3 根，不被裁剪（spec line 216）', async () => {
+      // 旧版本保存了 3 根探针的完整配置，加载后应原样保留，不裁剪
+      mockFiveHoleService.LoadFiveHoleConfig.mockResolvedValue({
+        name: 'old-3-probes',
+        probes: [
+          { probeId: 'probe1', enabled: true, probeChannels: [], motionX: { controllerId: 'mc1', axis: 'X' }, motionY: { controllerId: 'mc2', axis: 'Y' }, calibFiles: [{ filePath: 'C:/p1.prb', fileName: 'p1.prb', cMa: 1.0, validRange: { alphaMin: -20, alphaMax: 20, betaMin: -15, betaMax: 15, machMin: 0, machMax: 0.8 } }] },
+          { probeId: 'probe2', enabled: false, probeChannels: [], motionX: { controllerId: '', axis: 'X' }, motionY: { controllerId: '', axis: 'Y' }, calibFiles: [] },
+          { probeId: 'probe3', enabled: true, probeChannels: [], motionX: { controllerId: 'mc3', axis: 'Z' }, motionY: { controllerId: 'mc4', axis: 'U' }, calibFiles: [{ filePath: 'C:/p3.prb', fileName: 'p3.prb', cMa: 1.2, validRange: { alphaMin: -20, alphaMax: 20, betaMin: -15, betaMax: 15, machMin: 0, machMax: 0.8 } }] },
+        ],
+        layout: { pattern: 'rectangle' },
+      })
+      const store = useFiveHoleTestStore()
+      await store.loadConfig()
+      expect(store.config.probes).toHaveLength(3)
+      expect(store.config.probes.map(p => p.probeId)).toEqual(['probe1', 'probe2', 'probe3'])
+      // 完整保留每根探针的关键字段
+      expect(store.config.probes[0].motionX.controllerId).toBe('mc1')
+      expect(store.config.probes[1].enabled).toBe(false)
+      expect(store.config.probes[2].motionY.axis).toBe('U')
+      expect(store.config.probes[2].calibFiles).toHaveLength(1)
+      // enabledProbes 应排除禁用的 probe2 → 2 根
+      expect(store.enabledProbes.map(p => p.probeId)).toEqual(['probe1', 'probe3'])
     })
   })
 })

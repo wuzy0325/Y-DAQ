@@ -25,7 +25,24 @@ import type {
 
 // ==================== 默认配置构造 ====================
 
-const PROBE_IDS = ['probe1', 'probe2', 'probe3'] as const
+/** 最大探针数（与后端 Validate() enabledCount > 3 拒绝逻辑保持一致）
+ *  如未来放开，仅需调整此常量即可同步影响 store 守卫与 View UI */
+export const MAX_PROBES = 3
+
+/** 生成 probeN 字符串（N 从 1 开始） */
+function probeIdFor(n: number): string {
+  return `probe${n}`
+}
+
+/** 找出当前未使用的最小探针序号（1-based）
+ *  满员时返回 MAX_PROBES + 1；调用方应预先检查 length < MAX_PROBES */
+function nextProbeNumber(existingIds: string[]): number {
+  const used = new Set(existingIds)
+  for (let n = 1; n <= MAX_PROBES; n++) {
+    if (!used.has(probeIdFor(n))) return n
+  }
+  return MAX_PROBES + 1
+}
 
 function defaultProbeChannels(): FiveHoleProbeChannelConfig[] {
   return [
@@ -78,7 +95,7 @@ function defaultConfig(): FiveHoleTraversalConfig {
     pAtmChannel: 16,
     tAtmDeviceId: '',
     tAtmChannel: 17,
-    probes: PROBE_IDS.map(defaultProbe),
+    probes: [defaultProbe(probeIdFor(1))],
     savePath: '',
     saveFileName: `FiveHoleTraversal-${new Date().toISOString().slice(0, 10)}`,
   }
@@ -93,9 +110,9 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
   const realtime = ref<FiveHoleTraversalRealtimeEvent | null>(null)
   const isRunning = computed(() => taskStatus.value?.status === 'running' || taskStatus.value?.status === 'paused')
   const isPaused = computed(() => taskStatus.value?.status === 'paused')
-  // 每探针独立的校准文件加载状态
-  const calibLoadedMap = ref<Record<string, boolean>>({ probe1: false, probe2: false, probe3: false })
-  const calibFilesMap = ref<Record<string, string[]>>({ probe1: [], probe2: [], probe3: [] })
+  // 每探针独立的校准文件加载状态（按需扩展，初始为空对象）
+  const calibLoadedMap = ref<Record<string, boolean>>({})
+  const calibFilesMap = ref<Record<string, string[]>>({})
   const lastError = ref<string>('')
 
   // 配置持久化 key（全局单实例，不按 probeID 区分）
@@ -115,6 +132,31 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
 
   const enabledProbes = computed(() => config.value.probes.filter(p => p.enabled))
   const allCalibLoaded = computed(() => enabledProbes.value.every(p => calibLoadedMap.value[p.probeId]))
+
+  /** 探针数上限（暴露给 View 作 :disabled 判断，避免在多处硬编码字面量 3） */
+  const maxProbes = MAX_PROBES
+
+  // ==================== 探针增删（动态化） ====================
+
+  /** 添加一根探针：满 MAX_PROBES 或运行中时 no-op；否则复用最小未用编号 */
+  function addProbe() {
+    if (isRunning.value) return
+    if (config.value.probes.length >= MAX_PROBES) return
+    const next = nextProbeNumber(config.value.probes.map(p => p.probeId))
+    config.value.probes.push(defaultProbe(probeIdFor(next)))
+  }
+
+  /** 删除指定探针：仅剩 1 根 / 运行中 / probeId 不存在时 no-op
+   *  仅清理前端 calib 缓存；后端 interpolators map 条目保留，便于同 ID 复用 */
+  function removeProbe(probeId: string) {
+    if (isRunning.value) return
+    if (config.value.probes.length <= 1) return
+    const idx = config.value.probes.findIndex(p => p.probeId === probeId)
+    if (idx < 0) return
+    config.value.probes.splice(idx, 1)
+    delete calibLoadedMap.value[probeId]
+    delete calibFilesMap.value[probeId]
+  }
 
   // ==================== API 调用 ====================
 
@@ -237,7 +279,8 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
         await fetchStatus()
         const status = taskStatus.value?.status
         if (status === 'idle' || status === 'completed' || status === 'error') {
-          // 仅清理 realtime（结束后无实时数据），保留 progress 以便用户查看已完成进度与布点图
+          // 清理 realtime 最后一帧；保留 progress 以便用户查看已完成进度与布点图。
+          // 后端 Stop 不再杀 monitor goroutine，下一个 five-hole:realtime 事件会立即刷新 realtime。
           realtime.value = null
           break
         }
@@ -515,10 +558,11 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
     // 状态
     taskStatus, progress, realtime, isRunning, isPaused, lastError,
     calibLoadedMap, calibFilesMap, allCalibLoaded,
-    config, statusText, enabledProbes,
+    config, statusText, enabledProbes, maxProbes,
     completeProbeDataPoints,
     // 方法
     selectCalibFiles, ensureDevicesAcquiring,
+    addProbe, removeProbe,
     startTest, pauseTest, resumeTest, stopTest,
     fetchStatus, startListening, stopListening, clearError,
     exportProbeCSV, setCompleteData,
