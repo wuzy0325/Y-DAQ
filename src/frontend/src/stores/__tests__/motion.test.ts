@@ -703,8 +703,11 @@ describe('stores/motion', () => {
       mockMotionService.UpdateMotionProfile.mockResolvedValue(undefined)
       mockMotionService.GetMotionProfiles.mockResolvedValue([])
       const store = useMotionStore()
+      store.profiles = [{
+        id: 'mc-1', name: 'C1', type: 'b140', address: 'a', port: 1, timeoutMs: 5,
+        axes: [{ name: 'X', kind: 'LINEAR', enabled: true, inverted: false, stepAngleDeg: 1.8, microSteps: 16, lead: 5, gearRatio: 1, maxSpeed: 50, encoderScale: 0.005, encoderCompensation: {} } as any]
+      }]
       store.activeControllerId = 'mc-1'
-      store.profiles = [{ id: 'mc-1', name: 'C1', type: 'b140', address: 'a', port: 1, timeoutMs: 5, axes: [{ name: 'X', kind: 'LINEAR' } as any] }]
       await store.updateAxisConfig('X', { maxSpeed: 100 })
       expect(store.axisUIStates.X.config.maxSpeed).toBe(100)
       expect(mockMotionService.UpdateMotionProfile).toHaveBeenCalledTimes(1)

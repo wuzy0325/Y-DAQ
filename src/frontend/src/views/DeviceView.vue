@@ -237,14 +237,21 @@
       <div class="channel-section">
         <div class="channel-section-header">
           <div class="section-title">📋 通道配置</div>
-          <el-button
-            v-if="isPressureDAQ(editProfileType)"
-            size="small"
-            type="primary"
-            :loading="zeroCalibrating"
-            :disabled="!canZeroCalibrate"
-            @click="handleZeroCalibrateAll"
-          >批量校零</el-button>
+          <div class="batch-zero-actions" v-if="isPressureDevice(editProfileType)">
+            <el-button
+              size="small"
+              type="primary"
+              :loading="zeroCalibrating"
+              :disabled="!canZeroCalibrate"
+              @click="handleZeroCalibrateAll"
+            >批量校零</el-button>
+            <el-button
+              size="small"
+              type="warning"
+              :disabled="!hasAnyZeroOffset"
+              @click="handleClearAllZeroOffsets"
+            >批量去校零</el-button>
+          </div>
         </div>
         <el-table :data="editChannels" size="small" class="channel-table" :max-height="320">
           <el-table-column prop="index" label="#" width="45" align="center">
@@ -289,7 +296,7 @@
               <el-input-number v-model="row.rangeMax" size="small" controls-position="right" style="width: 85px" />
             </template>
           </el-table-column>
-          <el-table-column v-if="isPressureDAQ(editProfileType)" label="零位" width="130" align="center">
+          <el-table-column v-if="isPressureDevice(editProfileType)" label="零位" width="130" align="center">
             <template #default="{ row }">
               <template v-if="row.index < editPressureCount">
                 <div v-if="row.zeroCalibratedAt" class="zero-info">
@@ -301,7 +308,7 @@
               <span v-else class="readonly-text">--</span>
             </template>
           </el-table-column>
-          <el-table-column v-if="isPressureDAQ(editProfileType)" label="校零" width="80" align="center">
+          <el-table-column v-if="isPressureDevice(editProfileType)" label="校零" width="80" align="center">
             <template #default="{ row }">
               <template v-if="row.index < editPressureCount">
                 <el-button
@@ -325,7 +332,7 @@
             </template>
           </el-table-column>
         </el-table>
-        <div class="channel-hint" v-if="isPressureDAQ(editProfileType)">
+        <div class="channel-hint" v-if="isPressureDevice(editProfileType)">
           0-{{ editPressureCount - 1 }}: 压力通道 | {{ editPressureCount }}: 大气压 | {{ editPressureCount + 1 }}: 大气温度
         </div>
         <div class="channel-hint" v-else>
@@ -387,9 +394,12 @@ import * as types from '@bindings/yx-daq/internal/types'
 
 const deviceStore = useDeviceStore()
 
-function isPressureDAQ(type: string): boolean {
+// isPressureDevice 是否为压力设备（含 SIMULATED，排除温度设备 EA2516T）。
+// 用于零位校准/零位偏移 UI 可见性判断：EA2508A/EA2516A/SIMULATED 均属压力设备。
+// 区别于 isValveSupported（仅真实 DAQ，排除 SIMULATED）。
+function isPressureDevice(type: string): boolean {
   const info = getDeviceInfo(type as DeviceTypeValue)
-  return info.isRealDAQ && !info.isTemperature
+  return !info.isTemperature
 }
 
 // ==================== 阀位控制 ====================
@@ -401,8 +411,8 @@ const valveLoading = reactive<Record<string, boolean>>({})
 
 // 可选阀位枚举（Unknown 不作为可选项，仅作为查询失败/未初始化的占位显示）
 const valveOptions = [
-  { label: '测量位', value: 'Measurement' },
-  { label: '校准位', value: 'Calibration' },
+  { label: 'A-测量位', value: 'Measurement' },
+  { label: 'B-校准吹扫位', value: 'Calibration' },
 ]
 
 function isValveSupported(type: string): boolean {
@@ -435,7 +445,7 @@ async function handleSetValve(row: { id: string; status: string; acquiring: bool
   try {
     await DeviceService.SetValveState(row.id, target as any)
     valveStates[row.id] = target
-    ElMessage.success(`已切换到${target === 'Calibration' ? '校准位' : '测量位'}`)
+    ElMessage.success(`已切换到${target === 'Calibration' ? 'B-校准吹扫位' : 'A-测量位'}`)
   } catch (e: any) {
     ElMessage.error(`切换阀位失败: ${e?.message || e}`)
     // 切换失败时重新查询真实状态
@@ -695,11 +705,9 @@ function openEditDialog(id: string) {
   // 深拷贝通道配置
   editChannels.value = profile.channels.map(c => ({ ...c, thermocoupleType: c.thermocoupleType || 'K' }))
 
-  // 异步加载当前发布频率
-  DataService.GetPublishRate().then((rate: number) => {
-    editForm.value.publishRate = rate
-  }).catch(() => {})
-
+  // publishRate 已从 profile.periodMs 反推得到正确值，不再调用 DataService.GetPublishRate() 异步覆盖。
+  // GetPublishRate 返回的是 AcquisitionHub 的全局发布频率（所有设备的最小值，且受 100Hz 上限截断），
+  // 会覆盖当前设备的真实配置，导致"采样频率"输入框在对话框打开后可见地闪烁跳变。
   showEditDialog.value = true
 }
 
@@ -758,6 +766,14 @@ const zeroCalibrating = ref(false)
 const canZeroCalibrate = computed(() => {
   const status = deviceStore.statuses.find(s => s.id === editForm.value.id)
   return status?.status === 'Connected' && status?.acquiring
+})
+
+// 当前编辑设备是否存在任何已校零的压力通道（批量去校零按钮启用条件）
+// 仅当至少一个压力通道已校零时才允许批量清除，避免无意义操作。
+// isPressureDevice 守卫由按钮组 v-if 保证，此处无需重复判断。
+const hasAnyZeroOffset = computed(() => {
+  const pc = editPressureCount.value
+  return editChannels.value.some(c => c.index < pc && c.zeroCalibratedAt)
 })
 
 function formatZeroValue(value: number | undefined): string {
@@ -830,6 +846,28 @@ async function handleClearZeroOffset(channelIndex: number) {
   }
 }
 
+// 批量去校零：清除当前编辑设备所有压力通道的零位偏移。
+// 后端 ClearAllZeroOffsets 会清除所有通道（含大气压/大气温度通道，它们本就无零位）。
+// 按钮已通过 :disabled="!hasAnyZeroOffset" 禁用无校零项场景，此处无需重复判断。
+async function handleClearAllZeroOffsets() {
+  try {
+    await ElMessageBox.confirm(
+      '将清除该设备所有压力通道的零位偏移，此操作不可恢复。是否继续？',
+      '批量去校零确认',
+      { confirmButtonText: '清除', cancelButtonText: '取消', type: 'warning' },
+    )
+  } catch {
+    return // 用户取消
+  }
+  const err = await deviceStore.clearAllZeroOffsets(editForm.value.id)
+  if (err) {
+    ElMessage.error(`批量去校零失败: ${err}`)
+  } else {
+    ElMessage.success('批量去校零完成')
+    await syncZeroOffsetsFromProfile()
+  }
+}
+
 // ==================== 跨设备批量校零 ====================
 const batchZeroCalibrating = ref(false)
 const showBatchZeroResult = ref(false)
@@ -845,11 +883,11 @@ const batchZeroSummary = computed(() => {
   return { success, failed }
 })
 
-// 是否存在可批量校零的设备（已连接 + 采集中 + 压力DAQ）
+// 是否存在可批量校零的设备（已连接 + 采集中 + 压力设备）
 const canBatchZeroCalibrate = computed(() => {
   return deviceStore.statuses.some(s => {
     if (s.status !== 'Connected' || !s.acquiring) return false
-    return isPressureDAQ(s.type)
+    return isPressureDevice(s.type)
   })
 })
 
@@ -860,7 +898,7 @@ async function handleBatchZeroCalibrate() {
   }
   try {
     await ElMessageBox.confirm(
-      '将对所有已连接且正在采集的压力设备执行零位校准，请确保所有设备静止并处于测量位。是否继续？',
+      '将对所有已连接且正在采集的压力设备执行零位校准，请确保所有设备静止并处于A-测量位。是否继续？',
       '批量校零确认',
       { confirmButtonText: '开始校零', cancelButtonText: '取消', type: 'warning' },
     )
@@ -1310,6 +1348,13 @@ async function removeDevice(id: string) {
   .section-title {
     margin-bottom: 0;
   }
+}
+
+// 批量校零/去校零按钮组：紧邻排列，统一间距
+.batch-zero-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
 .zero-info {

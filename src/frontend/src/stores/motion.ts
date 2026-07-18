@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { MotionService } from '@bindings/yx-daq/internal/app'
 import * as types from '@bindings/yx-daq/internal/types'
@@ -296,6 +296,32 @@ export const useMotionStore = defineStore('motion', () => {
     await fetchProfiles()
   }
 
+  // 从当前活动控制器的 profile 同步轴配置到 axisUIStates
+  // 切换控制器时必须调用，确保轴配置对话框显示正确的值
+  function syncAxisConfigFromActiveProfile() {
+    const profile = profiles.value.find(p => p.id === activeControllerId.value)
+    if (!profile) return
+    for (const axis of profile.axes) {
+      const state = axisUIStates.value[axis.name]
+      if (!state) continue
+      // 深拷贝轴配置，避免共享引用；用 spread 同步全部字段，
+      // 后续 AxisConfig 新增字段时此处无需同步修改（避免 Shotgun Surgery）
+      state.config = {
+        ...axis,
+        kind: axis.kind as AxisKind,
+        encoderCompensation: { ...axis.encoderCompensation },
+      }
+      state.kind = axis.kind as AxisKind
+    }
+  }
+
+  // 监听活动控制器切换：当用户点击侧边栏切换控制器时，同步轴配置到 UI
+  watch(activeControllerId, (newId) => {
+    if (newId) {
+      syncAxisConfigFromActiveProfile()
+    }
+  }, { flush: 'sync' })
+
   // 连接/断开
   async function connectController(id: string): Promise<{ success: boolean; error?: string }> {
     connectingIds.value = new Set([...connectingIds.value, id])
@@ -306,6 +332,8 @@ export const useMotionStore = defineStore('motion', () => {
       activeControllerId.value = id
       connectionStatus.value = 'connected'
       addLog('运动控制器连接成功')
+      // 切换到新控制器后同步其轴配置到 UI
+      syncAxisConfigFromActiveProfile()
       await syncPositionsFromStatus()
       return { success: true }
     } catch (e: any) {
@@ -611,6 +639,8 @@ export const useMotionStore = defineStore('motion', () => {
       await fetchProfiles()
       // 若该控制器已连接，刷新状态以反映轴配置同步
       await fetchStatuses()
+      // 编辑对话框保存后同步轴配置到 UI（确保 AxisConfigDialog 不显示旧值）
+      syncAxisConfigFromActiveProfile()
       addLog(`控制器 ${profile.name} 配置已更新`)
       return { success: true }
     } catch (e: any) {

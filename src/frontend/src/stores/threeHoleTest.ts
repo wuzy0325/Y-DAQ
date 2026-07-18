@@ -276,6 +276,8 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
         await fetchStatus()
         const status = taskStatus.value?.status
         if (status === 'idle' || status === 'completed' || status === 'error') {
+          // 清理 realtime 最后一帧和 progress；保留 progress 也可，但三孔约定 Stop 后进度一并清空。
+          // 后端 Stop 不再杀 monitor goroutine，下一个 three-hole:realtime 事件会立即刷新 realtime。
           realtime.value = null
           progress.value = null
           break
