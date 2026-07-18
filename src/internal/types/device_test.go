@@ -72,6 +72,29 @@ func TestDeviceType_Methods(t *testing.T) {
 	}
 }
 
+// TestIsPressureDevice 校零场景的设备分类：SIMULATED 也属于压力设备，
+// EA2516T 温度设备不属于。IsDAQDevice 排除 SIMULATED（仅真实硬件），
+// IsPressureDevice 含 SIMULATED（校零/偏移应用范围更宽）。
+func TestIsPressureDevice(t *testing.T) {
+	cases := []struct {
+		name  string
+		t     DeviceType
+		want  bool
+	}{
+		{"EA2508A 是压力设备", DeviceTypeEA2508A, true},
+		{"EA2516A 是压力设备", DeviceTypeEA2516A, true},
+		{"SIMULATED 是压力设备", DeviceTypeSimulated, true},
+		{"EA2516T 温度设备不是压力设备", DeviceTypeEA2516T, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := tc.t.IsPressureDevice(); got != tc.want {
+				t.Errorf("%s IsPressureDevice = %v, want %v", tc.t, got, tc.want)
+			}
+		})
+	}
+}
+
 func TestAllDeviceTypes_ReturnsAllRegistered(t *testing.T) {
 	all := AllDeviceTypes()
 	if len(all) != 4 {

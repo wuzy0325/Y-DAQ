@@ -84,6 +84,13 @@ func (t DeviceType) IsTemperatureDevice() bool {
 	return t.Info().IsTemperature
 }
 
+// IsPressureDevice 是否为压力设备（含模拟设备，排除温度设备）。
+// 用于零位校准/零位偏移应用场景：EA2508A/EA2516A/SIMULATED 均属于压力设备，
+// EA2516T 温度设备无需校零。区别于 IsDAQDevice（仅真实 DAQ，排除模拟）。
+func (t DeviceType) IsPressureDevice() bool {
+	return !t.Info().IsTemperature
+}
+
 // AllDeviceTypes 返回所有已注册设备类型（供前端枚举使用）
 func AllDeviceTypes() []DeviceTypeInfo {
 	result := make([]DeviceTypeInfo, 0, len(deviceTypeRegistry))

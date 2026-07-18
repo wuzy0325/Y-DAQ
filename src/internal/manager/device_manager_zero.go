@@ -26,7 +26,7 @@ func (m *DeviceManager) applyZeroOffset(deviceID string, payload *types.DataPayl
 	if !ok {
 		return
 	}
-	if !profile.Type.IsDAQDevice() || profile.Type.IsTemperatureDevice() {
+	if !profile.Type.IsPressureDevice() {
 		return
 	}
 	hasOffset := false
@@ -121,7 +121,7 @@ func (m *DeviceManager) collectZeroCalibTargets(id string, onlyIndex int) ([]zer
 	if !ok {
 		return nil, fmt.Errorf("设备未连接: %s", id)
 	}
-	if !profile.Type.IsDAQDevice() || profile.Type.IsTemperatureDevice() {
+	if !profile.Type.IsPressureDevice() {
 		return nil, fmt.Errorf("设备 %s 不是压力扫描阀，不支持校零", id)
 	}
 	if !drv.IsAcquiring() {
@@ -286,7 +286,7 @@ func (m *DeviceManager) ClearAllZeroOffsets(id string) error {
 }
 
 // ZeroCalibrateAll 对所有已连接且正在采集的压力采集设备并行执行零位校准。
-// 仅校准类型为压力 DAQ（IsDAQDevice && !IsTemperatureDevice）、已连接且正在采集的设备。
+// 仅校准类型为压力设备（IsPressureDevice，含 SIMULATED）、已连接且正在采集的设备。
 // 各设备独立采样，错误收集合并返回（不因单个设备失败而中断其他设备）。
 // 返回结果按 DeviceID 排序，保证顺序稳定。
 func (m *DeviceManager) ZeroCalibrateAll() []types.ZeroCalibrateResult {
@@ -300,7 +300,7 @@ func (m *DeviceManager) ZeroCalibrateAll() []types.ZeroCalibrateResult {
 	// 锁内仅读取自身数据（profile + instance 指针），不调用 driver 外部方法，
 	// 避免"持锁调用外部函数"违规。driver 状态检查放到锁外。
 	for id, profile := range m.profiles {
-		if !profile.Type.IsDAQDevice() || profile.Type.IsTemperatureDevice() {
+		if !profile.Type.IsPressureDevice() {
 			continue
 		}
 		drv, ok := m.instances[id]
