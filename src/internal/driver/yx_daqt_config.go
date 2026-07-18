@@ -180,11 +180,28 @@ func (d *YXDAQTDriver) syncHardwareConfig() {
 
 // applyNormalizedConfig 采集启动前归一化配置
 // ★ 只确保 BIN=1（如果设备支持），不自动修改 TIME/HEAD，保持用户配置不变
-func (d *YXDAQTDriver) applyNormalizedConfig() error {
+// periodMs: 采集周期(毫秒)，用于设置硬件采样率 SPS = 1000/periodMs
+func (d *YXDAQTDriver) applyNormalizedConfig(periodMs int) error {
 	if d.hwConfig.BinaryFormat {
 		d.writeCmdOnly("@fe BIN 1")
 		time.Sleep(50 * time.Millisecond)
 	}
+
+	// 根据 periodMs 设置硬件采样率（SPS = 1000 / periodMs）
+	if periodMs > 0 {
+		sps := 1000 / periodMs
+		if sps < 1 {
+			sps = 1
+		}
+		if sps > 1000 {
+			sps = 1000
+		}
+		if err := d.writeCmdOnly(fmt.Sprintf("@fe SPS %d", sps)); err != nil {
+			return fmt.Errorf("set SPS failed: %w", err)
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+
 	// ★ 注意：不自动发 @fe TIME/HEAD，保持用户配置不变
 	d.frameReader.SetBinaryMode(d.hwConfig.BinaryFormat)
 	d.frameReader.SetMetadataMode(d.hwConfig.ShowTimestamp || d.hwConfig.ShowSequence)

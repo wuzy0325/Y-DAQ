@@ -246,7 +246,8 @@ func (d *XYDAQDriver) sendUnitCommand(cmd string) (string, error) {
 
 		select {
 		case payload := <-d.CmdRespCh:
-			return parseUnitPayload(payload)
+			// processData 已剥离 2 字节长度前缀，payload 为纯响应数据，无需再走 parseUnitPayload
+			return trimSpace(string(payload)), nil
 		case <-time.After(3 * time.Second):
 			return "", fmt.Errorf("unit command %q timeout", cmd)
 		}

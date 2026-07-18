@@ -109,7 +109,7 @@ func (d *YXDAQTDriver) StartAcquisition(periodMs int) error {
 		d.configSyncCond.Wait()
 	}
 
-	if err := d.applyNormalizedConfig(); err != nil {
+	if err := d.applyNormalizedConfig(periodMs); err != nil {
 		return fmt.Errorf("apply normalized config failed: %w", err)
 	}
 
