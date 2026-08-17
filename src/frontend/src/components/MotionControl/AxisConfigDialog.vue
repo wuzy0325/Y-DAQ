@@ -9,7 +9,7 @@
       <div class="config-header">
         <div class="header-item">
           <span class="header-label">选择轴</span>
-          <el-radio-group v-model="selectedAxisName" size="small" @change="onAxisChange">
+          <el-radio-group v-model="selectedAxisName" size="small">
             <el-radio-button value="X">X轴</el-radio-button>
             <el-radio-button value="Y">Y轴</el-radio-button>
             <el-radio-button value="Z">Z轴</el-radio-button>
@@ -106,32 +106,51 @@ const formData = ref({
   inverted: false,
 })
 
+// 各轴编辑草稿：切换轴时暂存未保存的编辑，支持多轴改完一次保存
+interface AxisDraft {
+  kind: 'LINEAR' | 'ROTARY'
+  data: typeof formData.value
+}
+const drafts = ref<Record<string, AxisDraft>>({})
+
 const currentAxis = computed(() => store.axisUIStates[selectedAxisName.value])
 
-// 监听轴变化，更新表单
-watch([() => selectedAxisName.value, () => store.axisUIStates], () => {
-  const axis = store.axisUIStates[selectedAxisName.value]
-  if (axis) {
-    axisKind.value = axis.kind as any
-    formData.value = {
+// 从 store 初始化某轴草稿（打开对话框/首次切到某轴时）
+function loadDraft(axisName: string) {
+  const axis = store.axisUIStates[axisName]
+  if (!axis) return
+  const draft: AxisDraft = {
+    kind: axis.kind as 'LINEAR' | 'ROTARY',
+    data: {
       stepAngleDeg: axis.config.stepAngleDeg,
       microSteps: axis.config.microSteps,
       maxSpeed: axis.config.maxSpeed,
       lead: axis.config.lead,
       gearRatio: axis.config.gearRatio || 1,
       inverted: axis.config.inverted,
-    }
-    applyToAxes.value = []
+    },
   }
-}, { immediate: true })
-
-function open(axisName?: string) {
-  if (axisName) selectedAxisName.value = axisName
-  visible.value = true
+  drafts.value[axisName] = draft
+  axisKind.value = draft.kind
+  formData.value = { ...draft.data }
 }
 
-function onAxisChange(name: string | number | boolean | undefined) {
-  if (typeof name === 'string') selectedAxisName.value = name
+// 切换轴：先暂存当前轴编辑，再载入目标轴草稿（保留其未保存的编辑）
+// visible 守卫：open() 初始化触发的轴切换不暂存（此时 formData 是上次会话的残留）
+watch(selectedAxisName, (newName, oldName) => {
+  if (!visible.value) return
+  if (oldName && drafts.value[oldName]) {
+    drafts.value[oldName] = { kind: axisKind.value, data: { ...formData.value } }
+  }
+  if (newName) loadDraft(newName)
+})
+
+function open(axisName?: string) {
+  drafts.value = {}
+  applyToAxes.value = []
+  if (axisName) selectedAxisName.value = axisName
+  loadDraft(selectedAxisName.value)
+  visible.value = true
 }
 
 function onKindChange(newKind: string | number | boolean | undefined) {
@@ -149,28 +168,35 @@ function onKindChange(newKind: string | number | boolean | undefined) {
 async function saveConfig() {
   saving.value = true
   try {
-    const config: any = {
-      stepAngleDeg: formData.value.stepAngleDeg,
-      microSteps: formData.value.microSteps,
-      maxSpeed: formData.value.maxSpeed,
-      lead: axisKind.value === 'LINEAR' ? formData.value.lead : 0,
-      gearRatio: axisKind.value === 'ROTARY' ? formData.value.gearRatio : 1,
-      inverted: formData.value.inverted,
-      kind: axisKind.value,
+    // 暂存当前轴的编辑
+    drafts.value[selectedAxisName.value] = { kind: axisKind.value, data: { ...formData.value } }
+
+    const buildConfig = (draft: AxisDraft) => ({
+      stepAngleDeg: draft.data.stepAngleDeg,
+      microSteps: draft.data.microSteps,
+      maxSpeed: draft.data.maxSpeed,
+      lead: draft.kind === 'LINEAR' ? draft.data.lead : 0,
+      gearRatio: draft.kind === 'ROTARY' ? draft.data.gearRatio : 1,
+      inverted: draft.data.inverted,
+      kind: draft.kind,
+    })
+
+    // 收集所有编辑过的轴，多轴一次提交
+    const updates: Record<string, ReturnType<typeof buildConfig>> = {}
+    for (const [axisName, draft] of Object.entries(drafts.value)) {
+      updates[axisName] = buildConfig(draft)
     }
 
-    // 保存当前轴
-    store.updateAxisKind(selectedAxisName.value, axisKind.value)
-    await store.updateAxisConfig(selectedAxisName.value, config)
-
-    // 批量应用
+    // 批量应用到其他同类型轴
+    const currentConfig = buildConfig(drafts.value[selectedAxisName.value])
     for (const axisName of applyToAxes.value) {
       const targetAxis = store.axisUIStates[axisName]
       if (targetAxis && targetAxis.kind === axisKind.value) {
-        await store.updateAxisConfig(axisName, config)
+        updates[axisName] = { ...currentConfig }
       }
     }
 
+    await store.updateAxesConfig(updates)
     ElMessage.success('配置保存成功')
     visible.value = false
   } catch (e) {

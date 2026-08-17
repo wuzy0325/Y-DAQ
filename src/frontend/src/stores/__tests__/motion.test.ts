@@ -699,7 +699,7 @@ describe('stores/motion', () => {
       expect(store.axisUIStates.X.kind).toBe('LINEAR')
     })
 
-    it('updateAxisConfig → Object.assign + saveConfigToLocal + persistActiveProfileAxes', async () => {
+    it('updateAxisConfig → Object.assign + saveConfigToLocal + 持久化到活动控制器', async () => {
       mockMotionService.UpdateMotionProfile.mockResolvedValue(undefined)
       mockMotionService.GetMotionProfiles.mockResolvedValue([])
       const store = useMotionStore()
@@ -717,6 +717,63 @@ describe('stores/motion', () => {
       const store = useMotionStore()
       await store.updateAxisConfig('W', { maxSpeed: 100 })
       expect(mockMotionService.UpdateMotionProfile).not.toHaveBeenCalled()
+    })
+
+    it('updateAxesConfig 多轴更新 → 一次 UpdateMotionProfile 提交，未修改轴保持 profile 原值', async () => {
+      mockMotionService.UpdateMotionProfile.mockResolvedValue(undefined)
+      mockMotionService.GetMotionProfiles.mockResolvedValue([])
+      const store = useMotionStore()
+      const mkAxis = (name: string, microSteps: number) => ({ name, kind: 'LINEAR', enabled: true, inverted: false, stepAngleDeg: 1.8, microSteps, lead: 5, gearRatio: 1, maxSpeed: 50, encoderScale: 0.005, encoderCompensation: {} } as any)
+      store.profiles = [{
+        id: 'mc-1', name: 'C1', type: 'b140', address: 'a', port: 1, timeoutMs: 5,
+        axes: [mkAxis('X', 16), mkAxis('Y', 16), mkAxis('Z', 16)]
+      }]
+      store.activeControllerId = 'mc-1'
+      await store.updateAxesConfig({ X: { microSteps: 32 }, Y: { microSteps: 64 } })
+      expect(mockMotionService.UpdateMotionProfile).toHaveBeenCalledTimes(1)
+      const arg = mockMotionService.UpdateMotionProfile.mock.calls[0][0]
+      expect(arg.id).toBe('mc-1')
+      expect(arg.axes.find((a: any) => a.name === 'X').microSteps).toBe(32)
+      expect(arg.axes.find((a: any) => a.name === 'Y').microSteps).toBe(64)
+      // 未修改的轴以 profile 原值为基准，不被全局 UI 状态覆盖
+      expect(arg.axes.find((a: any) => a.name === 'Z').microSteps).toBe(16)
+    })
+
+    it('updateAxesConfig 以 profile 原值为基准合并，axisUIStates 过期值不污染 profile', async () => {
+      mockMotionService.UpdateMotionProfile.mockResolvedValue(undefined)
+      mockMotionService.GetMotionProfiles.mockResolvedValue([])
+      const store = useMotionStore()
+      const mkAxis = (name: string, microSteps: number) => ({ name, kind: 'LINEAR', enabled: true, inverted: false, stepAngleDeg: 1.8, microSteps, lead: 5, gearRatio: 1, maxSpeed: 50, encoderScale: 0.005, encoderCompensation: {} } as any)
+      store.profiles = [{
+        id: 'mc-1', name: 'C1', type: 'b140', address: 'a', port: 1, timeoutMs: 5,
+        axes: [mkAxis('X', 16)]
+      }]
+      store.activeControllerId = 'mc-1'
+      // 模拟 axisUIStates 残留其他控制器的值（与 profile 不一致）
+      store.axisUIStates.X.config.microSteps = 99
+      store.axisUIStates.X.config.maxSpeed = 77
+      await store.updateAxesConfig({ X: { microSteps: 32 } })
+      const arg = mockMotionService.UpdateMotionProfile.mock.calls[0][0]
+      const x = arg.axes.find((a: any) => a.name === 'X')
+      expect(x.microSteps).toBe(32)   // 显式修改的字段生效
+      expect(x.maxSpeed).toBe(50)     // 未修改字段保持 profile 原值，而非过期 UI 值 77
+    })
+
+    it('updateAxesConfig kind 变更 → 轴 UI kind/relativeDistance 同步切换', async () => {
+      mockMotionService.UpdateMotionProfile.mockResolvedValue(undefined)
+      mockMotionService.GetMotionProfiles.mockResolvedValue([])
+      const store = useMotionStore()
+      store.profiles = [{
+        id: 'mc-1', name: 'C1', type: 'b140', address: 'a', port: 1, timeoutMs: 5,
+        axes: [{ name: 'X', kind: 'LINEAR', enabled: true, inverted: false, stepAngleDeg: 1.8, microSteps: 16, lead: 5, gearRatio: 1, maxSpeed: 50, encoderScale: 0.005, encoderCompensation: {} } as any]
+      }]
+      store.activeControllerId = 'mc-1'
+      await store.updateAxesConfig({ X: { kind: 'ROTARY', gearRatio: 10, maxSpeed: 30 } })
+      expect(store.axisUIStates.X.kind).toBe('ROTARY')
+      expect(store.axisUIStates.X.config.kind).toBe('ROTARY')
+      expect(store.axisUIStates.X.relativeDistance).toBe(5)
+      const arg = mockMotionService.UpdateMotionProfile.mock.calls[0][0]
+      expect(arg.axes.find((a: any) => a.name === 'X').kind).toBe('ROTARY')
     })
 
     it('updateAxisTarget → 写入 targetPosition', () => {

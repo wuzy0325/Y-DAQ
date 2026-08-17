@@ -285,15 +285,21 @@ export const useMotionStore = defineStore('motion', () => {
     return st?.status === 'Connecting'
   }
 
-  async function persistActiveProfileAxes() {
+  // 将轴配置更新持久化到当前活动控制器。
+  // 以 profile 原值为基准、仅合并 axisUpdates 中出现的字段：
+  // 全局 axisUIStates 可能与 profile 不同步（切换控制器/异步加载时序），
+  // 整体覆盖会把其他控制器的值写进当前 profile，导致控制器间配置串扰。
+  async function persistActiveControllerAxes(axisUpdates: Record<string, Partial<AxisConfig>>) {
     const profile = profiles.value.find(p => p.id === activeControllerId.value)
     if (!profile) return
     const axes = profile.axes.map(axis => {
-      const state = axisUIStates.value[axis.name]
-      return state ? types.AxisConfig.createFrom({ ...axis, ...state.config, kind: state.kind }) : axis
+      const upd = axisUpdates[axis.name]
+      return upd ? types.AxisConfig.createFrom({ ...axis, ...upd }) : axis
     })
     await MotionService.UpdateMotionProfile(types.MotionControllerProfile.createFrom({ ...profile, axes }))
     await fetchProfiles()
+    // 保存后从后端回读同步 UI，保证对话框下次打开显示的是持久化后的值
+    syncAxisConfigFromActiveProfile()
   }
 
   // 从当前活动控制器的 profile 同步轴配置到 axisUIStates
@@ -318,6 +324,15 @@ export const useMotionStore = defineStore('motion', () => {
   // 监听活动控制器切换：当用户点击侧边栏切换控制器时，同步轴配置到 UI
   watch(activeControllerId, (newId) => {
     if (newId) {
+      syncAxisConfigFromActiveProfile()
+    }
+  }, { flush: 'sync' })
+
+  // profiles 异步加载完成后补一次同步：
+  // 覆盖 activeControllerId 先设置而 profiles 尚未就绪导致上面 watch 中 sync 落空的窗口
+  // flush:'sync' —— profiles 每次替换时立即用当次值同步，避免延迟回调用旧数据覆盖刚更新的 UI
+  watch(profiles, () => {
+    if (activeControllerId.value) {
       syncAxisConfigFromActiveProfile()
     }
   }, { flush: 'sync' })
@@ -554,13 +569,27 @@ export const useMotionStore = defineStore('motion', () => {
     saveConfigToLocal()
   }
 
+  // 批量更新活动控制器多个轴的配置（一次 IPC 提交）。
+  // 对话框内多轴编辑后统一保存时使用，避免逐轴多次提交。
+  async function updateAxesConfig(axisUpdates: Record<string, Partial<AxisConfig>>) {
+    for (const [axisName, config] of Object.entries(axisUpdates)) {
+      const state = axisUIStates.value[axisName]
+      if (!state) continue
+      // kind 变更时同步轴 UI 派生状态（relativeDistance / 默认参数）
+      if (config.kind && config.kind !== state.kind) {
+        updateAxisKind(axisName, config.kind)
+      }
+      Object.assign(state.config, config)
+      addLog(`${axisName}轴配置已更新`)
+    }
+    saveConfigToLocal()
+    await persistActiveControllerAxes(axisUpdates)
+  }
+
   async function updateAxisConfig(axisName: string, config: Partial<AxisConfig>) {
     const state = axisUIStates.value[axisName]
     if (!state) return
-    Object.assign(state.config, config)
-    addLog(`${axisName}轴配置已更新`)
-    saveConfigToLocal()
-    await persistActiveProfileAxes()
+    await updateAxesConfig({ [axisName]: config })
   }
 
   function updateAxisTarget(axisName: string, target: number) {
@@ -702,7 +731,7 @@ export const useMotionStore = defineStore('motion', () => {
     connectController, disconnectController,
     moveTo, moveBy, startJog, stopJog,
     stopAxis, stopAllAxes, home, definePosition, emergencyStop,
-    updateAxisKind, updateAxisConfig, updateAxisTarget, updateAxisRelativeDistance,
+    updateAxisKind, updateAxisConfig, updateAxesConfig, updateAxisTarget, updateAxisRelativeDistance,
     selectAxis,
     addController, removeController, updateControllerProfile,
     addLog, clearLogs,
