@@ -481,6 +481,45 @@
               </el-button>
               <span class="probe-count-hint">{{ store.config.probes.length }} / {{ store.maxProbes }}</span>
             </div>
+
+            <!-- 共用轴位：勾选后所有探针统一使用全局轴位同步移动；不勾选各探针独立配置 -->
+            <div class="shared-motion-block">
+              <div class="shared-motion-toggle">
+                <el-switch v-model="store.config.sharedMotion" size="small" :disabled="store.isRunning" />
+                <span class="shared-motion-title">共用轴位</span>
+                <span class="shared-motion-desc">勾选后所有探针统一使用下方轴位同步移动；不勾选则各探针独立配置</span>
+              </div>
+              <div v-if="store.config.sharedMotion" class="channel-block shared-motion-mapping">
+                <div class="block-label">全局运动轴映射</div>
+                <div class="form-row">
+                  <div class="form-group" style="flex:1">
+                    <label class="group-label">{{ motionXLabel }} 控制器</label>
+                    <el-select v-model="store.config.sharedMotionX.controllerId" placeholder="选择运动控制器" size="small" clearable filterable style="width: 100%">
+                      <el-option v-for="mc in motionStore.profiles" :key="mc.id" :label="`${mc.name} (${mc.type})`" :value="mc.id" />
+                    </el-select>
+                  </div>
+                  <div class="form-group">
+                    <label class="group-label">{{ motionXAxisLabel }}</label>
+                    <el-select v-model="store.config.sharedMotionX.axis" size="small" style="width: 70px">
+                      <el-option v-for="axis in getAxisOptions(store.config.sharedMotionX.controllerId)" :key="axis" :label="axis" :value="axis" />
+                    </el-select>
+                  </div>
+                  <div v-if="store.config.layout.pattern !== TraversalPattern.LINE" class="form-group" style="flex:1">
+                    <label class="group-label">{{ motionYLabel }} 控制器</label>
+                    <el-select v-model="store.config.sharedMotionY.controllerId" placeholder="选择运动控制器" size="small" clearable filterable style="width: 100%">
+                      <el-option v-for="mc in motionStore.profiles" :key="mc.id" :label="`${mc.name} (${mc.type})`" :value="mc.id" />
+                    </el-select>
+                  </div>
+                  <div v-if="store.config.layout.pattern !== TraversalPattern.LINE" class="form-group">
+                    <label class="group-label">{{ motionYLabel }}轴</label>
+                    <el-select v-model="store.config.sharedMotionY.axis" size="small" style="width: 70px">
+                      <el-option v-for="axis in getAxisOptions(store.config.sharedMotionY.controllerId)" :key="axis" :label="axis" :value="axis" />
+                    </el-select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <el-tabs type="card" class="probe-tabs">
               <el-tab-pane
                 v-for="probe in store.config.probes"
@@ -552,31 +591,34 @@
                     </el-table>
                   </div>
 
-                  <!-- 运动轴映射 -->
-                  <div class="channel-block">
-                    <div class="block-label">运动轴映射</div>
+                  <!-- 运动轴映射（共用轴位模式下跟随全局设置，控件禁用） -->
+                  <div class="channel-block" :class="{ 'motion-shared': store.config.sharedMotion }">
+                    <div class="block-label">
+                      运动轴映射
+                      <span v-if="store.config.sharedMotion" class="shared-follow-hint">（已跟随全局轴位）</span>
+                    </div>
                     <div class="form-row">
                       <div class="form-group" style="flex:1">
                         <label class="group-label">{{ motionXLabel }} 控制器</label>
-                        <el-select v-model="probe.motionX.controllerId" placeholder="选择运动控制器" size="small" clearable filterable style="width: 100%">
+                        <el-select v-model="probe.motionX.controllerId" placeholder="选择运动控制器" size="small" clearable filterable style="width: 100%" :disabled="store.config.sharedMotion">
                           <el-option v-for="mc in motionStore.profiles" :key="mc.id" :label="`${mc.name} (${mc.type})`" :value="mc.id" />
                         </el-select>
                       </div>
                       <div class="form-group">
                         <label class="group-label">{{ motionXAxisLabel }}</label>
-                        <el-select v-model="probe.motionX.axis" size="small" style="width: 70px">
+                        <el-select v-model="probe.motionX.axis" size="small" style="width: 70px" :disabled="store.config.sharedMotion">
                           <el-option v-for="axis in getAxisOptions(probe.motionX.controllerId)" :key="axis" :label="axis" :value="axis" />
                         </el-select>
                       </div>
                       <div v-if="store.config.layout.pattern !== TraversalPattern.LINE" class="form-group" style="flex:1">
                         <label class="group-label">{{ motionYLabel }} 控制器</label>
-                        <el-select v-model="probe.motionY.controllerId" placeholder="选择运动控制器" size="small" clearable filterable style="width: 100%">
+                        <el-select v-model="probe.motionY.controllerId" placeholder="选择运动控制器" size="small" clearable filterable style="width: 100%" :disabled="store.config.sharedMotion">
                           <el-option v-for="mc in motionStore.profiles" :key="mc.id" :label="`${mc.name} (${mc.type})`" :value="mc.id" />
                         </el-select>
                       </div>
                       <div v-if="store.config.layout.pattern !== TraversalPattern.LINE" class="form-group">
                         <label class="group-label">{{ motionYLabel }}轴</label>
-                        <el-select v-model="probe.motionY.axis" size="small" style="width: 70px">
+                        <el-select v-model="probe.motionY.axis" size="small" style="width: 70px" :disabled="store.config.sharedMotion">
                           <el-option v-for="axis in getAxisOptions(probe.motionY.controllerId)" :key="axis" :label="axis" :value="axis" />
                         </el-select>
                       </div>
@@ -1507,6 +1549,43 @@ onUnmounted(() => {
 .probe-tabs-wrapper {
   overflow-x: auto;
   margin-top: 10px;
+}
+
+// 共用轴位开关块：开关 + 说明 + 全局轴位映射
+.shared-motion-block {
+  margin-bottom: 10px;
+}
+
+.shared-motion-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: rgba($color-accent, 0.06);
+  border: 1px solid rgba($color-accent, 0.15);
+  border-radius: 4px;
+
+  .shared-motion-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: $text-primary;
+  }
+
+  .shared-motion-desc {
+    font-size: 11px;
+    color: $text-muted;
+  }
+}
+
+.shared-motion-mapping {
+  margin-top: 8px;
+}
+
+// 共用轴位模式下探针运动轴映射的跟随提示
+.shared-follow-hint {
+  font-size: 11px;
+  font-weight: 400;
+  color: rgba($color-accent, 0.7);
 }
 
 // 探针列表头部：标题 + 添加按钮 + 计数提示

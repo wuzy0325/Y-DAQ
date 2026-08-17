@@ -381,6 +381,36 @@ describe('stores/fiveHoleTest', () => {
       expect(store.taskStatus?.status).toBe('running')
     })
 
+    it('sharedMotion=true 且全局控制器未连接 → 拒绝（共用轴位提示）', async () => {
+      const store = useFiveHoleTestStore()
+      store.addProbe()
+      store.calibLoadedMap = { probe1: true, probe2: true }
+      store.config.sharedMotion = true
+      store.config.sharedMotionX.controllerId = 'mc-shared'
+      // 探针独立轴位留空：共用模式下应检查全局轴位而非探针轴位
+      await store.startTest()
+      expect(store.lastError).toContain('共用轴位')
+      expect(store.lastError).toContain('mc-shared')
+      expect(mockFiveHoleService.StartFiveHoleTraversal).not.toHaveBeenCalled()
+    })
+
+    it('sharedMotion=true 且全局控制器已连接 → 通过（探针独立轴位不检查）', async () => {
+      const store = useFiveHoleTestStore()
+      store.addProbe()
+      store.calibLoadedMap = { probe1: true, probe2: true }
+      store.config.sharedMotion = true
+      store.config.sharedMotionX.controllerId = 'mc-shared'
+      store.config.sharedMotionY.controllerId = 'mc-shared'
+      // probe1 独立轴位指向未连接的控制器：共用模式下应被忽略
+      store.config.probes[0].motionX.controllerId = 'mc-not-checked'
+      mockMotionStore.statuses = [{ id: 'mc-shared', status: 'Connected' }]
+      mockFiveHoleService.StartFiveHoleTraversal.mockResolvedValue('task-1')
+      mockFiveHoleService.GetFiveHoleTraversalStatus.mockResolvedValue({ status: 'running' })
+      await store.startTest()
+      expect(mockFiveHoleService.StartFiveHoleTraversal).toHaveBeenCalledTimes(1)
+      expect(store.taskStatus?.status).toBe('running')
+    })
+
     it('StartFiveHoleTraversal 抛错 → lastError 写入 + resetRuntimeState + taskStatus=null', async () => {
       const store = useFiveHoleTestStore()
       store.calibLoadedMap = { probe1: true, probe2: true, probe3: true }
@@ -981,6 +1011,49 @@ describe('stores/fiveHoleTest', () => {
       expect(store.config.probes[2].calibFiles).toHaveLength(1)
       // enabledProbes 应排除禁用的 probe2 → 2 根
       expect(store.enabledProbes.map(p => p.probeId)).toEqual(['probe1', 'probe3'])
+    })
+  })
+
+  // ==================== 共用轴位配置 ====================
+  describe('共用轴位配置', () => {
+    it('默认配置：sharedMotion=false，全局轴位为空', () => {
+      const store = useFiveHoleTestStore()
+      expect(store.config.sharedMotion).toBe(false)
+      expect(store.config.sharedMotionX).toEqual({ controllerId: '', axis: AxisName.X })
+      expect(store.config.sharedMotionY).toEqual({ controllerId: '', axis: AxisName.Y })
+    })
+
+    it('loadConfig 旧配置缺 sharedMotion 字段 → 迁移补全默认值', async () => {
+      mockFiveHoleService.LoadFiveHoleConfig.mockResolvedValue({
+        name: 'legacy',
+        probes: [
+          { probeId: 'probe1', enabled: true, probeChannels: [], motionX: { controllerId: '', axis: 'X' }, motionY: { controllerId: '', axis: 'Y' }, calibFiles: [] },
+        ],
+        layout: { pattern: 'rectangle' },
+      })
+      const store = useFiveHoleTestStore()
+      await store.loadConfig()
+      expect(store.config.sharedMotion).toBe(false)
+      expect(store.config.sharedMotionX).toEqual({ controllerId: '', axis: AxisName.X })
+      expect(store.config.sharedMotionY).toEqual({ controllerId: '', axis: AxisName.Y })
+    })
+
+    it('loadConfig 保留已保存的共用轴位配置', async () => {
+      mockFiveHoleService.LoadFiveHoleConfig.mockResolvedValue({
+        name: 'shared',
+        sharedMotion: true,
+        sharedMotionX: { controllerId: 'mc-s', axis: 'Z' },
+        sharedMotionY: { controllerId: 'mc-s', axis: 'U' },
+        probes: [
+          { probeId: 'probe1', enabled: true, probeChannels: [], motionX: { controllerId: '', axis: 'X' }, motionY: { controllerId: '', axis: 'Y' }, calibFiles: [] },
+        ],
+        layout: { pattern: 'rectangle' },
+      })
+      const store = useFiveHoleTestStore()
+      await store.loadConfig()
+      expect(store.config.sharedMotion).toBe(true)
+      expect(store.config.sharedMotionX).toEqual({ controllerId: 'mc-s', axis: 'Z' })
+      expect(store.config.sharedMotionY).toEqual({ controllerId: 'mc-s', axis: 'U' })
     })
   })
 })

@@ -361,13 +361,33 @@ func TestFiveHoleValidate_Probes(t *testing.T) {
 			"X方向轴号",
 		},
 		{
-			"empty y controllerID",
-			func(c *FiveHoleTraversalConfig) { c.Probes[0].MotionY.ControllerID = "" },
+			"empty y controllerID (rectangle)",
+			func(c *FiveHoleTraversalConfig) {
+				c.Layout = TraversalLayout{
+					Pattern: TraversalPatternRectangle,
+					Rectangle: &RectangleLayout{
+						XMin: 0, XMax: 10, YMin: 0, YMax: 10,
+						XSteps: []StepSegment{{Start: 0, End: 10, Step: 10}},
+						YSteps: []StepSegment{{Start: 0, End: 10, Step: 10}},
+					},
+				}
+				c.Probes[0].MotionY.ControllerID = ""
+			},
 			"Y方向",
 		},
 		{
-			"empty y axis",
-			func(c *FiveHoleTraversalConfig) { c.Probes[0].MotionY.Axis = "" },
+			"empty y axis (rectangle)",
+			func(c *FiveHoleTraversalConfig) {
+				c.Layout = TraversalLayout{
+					Pattern: TraversalPatternRectangle,
+					Rectangle: &RectangleLayout{
+						XMin: 0, XMax: 10, YMin: 0, YMax: 10,
+						XSteps: []StepSegment{{Start: 0, End: 10, Step: 10}},
+						YSteps: []StepSegment{{Start: 0, End: 10, Step: 10}},
+					},
+				}
+				c.Probes[0].MotionY.Axis = ""
+			},
 			"Y方向轴号",
 		},
 		{
@@ -474,4 +494,139 @@ func TestFiveHoleValidate_Layout(t *testing.T) {
 			}
 		})
 	}
+}
+
+// ==================== 五孔共用轴位 ====================
+
+func TestFiveHoleValidate_SharedMotion(t *testing.T) {
+	cases := []struct {
+		name    string
+		mutate  func(*FiveHoleTraversalConfig)
+		wantSub string
+	}{
+		{
+			"共用X方向为空",
+			func(c *FiveHoleTraversalConfig) {
+				c.SharedMotion = true
+				c.SharedMotionY = FiveHoleMotionAxisMapping{ControllerID: "mc-2", Axis: AxisY}
+			},
+			"共用轴位的X方向",
+		},
+		{
+			"共用Y方向轴号为空",
+			func(c *FiveHoleTraversalConfig) {
+				c.SharedMotion = true
+				c.SharedMotionX = FiveHoleMotionAxisMapping{ControllerID: "mc-2", Axis: AxisX}
+				c.SharedMotionY = FiveHoleMotionAxisMapping{ControllerID: "mc-2"}
+				// 默认布局为直线（跳过Y校验），切矩形使Y校验生效
+				c.Layout = TraversalLayout{
+					Pattern: TraversalPatternRectangle,
+					Rectangle: &RectangleLayout{
+						XMin: 0, XMax: 10, YMin: 0, YMax: 10,
+						XSteps: []StepSegment{{Start: 0, End: 10, Step: 10}},
+						YSteps: []StepSegment{{Start: 0, End: 10, Step: 10}},
+					},
+				}
+			},
+			"共用轴位的Y方向",
+		},
+		{
+			"共用X/Y指向同一根物理轴",
+			func(c *FiveHoleTraversalConfig) {
+				c.SharedMotion = true
+				c.SharedMotionX = FiveHoleMotionAxisMapping{ControllerID: "mc-2", Axis: AxisX}
+				c.SharedMotionY = FiveHoleMotionAxisMapping{ControllerID: "mc-2", Axis: AxisX}
+				c.Layout = TraversalLayout{
+					Pattern: TraversalPatternRectangle,
+					Rectangle: &RectangleLayout{
+						XMin: 0, XMax: 10, YMin: 0, YMax: 10,
+						XSteps: []StepSegment{{Start: 0, End: 10, Step: 10}},
+						YSteps: []StepSegment{{Start: 0, End: 10, Step: 10}},
+					},
+				}
+			},
+			"同一根物理轴",
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			c := validFiveHoleConfig()
+			tc.mutate(&c)
+			err := c.Validate()
+			if err == nil || !strings.Contains(err.Error(), tc.wantSub) {
+				t.Fatalf("expected error containing %q, got %v", tc.wantSub, err)
+			}
+		})
+	}
+}
+
+// 直线布点只走X单轴：共用Y方向为空也应通过（与UI直线模式隐藏Y选择器一致）
+func TestFiveHoleValidate_SharedMotion_LineSkipsY(t *testing.T) {
+	c := validFiveHoleConfig()
+	c.SharedMotion = true
+	c.SharedMotionX = FiveHoleMotionAxisMapping{ControllerID: "mc-2", Axis: AxisX}
+	c.SharedMotionY = FiveHoleMotionAxisMapping{} // 直线模式无需Y
+	c.Layout = TraversalLayout{
+		Pattern: TraversalPatternLine,
+		Line:    &LineLayout{Axis: LineAxisX, Start: 0, End: 10, Step: 1, Fixed: 0},
+	}
+	if err := c.Validate(); err != nil {
+		t.Fatalf("expected nil for line pattern with empty shared Y, got %v", err)
+	}
+}
+
+// 共用轴位模式下探针独立轴位为空也能通过（被全局轴位覆盖），且原配置不被修改
+func TestFiveHoleValidate_SharedMotionOverridesEmptyProbeAxes(t *testing.T) {
+	c := validFiveHoleConfig()
+	c.SharedMotion = true
+	c.SharedMotionX = FiveHoleMotionAxisMapping{ControllerID: "mc-2", Axis: AxisX}
+	c.SharedMotionY = FiveHoleMotionAxisMapping{ControllerID: "mc-2", Axis: AxisY}
+	// 探针独立轴位清空（前端灰显未配置场景）
+	c.Probes[0].MotionX = FiveHoleMotionAxisMapping{}
+	c.Probes[0].MotionY = FiveHoleMotionAxisMapping{}
+	if err := c.Validate(); err != nil {
+		t.Fatalf("expected nil, got %v", err)
+	}
+	if c.Probes[0].MotionX != (FiveHoleMotionAxisMapping{}) || c.Probes[0].MotionY != (FiveHoleMotionAxisMapping{}) {
+		t.Fatalf("original config must not be mutated, got %+v/%+v", c.Probes[0].MotionX, c.Probes[0].MotionY)
+	}
+}
+
+func TestApplySharedMotion(t *testing.T) {
+	sharedX := FiveHoleMotionAxisMapping{ControllerID: "mc-s", Axis: AxisX}
+	sharedY := FiveHoleMotionAxisMapping{ControllerID: "mc-s", Axis: AxisY}
+
+	t.Run("未启用时原样返回", func(t *testing.T) {
+		c := validFiveHoleConfig()
+		got := c.ApplySharedMotion()
+		if got.Probes[0].MotionX.ControllerID != "mc-1" {
+			t.Fatalf("expected probe axes unchanged, got %+v", got.Probes[0].MotionX)
+		}
+	})
+
+	t.Run("仅覆盖启用探针且不改原配置", func(t *testing.T) {
+		c := validFiveHoleConfig()
+		c.Probes = append(c.Probes, FiveHoleProbeConfig{
+			ProbeID:       "probe2",
+			Enabled:       false,
+			ProbeChannels: c.Probes[0].ProbeChannels,
+			MotionX:       FiveHoleMotionAxisMapping{ControllerID: "keep", Axis: AxisX},
+			MotionY:       FiveHoleMotionAxisMapping{ControllerID: "keep", Axis: AxisY},
+			CalibFiles:    c.Probes[0].CalibFiles,
+		})
+		c.SharedMotion = true
+		c.SharedMotionX = sharedX
+		c.SharedMotionY = sharedY
+
+		got := c.ApplySharedMotion()
+		if got.Probes[0].MotionX != sharedX || got.Probes[0].MotionY != sharedY {
+			t.Fatalf("enabled probe axes should be overridden, got %+v/%+v", got.Probes[0].MotionX, got.Probes[0].MotionY)
+		}
+		if got.Probes[1].MotionX.ControllerID != "keep" {
+			t.Fatalf("disabled probe axes should stay, got %+v", got.Probes[1].MotionX)
+		}
+		if c.Probes[0].MotionX.ControllerID != "mc-1" {
+			t.Fatalf("original config must not be mutated, got %+v", c.Probes[0].MotionX)
+		}
+	})
 }

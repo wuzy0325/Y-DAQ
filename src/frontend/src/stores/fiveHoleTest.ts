@@ -97,6 +97,9 @@ function defaultConfig(): FiveHoleTraversalConfig {
     tAtmChannel: 17,
     tTotalDeviceId: '',
     tTotalChannel: 0,
+    sharedMotion: false,
+    sharedMotionX: { controllerId: '', axis: AxisName.X },
+    sharedMotionY: { controllerId: '', axis: AxisName.Y },
     probes: [defaultProbe(probeIdFor(1))],
     savePath: '',
     saveFileName: `FiveHoleTraversal-${new Date().toISOString().slice(0, 10)}`,
@@ -226,16 +229,18 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
       lastError.value = '请为所有启用的探针加载校准文件'
       return
     }
-    // 检查每探针位移机构连接状态
+    // 检查位移机构连接状态：共用轴位模式检查全局轴位，否则检查每探针轴位
     const motionStore = useMotionStore()
-    for (const probe of enabledProbes.value) {
-      for (const axisMap of [probe.motionX, probe.motionY]) {
-        if (!axisMap.controllerId) continue
-        const mc = motionStore.statuses.find(s => s.id === axisMap.controllerId)
-        if (!mc || mc.status !== 'Connected') {
-          lastError.value = `探针 ${probe.probeId} 的位移机构 ${axisMap.controllerId} 未连接`
-          return
-        }
+    const sharedAxisMaps = config.value.sharedMotion
+      ? [{ label: '共用轴位X方向', map: config.value.sharedMotionX }, { label: '共用轴位Y方向', map: config.value.sharedMotionY }]
+      : enabledProbes.value.flatMap(probe =>
+          [{ label: `探针 ${probe.probeId}`, map: probe.motionX }, { label: `探针 ${probe.probeId}`, map: probe.motionY }])
+    for (const { label, map } of sharedAxisMaps) {
+      if (!map.controllerId) continue
+      const mc = motionStore.statuses.find(s => s.id === map.controllerId)
+      if (!mc || mc.status !== 'Connected') {
+        lastError.value = `${label}的位移机构 ${map.controllerId} 未连接`
+        return
       }
     }
 
@@ -526,10 +531,14 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
     }
   }
 
-  // 迁移旧配置字段：motionAlpha/motionBeta -> motionX/motionY；line.axis 小写 -> 大写
+  // 迁移旧配置字段：motionAlpha/motionBeta -> motionX/motionY；line.axis 小写 -> 大写；
+  // 补全共用轴位字段（旧配置无 sharedMotion/sharedMotionX/sharedMotionY）
   function migrateLegacyConfig() {
     const cfg = config.value as any
     if (!cfg.probes) return
+    if (cfg.sharedMotion === undefined) cfg.sharedMotion = false
+    if (!cfg.sharedMotionX) cfg.sharedMotionX = { controllerId: '', axis: AxisName.X }
+    if (!cfg.sharedMotionY) cfg.sharedMotionY = { controllerId: '', axis: AxisName.Y }
     for (const probe of cfg.probes) {
       if (probe.motionAlpha) {
         probe.motionX = probe.motionAlpha

@@ -329,6 +329,9 @@ func (s *FiveHoleTraversalService) Start(config types.FiveHoleTraversalConfig) (
 		return "", fmt.Errorf("配置验证失败: %w", err)
 	}
 
+	// 共用轴位：归一化到各探针（副本），后续流程（轴类型校验/初始位置/CSV/测试循环）统一使用
+	config = config.ApplySharedMotion()
+
 	// 扇面模式：校验每根启用探针 MotionX=线性轴、MotionY=旋转轴
 	// probeAxisKindGetter 未设置（如单元测试）时跳过校验
 	if config.Layout.Pattern == types.TraversalPatternFan {

@@ -77,6 +77,11 @@ type FiveHoleTraversalConfig struct {
 	SamplesPerPoint  int                  `json:"samplesPerPoint"`  // 采样次数（三根共用）
 	SampleIntervalMs int                  `json:"sampleIntervalMs"` // 采样间隔（三根共用）
 	MotionTimeoutMs  int                  `json:"motionTimeoutMs"`  // 运动等待超时（三根共用）
+	// 共用轴位：true 时所有启用探针统一使用 SharedMotionX/Y（多探针装在同一位移机构场景），
+	// 各探针独立 MotionX/MotionY 被忽略（配置保留，切回独立模式时仍可用）
+	SharedMotion     bool                     `json:"sharedMotion"`
+	SharedMotionX    FiveHoleMotionAxisMapping `json:"sharedMotionX"`
+	SharedMotionY    FiveHoleMotionAxisMapping `json:"sharedMotionY"`
 	// PAtm/TAtm 全局共享数据源（三根共用）
 	PAtmDeviceID     string               `json:"pAtmDeviceId"`
 	PAtmChannel      int                  `json:"pAtmChannel"`
@@ -207,8 +212,46 @@ type FiveHoleTraversalErrorEvent struct {
 
 // ==================== Validate ====================
 
+// ApplySharedMotion 返回应用共用轴位后的配置副本
+// SharedMotion=true 时，启用探针的 MotionX/MotionY 被 SharedMotionX/Y 覆盖；
+// 浅拷贝 Probes 切片，不修改原配置（各探针独立轴位保留，切回独立模式时仍可用）
+// SharedMotion=false 时原样返回
+func (c FiveHoleTraversalConfig) ApplySharedMotion() FiveHoleTraversalConfig {
+	if !c.SharedMotion {
+		return c
+	}
+	probes := make([]FiveHoleProbeConfig, len(c.Probes))
+	copy(probes, c.Probes)
+	for i := range probes {
+		if probes[i].Enabled {
+			probes[i].MotionX = c.SharedMotionX
+			probes[i].MotionY = c.SharedMotionY
+		}
+	}
+	c.Probes = probes
+	return c
+}
+
 // Validate 验证五孔移位测试配置
+// 共用轴位模式：先校验全局轴位非空（直线布点只走单轴，Y 方向不校验，与UI隐藏Y选择器一致），
+// 归一化到各探针副本后走通用校验（不修改原配置）
 func (c *FiveHoleTraversalConfig) Validate() error {
+	if c.SharedMotion {
+		if c.SharedMotionX.ControllerID == "" || c.SharedMotionX.Axis == "" {
+			return fmt.Errorf("共用轴位的X方向未选择位移机构或轴号")
+		}
+		if c.Layout.Pattern != TraversalPatternLine {
+			if c.SharedMotionY.ControllerID == "" || c.SharedMotionY.Axis == "" {
+				return fmt.Errorf("共用轴位的Y方向未选择位移机构或轴号")
+			}
+		}
+		return c.ApplySharedMotion().validate()
+	}
+	return c.validate()
+}
+
+// validate 通用配置校验（探针轴位等字段已被调用方归一化；只读，值接收者）
+func (c FiveHoleTraversalConfig) validate() error {
 	if c.Name == "" {
 		return fmt.Errorf("测试名称不能为空")
 	}
@@ -316,17 +359,20 @@ func (c *FiveHoleTraversalConfig) Validate() error {
 		}
 
 		// 运动轴配置验证（X、Y 方向各自选位移机构+轴号）
+		// 直线布点只走 X 单轴（buildMoveTasks 跳过 Y），Y 不校验（与UI直线模式隐藏Y选择器一致）
 		if p.MotionX.ControllerID == "" {
 			return fmt.Errorf("探针%s的X方向未选择位移机构", p.ProbeID)
 		}
 		if p.MotionX.Axis == "" {
 			return fmt.Errorf("探针%s的X方向轴号不能为空", p.ProbeID)
 		}
-		if p.MotionY.ControllerID == "" {
-			return fmt.Errorf("探针%s的Y方向未选择位移机构", p.ProbeID)
-		}
-		if p.MotionY.Axis == "" {
-			return fmt.Errorf("探针%s的Y方向轴号不能为空", p.ProbeID)
+		if c.Layout.Pattern != TraversalPatternLine {
+			if p.MotionY.ControllerID == "" {
+				return fmt.Errorf("探针%s的Y方向未选择位移机构", p.ProbeID)
+			}
+			if p.MotionY.Axis == "" {
+				return fmt.Errorf("探针%s的Y方向轴号不能为空", p.ProbeID)
+			}
 		}
 
 		// 校准文件验证（启用探针必须载入至少一个 .cal）

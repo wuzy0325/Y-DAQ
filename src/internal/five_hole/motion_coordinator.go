@@ -103,6 +103,27 @@ type moveTask struct {
 	target       float64
 }
 
+// dedupeMoveTasks 按物理轴（controllerID+axis）去重
+// - 同轴同目标：合并为一次移动（多探针共用同一位移机构/轴的场景，避免对同一物理轴并发发送重复命令）
+// - 同轴不同目标：物理冲突，返回错误
+func dedupeMoveTasks(tasks []moveTask) ([]moveTask, error) {
+	idxByKey := make(map[string]int, len(tasks))
+	deduped := make([]moveTask, 0, len(tasks))
+	for _, t := range tasks {
+		key := t.controllerID + "|" + string(t.axis)
+		if idx, ok := idxByKey[key]; ok {
+			if deduped[idx].target != t.target {
+				return nil, fmt.Errorf("物理轴冲突: 位移机构%s的%s轴被探针%s(%s方向→%.2f)与探针%s(%s方向→%.2f)要求移动到不同位置",
+					t.controllerID, t.axis, deduped[idx].probeID, deduped[idx].direction, deduped[idx].target, t.probeID, t.direction, t.target)
+			}
+			continue // 同轴同目标：合并，保留首个任务的 probeID 用于日志
+		}
+		idxByKey[key] = len(deduped)
+		deduped = append(deduped, t)
+	}
+	return deduped, nil
+}
+
 // buildMoveTasks 根据布点配置构建本次需要驱动的轴任务列表
 // 物理轴强制对应：point.X→MotionX, point.Y→MotionY（扇面 R→MotionX, θ→MotionY）
 // 直线模式仅驱动 MotionX，MotionY 不参与
@@ -162,13 +183,15 @@ func buildMoveTasks(point types.TraversalPoint, probes []types.FiveHoleProbeConf
 		}
 	}
 
-	return tasks, nil
+	// 按物理轴去重（共用轴位/多探针配同轴时同一物理轴只发一次命令；同轴不同目标报冲突）
+	return dedupeMoveTasks(tasks)
 }
 
 // ReturnProbesToInitialPositions 把每根探针的 X/Y 轴移动回各自初始位置
 // 与 MoveAllProbesToPoint 区别：
 // - 每根探针使用各自的 (X=MotionX初始位置, Y=MotionY初始位置)
 // - 不应用直线单轴模式跳过逻辑（初始位置 X/Y 都可能需要恢复）
+// 任务按物理轴（controllerID+axis）去重：共用轴位时同一物理轴只发一次命令
 func (mc *MotionCoordinator) ReturnProbesToInitialPositions(
 	initialPositions map[string]types.TraversalPoint,
 	probes []types.FiveHoleProbeConfig,
@@ -181,12 +204,9 @@ func (mc *MotionCoordinator) ReturnProbesToInitialPositions(
 		motionTimeoutMs = 30000
 	}
 
-	var wg sync.WaitGroup
-	errChan := make(chan error, len(probes)*2)
-
-	// initiated 跟踪成功发起运动的探针，waiter 阶段仅等待这些轴
-	initiated := make([]types.FiveHoleProbeConfig, 0, len(probes))
-
+	// 构建返回初始位置任务（每根有初始位置的启用探针 X/Y 各一条）
+	// 直线布点只走X单轴，Y 映射可为空：空映射方向跳过（无轴可回）
+	tasks := make([]moveTask, 0, len(probes)*2)
 	for _, probe := range probes {
 		if !probe.Enabled {
 			continue
@@ -195,23 +215,31 @@ func (mc *MotionCoordinator) ReturnProbesToInitialPositions(
 		if !ok {
 			continue
 		}
-		initiated = append(initiated, probe)
-		// X 方向回到初始 X
+		if probe.MotionX.ControllerID != "" && probe.MotionX.Axis != "" {
+			tasks = append(tasks, moveTask{probeID: probe.ProbeID, direction: "X", controllerID: probe.MotionX.ControllerID, axis: probe.MotionX.Axis, target: initial.X})
+		}
+		if probe.MotionY.ControllerID != "" && probe.MotionY.Axis != "" {
+			tasks = append(tasks, moveTask{probeID: probe.ProbeID, direction: "Y", controllerID: probe.MotionY.ControllerID, axis: probe.MotionY.Axis, target: initial.Y})
+		}
+	}
+
+	// 按物理轴去重（共用轴位/多探针配同轴时同一物理轴只发一次命令；同轴不同目标报冲突）
+	tasks, err := dedupeMoveTasks(tasks)
+	if err != nil {
+		return fmt.Errorf("返回初始位置失败: %w", err)
+	}
+
+	var wg sync.WaitGroup
+	errChan := make(chan error, len(tasks))
+
+	for _, t := range tasks {
 		wg.Add(1)
-		go func(p types.FiveHoleProbeConfig, posX float64) {
+		go func(task moveTask) {
 			defer wg.Done()
-			if err := mc.mover(p.MotionX.ControllerID, p.MotionX.Axis, posX); err != nil {
-				errChan <- fmt.Errorf("探针%s X方向轴(%s)返回初始位置 %.2f 失败: %w", p.ProbeID, p.MotionX.Axis, posX, err)
+			if err := mc.mover(task.controllerID, task.axis, task.target); err != nil {
+				errChan <- fmt.Errorf("探针%s %s方向轴(%s)返回初始位置 %.2f 失败: %w", task.probeID, task.direction, task.axis, task.target, err)
 			}
-		}(probe, initial.X)
-		// Y 方向回到初始 Y
-		wg.Add(1)
-		go func(p types.FiveHoleProbeConfig, posY float64) {
-			defer wg.Done()
-			if err := mc.mover(p.MotionY.ControllerID, p.MotionY.Axis, posY); err != nil {
-				errChan <- fmt.Errorf("探针%s Y方向轴(%s)返回初始位置 %.2f 失败: %w", p.ProbeID, p.MotionY.Axis, posY, err)
-			}
-		}(probe, initial.Y)
+		}(t)
 	}
 
 	wg.Wait()
@@ -226,21 +254,14 @@ func (mc *MotionCoordinator) ReturnProbesToInitialPositions(
 	// 等待所有已发起运动完成（即使部分 mover 失败，成功的轴仍在运动，必须等待）
 	if mc.waiter != nil {
 		waitWg := sync.WaitGroup{}
-		for _, probe := range initiated {
+		for _, t := range tasks {
 			waitWg.Add(1)
-			go func(p types.FiveHoleProbeConfig) {
+			go func(task moveTask) {
 				defer waitWg.Done()
-				if err := mc.waiter(p.MotionX.ControllerID, p.MotionX.Axis, motionTimeoutMs); err != nil {
-					slog.Warn("五孔: 等待 X方向轴返回初始位置完成失败", "probeID", p.ProbeID, "axis", p.MotionX.Axis, "err", err)
+				if err := mc.waiter(task.controllerID, task.axis, motionTimeoutMs); err != nil {
+					slog.Warn("五孔: 等待轴返回初始位置完成失败", "probeID", task.probeID, "direction", task.direction, "axis", task.axis, "err", err)
 				}
-			}(probe)
-			waitWg.Add(1)
-			go func(p types.FiveHoleProbeConfig) {
-				defer waitWg.Done()
-				if err := mc.waiter(p.MotionY.ControllerID, p.MotionY.Axis, motionTimeoutMs); err != nil {
-					slog.Warn("五孔: 等待 Y方向轴返回初始位置完成失败", "probeID", p.ProbeID, "axis", p.MotionY.Axis, "err", err)
-				}
-			}(probe)
+			}(t)
 		}
 		waitWg.Wait()
 	}

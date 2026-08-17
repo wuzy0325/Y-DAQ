@@ -163,6 +163,11 @@ export interface FiveHoleTraversalConfig {
   // TTotal（总温 TAT）可选全局数据源：未配置（deviceId 为空）时插值公式回退用 TAtm
   tTotalDeviceId: string
   tTotalChannel: number
+  // 共用轴位：true 时所有启用探针统一使用 sharedMotionX/Y（多探针装在同一位移机构场景），
+  // 各探针独立 motionX/motionY 被忽略（配置保留，切回独立模式时仍可用）
+  sharedMotion: boolean
+  sharedMotionX: FiveHoleMotionAxisMapping
+  sharedMotionY: FiveHoleMotionAxisMapping
   probes: FiveHoleProbeConfig[] // 1-3 根探针
   savePath: string
   saveFileName: string
