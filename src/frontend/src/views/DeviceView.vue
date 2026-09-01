@@ -144,7 +144,7 @@
           <div class="form-group">
             <label class="group-label">采样频率</label>
             <div class="input-with-unit">
-              <el-input-number v-model="newDevice.publishRate" :min="1" :max="1000" :step="1" size="small" style="width: 90px" controls-position="right" />
+              <el-input-number v-model="newDevice.publishRate" :min="1" :max="maxSampleRateFor(newDevice.type)" :step="1" size="small" style="width: 90px" controls-position="right" />
               <span class="unit">Hz</span>
             </div>
           </div>
@@ -190,7 +190,7 @@
           <div class="form-group">
             <label class="group-label">采样频率</label>
             <div class="input-with-unit">
-              <el-input-number v-model="editForm.publishRate" :min="1" :max="1000" :step="1" size="small" style="width: 90px" controls-position="right" />
+              <el-input-number v-model="editForm.publishRate" :min="1" :max="maxSampleRateFor(editProfileType)" :step="1" size="small" style="width: 90px" controls-position="right" />
               <span class="unit">Hz</span>
             </div>
           </div>
@@ -397,6 +397,14 @@ const deviceStore = useDeviceStore()
 // isPressureDevice 是否为压力设备（含 SIMULATED，排除温度设备 EA2516T）。
 // 用于零位校准/零位偏移 UI 可见性判断：EA2508A/EA2516A/SIMULATED 均属压力设备。
 // 区别于 isValveSupported（仅真实 DAQ，排除 SIMULATED）。
+// 真实的两个压力采集设备（EA2508A/EA2516A）最大采样频率限制为 500Hz，
+// 温度设备 EA2516T 保持 1000Hz，模拟设备不受物理采样上限约束。
+function maxSampleRateFor(type: string): number {
+  const info = getDeviceInfo(type as DeviceTypeValue)
+  if (info.isRealDAQ && !info.isTemperature) return 500
+  return 1000
+}
+
 function isPressureDevice(type: string): boolean {
   const info = getDeviceInfo(type as DeviceTypeValue)
   return !info.isTemperature
