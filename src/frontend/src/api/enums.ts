@@ -103,7 +103,7 @@ export const FiveHoleChannelRoleLabels: Record<FiveHoleChannelRoleValue, string>
   [FiveHoleChannelRole.P4]: '4号孔压力',
   [FiveHoleChannelRole.P5]: '5号孔压力',
   [FiveHoleChannelRole.P_ATM]: '大气压',
-  [FiveHoleChannelRole.T_ATM]: '大气温度',
+  [FiveHoleChannelRole.T_ATM]: '气流温度',
 }
 
 // 布点模式
@@ -168,6 +168,30 @@ export const thermocoupleTypeOptions: { value: string; label: string }[] =
     value,
     label,
   }))
+
+// EA2508A 温度通道传感器来源（@16 命令：internal=12 / thermocouple=13 / pt100=14）
+export const TempSource = {
+  INTERNAL: 'internal',
+  THERMOCOUPLE: 'thermocouple',
+  PT100: 'pt100',
+} as const
+
+export type TempSourceValue = typeof TempSource[keyof typeof TempSource]
+
+// 温度源中文标签
+export const TempSourceLabels: Record<TempSourceValue, string> = {
+  [TempSource.INTERNAL]: '内部温度传感器',
+  [TempSource.THERMOCOUPLE]: '外界热电偶传感器',
+  [TempSource.PT100]: '外接PT100传感器',
+}
+
+// 温度源选项（用于 el-select）
+export const tempSourceOptions: { value: string; label: string }[] =
+  Object.entries(TempSourceLabels).map(([value, label]) => ({ value, label }))
+
+// EA2508A 温度通道 @17 命令支持的热电偶类型（单字符 T/K/J/E/S）
+export const ea2508aTempThermocoupleOptions: { value: string; label: string }[] =
+  ['T', 'K', 'J', 'E', 'S'].map(t => ({ value: t, label: `${t} 型` }))
 
 // 各热电偶类型的量程范围（°C），用于根据热电偶类型同步温度量程
 export const ThermocoupleRanges: Record<string, { min: number; max: number }> = {

@@ -163,6 +163,66 @@ func TestDAQTFrameReader_Reset(t *testing.T) {
 	}
 }
 
+// TestDAQTFrameReader_LateACKAlignment 验证迟到 ACK 的偏移对齐自愈。
+// 场景：@f0 发送后，ACK 'A'(0x41) 作为前导残杂字节落在数据帧前面。
+// FrameReader 应丢弃 1 个前导字节，从偏移 1 对齐真实帧边界。
+func TestDAQTFrameReader_LateACKAlignment(t *testing.T) {
+	reader := NewDAQTFrameReader()
+	reader.SetBinaryMode(true)
+
+	// 构造合法二进制帧（CH15=25.0°C，其余 0.0）
+	// 注意：二进制帧解析后会 reverse，CH15 在 offset 0，reverse 后变 index 15
+	frame := make([]byte, 64)
+	bits := math.Float32bits(25.0)
+	frame[0] = byte(bits)
+	frame[1] = byte(bits >> 8)
+	frame[2] = byte(bits >> 16)
+	frame[3] = byte(bits >> 24)
+
+	// 前面加 1 个迟到 ACK 'A'
+	lateACK := []byte{'A'}
+	reader.Feed(append(lateACK, frame...))
+
+	if !reader.HasCompleteFrame() {
+		t.Fatal("expected complete frame despite late ACK prefix")
+	}
+	result := reader.ReadFrame()
+	if len(result) != 64 {
+		t.Fatalf("expected 64 bytes, got %d", len(result))
+	}
+	// 验证解析后 CH15=25.0（reverse 后在 index 15）
+	parser := &DAQTBinaryParser{}
+	values, err := parser.Parse(result)
+	if err != nil {
+		t.Fatalf("parse failed: %v", err)
+	}
+	if values[15] < 24.9 || values[15] > 25.1 {
+		t.Errorf("CH15 expected ~25.0, got %f", values[15])
+	}
+}
+
+// TestDAQTFrameReader_NoACKPrefix 验证无前导 ACK 时的正常对齐（偏移 0）。
+func TestDAQTFrameReader_NoACKPrefix(t *testing.T) {
+	reader := NewDAQTFrameReader()
+	reader.SetBinaryMode(true)
+
+	frame := make([]byte, 64)
+	bits := math.Float32bits(25.0)
+	frame[0] = byte(bits)
+	frame[1] = byte(bits >> 8)
+	frame[2] = byte(bits >> 16)
+	frame[3] = byte(bits >> 24)
+
+	reader.Feed(frame)
+	if !reader.HasCompleteFrame() {
+		t.Fatal("expected complete frame without ACK prefix")
+	}
+	result := reader.ReadFrame()
+	if len(result) != 64 {
+		t.Fatalf("expected 64 bytes, got %d", len(result))
+	}
+}
+
 // --- 辅助函数测试 ---
 
 func TestReverseFloat64(t *testing.T) {

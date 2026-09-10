@@ -117,14 +117,20 @@ func (d *YXDAQTDriver) StartAcquisition(periodMs int) error {
 	d.frameReader.SetBinaryMode(d.hwConfig.BinaryFormat)
 	d.frameReader.SetMetadataMode(d.hwConfig.ShowTimestamp || d.hwConfig.ShowSequence)
 
-	// 发送开始采集命令
+	// 发送开始采集命令。
+	// 用 writeCmdOnly 不注册 pending entry：设备固件在 @f0 后并行发送 ACK 与数据流，
+	// 顺序不保证（约 10~15% 数据帧先到），若注册 pending 会导致数据帧被误消费为 ACK。
+	// 迟到的 ACK 'A'(0x41) 由 FrameReader 的偏移对齐机制自动丢弃（见 hasAlignedFixedFrame）。
 	if err := d.writeCmdOnly("@f0 FFFF 2"); err != nil {
 		return fmt.Errorf("start acquisition failed: %w", err)
 	}
 
-	// 等待 @f0 的 ACK 到达并消费掉，防止 'A' 字节污染帧对齐。
+	// 等待设备开始流数据。此时 acquiring=false，数据走 handleCommandResponse，
+	// 但 pending 为空会被直接清空 respBuffer。
+	// 切换到采集模式后，FrameReader 的偏移对齐会处理迟到的 ACK。
 	time.Sleep(150 * time.Millisecond)
 	d.frameReader.Reset()
+	d.respBuffer = d.respBuffer[:0]
 
 	d.acquiring.Store(true)
 	return nil
@@ -148,8 +154,19 @@ func (d *YXDAQTDriver) StopAcquisition() error {
 		slog.Warn("DAQ-T: 停止采集命令 @f1 发送失败", "host", d.Host, "port", d.Port, "err", err)
 	}
 
+	// 切换到非采集模式，让后续到达的数据走 handleCommandResponse
 	d.acquiring.Store(false)
+
+	// 静默窗口确认数据流停止：@f1 发送后设备可能仍在发送已排队的帧 + ACK。
+	// 等待 150ms 静默（无新数据到达），确认停止完成，再清空缓冲区，
+	// 避免残留帧/ACK 字节污染后续命令响应。
+	time.Sleep(150 * time.Millisecond)
 	d.frameReader.Reset()
+	d.respBuffer = d.respBuffer[:0]
+	if d.silenceTimer != nil {
+		d.silenceTimer.Stop()
+		d.silenceTimer = nil
+	}
 	return nil
 }
 

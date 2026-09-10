@@ -2,7 +2,6 @@ package five_hole
 
 import (
 	"fmt"
-	"math"
 
 	"yx-daq/internal/types"
 )
@@ -90,8 +89,10 @@ func generateRectanglePoints(rect *types.RectangleLayout) []types.TraversalPoint
 }
 
 // generateFanPoints 扇形布点
-// R 方向为线性轴，θ 方向为旋转轴；第一点位为相对原点（当前位置），后续点位相对于第一点递增
-// 角度使用数学极坐标：0° 沿 +X，逆时针为正
+// R 方向为线性轴，θ 方向为旋转轴
+// 点位直接使用轴坐标：X=R（半径轴绝对位置，mm）、Y=θ（角度轴绝对位置，°）
+// 数据点记录与 CSV 导出直接使用 point.X/Y，即实际轴位置；
+// 前端预览画布自行把 (R, θ) 转为笛卡尔坐标绘制
 func generateFanPoints(fan *types.FanLayout) []types.TraversalPoint {
 	if fan == nil {
 		return nil
@@ -107,12 +108,10 @@ func generateFanPoints(fan *types.FanLayout) []types.TraversalPoint {
 	id := 0
 	for _, r := range rValues {
 		for _, thetaDeg := range thetaValues {
-			theta := (thetaDeg - fan.ThetaStart) * math.Pi / 180
-			dr := r - fan.RStart
 			points = append(points, types.TraversalPoint{
 				ID: fmt.Sprintf("pt-%d", id),
-				X:  dr * math.Cos(theta),
-				Y:  dr * math.Sin(theta),
+				X:  r,
+				Y:  thetaDeg,
 			})
 			id++
 		}

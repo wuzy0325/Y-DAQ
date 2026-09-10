@@ -173,6 +173,9 @@ func (s *ThreeHoleService) SelectAndStartThreeHoleRealtimeRecording(probeID stri
 	dlg.AddFilter("所有文件", "*.*")
 	filePath, err := dlg.PromptForSingleSelection()
 	if err != nil {
+		if isDialogCancelled(err) {
+			return "", nil // 用户取消对话框，静默返回
+		}
 		return "", err
 	}
 	if filePath == "" {

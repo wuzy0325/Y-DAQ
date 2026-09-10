@@ -116,14 +116,13 @@ func (i *FiveHoleInterpolator) Calculate(rawData types.FiveHoleRawData) types.Fi
 	}
 
 	input := interpolation.InterpolationInput{
-		P1:     rawData.P1,
-		P2:     rawData.P2,
-		P3:     rawData.P3,
-		P4:     rawData.P4,
-		P5:     rawData.P5,
-		PAtm:   rawData.PAtm,
-		TAtm:   rawData.TAtm,
-		TTotal: rawData.TTotal,
+		P1:   rawData.P1,
+		P2:   rawData.P2,
+		P3:   rawData.P3,
+		P4:   rawData.P4,
+		P5:   rawData.P5,
+		PAtm: rawData.PAtm,
+		TAtm: rawData.TAtm,
 	}
 
 	result, err := i.multiCal.Calculate(input)

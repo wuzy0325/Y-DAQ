@@ -2,213 +2,32 @@ package types
 
 import "fmt"
 
-// ==================== 五孔探针通道角色 ====================
-
-// FiveHoleChannelRole 五孔探针通道语义角色
-type FiveHoleChannelRole string
-
-const (
-	Role5H_P1   FiveHoleChannelRole = "fiveHole.p1"   // 1号孔压力
-	Role5H_P2   FiveHoleChannelRole = "fiveHole.p2"   // 2号孔压力（中心孔）
-	Role5H_P3   FiveHoleChannelRole = "fiveHole.p3"   // 3号孔压力
-	Role5H_P4   FiveHoleChannelRole = "fiveHole.p4"   // 4号孔压力
-	Role5H_P5   FiveHoleChannelRole = "fiveHole.p5"   // 5号孔压力
-	Role5H_PAtm FiveHoleChannelRole = "fiveHole.pAtm" // 大气压（全局共享）
-	Role5H_TAtm FiveHoleChannelRole = "fiveHole.tAtm" // 大气温度（全局共享）
-)
-
-// FiveHoleProbeChannelConfig 五孔探针通道配置（每通道独立选采集设备）
-type FiveHoleProbeChannelConfig struct {
-	Name     string              `json:"name"`
-	Role     FiveHoleChannelRole `json:"role"`
-	DeviceID string              `json:"deviceId"` // 每通道独立选采集设备
-	Channel  int                 `json:"channel"`
-	Enabled  bool                `json:"enabled"`
-}
-
-// ==================== 五孔运动轴映射 ====================
-
-// FiveHoleMotionAxisMapping 五孔运动轴映射（每轴独立选位移机构）
-// 与三孔 MotionAxisMapping 区别：含 ControllerID，支持每轴独立位移机构
-type FiveHoleMotionAxisMapping struct {
-	ControllerID string  `json:"controllerId"` // 位移机构ID
-	Axis        AxisName `json:"axis"`         // 轴名（X/Y/Z/U）
-}
-
-// ==================== 五孔校准文件 ====================
-
-// FiveHoleCalibRange 五孔校准文件有效范围
-type FiveHoleCalibRange struct {
-	AlphaMin float64 `json:"alphaMin"` // 最小攻角（度）
-	AlphaMax float64 `json:"alphaMax"` // 最大攻角（度）
-	BetaMin  float64 `json:"betaMin"`  // 最小侧滑角（度）
-	BetaMax  float64 `json:"betaMax"`  // 最大侧滑角（度）
-	MachMin  float64 `json:"machMin"`  // 最小马赫数
-	MachMax  float64 `json:"machMax"`  // 最大马赫数
-}
-
-// FiveHoleCalibFileInfo 五孔校准文件信息（.cal 文件：首行 13 13，后接 169 行 ka kb cpt cps alpha beta）
-type FiveHoleCalibFileInfo struct {
-	FilePath   string             `json:"filePath"`
-	FileName   string             `json:"fileName"`
-	CMa        float64            `json:"cMa"`        // 校准马赫数（从文件名解析）
-	ValidRange FiveHoleCalibRange `json:"validRange"` // 有效范围（α/β/Ma）
-}
-
-// ==================== 五孔探针配置 ====================
-
-// FiveHoleProbeConfig 单根五孔探针配置
-type FiveHoleProbeConfig struct {
-	ProbeID       string                       `json:"probeId"`       // probe1..probeN (N≤3，前端动态增删，复用最小未用序号)
-	Enabled       bool                         `json:"enabled"`       // 是否启用（配几根跑几根）
-	ProbeChannels []FiveHoleProbeChannelConfig `json:"probeChannels"` // P1-P5 各自数据源
-	MotionX       FiveHoleMotionAxisMapping    `json:"motionX"`       // X 方向：位移机构 + 轴号
-	MotionY       FiveHoleMotionAxisMapping    `json:"motionY"`       // Y 方向：位移机构 + 轴号
-	CalibFiles    []FiveHoleCalibFileInfo       `json:"calibFiles"`    // .cal 校准文件（每探针独立载入）
-}
+// MaxFiveHoleProbes 五孔测试最大启用探针数（后端校验上限，前端 MAX_PROBES 与此保持一致）
+const MaxFiveHoleProbes = 8
 
 // ==================== 五孔测试配置 ====================
 
-// FiveHoleTraversalConfig 五孔移位测试配置（全局配置，含 1-3 探针）
+// FiveHoleTraversalConfig 五孔移位测试配置（全局配置，含 1-MaxFiveHoleProbes 根探针）
 type FiveHoleTraversalConfig struct {
 	Name             string               `json:"name"`
 	Layout           TraversalLayout      `json:"layout"`           // 布点（复用三孔 TraversalLayout）
-	DwellTimeMs      int                  `json:"dwellTimeMs"`      // 驻留时间（三根共用）
-	SamplesPerPoint  int                  `json:"samplesPerPoint"`  // 采样次数（三根共用）
-	SampleIntervalMs int                  `json:"sampleIntervalMs"` // 采样间隔（三根共用）
-	MotionTimeoutMs  int                  `json:"motionTimeoutMs"`  // 运动等待超时（三根共用）
+	DwellTimeMs      int                  `json:"dwellTimeMs"`      // 驻留时间（所有探针共用）
+	SamplesPerPoint  int                  `json:"samplesPerPoint"`  // 采样次数（所有探针共用）
+	SampleIntervalMs int                  `json:"sampleIntervalMs"` // 采样间隔（所有探针共用）
+	MotionTimeoutMs  int                  `json:"motionTimeoutMs"`  // 运动等待超时（所有探针共用）
 	// 共用轴位：true 时所有启用探针统一使用 SharedMotionX/Y（多探针装在同一位移机构场景），
 	// 各探针独立 MotionX/MotionY 被忽略（配置保留，切回独立模式时仍可用）
 	SharedMotion     bool                     `json:"sharedMotion"`
 	SharedMotionX    FiveHoleMotionAxisMapping `json:"sharedMotionX"`
 	SharedMotionY    FiveHoleMotionAxisMapping `json:"sharedMotionY"`
-	// PAtm/TAtm 全局共享数据源（三根共用）
-	PAtmDeviceID     string               `json:"pAtmDeviceId"`
-	PAtmChannel      int                  `json:"pAtmChannel"`
-	TAtmDeviceID     string               `json:"tAtmDeviceId"`
-	TAtmChannel      int                  `json:"tAtmChannel"`
-	// TTotal（总温 TAT）可选全局数据源：未配置（deviceID 为空）时插值公式回退用 TAtm
-	TTotalDeviceID   string               `json:"tTotalDeviceId"`
-	TTotalChannel    int                  `json:"tTotalChannel"`
-	// 1-3 根探针（配几根跑几根）
+	// 1-8 根探针（配几根跑几根）
 	Probes           []FiveHoleProbeConfig `json:"probes"`
 	SavePath         string               `json:"savePath"`
 	SaveFileName     string               `json:"saveFileName"`
 }
 
-// ==================== 五孔原始数据 ====================
 // 注：FiveHoleRawData 已在 calibration.go 定义（P1-P5+PAtm+TAtm+可选PTotal），
 // 五孔移位测试模块直接复用该类型，PTotal 字段可选可忽略。
-
-// ==================== 五孔插值结果 ====================
-
-// FiveHoleInterpolationResult 五孔插值结果
-// 字段对齐 vendored interpolation.InterpolationResult，移除 IterationCount/Converged，
-// 新增 CAS/SAT/动压/密度/三向速度分量。
-type FiveHoleInterpolationResult struct {
-	PtProbe         float64 `json:"ptProbe"`                  // 总压（表压 Pa）
-	PsProbe         float64 `json:"psProbe"`                  // 静压（表压 Pa）
-	MachProbe       float64 `json:"machProbe"`                // 马赫数
-	AlphaProbe      float64 `json:"alphaProbe"`               // 攻角（度）
-	BetaProbe       float64 `json:"betaProbe"`                // 侧滑角（度）
-	VelocityProbe   float64 `json:"velocityProbe"`            // 真空速 TAS（m/s）
-	CASProbe        float64 `json:"casProbe"`                 // 校正空速 CAS（m/s）
-	SATProbe        float64 `json:"satProbe"`                 // 静温 SAT（K）
-	DynamicPressure float64 `json:"dynamicPressure"`          // 动压（Pa）
-	Density         float64 `json:"density"`                  // 密度（kg/m³）
-	VxProbe         float64 `json:"vxProbe"`                  // X 方向速度分量（m/s）
-	VyProbe         float64 `json:"vyProbe"`                  // Y 方向速度分量（m/s）
-	VzProbe         float64 `json:"vzProbe"`                  // Z 方向速度分量（m/s）
-	Valid           bool    `json:"valid"`                    // 结果是否有效
-	ErrorMsg        string  `json:"errorMsg,omitempty"`       // 无效/警告原因描述
-}
-
-// ==================== 五孔测试数据点 ====================
-
-// FiveHoleTraversalDataPoint 五孔移位测试数据点（每探针一份）
-type FiveHoleTraversalDataPoint struct {
-	PointID         string                      `json:"pointId"`
-	ProbeID         string                      `json:"probeId"`
-	X               float64                     `json:"x"`
-	Y               float64                     `json:"y"`
-	XControllerName string                      `json:"xControllerName"` // X 方向位移机构名
-	XAxis           AxisName                    `json:"xAxis"`           // X 方向轴号
-	YControllerName string                      `json:"yControllerName"` // Y 方向位移机构名
-	YAxis           AxisName                    `json:"yAxis"`           // Y 方向轴号
-	RawData         FiveHoleRawData             `json:"rawData"`
-	InterpResult    FiveHoleInterpolationResult `json:"interpResult"`
-	SampleCount     int                         `json:"sampleCount"`
-	Timestamp       int64                       `json:"timestamp"`
-}
-
-// ==================== 五孔测试状态 ====================
-
-// FiveHoleProbeStatus 单根探针实时状态
-type FiveHoleProbeStatus struct {
-	ProbeID      string                      `json:"probeId"`
-	Phase        string                      `json:"phase"`        // moving/waiting/acquiring/completed
-	CurrentX     float64                     `json:"currentX"`
-	CurrentY     float64                     `json:"currentY"`
-	RawData      *FiveHoleRawData            `json:"rawData,omitempty"`
-	InterpResult *FiveHoleInterpolationResult `json:"interpResult,omitempty"`
-}
-
-// FiveHoleTraversalTaskStatus 五孔测试任务状态
-type FiveHoleTraversalTaskStatus struct {
-	TaskID          string                 `json:"taskId"`
-	Status          TraversalTestStatus    `json:"status"`          // 统一状态
-	TotalPoints     int                    `json:"totalPoints"`
-	CompletedPoints int                    `json:"completedPoints"` // 统一进度（等最慢探针）
-	Progress        float64                `json:"progress"`
-	CurrentPoint    *TraversalPoint        `json:"currentPoint,omitempty"`
-	// 每探针独立 phase/坐标（统一进度 + 各探针 phase 指示）
-	ProbeStatuses   []FiveHoleProbeStatus  `json:"probeStatuses"`
-	LastError       string                 `json:"lastError,omitempty"`
-}
-
-// ==================== 五孔事件类型 ====================
-
-// FiveHoleTraversalProgressEvent 进度事件
-type FiveHoleTraversalProgressEvent struct {
-	TaskID          string                `json:"taskId"`
-	TotalPoints     int                   `json:"totalPoints"`
-	CompletedPoints int                   `json:"completedPoints"`
-	Progress        float64               `json:"progress"`
-	CurrentX        float64               `json:"currentX"`
-	CurrentY        float64               `json:"currentY"`
-	Phase           string                `json:"phase,omitempty"`
-	ProbeStatuses   []FiveHoleProbeStatus `json:"probeStatuses"`
-}
-
-// FiveHoleTraversalRealtimeEvent 实时数据事件（含所有启用探针的实时数据）
-type FiveHoleTraversalRealtimeEvent struct {
-	TaskID       string                      `json:"taskId"`
-	PointID      string                      `json:"pointId"`
-	Phase        string                      `json:"phase,omitempty"`
-	ProbeRealtime []FiveHoleProbeRealtimeItem `json:"probeRealtime"`
-}
-
-// FiveHoleProbeRealtimeItem 单根探针实时数据项
-type FiveHoleProbeRealtimeItem struct {
-	ProbeID      string                      `json:"probeId"`
-	RawData      FiveHoleRawData             `json:"rawData"`
-	InterpResult FiveHoleInterpolationResult `json:"interpResult"`
-}
-
-// FiveHoleTraversalCompleteEvent 完成事件
-type FiveHoleTraversalCompleteEvent struct {
-	TaskID string                        `json:"taskId"`
-	Status TraversalTestStatus           `json:"status"`
-	// 每探针的数据点列表（每探针独立 CSV）
-	ProbeDataPoints map[string][]FiveHoleTraversalDataPoint `json:"probeDataPoints"`
-}
-
-// FiveHoleTraversalErrorEvent 错误事件
-type FiveHoleTraversalErrorEvent struct {
-	TaskID  string `json:"taskId"`
-	Error   string `json:"error"`
-	IsFatal bool   `json:"isFatal"`
-}
 
 // ==================== Validate ====================
 
@@ -256,7 +75,7 @@ func (c FiveHoleTraversalConfig) validate() error {
 		return fmt.Errorf("测试名称不能为空")
 	}
 
-	// 采样参数验证（三根共用）
+	// 采样参数验证（所有探针共用）
 	if c.SamplesPerPoint < 1 {
 		return fmt.Errorf("每点位采样数必须≥1")
 	}
@@ -268,25 +87,6 @@ func (c FiveHoleTraversalConfig) validate() error {
 	}
 	if c.MotionTimeoutMs < 1000 {
 		return fmt.Errorf("运动超时时间必须≥1000ms")
-	}
-
-	// 全局 PAtm/TAtm 数据源验证
-	if c.PAtmDeviceID == "" {
-		return fmt.Errorf("大气压采集设备ID不能为空")
-	}
-	if c.PAtmChannel < 0 {
-		return fmt.Errorf("大气压通道号必须≥0")
-	}
-	if c.TAtmDeviceID == "" {
-		return fmt.Errorf("大气温度采集设备ID不能为空")
-	}
-	if c.TAtmChannel < 0 {
-		return fmt.Errorf("大气温度通道号必须≥0")
-	}
-
-	// TTotal 可选：未配置（deviceID 为空）时跳过校验，插值公式回退用 TAtm
-	if c.TTotalDeviceID != "" && c.TTotalChannel < 0 {
-		return fmt.Errorf("总温通道号必须≥0")
 	}
 
 	// 探针配置验证
@@ -303,8 +103,8 @@ func (c FiveHoleTraversalConfig) validate() error {
 			continue
 		}
 		enabledCount++
-		if enabledCount > 3 {
-			return fmt.Errorf("最多启用3根探针")
+		if enabledCount > MaxFiveHoleProbes {
+			return fmt.Errorf("最多启用%d根探针", MaxFiveHoleProbes)
 		}
 
 		// ProbeID 唯一性
@@ -356,6 +156,14 @@ func (c FiveHoleTraversalConfig) validate() error {
 			if !ok {
 				return fmt.Errorf("探针%s必须启用%s通道", p.ProbeID, role)
 			}
+		}
+
+		// 大气压/气流温度数据源验证（每探针独立：设备读取须选设备，手动写入无额外约束）
+		if err := p.PAtmSource.validate("大气压"); err != nil {
+			return fmt.Errorf("探针%s的%w", p.ProbeID, err)
+		}
+		if err := p.TAtmSource.validate("气流温度"); err != nil {
+			return fmt.Errorf("探针%s的%w", p.ProbeID, err)
 		}
 
 		// 运动轴配置验证（X、Y 方向各自选位移机构+轴号）

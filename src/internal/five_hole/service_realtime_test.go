@@ -37,6 +37,7 @@ func makeRealtimeBatchGetter5H() FiveHoleMultiDeviceBatchGetter {
 }
 
 // makeRealtimeProbe5H 构造一个用于 realtime 监控测试的启用探针配置（deviceID=d1）
+// PAtm/TAtm 设备读取 devPAtm/devTAtm，匹配 makeRealtimeBatchGetter5H
 func makeRealtimeProbe5H(probeID string) types.FiveHoleProbeConfig {
 	return types.FiveHoleProbeConfig{
 		ProbeID: probeID,
@@ -48,19 +49,17 @@ func makeRealtimeProbe5H(probeID string) types.FiveHoleProbeConfig {
 			{Role: types.Role5H_P4, DeviceID: "d1", Channel: 3, Enabled: true},
 			{Role: types.Role5H_P5, DeviceID: "d1", Channel: 4, Enabled: true},
 		},
-		MotionX: types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "X"},
-		MotionY: types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "Y"},
+		MotionX:     types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "X"},
+		MotionY:     types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "Y"},
+		PAtmSource:  types.FiveHoleAtmSource{Mode: types.FiveHoleSourceDevice, DeviceID: "devPAtm", Channel: 0},
+		TAtmSource:  types.FiveHoleAtmSource{Mode: types.FiveHoleSourceDevice, DeviceID: "devTAtm", Channel: 0},
 	}
 }
 
 // makeRealtimeConfig5H 构造一个用于 realtime 监控测试的五孔配置
 func makeRealtimeConfig5H(t *testing.T, probes ...types.FiveHoleProbeConfig) types.FiveHoleTraversalConfig {
 	t.Helper()
-	cfg := makeValidFiveHoleConfig(t, probes...)
-	// 覆盖 PAtm/TAtm 设备ID 以匹配 makeRealtimeBatchGetter5H
-	cfg.PAtmDeviceID = "devPAtm"
-	cfg.TAtmDeviceID = "devTAtm"
-	return cfg
+	return makeValidFiveHoleConfig(t, probes...)
 }
 
 // TestService_StartRealtimeMonitor_EmitsRealtimeEvents 启动监控后应发射 realtime 事件
@@ -231,14 +230,14 @@ func TestService_IsRealtimeRecording_InitialFalse(t *testing.T) {
 	}
 }
 
-// TestService_RunRealtimeMonitor_NoPAtmDevice_StillEmits PAtmDeviceID 为空时仍应发射事件（PAtm=0）
+// TestService_RunRealtimeMonitor_NoPAtmDevice_StillEmits PAtmSource 未配置设备时仍应发射事件（PAtm=0）
 func TestService_RunRealtimeMonitor_NoPAtmDevice_StillEmits(t *testing.T) {
 	publisher := &MockEventPublisher{}
 	service := NewFiveHoleTraversalService(publisher)
 	service.SetMultiDeviceBatchGetter(makeRealtimeBatchGetter5H())
 
 	config := makeRealtimeConfig5H(t, makeRealtimeProbe5H("probe1"))
-	config.PAtmDeviceID = "" // 清空 PAtm 设备
+	config.Probes[0].PAtmSource = types.FiveHoleAtmSource{Mode: types.FiveHoleSourceDevice} // 清空 PAtm 设备
 	service.StartRealtimeMonitor(config)
 
 	time.Sleep(300 * time.Millisecond)
@@ -246,26 +245,26 @@ func TestService_RunRealtimeMonitor_NoPAtmDevice_StillEmits(t *testing.T) {
 
 	events := publisher.GetRealtimeEvents()
 	if len(events) == 0 {
-		t.Error("PAtmDeviceID 为空时仍应发射事件（PAtm 默认为 0），但实际未发射")
+		t.Error("PAtmSource 未配置设备时仍应发射事件（PAtm 默认为 0），但实际未发射")
 	}
 	// 验证 PAtm 为 0
 	for _, evt := range events {
 		for _, item := range evt.ProbeRealtime {
 			if item.RawData.PAtm != 0 {
-				t.Errorf("PAtmDeviceID 为空时 PAtm 应为 0，实际 %f", item.RawData.PAtm)
+				t.Errorf("PAtmSource 未配置设备时 PAtm 应为 0，实际 %f", item.RawData.PAtm)
 			}
 		}
 	}
 }
 
-// TestService_RunRealtimeMonitor_NoTAtmDevice_StillEmits TAtmDeviceID 为空时仍应发射事件（TAtm=0）
+// TestService_RunRealtimeMonitor_NoTAtmDevice_StillEmits TAtmSource 未配置设备时仍应发射事件（TAtm=0）
 func TestService_RunRealtimeMonitor_NoTAtmDevice_StillEmits(t *testing.T) {
 	publisher := &MockEventPublisher{}
 	service := NewFiveHoleTraversalService(publisher)
 	service.SetMultiDeviceBatchGetter(makeRealtimeBatchGetter5H())
 
 	config := makeRealtimeConfig5H(t, makeRealtimeProbe5H("probe1"))
-	config.TAtmDeviceID = "" // 清空 TAtm 设备
+	config.Probes[0].TAtmSource = types.FiveHoleAtmSource{Mode: types.FiveHoleSourceDevice} // 清空 TAtm 设备
 	service.StartRealtimeMonitor(config)
 
 	time.Sleep(300 * time.Millisecond)
@@ -273,13 +272,13 @@ func TestService_RunRealtimeMonitor_NoTAtmDevice_StillEmits(t *testing.T) {
 
 	events := publisher.GetRealtimeEvents()
 	if len(events) == 0 {
-		t.Error("TAtmDeviceID 为空时仍应发射事件（TAtm 默认为 0），但实际未发射")
+		t.Error("TAtmSource 未配置设备时仍应发射事件（TAtm 默认为 0），但实际未发射")
 	}
 	// 验证 TAtm 为 0
 	for _, evt := range events {
 		for _, item := range evt.ProbeRealtime {
 			if item.RawData.TAtm != 0 {
-				t.Errorf("TAtmDeviceID 为空时 TAtm 应为 0，实际 %f", item.RawData.TAtm)
+				t.Errorf("TAtmSource 未配置设备时 TAtm 应为 0，实际 %f", item.RawData.TAtm)
 			}
 		}
 	}
@@ -432,9 +431,9 @@ func TestService_RealtimeMonitor_ResumesAfterTestCompletes(t *testing.T) {
 		t.Fatalf("Start failed: %v", err)
 	}
 
-	// 等待测试自然完成
+	// 等待测试自然完成（完成后状态自动标记为 completed）
 	waitForCompleteEvent5H(t, publisher, 3*time.Second)
-	waitForStatusEventually5H(t, service, types.TraversalStatusIdle, 1*time.Second)
+	waitForStatusEventually5H(t, service, types.TraversalStatusCompleted, 1*time.Second)
 
 	// 等 ticker 周期让 in-flight 事件完成，再清空
 	time.Sleep(150 * time.Millisecond)

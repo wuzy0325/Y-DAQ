@@ -227,10 +227,6 @@ func validFiveHoleConfig() FiveHoleTraversalConfig {
 		SamplesPerPoint:  1,
 		SampleIntervalMs: 10,
 		MotionTimeoutMs:  1000,
-		PAtmDeviceID:     "dev-atm",
-		PAtmChannel:      0,
-		TAtmDeviceID:     "dev-tatm",
-		TAtmChannel:      1,
 		Probes: []FiveHoleProbeConfig{
 			{
 				ProbeID: "probe1",
@@ -242,9 +238,11 @@ func validFiveHoleConfig() FiveHoleTraversalConfig {
 					{Role: Role5H_P4, DeviceID: "d1", Channel: 3, Enabled: true},
 					{Role: Role5H_P5, DeviceID: "d1", Channel: 4, Enabled: true},
 				},
-				MotionX: FiveHoleMotionAxisMapping{ControllerID: "mc-1", Axis: AxisX},
-				MotionY: FiveHoleMotionAxisMapping{ControllerID: "mc-1", Axis: AxisY},
+				MotionX:     FiveHoleMotionAxisMapping{ControllerID: "mc-1", Axis: AxisX},
+				MotionY:     FiveHoleMotionAxisMapping{ControllerID: "mc-1", Axis: AxisY},
 				CalibFiles:  []FiveHoleCalibFileInfo{{FilePath: "a.cal", FileName: "a.cal"}},
+				PAtmSource:  FiveHoleAtmSource{Mode: FiveHoleSourceDevice, DeviceID: "dev-atm", Channel: 0},
+				TAtmSource:  FiveHoleAtmSource{Mode: FiveHoleSourceDevice, DeviceID: "dev-tatm", Channel: 1},
 			},
 		},
 		Layout: TraversalLayout{
@@ -280,14 +278,21 @@ func TestFiveHoleValidate_BasicFields(t *testing.T) {
 		{"dwell < 100", func(c *FiveHoleTraversalConfig) { c.DwellTimeMs = 99 }, "驻留时间"},
 		{"interval < 10", func(c *FiveHoleTraversalConfig) { c.SampleIntervalMs = 9 }, "采样间隔"},
 		{"motion timeout < 1000", func(c *FiveHoleTraversalConfig) { c.MotionTimeoutMs = 999 }, "运动超时"},
-		{"empty pAtm deviceID", func(c *FiveHoleTraversalConfig) { c.PAtmDeviceID = "" }, "大气压采集设备"},
-		{"negative pAtm channel", func(c *FiveHoleTraversalConfig) { c.PAtmChannel = -1 }, "大气压通道"},
-		{"empty tAtm deviceID", func(c *FiveHoleTraversalConfig) { c.TAtmDeviceID = "" }, "大气温度采集设备"},
-		{"negative tAtm channel", func(c *FiveHoleTraversalConfig) { c.TAtmChannel = -1 }, "大气温度通道"},
-		{"negative tTotal channel", func(c *FiveHoleTraversalConfig) {
-			c.TTotalDeviceID = "dev-ttotal"
-			c.TTotalChannel = -1
-		}, "总温通道"},
+		{"empty pAtm source deviceID", func(c *FiveHoleTraversalConfig) {
+			c.Probes[0].PAtmSource = FiveHoleAtmSource{Mode: FiveHoleSourceDevice}
+		}, "大气压数据源未选择采集设备"},
+		{"negative pAtm source channel", func(c *FiveHoleTraversalConfig) {
+			c.Probes[0].PAtmSource = FiveHoleAtmSource{Mode: FiveHoleSourceDevice, DeviceID: "dev-atm", Channel: -1}
+		}, "大气压数据源通道号"},
+		{"empty tAtm source deviceID", func(c *FiveHoleTraversalConfig) {
+			c.Probes[0].TAtmSource = FiveHoleAtmSource{Mode: FiveHoleSourceDevice}
+		}, "气流温度数据源未选择采集设备"},
+		{"negative tAtm source channel", func(c *FiveHoleTraversalConfig) {
+			c.Probes[0].TAtmSource = FiveHoleAtmSource{Mode: FiveHoleSourceDevice, DeviceID: "dev-tatm", Channel: -1}
+		}, "气流温度数据源通道号"},
+		{"invalid atm source mode", func(c *FiveHoleTraversalConfig) {
+			c.Probes[0].PAtmSource = FiveHoleAtmSource{Mode: FiveHoleAtmSourceMode("bogus")}
+		}, "大气压数据源模式无效"},
 		{"no probes", func(c *FiveHoleTraversalConfig) { c.Probes = nil }, "探针"},
 		{"empty savePath", func(c *FiveHoleTraversalConfig) { c.SavePath = "" }, "保存路径"},
 		{"empty saveFileName", func(c *FiveHoleTraversalConfig) { c.SaveFileName = "" }, "保存文件名"},
@@ -410,15 +415,15 @@ func TestFiveHoleValidate_Probes(t *testing.T) {
 
 func TestFiveHoleValidate_TooManyProbes(t *testing.T) {
 	c := validFiveHoleConfig()
-	// 添加到 4 个启用探针
-	for i := 2; i <= 4; i++ {
+	// 添加到 9 个启用探针
+	for i := 2; i <= 9; i++ {
 		p := c.Probes[0]
 		p.ProbeID = "probe" + string(rune('0'+i))
 		c.Probes = append(c.Probes, p)
 	}
 	err := c.Validate()
-	if err == nil || !strings.Contains(err.Error(), "最多启用3根") {
-		t.Fatalf("expected 最多启用3根 error, got %v", err)
+	if err == nil || !strings.Contains(err.Error(), "最多启用8根") {
+		t.Fatalf("expected 最多启用8根 error, got %v", err)
 	}
 }
 
@@ -431,18 +436,13 @@ func TestFiveHoleValidate_NoEnabledProbes(t *testing.T) {
 	}
 }
 
-// TestFiveHoleValidate_TTotal_Optional TTotal 未配置时应通过（回退用 TAtm）
-func TestFiveHoleValidate_TTotal_Optional(t *testing.T) {
+// TestFiveHoleValidate_AtmSource_ManualOK 手动模式无需设备即应通过
+func TestFiveHoleValidate_AtmSource_ManualOK(t *testing.T) {
 	c := validFiveHoleConfig()
-	// 默认 TTotalDeviceID 为空，应通过
+	c.Probes[0].PAtmSource = FiveHoleAtmSource{Mode: FiveHoleSourceManual, ManualValue: 101325}
+	c.Probes[0].TAtmSource = FiveHoleAtmSource{Mode: FiveHoleSourceManual, ManualValue: 25}
 	if err := c.Validate(); err != nil {
-		t.Fatalf("TTotal 未配置时应通过，got %v", err)
-	}
-	// 显式配置 TTotal 也应通过
-	c.TTotalDeviceID = "dev-ttotal"
-	c.TTotalChannel = 5
-	if err := c.Validate(); err != nil {
-		t.Fatalf("TTotal 已配置且通道合法时应通过，got %v", err)
+		t.Fatalf("手动写入大气压/气流温度应通过，got %v", err)
 	}
 }
 

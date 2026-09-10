@@ -127,12 +127,10 @@ type RectangleLayout struct {
 }
 
 // FanLayout 扇形布点配置
-// R 方向为线性轴，θ 方向为旋转轴；第一点位为相对原点（当前位置）
+// R 方向为线性轴，θ 方向为旋转轴；点位即轴绝对坐标（X=R, Y=θ），无相对原点概念
 type FanLayout struct {
 	RSteps     []StepSegment `json:"rSteps"`     // 半径方向步进
 	ThetaSteps []StepSegment `json:"thetaSteps"` // 角度方向步进
-	RStart     float64       `json:"rStart"`     // 起始半径，用于相对原点计算
-	ThetaStart float64       `json:"thetaStart"` // 起始角度（度），用于相对原点计算
 	RAxis      string        `json:"rAxis"`      // 半径方向物理轴名
 	ThetaAxis  string        `json:"thetaAxis"`  // 角度方向物理轴名
 }

@@ -27,7 +27,8 @@ func NewFiveHoleCsvWriter() *FiveHoleCsvWriter {
 
 // Initialize 初始化 CSV 文件（创建文件、写表头）
 // savePath: 保存目录；baseName: 基础文件名（不含扩展名）；probeID: 探针ID（用于文件名区分）
-func (w *FiveHoleCsvWriter) Initialize(savePath string, baseName string, probeID string) error {
+// pattern: 布点模式；扇面模式下点位列为 R(mm)/θ(°)，方向列标注 R/θ，其余模式为 X/Y
+func (w *FiveHoleCsvWriter) Initialize(savePath string, baseName string, probeID string, pattern types.TraversalPattern) error {
 	if baseName == "" {
 		baseName = fmt.Sprintf("FiveHoleTraversal-%s", time.Now().Format("2006-01-02"))
 	}
@@ -52,11 +53,19 @@ func (w *FiveHoleCsvWriter) Initialize(savePath string, baseName string, probeID
 	w.file = file
 	w.writer = csv.NewWriter(file)
 
-	// 写入表头（含 β 列及仓库富字段：CAS/SAT/动压/密度/Vx/Vy/Vz；X/Y 方向位移机构名 与轴号；TTotal 可选总温列）
+	// 点位/方向列标签：扇面为 R/θ（轴坐标），其余为 X/Y
+	primaryCol, secondaryCol := "X", "Y"   // 点位值列（扇面带单位）
+	primaryDir, secondaryDir := "X", "Y"   // 方向机构/轴号列
+	if pattern == types.TraversalPatternFan {
+		primaryCol, secondaryCol = "R(mm)", "θ(°)"
+		primaryDir, secondaryDir = "R", "θ"
+	}
+
+	// 写入表头（含 β 列及仓库富字段：CAS/SAT/动压/密度/Vx/Vy/Vz；X/Y 方向位移机构名 与轴号）
 	header := []string{
-		"点号", "探针ID", "X", "Y",
-		"X方向位移机构名", "X方向轴号", "Y方向位移机构名", "Y方向轴号",
-		"P1", "P2", "P3", "P4", "P5", "P∞", "T∞", "T0",
+		"点号", "探针ID", primaryCol, secondaryCol,
+		primaryDir + "方向位移机构名", primaryDir + "方向轴号", secondaryDir + "方向位移机构名", secondaryDir + "方向轴号",
+		"P1", "P2", "P3", "P4", "P5", "P∞", "T∞",
 		"总压Pt", "静压Ps", "马赫数Ma", "攻角Alpha", "侧滑角Beta", "速度V",
 		"校正空速CAS", "静温SAT", "动压Qc", "密度ρ",
 		"速度Vx", "速度Vy", "速度Vz",
@@ -92,7 +101,6 @@ func (w *FiveHoleCsvWriter) AppendPoint(dp types.FiveHoleTraversalDataPoint) err
 		fmt.Sprintf("%.6f", dp.RawData.P5),
 		fmt.Sprintf("%.6f", dp.RawData.PAtm),
 		fmt.Sprintf("%.6f", dp.RawData.TAtm),
-		formatTTotal(dp.RawData.TTotal),
 		fmt.Sprintf("%.6f", dp.InterpResult.PtProbe),
 		fmt.Sprintf("%.6f", dp.InterpResult.PsProbe),
 		fmt.Sprintf("%.6f", dp.InterpResult.MachProbe),
@@ -131,12 +139,4 @@ func (w *FiveHoleCsvWriter) Close() {
 		w.file.Close()
 		w.file = nil
 	}
-}
-
-// formatTTotal 格式化总温列：有值显示数值（6 位小数），未配置（nil）显示 "-"
-func formatTTotal(t *float64) string {
-	if t == nil {
-		return "-"
-	}
-	return fmt.Sprintf("%.6f", *t)
 }

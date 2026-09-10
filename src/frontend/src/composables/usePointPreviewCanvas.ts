@@ -32,8 +32,6 @@ interface CustomPointLike {
 interface FanLayoutLike {
   rSteps: StepSegment[]
   thetaSteps: StepSegment[]
-  rStart: number
-  thetaStart: number
 }
 
 interface LayoutLike {
@@ -181,14 +179,15 @@ export function usePointPreviewCanvas(options: UsePointPreviewCanvasOptions): {
         }
       }
     } else if (layout.pattern === 'fan' && layout.fan) {
+      // 点位为轴坐标（r=半径轴绝对位置，thetaDeg=角度轴绝对位置），
+      // 绘制时转为笛卡尔坐标（数学极坐标：0° 沿 +X，逆时针为正）呈现真实扇面形状
       const f = layout.fan
       const rValues = expandSteps(f.rSteps)
       const thetaValues = expandSteps(f.thetaSteps)
       for (const r of rValues) {
         for (const thetaDeg of thetaValues) {
-          const theta = (thetaDeg - f.thetaStart) * Math.PI / 180
-          const dr = r - f.rStart
-          points.push({ x: dr * Math.cos(theta), y: dr * Math.sin(theta), state: 'pending' })
+          const theta = thetaDeg * Math.PI / 180
+          points.push({ x: r * Math.cos(theta), y: r * Math.sin(theta), state: 'pending' })
         }
       }
     } else if (supportCustomPattern && layout.pattern === 'custom' && layout.customPoints) {

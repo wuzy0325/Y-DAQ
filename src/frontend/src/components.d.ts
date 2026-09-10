@@ -48,6 +48,7 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     StatusIndicator: typeof import('./components/StatusIndicator.vue')['default']
+    TemperatureCalibPanel: typeof import('./components/TemperatureCalibPanel.vue')['default']
     ValueDisplay: typeof import('./components/ValueDisplay.vue')['default']
   }
 }

@@ -447,19 +447,25 @@ func (s *FiveHoleTraversalService) runTestLoop(taskID string, config types.FiveH
 
 	s.testManager.EmitProgress(taskID, totalPoints, 0, 0, 0, 0, "starting")
 
+	// 保存当前代际号，用于检测是否被新测试取代
+	myGen := s.testManager.testGen.Load()
+
 	// 测试循环退出时（自然完成 / 取消 / 致命错误）必须重置 testRunning，
 	// 否则 runRealtimeMonitor 会因 testRunning=true 永远 continue，导致测试完成后画面数据不再更新
 	defer func() {
 		s.testRunning.Store(false)
+		// 自然完成：当前代际未变且状态仍为 running 时标记 completed，
+		// 前端据此自动停止（暂停/停止按钮置灰，可导出数据）
+		// （用户取消已被 Stop 置 idle、致命错误已被 EmitFatalError 置 error、被新测试取代时 testGen 已变）
+		if s.testManager.testGen.Load() == myGen && s.testManager.GetStatus().Status == types.TraversalStatusRunning {
+			s.testManager.SetStatus(types.TraversalStatusCompleted)
+		}
 		// 先发射完成事件，让 UI 立即收到测试结束信号；
 		// 再尝试把所有探针移动回测试开始前的初始位置（可能耗时数秒），
 		// 失败时仅记录警告，不影响已发射的完成事件。
 		s.eventHandler.OnTestComplete(taskID, s.testManager.GetStatus().Status)
 		s.returnToInitialPositions(config, initialPositions)
 	}()
-
-	// 保存当前代际号，用于检测是否被新测试取代
-	myGen := s.testManager.testGen.Load()
 
 	// 预计算启用探针索引
 	enabledIndices := make([]int, 0, len(config.Probes))
@@ -595,12 +601,9 @@ func (s *FiveHoleTraversalService) samplePoint(taskID string, point types.Traver
 			lastTimestamps = newTs
 		}
 
-		// 读取所有探针原始数据
+		// 读取所有探针原始数据（PAtm/TAtm 按各探针数据源配置解析）
 		rawDatas, currentTs, err := s.dataProcessor.ReadAllProbesRawData(
 			config.Probes,
-			config.PAtmDeviceID, config.PAtmChannel,
-			config.TAtmDeviceID, config.TAtmChannel,
-			config.TTotalDeviceID, config.TTotalChannel,
 			lastTimestamps,
 		)
 		if err != nil {
@@ -671,15 +674,6 @@ func (s *FiveHoleTraversalService) aggregateProbeData(point types.TraversalPoint
 			P5:   OutlierFilteredAvg(mapField5H(samples, func(r types.FiveHoleRawData) float64 { return r.P5 })),
 			PAtm: OutlierFilteredAvg(mapField5H(samples, func(r types.FiveHoleRawData) float64 { return r.PAtm })),
 			TAtm: OutlierFilteredAvg(mapField5H(samples, func(r types.FiveHoleRawData) float64 { return r.TAtm })),
-		}
-		// TTotal 为可选项：所有样本共享同一全局值，3σ 滤波后取首个非 nil 样本的 TTotal
-		// 若所有样本 TTotal 均为 nil（未配置或全部读取失败），avgData.TTotal 保持 nil，公式回退用 TAtm
-		for _, sample := range samples {
-			if sample.TTotal != nil {
-				v := *sample.TTotal
-				avgData.TTotal = &v
-				break
-			}
 		}
 
 		// 对平均数据执行插值（占位，结果 invalid）
@@ -787,9 +781,6 @@ func (s *FiveHoleTraversalService) waitForResumeWithRealtime(taskID string, poin
 func (s *FiveHoleTraversalService) emitRealtimeForAllProbes(taskID, pointID, phase string, config types.FiveHoleTraversalConfig) {
 	rawDatas, _, err := s.dataProcessor.ReadAllProbesRawData(
 		config.Probes,
-		config.PAtmDeviceID, config.PAtmChannel,
-		config.TAtmDeviceID, config.TAtmChannel,
-		config.TTotalDeviceID, config.TTotalChannel,
 		nil,
 	)
 	if err != nil {
@@ -890,9 +881,6 @@ func CollectDeviceIDs(config types.FiveHoleTraversalConfig) []string {
 		seen[id] = struct{}{}
 		ids = append(ids, id)
 	}
-	add(config.PAtmDeviceID)
-	add(config.TAtmDeviceID)
-	add(config.TTotalDeviceID)
 	for _, probe := range config.Probes {
 		if !probe.Enabled {
 			continue
@@ -901,6 +889,13 @@ func CollectDeviceIDs(config types.FiveHoleTraversalConfig) []string {
 			if ch.Enabled {
 				add(ch.DeviceID)
 			}
+		}
+		// 探针级 PAtm/TAtm 数据源（device 模式时参与新帧等待）
+		if probe.PAtmSource.Mode != types.FiveHoleSourceManual {
+			add(probe.PAtmSource.DeviceID)
+		}
+		if probe.TAtmSource.Mode != types.FiveHoleSourceManual {
+			add(probe.TAtmSource.DeviceID)
 		}
 	}
 	return ids

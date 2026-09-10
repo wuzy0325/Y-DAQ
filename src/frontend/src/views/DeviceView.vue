@@ -60,6 +60,49 @@
             <span v-else class="readonly-text">--</span>
           </template>
         </el-table-column>
+        <el-table-column label="温度源" width="150" align="center">
+          <template #default="{ row }">
+            <el-select
+              v-if="row.type === 'EA2508A'"
+              :model-value="tempSourceOf(row)"
+              :loading="tempSourceLoading[row.id]"
+              size="small"
+              class="temp-src-select"
+              placeholder="--"
+              @change="(val) => handleSetTempSource(row, val)"
+            >
+              <el-option
+                v-for="opt in tempSourceOptions"
+                :key="opt.value"
+                :label="opt.label"
+                :value="opt.value"
+              />
+            </el-select>
+            <span v-else class="readonly-text">--</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="热电偶类型" width="110" align="center">
+          <template #default="{ row }">
+            <el-select
+              v-if="row.type === 'EA2508A'"
+              :model-value="tempTcTypeOf(row)"
+              :loading="tempTcLoading[row.id]"
+              :disabled="tempSourceOf(row) !== TempSource.THERMOCOUPLE"
+              size="small"
+              class="temp-tc-select"
+              :placeholder="tempSourceOf(row) === TempSource.THERMOCOUPLE ? '--' : '不适用'"
+              @change="(val) => handleSetTempTcType(row, val)"
+            >
+              <el-option
+                v-for="opt in ea2508aTempThermocoupleOptions"
+                :key="opt.value"
+                :label="opt.label"
+                :value="opt.value"
+              />
+            </el-select>
+            <span v-else class="readonly-text">--</span>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="260" align="right">
           <template #default="{ row }">
             <el-button-group class="action-group">
@@ -385,8 +428,8 @@ import { ref, watch, computed, reactive } from 'vue'
 import { Edit, Link, CircleClose, Delete, VideoPlay, VideoPause } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useDeviceStore } from '../stores/device'
-import type { ZeroCalibrateResult } from '../stores/device'
-import { getDeviceInfo, thermocoupleTypeOptions, getThermocoupleRange } from '../api/enums'
+import type { ZeroCalibrateResult, ChannelConfig } from '../stores/device'
+import { getDeviceInfo, thermocoupleTypeOptions, getThermocoupleRange, tempSourceOptions, ea2508aTempThermocoupleOptions, TempSource } from '../api/enums'
 import type { DeviceTypeValue } from '../api/enums'
 import GlassCard from '../components/GlassCard.vue'
 import { DeviceService, DataService } from '@bindings/yx-daq/internal/app'
@@ -499,6 +542,55 @@ watch(
   },
 )
 
+// ==================== EA2508A 温度通道配置 ====================
+// 温度源（@16）持久化到 devices.json，连接后由驱动自动下发；
+// 热电偶类型（@17）仅温度源为外界热电偶时可选，内部温度传感器/PT100 时禁用。
+const tempSourceLoading = reactive<Record<string, boolean>>({})
+const tempTcLoading = reactive<Record<string, boolean>>({})
+
+// 获取 EA2508A 温度通道（最后一个通道）配置
+function tempChannelOf(row: { id: string }): ChannelConfig | undefined {
+  const profile = deviceStore.profiles.find(p => p.id === row.id)
+  if (!profile || profile.channels.length === 0) return undefined
+  return profile.channels[profile.channels.length - 1]
+}
+
+function tempSourceOf(row: { id: string }): string {
+  return tempChannelOf(row)?.tempSource || ''
+}
+
+function tempTcTypeOf(row: { id: string }): string {
+  return tempChannelOf(row)?.thermocoupleType || ''
+}
+
+async function handleSetTempSource(row: { id: string }, source: string) {
+  tempSourceLoading[row.id] = true
+  try {
+    const err = await deviceStore.setTempSource(row.id, source)
+    if (err) {
+      ElMessage.error(`设置温度源失败: ${err}`)
+    } else {
+      ElMessage.success('温度源已设置')
+    }
+  } finally {
+    tempSourceLoading[row.id] = false
+  }
+}
+
+async function handleSetTempTcType(row: { id: string }, tcType: string) {
+  tempTcLoading[row.id] = true
+  try {
+    const err = await deviceStore.setTempThermocoupleType(row.id, tcType)
+    if (err) {
+      ElMessage.error(`设置热电偶类型失败: ${err}`)
+    } else {
+      ElMessage.success('热电偶类型已设置')
+    }
+  } finally {
+    tempTcLoading[row.id] = false
+  }
+}
+
 // 连接状态映射
 function statusClass(status: string): string {
   switch (status) {
@@ -599,6 +691,8 @@ async function addDevice() {
           precision: newDevice.value.precision,
           rangeMin: 0,
           rangeMax: 200,
+          // EA2508A 温度通道默认内部温度传感器（@1612）
+          ...(newDevice.value.type === 'EA2508A' && isAtmTemp ? { tempSource: TempSource.INTERNAL } : {}),
         })
       }
     }
@@ -668,6 +762,7 @@ interface EditChannel {
   rangeMin: number
   rangeMax: number
   thermocoupleType: string
+  tempSource?: string
   zeroOffset?: number
   zeroOffsetUnit?: string
   zeroCalibratedAt?: number
@@ -956,6 +1051,8 @@ async function saveEdit() {
     const channelsSnapshot = editChannels.value.map(c => ({ ...c }))
     const pc = editPressureCount.value
     const isTempDevice = editProfileType.value === 'EA2516T'
+    const isEA2508A = editProfileType.value === 'EA2508A'
+    const lastIdx = channelsSnapshot.length - 1
     const updatedChannels = channelsSnapshot.map(c => ({
       index: c.index,
       name: c.name,
@@ -964,7 +1061,9 @@ async function saveEdit() {
       precision: formSnapshot.precision,
       rangeMin: c.rangeMin,
       rangeMax: c.rangeMax,
-      thermocoupleType: isTempDevice ? (c.thermocoupleType || 'K') : undefined,
+      thermocoupleType: isTempDevice ? (c.thermocoupleType || 'K') : (isEA2508A && c.index === lastIdx ? (c.thermocoupleType || undefined) : undefined),
+      // EA2508A 温度通道保留温度源配置（列表列设置，编辑配置时不能丢失）
+      tempSource: isEA2508A && c.index === lastIdx ? (c.tempSource || undefined) : undefined,
       // 保留零位校准字段（校零由运行时操作设置，编辑配置时不能丢失）
       zeroOffset: c.zeroOffset,
       zeroOffsetUnit: c.zeroOffsetUnit,
@@ -1449,6 +1548,14 @@ async function removeDevice(id: string) {
 .readonly-text {
   font-size: 11px;
   color: rgba(255,255,255,0.55);
+}
+
+// EA2508A 温度通道配置下拉宽度
+.temp-src-select {
+  width: 132px;
+}
+.temp-tc-select {
+  width: 90px;
 }
 
 // 表格内输入框样式统一

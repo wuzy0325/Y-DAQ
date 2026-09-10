@@ -59,7 +59,7 @@ vi.mock('../../utils/csv', () => ({
   downloadCSV: mockDownloadCSV,
 }))
 
-import { useFiveHoleTestStore } from '../fiveHoleTest'
+import { useFiveHoleTestStore, MAX_PROBES } from '../fiveHoleTest'
 import { FiveHoleChannelRole, TraversalPattern, AxisName } from '../../api/enums'
 
 describe('stores/fiveHoleTest', () => {
@@ -205,13 +205,14 @@ describe('stores/fiveHoleTest', () => {
 
   // ==================== ensureDevicesAcquiring（聚合多设备） ====================
   describe('ensureDevicesAcquiring（聚合多设备 IDs）', () => {
-    it('pAtm/tAtm + 多探针通道的设备 IDs 全部聚合传入 ensureDevicesAcquiringByIds', async () => {
+    it('探针级 pAtm/tAtm 数据源 + 多探针通道的设备 IDs 全部聚合传入 ensureDevicesAcquiringByIds', async () => {
       const store = useFiveHoleTestStore()
       // 默认 1 根探针，扩展到 3 根以测试多探针场景
       store.addProbe()
       store.addProbe()
-      store.config.pAtmDeviceId = 'dev-atm'
-      store.config.tAtmDeviceId = 'dev-atm' // 与 pAtm 相同，应去重
+      // 探针级大气数据源（device 模式）：probe1 与 probe2 指向同一设备，应去重
+      store.config.probes[0].pAtmSource = { mode: 'device', deviceId: 'dev-atm', channel: 16, manualValue: 0 }
+      store.config.probes[1].tAtmSource = { mode: 'device', deviceId: 'dev-atm', channel: 17, manualValue: 0 }
       store.config.probes[0].probeChannels[0].deviceId = 'dev-p1'
       store.config.probes[1].probeChannels[0].deviceId = 'dev-p2'
       store.config.probes[2].probeChannels[0].deviceId = 'dev-p1' // 与 probe1 相同，应去重
@@ -222,6 +223,19 @@ describe('stores/fiveHoleTest', () => {
       // Set 去重后应包含 dev-atm/dev-p1/dev-p2 共 3 个
       const passedIds = mockEnsureDevicesAcquiring.mock.calls[0][0] as Iterable<string>
       expect([...passedIds].sort()).toEqual(['dev-atm', 'dev-p1', 'dev-p2'])
+    })
+
+    it('manual 模式的 pAtm/tAtm 数据源不参与设备聚合', async () => {
+      const store = useFiveHoleTestStore()
+      store.config.probes[0].pAtmSource = { mode: 'manual', deviceId: 'dev-manual', channel: 0, manualValue: 101.3 }
+      store.config.probes[0].tAtmSource = { mode: 'manual', deviceId: '', channel: 0, manualValue: 20 }
+      store.config.probes[0].probeChannels[0].deviceId = 'dev-active'
+      mockEnsureDevicesAcquiring.mockResolvedValue([])
+
+      await store.ensureDevicesAcquiring()
+
+      const passedIds = [...(mockEnsureDevicesAcquiring.mock.calls[0][0] as Iterable<string>)]
+      expect(passedIds).toEqual(['dev-active'])
     })
 
     it('禁用的探针通道不参与聚合', async () => {
@@ -243,7 +257,7 @@ describe('stores/fiveHoleTest', () => {
 
     it('返回错误 → 最后一个写入 lastError', async () => {
       const store = useFiveHoleTestStore()
-      store.config.pAtmDeviceId = 'd1'
+      store.config.probes[0].pAtmSource = { mode: 'device', deviceId: 'd1', channel: 16, manualValue: 0 }
       mockEnsureDevicesAcquiring.mockResolvedValue(['d1 连接失败', 'd1 启动采集失败'])
 
       await store.ensureDevicesAcquiring()
@@ -866,15 +880,16 @@ describe('stores/fiveHoleTest', () => {
       expect(store.config.probes[1].enabled).toBe(true)
     })
 
-    it('addProbe() 在 3 根时 no-op（按钮禁用 + action 不变）', () => {
+    it('addProbe() 在 8 根（MAX_PROBES）时 no-op（按钮禁用 + action 不变）', () => {
       const store = useFiveHoleTestStore()
-      store.addProbe()
-      store.addProbe()
-      expect(store.config.probes).toHaveLength(3)
+      for (let i = 1; i < MAX_PROBES; i++) store.addProbe()
+      expect(store.config.probes).toHaveLength(MAX_PROBES)
       // 再次调用 → 不变
       store.addProbe()
-      expect(store.config.probes).toHaveLength(3)
-      expect(store.config.probes.map(p => p.probeId)).toEqual(['probe1', 'probe2', 'probe3'])
+      expect(store.config.probes).toHaveLength(MAX_PROBES)
+      expect(store.config.probes.map(p => p.probeId)).toEqual([
+        'probe1', 'probe2', 'probe3', 'probe4', 'probe5', 'probe6', 'probe7', 'probe8',
+      ])
     })
 
     it("removeProbe('probe2') 在 [probe1, probe2, probe3] 时 → [probe1, probe3]，且 probe1/probe3 的 calibFiles、通道配置、运动轴映射均不受影响", () => {
@@ -1054,6 +1069,53 @@ describe('stores/fiveHoleTest', () => {
       expect(store.config.sharedMotion).toBe(true)
       expect(store.config.sharedMotionX).toEqual({ controllerId: 'mc-s', axis: 'Z' })
       expect(store.config.sharedMotionY).toEqual({ controllerId: 'mc-s', axis: 'U' })
+    })
+  })
+
+  // ==================== 探针级大气数据源（迁移 + 默认值） ====================
+  describe('探针级大气数据源', () => {
+    it('默认探针含 pAtmSource/tAtmSource（device 模式，设备为空）', () => {
+      const store = useFiveHoleTestStore()
+      const probe = store.config.probes[0]
+      expect(probe.pAtmSource).toEqual({ mode: 'device', deviceId: '', channel: 16, manualValue: 0 })
+      expect(probe.tAtmSource).toEqual({ mode: 'device', deviceId: '', channel: 17, manualValue: 0 })
+    })
+
+    it('旧全局 pAtm/tAtm 配置 → 迁移到每探针数据源并删除全局字段', async () => {
+      mockFiveHoleService.LoadFiveHoleConfig.mockResolvedValue({
+        name: 'legacy-atm',
+        pAtmDeviceId: 'dev-p', pAtmChannel: 15,
+        tAtmDeviceId: 'dev-t', tAtmChannel: 16,
+        tTotalDeviceId: 'dev-t0', tTotalChannel: 3,
+        probes: [
+          { probeId: 'probe1', enabled: true, probeChannels: [], motionX: { controllerId: '', axis: 'X' }, motionY: { controllerId: '', axis: 'Y' }, calibFiles: [] },
+          { probeId: 'probe2', enabled: true, probeChannels: [], motionX: { controllerId: '', axis: 'X' }, motionY: { controllerId: '', axis: 'Y' }, calibFiles: [] },
+        ],
+        layout: { pattern: 'rectangle' },
+      })
+      const store = useFiveHoleTestStore()
+      await store.loadConfig()
+      // 每根探针继承旧全局数据源（channel 为 0-indexed 原值）
+      for (const probe of store.config.probes) {
+        expect(probe.pAtmSource).toEqual({ mode: 'device', deviceId: 'dev-p', channel: 15, manualValue: 0 })
+        expect(probe.tAtmSource).toEqual({ mode: 'device', deviceId: 'dev-t', channel: 16, manualValue: 0 })
+      }
+      // 全局字段（含 tTotal）已删除
+      const cfg = store.config as any
+      expect(cfg.pAtmDeviceId).toBeUndefined()
+      expect(cfg.pAtmChannel).toBeUndefined()
+      expect(cfg.tAtmDeviceId).toBeUndefined()
+      expect(cfg.tAtmChannel).toBeUndefined()
+      expect(cfg.tTotalDeviceId).toBeUndefined()
+      expect(cfg.tTotalChannel).toBeUndefined()
+    })
+
+    it('addProbe 新增探针继承默认数据源', () => {
+      const store = useFiveHoleTestStore()
+      store.addProbe()
+      const probe2 = store.config.probes.find(p => p.probeId === 'probe2')!
+      expect(probe2.pAtmSource).toEqual({ mode: 'device', deviceId: '', channel: 16, manualValue: 0 })
+      expect(probe2.tAtmSource).toEqual({ mode: 'device', deviceId: '', channel: 17, manualValue: 0 })
     })
   })
 })

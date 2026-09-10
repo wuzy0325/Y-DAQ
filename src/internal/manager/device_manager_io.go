@@ -213,6 +213,105 @@ func (m *DeviceManager) SetValveState(id string, state types.ValveState) error {
 	return ctrl.SetValveState(state)
 }
 
+// SetTempSource 设置 EA2508A 温度通道传感器来源（@16 命令，写入硬件并持久化）。
+// 未连接时仅持久化，连接后由驱动自动下发。
+func (m *DeviceManager) SetTempSource(id string, source string) error {
+	if _, ok := types.TempSource(source).CmdCode(); !ok {
+		return fmt.Errorf("不支持的温度源: %s（支持: internal/thermocouple/pt100）", source)
+	}
+
+	m.RLock()
+	profile, exists := m.profiles[id]
+	drv, connected := m.instances[id]
+	m.RUnlock()
+	if !exists {
+		return fmt.Errorf("device profile not found: %s", id)
+	}
+	if profile.Type != types.DeviceTypeEA2508A {
+		return fmt.Errorf("设备不支持温度源配置: %s（仅 EA2508A）", id)
+	}
+
+	if connected {
+		cfg, ok := drv.(TempChannelConfigurator)
+		if !ok {
+			return fmt.Errorf("设备不支持温度通道配置: %s", id)
+		}
+		if err := cfg.SetTempSource(source); err != nil {
+			return err
+		}
+	}
+
+	m.Lock()
+	if p, exists := m.profiles[id]; exists {
+		tempIdx := p.Type.TotalChannelCount() - 1
+		for i := range p.Channels {
+			if p.Channels[i].Index == tempIdx {
+				p.Channels[i].TempSource = source
+				break
+			}
+		}
+		m.profiles[id] = p
+	}
+	m.Unlock()
+	m.saveProfilesWithLog("device")
+	return nil
+}
+
+// SetTempThermocoupleType 设置 EA2508A 温度通道热电偶类型（@17 命令，写入硬件并持久化）。
+// 仅当温度源为外界热电偶（thermocouple）时允许设置；未连接时仅持久化。
+func (m *DeviceManager) SetTempThermocoupleType(id string, tcType string) error {
+	if !types.EA2508ATempThermocoupleTypes[tcType] {
+		return fmt.Errorf("不支持的热电偶类型: %s（支持: T/K/J/E/S）", tcType)
+	}
+
+	m.RLock()
+	profile, exists := m.profiles[id]
+	drv, connected := m.instances[id]
+	m.RUnlock()
+	if !exists {
+		return fmt.Errorf("device profile not found: %s", id)
+	}
+	if profile.Type != types.DeviceTypeEA2508A {
+		return fmt.Errorf("设备不支持温度通道热电偶配置: %s（仅 EA2508A）", id)
+	}
+
+	tempIdx := profile.Type.TotalChannelCount() - 1
+	tempSource := ""
+	for i := range profile.Channels {
+		if profile.Channels[i].Index == tempIdx {
+			tempSource = profile.Channels[i].TempSource
+			break
+		}
+	}
+	if tempSource != string(types.TempSourceThermocouple) {
+		return fmt.Errorf("温度源为内部传感器/PT100 时不可选择热电偶类型，请先切换为外界热电偶传感器")
+	}
+
+	if connected {
+		cfg, ok := drv.(TempChannelConfigurator)
+		if !ok {
+			return fmt.Errorf("设备不支持温度通道配置: %s", id)
+		}
+		if err := cfg.SetTempThermocoupleType(tcType); err != nil {
+			return err
+		}
+	}
+
+	m.Lock()
+	if p, exists := m.profiles[id]; exists {
+		for i := range p.Channels {
+			if p.Channels[i].Index == tempIdx {
+				p.Channels[i].ThermocoupleType = tcType
+				break
+			}
+		}
+		m.profiles[id] = p
+	}
+	m.Unlock()
+	m.saveProfilesWithLog("device")
+	return nil
+}
+
 // IsAcquiring 检查指定设备是否正在采集
 func (m *DeviceManager) IsAcquiring(id string) bool {
 	m.RLock()

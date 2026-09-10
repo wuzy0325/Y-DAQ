@@ -61,10 +61,10 @@ func (s *FiveHoleService) StartFiveHoleTraversal(config types.FiveHoleTraversalC
 	svc := s.Core.FiveHoleService
 
 	// 多设备冲突检查
-	if err := s.Core.CheckFiveHoleMotionConflict(config); err != nil {
+	if err := five_hole.CheckMotionConflict(config); err != nil {
 		return "", err
 	}
-	if warn := s.Core.CheckFiveHoleDeviceChannelOverlap(config); warn != "" {
+	if warn := five_hole.CheckDeviceChannelOverlap(config); warn != "" {
 		slog.Warn(warn)
 	}
 
@@ -166,6 +166,9 @@ func (s *FiveHoleService) SelectAndStartFiveHoleRealtimeRecording() (string, err
 	dlg.AddFilter("所有文件", "*.*")
 	filePath, err := dlg.PromptForSingleSelection()
 	if err != nil {
+		if isDialogCancelled(err) {
+			return "", nil // 用户取消对话框，静默返回
+		}
 		return "", err
 	}
 	if filePath == "" {
@@ -240,63 +243,4 @@ func (s *FiveHoleService) LoadFiveHoleConfig() (types.FiveHoleTraversalConfig, e
 		return types.FiveHoleTraversalConfig{}, fmt.Errorf("unmarshal config failed: %w", err)
 	}
 	return config, nil
-}
-
-// CheckFiveHoleMotionConflict 检查五孔配置中各探针位移机构轴是否冲突
-// （同一控制器的同一轴不能被多个探针同时使用）
-func (c *Core) CheckFiveHoleMotionConflict(config types.FiveHoleTraversalConfig) error {
-	axisMap := make(map[string]string) // key: "controllerID:axis" -> probeID
-	for _, probe := range config.Probes {
-		if !probe.Enabled {
-			continue
-		}
-		xKey := probe.MotionX.ControllerID + ":" + string(probe.MotionX.Axis)
-		if owner, exists := axisMap[xKey]; exists {
-			return fmt.Errorf("位移机构 %s 的 %s 轴同时被探针 %s 和 %s 使用",
-				probe.MotionX.ControllerID, probe.MotionX.Axis, owner, probe.ProbeID)
-		}
-		axisMap[xKey] = probe.ProbeID
-		yKey := probe.MotionY.ControllerID + ":" + string(probe.MotionY.Axis)
-		if owner, exists := axisMap[yKey]; exists {
-			return fmt.Errorf("位移机构 %s 的 %s 轴同时被探针 %s 和 %s 使用",
-				probe.MotionY.ControllerID, probe.MotionY.Axis, owner, probe.ProbeID)
-		}
-		axisMap[yKey] = probe.ProbeID
-	}
-	return nil
-}
-
-// CheckFiveHoleDeviceChannelOverlap 检查五孔配置中同一采集设备通道是否冲突
-func (c *Core) CheckFiveHoleDeviceChannelOverlap(config types.FiveHoleTraversalConfig) string {
-	// 收集所有启用通道：key: "deviceID:channel" -> role
-	chMap := make(map[string]string)
-	// PAtm/TAtm 全局通道
-	pAtmKey := fmt.Sprintf("%s:%d", config.PAtmDeviceID, config.PAtmChannel)
-	chMap[pAtmKey] = "PAtm"
-	tAtmKey := fmt.Sprintf("%s:%d", config.TAtmDeviceID, config.TAtmChannel)
-	if tAtmKey != pAtmKey {
-		chMap[tAtmKey] = "TAtm"
-	} else {
-		// 同设备同通道用于 PAtm 和 TAtm，冲突
-		return fmt.Sprintf("警告: 大气压与大气温度配置在同一设备 %s 的通道 %d，数据冲突",
-			config.PAtmDeviceID, config.PAtmChannel)
-	}
-
-	for _, probe := range config.Probes {
-		if !probe.Enabled {
-			continue
-		}
-		for _, ch := range probe.ProbeChannels {
-			if !ch.Enabled {
-				continue
-			}
-			key := fmt.Sprintf("%s:%d", ch.DeviceID, ch.Channel)
-			if existing, exists := chMap[key]; exists && existing != string(ch.Role) {
-				return fmt.Sprintf("警告: 采集设备 %s 的通道 %d 同时被映射为 %s 和 %s，数据冲突",
-					ch.DeviceID, ch.Channel, existing, string(ch.Role))
-			}
-			chMap[key] = string(ch.Role)
-		}
-	}
-	return ""
 }

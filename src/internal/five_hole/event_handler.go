@@ -50,7 +50,7 @@ func (eh *EventHandler) OnTestStart(config types.FiveHoleTraversalConfig) error 
 			continue
 		}
 		w := NewFiveHoleCsvWriter()
-		if err := w.Initialize(config.SavePath, config.SaveFileName, p.ProbeID); err != nil {
+		if err := w.Initialize(config.SavePath, config.SaveFileName, p.ProbeID, config.Layout.Pattern); err != nil {
 			// 清理已创建的 writer
 			for _, ww := range eh.csvWriters {
 				ww.Close()

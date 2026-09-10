@@ -1,6 +1,7 @@
 package five_hole
 
 import (
+	"fmt"
 	"strings"
 	"sync"
 	"testing"
@@ -306,7 +307,7 @@ func TestMotionCoordinator_ReturnInitialPositions_SharedAxisDedup(t *testing.T) 
 		"probe2": {X: 1, Y: 2},
 	}
 
-	err := mc.ReturnProbesToInitialPositions(initial, probes, 1000)
+	err := mc.ReturnProbesToInitialPositions(initial, probes, rectangleLayoutForDedup(), 1000)
 	if err != nil {
 		t.Fatalf("ReturnProbesToInitialPositions failed: %v", err)
 	}
@@ -349,6 +350,291 @@ func TestCaptureInitialPositions_SharedAxisReadOnce(t *testing.T) {
 	}
 }
 
+// ===== 扇形布点分相位运动测试 =====
+
+// fanLayoutForPhase 构建扇形布点配置：R 0→10 步长10，θ 0→30 步长30
+func fanLayoutForPhase() types.TraversalLayout {
+	return types.TraversalLayout{
+		Pattern: types.TraversalPatternFan,
+		Fan: &types.FanLayout{
+			RSteps:     []types.StepSegment{{Start: 0, End: 10, Step: 10}},
+			ThetaSteps: []types.StepSegment{{Start: 0, End: 30, Step: 30}},
+		},
+	}
+}
+
+// 扇形布点：先旋转（θ/MotionY 轴）移动并等待完成，再平移（R/MotionX 轴）
+// 单探针单轴场景下相位内事件顺序确定，可断言精确序列
+func TestMotionCoordinator_FanRotateBeforeTranslate(t *testing.T) {
+	var mu sync.Mutex
+	var events []string
+	mover := func(controllerID string, axis types.AxisName, position float64) error {
+		mu.Lock()
+		events = append(events, "move:"+string(axis))
+		mu.Unlock()
+		return nil
+	}
+	waiter := func(controllerID string, axis types.AxisName, timeoutMs int) error {
+		mu.Lock()
+		events = append(events, "wait:"+string(axis))
+		mu.Unlock()
+		return nil
+	}
+	mc := NewMotionCoordinator(mover, waiter)
+
+	// MotionX→R（线性，Z 轴），MotionY→θ（旋转，U 轴）
+	probes := []types.FiveHoleProbeConfig{
+		{
+			ProbeID: "probe1", Enabled: true,
+			MotionX: types.FiveHoleMotionAxisMapping{ControllerID: "c-lin", Axis: "Z"},
+			MotionY: types.FiveHoleMotionAxisMapping{ControllerID: "c-rot", Axis: "U"},
+		},
+	}
+	// 轴坐标 (R=10, θ=0)：X 即 R 轴绝对位置，Y 即 θ 轴绝对位置
+	point := types.TraversalPoint{ID: "p1", X: 10, Y: 0}
+
+	if err := mc.MoveAllProbesToPoint(point, probes, fanLayoutForPhase(), 1000); err != nil {
+		t.Fatalf("MoveAllProbesToPoint failed: %v", err)
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+	want := []string{"move:U", "wait:U", "move:Z", "wait:Z"}
+	if len(events) != len(want) {
+		t.Fatalf("expected %d events, got %v", len(want), events)
+	}
+	for i, w := range want {
+		if events[i] != w {
+			t.Fatalf("event[%d]=%s, want %s (full: %v)", i, events[i], w, events)
+		}
+	}
+}
+
+// 多探针扇形布点：旋转相位全部事件（含等待）必须早于平移相位的首个移动事件
+// （相位间严格串行：先旋转到位，后平移）
+func TestMotionCoordinator_FanMultiProbePhaseBoundary(t *testing.T) {
+	var mu sync.Mutex
+	var events []string
+	mover := func(controllerID string, axis types.AxisName, position float64) error {
+		mu.Lock()
+		events = append(events, "move:"+string(axis))
+		mu.Unlock()
+		return nil
+	}
+	waiter := func(controllerID string, axis types.AxisName, timeoutMs int) error {
+		mu.Lock()
+		events = append(events, "wait:"+string(axis))
+		mu.Unlock()
+		return nil
+	}
+	mc := NewMotionCoordinator(mover, waiter)
+
+	// 2 探针各自独立控制器：MotionX→R（Z 线性），MotionY→θ（U 旋转）
+	probes := []types.FiveHoleProbeConfig{
+		{
+			ProbeID: "probe1", Enabled: true,
+			MotionX: types.FiveHoleMotionAxisMapping{ControllerID: "c1-lin", Axis: "Z"},
+			MotionY: types.FiveHoleMotionAxisMapping{ControllerID: "c1-rot", Axis: "U"},
+		},
+		{
+			ProbeID: "probe2", Enabled: true,
+			MotionX: types.FiveHoleMotionAxisMapping{ControllerID: "c2-lin", Axis: "Z"},
+			MotionY: types.FiveHoleMotionAxisMapping{ControllerID: "c2-rot", Axis: "U"},
+		},
+	}
+	point := types.TraversalPoint{ID: "p1", X: 10, Y: 0}
+
+	if err := mc.MoveAllProbesToPoint(point, probes, fanLayoutForPhase(), 1000); err != nil {
+		t.Fatalf("MoveAllProbesToPoint failed: %v", err)
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+	// 2 探针 × (move+wait) × 2 相位 = 8 事件
+	if len(events) != 8 {
+		t.Fatalf("expected 8 events, got %v", events)
+	}
+	lastRotary, firstLinear := -1, -1
+	for i, e := range events {
+		if strings.HasSuffix(e, ":U") {
+			lastRotary = i
+		}
+		if strings.HasSuffix(e, ":Z") && firstLinear == -1 {
+			firstLinear = i
+		}
+	}
+	if lastRotary == -1 || firstLinear == -1 {
+		t.Fatalf("missing rotary/linear events: %v", events)
+	}
+	if lastRotary > firstLinear {
+		t.Fatalf("rotary events must all precede linear events, got %v", events)
+	}
+}
+
+// 扇形布点：旋转（θ）相位失败时不得发起平移（R）相位
+func TestMotionCoordinator_FanRotateFailureSkipsTranslate(t *testing.T) {
+	var mu sync.Mutex
+	linearMoved := false
+	mover := func(controllerID string, axis types.AxisName, position float64) error {
+		if axis == types.AxisU {
+			return fmt.Errorf("simulated rotary failure")
+		}
+		mu.Lock()
+		linearMoved = true
+		mu.Unlock()
+		return nil
+	}
+	waiter := func(controllerID string, axis types.AxisName, timeoutMs int) error {
+		return nil
+	}
+	mc := NewMotionCoordinator(mover, waiter)
+
+	probes := []types.FiveHoleProbeConfig{
+		{
+			ProbeID: "probe1", Enabled: true,
+			MotionX: types.FiveHoleMotionAxisMapping{ControllerID: "c-lin", Axis: "Z"},
+			MotionY: types.FiveHoleMotionAxisMapping{ControllerID: "c-rot", Axis: "U"},
+		},
+	}
+	point := types.TraversalPoint{ID: "p1", X: 10, Y: 0}
+
+	err := mc.MoveAllProbesToPoint(point, probes, fanLayoutForPhase(), 1000)
+	if err == nil || !strings.Contains(err.Error(), "旋转(θ)相位失败") {
+		t.Fatalf("expected rotary phase failure error, got %v", err)
+	}
+	mu.Lock()
+	defer mu.Unlock()
+	if linearMoved {
+		t.Fatal("linear (R) axis must not move when rotary phase failed")
+	}
+}
+
+// 扇形布点：θ 相 waiter 超时必须阻断 R 相发起（轴未确认到位不得进入下一相位）
+func TestMotionCoordinator_FanWaitTimeoutBlocksTranslate(t *testing.T) {
+	var mu sync.Mutex
+	linearMoved := false
+	mover := func(controllerID string, axis types.AxisName, position float64) error {
+		if axis == types.AxisZ {
+			mu.Lock()
+			linearMoved = true
+			mu.Unlock()
+		}
+		return nil
+	}
+	waiter := func(controllerID string, axis types.AxisName, timeoutMs int) error {
+		if axis == types.AxisU {
+			return fmt.Errorf("simulated wait timeout")
+		}
+		return nil
+	}
+	mc := NewMotionCoordinator(mover, waiter)
+
+	probes := []types.FiveHoleProbeConfig{
+		{
+			ProbeID: "probe1", Enabled: true,
+			MotionX: types.FiveHoleMotionAxisMapping{ControllerID: "c-lin", Axis: "Z"},
+			MotionY: types.FiveHoleMotionAxisMapping{ControllerID: "c-rot", Axis: "U"},
+		},
+	}
+	point := types.TraversalPoint{ID: "p1", X: 10, Y: 0}
+
+	err := mc.MoveAllProbesToPoint(point, probes, fanLayoutForPhase(), 1000)
+	if err == nil || !strings.Contains(err.Error(), "旋转(θ)相位失败") {
+		t.Fatalf("expected rotary phase wait-timeout error, got %v", err)
+	}
+	mu.Lock()
+	defer mu.Unlock()
+	if linearMoved {
+		t.Fatal("linear (R) axis must not move when rotary phase wait timed out")
+	}
+}
+
+// 扇形布点返回初始位置：同样先旋转（Y=θ）后平移（X=R）
+func TestMotionCoordinator_FanReturnInitialRotaryFirst(t *testing.T) {
+	var mu sync.Mutex
+	var events []string
+	mover := func(controllerID string, axis types.AxisName, position float64) error {
+		mu.Lock()
+		events = append(events, "move:"+string(axis))
+		mu.Unlock()
+		return nil
+	}
+	waiter := func(controllerID string, axis types.AxisName, timeoutMs int) error {
+		mu.Lock()
+		events = append(events, "wait:"+string(axis))
+		mu.Unlock()
+		return nil
+	}
+	mc := NewMotionCoordinator(mover, waiter)
+
+	probes := []types.FiveHoleProbeConfig{
+		{
+			ProbeID: "probe1", Enabled: true,
+			MotionX: types.FiveHoleMotionAxisMapping{ControllerID: "c-lin", Axis: "Z"},
+			MotionY: types.FiveHoleMotionAxisMapping{ControllerID: "c-rot", Axis: "U"},
+		},
+	}
+	initial := map[string]types.TraversalPoint{
+		"probe1": {X: 0, Y: 0},
+	}
+
+	if err := mc.ReturnProbesToInitialPositions(initial, probes, fanLayoutForPhase(), 1000); err != nil {
+		t.Fatalf("ReturnProbesToInitialPositions failed: %v", err)
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+	want := []string{"move:U", "wait:U", "move:Z", "wait:Z"}
+	if len(events) != len(want) {
+		t.Fatalf("expected %d events, got %v", len(want), events)
+	}
+	for i, w := range want {
+		if events[i] != w {
+			t.Fatalf("event[%d]=%s, want %s (full: %v)", i, events[i], w, events)
+		}
+	}
+}
+
+// 扇形布点：点位即轴坐标（X=R 绝对位置，Y=θ 绝对位置），轴目标直接透传不做反推，
+// θ 超过 ±180° 时不得绕回（如 θ=270° 不能变成 -90°）
+func TestMotionCoordinator_FanAxisTargetPassThrough(t *testing.T) {
+	var mu sync.Mutex
+	targets := make(map[string]float64)
+	mover := func(controllerID string, axis types.AxisName, position float64) error {
+		mu.Lock()
+		targets[string(axis)] = position
+		mu.Unlock()
+		return nil
+	}
+	waiter := func(controllerID string, axis types.AxisName, timeoutMs int) error {
+		return nil
+	}
+	mc := NewMotionCoordinator(mover, waiter)
+
+	probes := []types.FiveHoleProbeConfig{
+		{
+			ProbeID: "probe1", Enabled: true,
+			MotionX: types.FiveHoleMotionAxisMapping{ControllerID: "c-lin", Axis: "Z"},
+			MotionY: types.FiveHoleMotionAxisMapping{ControllerID: "c-rot", Axis: "U"},
+		},
+	}
+	// 轴坐标点位：R=150mm，θ=270°（非零起始，超出 ±180°）
+	point := types.TraversalPoint{ID: "p1", X: 150, Y: 270}
+
+	if err := mc.MoveAllProbesToPoint(point, probes, fanLayoutForPhase(), 1000); err != nil {
+		t.Fatalf("MoveAllProbesToPoint failed: %v", err)
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+	if targets["Z"] != 150 {
+		t.Fatalf("R axis target should be 150, got %f", targets["Z"])
+	}
+	if targets["U"] != 270 {
+		t.Fatalf("θ axis target should be 270 (no wrap-around), got %f", targets["U"])
+	}
+}
+
 // ===== 数据处理器测试 =====
 
 func TestDataProcessor_ReadAllProbesRawData(t *testing.T) {
@@ -362,6 +648,14 @@ func TestDataProcessor_ReadAllProbesRawData(t *testing.T) {
 				result[ch] = 101.325
 			case "dev_tAtm":
 				result[ch] = 20.5
+			case "dev_manual":
+				// probe2 使用 device 模式读取不同 PAtm/TAtm
+				switch ch {
+				case 3:
+					result[ch] = 98.765
+				case 7:
+					result[ch] = 30.1
+				}
 			case "dev1":
 				// probe1 P1-P5
 				result[0] = 100.0
@@ -394,6 +688,9 @@ func TestDataProcessor_ReadAllProbesRawData(t *testing.T) {
 				{Role: types.Role5H_P4, DeviceID: "dev1", Channel: 3, Enabled: true},
 				{Role: types.Role5H_P5, DeviceID: "dev1", Channel: 4, Enabled: true},
 			},
+			// probe1：设备读取 PAtm/TAtm
+			PAtmSource: types.FiveHoleAtmSource{Mode: types.FiveHoleSourceDevice, DeviceID: "dev_pAtm", Channel: 0},
+			TAtmSource: types.FiveHoleAtmSource{Mode: types.FiveHoleSourceDevice, DeviceID: "dev_tAtm", Channel: 0},
 		},
 		{
 			ProbeID: "probe2", Enabled: true,
@@ -404,26 +701,32 @@ func TestDataProcessor_ReadAllProbesRawData(t *testing.T) {
 				{Role: types.Role5H_P4, DeviceID: "dev2", Channel: 13, Enabled: true},
 				{Role: types.Role5H_P5, DeviceID: "dev2", Channel: 14, Enabled: true},
 			},
+			// probe2：PAtm 设备读取（不同设备/通道），TAtm 手动写入
+			PAtmSource: types.FiveHoleAtmSource{Mode: types.FiveHoleSourceDevice, DeviceID: "dev_manual", Channel: 3},
+			TAtmSource: types.FiveHoleAtmSource{Mode: types.FiveHoleSourceManual, ManualValue: 15.5},
 		},
 	}
 
-	results, _, err := dp.ReadAllProbesRawData(probes, "dev_pAtm", 0, "dev_tAtm", 0, "", 0, nil)
+	results, _, err := dp.ReadAllProbesRawData(probes, nil)
 	if err != nil {
 		t.Fatalf("ReadAllProbesRawData failed: %v", err)
 	}
 	if len(results) != 2 {
 		t.Fatalf("expected 2 results, got %d", len(results))
 	}
-	// 验证 probe1
+	// 验证 probe1（设备读取 PAtm/TAtm）
 	if results[0].P1 != 100.0 || results[0].P5 != 99.5 {
 		t.Fatalf("probe1 rawData mismatch: %+v", results[0])
 	}
 	if results[0].PAtm != 101.325 || results[0].TAtm != 20.5 {
 		t.Fatalf("probe1 PAtm/TAtm mismatch: %+v", results[0])
 	}
-	// 验证 probe2
+	// 验证 probe2（PAtm 设备读取独立值，TAtm 手动值）
 	if results[1].P1 != 200.0 || results[1].P5 != 199.5 {
 		t.Fatalf("probe2 rawData mismatch: %+v", results[1])
+	}
+	if results[1].PAtm != 98.765 || results[1].TAtm != 15.5 {
+		t.Fatalf("probe2 PAtm/TAtm mismatch: %+v", results[1])
 	}
 }
 

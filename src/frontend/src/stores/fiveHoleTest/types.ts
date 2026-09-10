@@ -6,7 +6,6 @@ export interface FiveHoleRawData {
   p1: number; p2: number; p3: number; p4: number; p5: number
   pAtm: number; tAtm: number
   pTotal?: number | null
-  tTotal?: number | null
 }
 
 export interface FiveHoleInterpolationResult {
@@ -97,8 +96,6 @@ export interface RectangleLayout {
 export interface FanLayout {
   rSteps: StepSegment[]
   thetaSteps: StepSegment[]
-  rStart: number
-  thetaStart: number
   rAxis: AxisNameValue
   thetaAxis: AxisNameValue
 }
@@ -126,6 +123,22 @@ export interface FiveHoleMotionAxisMapping {
   axis: AxisNameValue
 }
 
+// 大气压/气流温度数据源模式
+export const ATM_SOURCE_MODE = {
+  DEVICE: 'device', // 设备读取（压力扫描阀上的通道或温度扫描阀的通道）
+  MANUAL: 'manual', // 手动写入固定值
+} as const
+
+export type FiveHoleAtmSourceMode = typeof ATM_SOURCE_MODE[keyof typeof ATM_SOURCE_MODE]
+
+// 大气压/气流温度数据源（每探针独立配置）
+export interface FiveHoleAtmSource {
+  mode: FiveHoleAtmSourceMode
+  deviceId: string // mode=device 时有效
+  channel: number // mode=device 时有效
+  manualValue: number // mode=manual 时有效
+}
+
 export interface FiveHoleCalibRange {
   alphaMin: number; alphaMax: number
   betaMin: number; betaMax: number
@@ -138,12 +151,15 @@ export interface FiveHoleCalibFileInfo {
 }
 
 export interface FiveHoleProbeConfig {
-  probeId: string // probe1/probe2/probe3
+  probeId: string // probe1..probeN (N≤8)
   enabled: boolean // 配几根跑几根
   probeChannels: FiveHoleProbeChannelConfig[]
   motionX: FiveHoleMotionAxisMapping // X 方向：位移机构 + 轴号
   motionY: FiveHoleMotionAxisMapping // Y 方向：位移机构 + 轴号
   calibFiles: FiveHoleCalibFileInfo[]
+  // 大气压/气流温度数据源（每探针独立，不全局共享）
+  pAtmSource: FiveHoleAtmSource
+  tAtmSource: FiveHoleAtmSource
 }
 
 // ==================== 全局配置 ====================
@@ -155,20 +171,12 @@ export interface FiveHoleTraversalConfig {
   samplesPerPoint: number
   sampleIntervalMs: number
   motionTimeoutMs: number
-  // PAtm/TAtm 全局共享数据源（三根共用）
-  pAtmDeviceId: string
-  pAtmChannel: number
-  tAtmDeviceId: string
-  tAtmChannel: number
-  // TTotal（总温 TAT）可选全局数据源：未配置（deviceId 为空）时插值公式回退用 TAtm
-  tTotalDeviceId: string
-  tTotalChannel: number
   // 共用轴位：true 时所有启用探针统一使用 sharedMotionX/Y（多探针装在同一位移机构场景），
   // 各探针独立 motionX/motionY 被忽略（配置保留，切回独立模式时仍可用）
   sharedMotion: boolean
   sharedMotionX: FiveHoleMotionAxisMapping
   sharedMotionY: FiveHoleMotionAxisMapping
-  probes: FiveHoleProbeConfig[] // 1-3 根探针
+  probes: FiveHoleProbeConfig[] // 1-8 根探针
   savePath: string
   saveFileName: string
 }

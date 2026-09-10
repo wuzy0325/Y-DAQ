@@ -11,7 +11,7 @@ import (
 func TestFiveHoleCsvWriter_HeaderAndDataPoint(t *testing.T) {
 	tmpDir := t.TempDir()
 	w := NewFiveHoleCsvWriter()
-	if err := w.Initialize(tmpDir, "test", "probe1"); err != nil {
+	if err := w.Initialize(tmpDir, "test", "probe1", types.TraversalPatternLine); err != nil {
 		t.Fatalf("Initialize failed: %v", err)
 	}
 	defer w.Close()
@@ -99,8 +99,9 @@ func TestFiveHoleCsvWriter_HeaderAndDataPoint(t *testing.T) {
 	if !contains(str, "速度Vz") {
 		t.Fatal("header missing 速度Vz")
 	}
-	if !contains(str, "T0") {
-		t.Fatal("header missing T0 (TTotal)")
+	// 验证 T0（总温）列已移除
+	if contains(str, "T0") {
+		t.Fatal("header should not contain T0 (TTotal removed)")
 	}
 	// 验证旧字段已移除
 	if contains(str, "迭代次数") {
@@ -136,13 +137,13 @@ func TestFiveHoleCsvWriter_IndependentFiles(t *testing.T) {
 
 	// 两个探针各一个 writer
 	w1 := NewFiveHoleCsvWriter()
-	if err := w1.Initialize(tmpDir, "test", "probe1"); err != nil {
+	if err := w1.Initialize(tmpDir, "test", "probe1", types.TraversalPatternLine); err != nil {
 		t.Fatalf("Initialize probe1 failed: %v", err)
 	}
 	defer w1.Close()
 
 	w2 := NewFiveHoleCsvWriter()
-	if err := w2.Initialize(tmpDir, "test", "probe2"); err != nil {
+	if err := w2.Initialize(tmpDir, "test", "probe2", types.TraversalPatternLine); err != nil {
 		t.Fatalf("Initialize probe2 failed: %v", err)
 	}
 	defer w2.Close()
@@ -153,6 +154,32 @@ func TestFiveHoleCsvWriter_IndependentFiles(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(tmpDir, "test_probe2.csv")); err != nil {
 		t.Fatalf("probe2 csv not created: %v", err)
+	}
+}
+
+func TestFiveHoleCsvWriter_FanHeader(t *testing.T) {
+	tmpDir := t.TempDir()
+	w := NewFiveHoleCsvWriter()
+	if err := w.Initialize(tmpDir, "test", "probe1", types.TraversalPatternFan); err != nil {
+		t.Fatalf("Initialize failed: %v", err)
+	}
+	defer w.Close()
+
+	w.Close()
+	content, err := os.ReadFile(filepath.Join(tmpDir, "test_probe1.csv"))
+	if err != nil {
+		t.Fatalf("read csv failed: %v", err)
+	}
+	str := string(content)
+	// 扇面模式点位列为 R(mm)/θ(°)，方向列标注 R/θ
+	if !contains(str, "R(mm)") || !contains(str, "θ(°)") {
+		t.Fatal("fan header missing R(mm)/θ(°) columns")
+	}
+	if !contains(str, "R方向位移机构名") || !contains(str, "θ方向位移机构名") {
+		t.Fatal("fan header missing R/θ direction columns")
+	}
+	if contains(str, "X方向位移机构名") {
+		t.Fatal("fan header should not contain X方向 columns")
 	}
 }
 

@@ -16,6 +16,7 @@ import (
 type XYDAQDriver struct {
 	*TCPDriverBase
 	streamID      int
+	deviceType    types.DeviceType
 	pressureCount int // 压力通道数（8或16）
 	totalChannels int // 总通道数（压力+大气压+大气温度）
 	frameSize     int // 数据帧大小（字节）
@@ -28,6 +29,7 @@ func NewXYDAQDriver(host string, port, streamID int, channels []types.ChannelCon
 	return &XYDAQDriver{
 		TCPDriverBase: NewTCPDriverBase(host, port, channels),
 		streamID:      streamID,
+		deviceType:    deviceType,
 		pressureCount: pressureCount,
 		totalChannels: totalChannels,
 		frameSize:     deviceType.StreamFrameSize(),
@@ -57,6 +59,11 @@ func (d *XYDAQDriver) initAfterConnect() error {
 
 	// 读取设备EU单位并更新通道配置
 	d.readAndUpdateEUUnit()
+
+	// EA2508A：按持久化配置下发温度通道配置（@16 来源 + @17 热电偶类型）
+	if d.deviceType == types.DeviceTypeEA2508A {
+		d.applyTempChannelConfig()
+	}
 
 	// 启动数据接收协程
 	d.StartReceiveLoop(d.processData)

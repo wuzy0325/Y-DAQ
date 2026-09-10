@@ -405,9 +405,14 @@ export class ChannelConfig {
     "rangeMax": number;
 
     /**
-     * 热电偶类型（K/J/T/E/N/S/R/B/C/WRE325/WRE526/WRE520），仅 EA2516T
+     * 热电偶类型（EA2516T: K/J/T/E/N/S/R/B/C；EA2508A 温度通道: T/K/J/E/S）
      */
     "thermocoupleType"?: string;
+
+    /**
+     * EA2508A 温度通道传感器来源（internal/thermocouple/pt100）
+     */
+    "tempSource"?: string;
 
     /**
      * 零位偏移（校准时记录的当前读数，后续采集时减去）
@@ -423,6 +428,31 @@ export class ChannelConfig {
      * 零位校准时刻（Unix 毫秒），0 表示未校准
      */
     "zeroCalibratedAt"?: number;
+
+    /**
+     * 温度线性校准斜率 y = a*x + b
+     */
+    "tempCalibA"?: number;
+
+    /**
+     * 温度线性校准截距
+     */
+    "tempCalibB"?: number;
+
+    /**
+     * 温度线性校准决定系数
+     */
+    "tempCalibR2"?: number;
+
+    /**
+     * 温度校准参与拟合点数
+     */
+    "tempCalibPoints"?: number;
+
+    /**
+     * 温度校准时刻（Unix 毫秒），0 表示未校准
+     */
+    "tempCalibratedAt"?: number;
 
     /** Creates a new ChannelConfig instance. */
     constructor($$source: Partial<ChannelConfig> = {}) {
@@ -748,7 +778,7 @@ export class EncoderCompensationConfig {
 
 /**
  * FanLayout 扇形布点配置
- * R 方向为线性轴，θ 方向为旋转轴；第一点位为相对原点（当前位置）
+ * R 方向为线性轴，θ 方向为旋转轴；点位即轴绝对坐标（X=R, Y=θ），无相对原点概念
  */
 export class FanLayout {
     /**
@@ -760,16 +790,6 @@ export class FanLayout {
      * 角度方向步进
      */
     "thetaSteps": StepSegment[];
-
-    /**
-     * 起始半径，用于相对原点计算
-     */
-    "rStart": number;
-
-    /**
-     * 起始角度（度），用于相对原点计算
-     */
-    "thetaStart": number;
 
     /**
      * 半径方向物理轴名
@@ -788,12 +808,6 @@ export class FanLayout {
         }
         if (!("thetaSteps" in $$source)) {
             this["thetaSteps"] = [];
-        }
-        if (!("rStart" in $$source)) {
-            this["rStart"] = 0;
-        }
-        if (!("thetaStart" in $$source)) {
-            this["thetaStart"] = 0;
         }
         if (!("rAxis" in $$source)) {
             this["rAxis"] = "";
@@ -821,6 +835,77 @@ export class FanLayout {
         return new FanLayout($$parsedSource as Partial<FanLayout>);
     }
 }
+
+/**
+ * FiveHoleAtmSource 大气压/气流温度数据源（每探针独立配置）
+ */
+export class FiveHoleAtmSource {
+    /**
+     * device=设备读取 / manual=手动写入
+     */
+    "mode": FiveHoleAtmSourceMode;
+
+    /**
+     * Mode=device 时有效
+     */
+    "deviceId": string;
+
+    /**
+     * Mode=device 时有效
+     */
+    "channel": number;
+
+    /**
+     * Mode=manual 时有效
+     */
+    "manualValue": number;
+
+    /** Creates a new FiveHoleAtmSource instance. */
+    constructor($$source: Partial<FiveHoleAtmSource> = {}) {
+        if (!("mode" in $$source)) {
+            this["mode"] = FiveHoleAtmSourceMode.$zero;
+        }
+        if (!("deviceId" in $$source)) {
+            this["deviceId"] = "";
+        }
+        if (!("channel" in $$source)) {
+            this["channel"] = 0;
+        }
+        if (!("manualValue" in $$source)) {
+            this["manualValue"] = 0;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new FiveHoleAtmSource instance from a string or object.
+     */
+    static createFrom($$source: any = {}): FiveHoleAtmSource {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new FiveHoleAtmSource($$parsedSource as Partial<FiveHoleAtmSource>);
+    }
+}
+
+/**
+ * FiveHoleAtmSourceMode 大气压/气流温度数据源模式
+ */
+export enum FiveHoleAtmSourceMode {
+    /**
+     * The Go zero value for the underlying type of the enum.
+     */
+    $zero = "",
+
+    /**
+     * FiveHoleSourceDevice 设备读取（压力扫描阀上的大气压/大气温度通道，或温度扫描阀的通道）
+     */
+    FiveHoleSourceDevice = "device",
+
+    /**
+     * FiveHoleSourceManual 手动写入固定值
+     */
+    FiveHoleSourceManual = "manual",
+};
 
 /**
  * FiveHoleCalibFileInfo 五孔校准文件信息（.cal 文件：首行 13 13，后接 169 行 ka kb cpt cps alpha beta）
@@ -972,12 +1057,12 @@ export enum FiveHoleChannelRole {
     Role5H_P5 = "fiveHole.p5",
 
     /**
-     * 大气压（全局共享）
+     * 大气压
      */
     Role5H_PAtm = "fiveHole.pAtm",
 
     /**
-     * 大气温度（全局共享）
+     * 气流温度
      */
     Role5H_TAtm = "fiveHole.tAtm",
 };
@@ -1241,7 +1326,7 @@ export class FiveHoleProbeChannelConfig {
  */
 export class FiveHoleProbeConfig {
     /**
-     * probe1..probeN (N≤3，前端动态增删，复用最小未用序号)
+     * probe1..probeN (N≤MaxFiveHoleProbes，前端动态增删，复用最小未用序号)
      */
     "probeId": string;
 
@@ -1270,6 +1355,17 @@ export class FiveHoleProbeConfig {
      */
     "calibFiles": FiveHoleCalibFileInfo[];
 
+    /**
+     * 大气压/气流温度数据源（每探针独立，不再全局共享）
+     * 大气压 P∞：设备读取或手动写入
+     */
+    "pAtmSource": FiveHoleAtmSource;
+
+    /**
+     * 气流温度 T∞：设备读取或手动写入
+     */
+    "tAtmSource": FiveHoleAtmSource;
+
     /** Creates a new FiveHoleProbeConfig instance. */
     constructor($$source: Partial<FiveHoleProbeConfig> = {}) {
         if (!("probeId" in $$source)) {
@@ -1290,6 +1386,12 @@ export class FiveHoleProbeConfig {
         if (!("calibFiles" in $$source)) {
             this["calibFiles"] = [];
         }
+        if (!("pAtmSource" in $$source)) {
+            this["pAtmSource"] = (new FiveHoleAtmSource());
+        }
+        if (!("tAtmSource" in $$source)) {
+            this["tAtmSource"] = (new FiveHoleAtmSource());
+        }
 
         Object.assign(this, $$source);
     }
@@ -1302,6 +1404,8 @@ export class FiveHoleProbeConfig {
         const $$createField3_0 = $$createType21;
         const $$createField4_0 = $$createType21;
         const $$createField5_0 = $$createType23;
+        const $$createField6_0 = $$createType24;
+        const $$createField7_0 = $$createType24;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("probeChannels" in $$parsedSource) {
             $$parsedSource["probeChannels"] = $$createField2_0($$parsedSource["probeChannels"]);
@@ -1314,6 +1418,12 @@ export class FiveHoleProbeConfig {
         }
         if ("calibFiles" in $$parsedSource) {
             $$parsedSource["calibFiles"] = $$createField5_0($$parsedSource["calibFiles"]);
+        }
+        if ("pAtmSource" in $$parsedSource) {
+            $$parsedSource["pAtmSource"] = $$createField6_0($$parsedSource["pAtmSource"]);
+        }
+        if ("tAtmSource" in $$parsedSource) {
+            $$parsedSource["tAtmSource"] = $$createField7_0($$parsedSource["tAtmSource"]);
         }
         return new FiveHoleProbeConfig($$parsedSource as Partial<FiveHoleProbeConfig>);
     }
@@ -1356,8 +1466,8 @@ export class FiveHoleProbeStatus {
      * Creates a new FiveHoleProbeStatus instance from a string or object.
      */
     static createFrom($$source: any = {}): FiveHoleProbeStatus {
-        const $$createField4_0 = $$createType24;
-        const $$createField5_0 = $$createType26;
+        const $$createField4_0 = $$createType25;
+        const $$createField5_0 = $$createType27;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("rawData" in $$parsedSource) {
             $$parsedSource["rawData"] = $$createField4_0($$parsedSource["rawData"]);
@@ -1381,11 +1491,6 @@ export class FiveHoleRawData {
     "pAtm": number;
     "tAtm": number;
     "pTotal"?: number | null;
-
-    /**
-     * TTotal 总温（可选，nil 表示未配置→公式回退用 TAtm 计算 SAT）
-     */
-    "tTotal"?: number | null;
 
     /** Creates a new FiveHoleRawData instance. */
     constructor($$source: Partial<FiveHoleRawData> = {}) {
@@ -1424,7 +1529,7 @@ export class FiveHoleRawData {
 }
 
 /**
- * FiveHoleTraversalConfig 五孔移位测试配置（全局配置，含 1-3 探针）
+ * FiveHoleTraversalConfig 五孔移位测试配置（全局配置，含 1-MaxFiveHoleProbes 根探针）
  */
 export class FiveHoleTraversalConfig {
     "name": string;
@@ -1435,42 +1540,35 @@ export class FiveHoleTraversalConfig {
     "layout": TraversalLayout;
 
     /**
-     * 驻留时间（三根共用）
+     * 驻留时间（所有探针共用）
      */
     "dwellTimeMs": number;
 
     /**
-     * 采样次数（三根共用）
+     * 采样次数（所有探针共用）
      */
     "samplesPerPoint": number;
 
     /**
-     * 采样间隔（三根共用）
+     * 采样间隔（所有探针共用）
      */
     "sampleIntervalMs": number;
 
     /**
-     * 运动等待超时（三根共用）
+     * 运动等待超时（所有探针共用）
      */
     "motionTimeoutMs": number;
 
     /**
-     * PAtm/TAtm 全局共享数据源（三根共用）
+     * 共用轴位：true 时所有启用探针统一使用 SharedMotionX/Y（多探针装在同一位移机构场景），
+     * 各探针独立 MotionX/MotionY 被忽略（配置保留，切回独立模式时仍可用）
      */
-    "pAtmDeviceId": string;
-    "pAtmChannel": number;
-    "tAtmDeviceId": string;
-    "tAtmChannel": number;
+    "sharedMotion": boolean;
+    "sharedMotionX": FiveHoleMotionAxisMapping;
+    "sharedMotionY": FiveHoleMotionAxisMapping;
 
     /**
-     * TTotal 全局共享总温源（三根共用，可选）
-     * 配置时 CalculateSAT 使用 TTotal；未配置时回退用 TAtm（保旧行为）
-     */
-    "tTotalDeviceId": string;
-    "tTotalChannel": number;
-
-    /**
-     * 1-3 根探针（配几根跑几根）
+     * 1-8 根探针（配几根跑几根）
      */
     "probes": FiveHoleProbeConfig[];
     "savePath": string;
@@ -1496,23 +1594,14 @@ export class FiveHoleTraversalConfig {
         if (!("motionTimeoutMs" in $$source)) {
             this["motionTimeoutMs"] = 0;
         }
-        if (!("pAtmDeviceId" in $$source)) {
-            this["pAtmDeviceId"] = "";
+        if (!("sharedMotion" in $$source)) {
+            this["sharedMotion"] = false;
         }
-        if (!("pAtmChannel" in $$source)) {
-            this["pAtmChannel"] = 0;
+        if (!("sharedMotionX" in $$source)) {
+            this["sharedMotionX"] = (new FiveHoleMotionAxisMapping());
         }
-        if (!("tAtmDeviceId" in $$source)) {
-            this["tAtmDeviceId"] = "";
-        }
-        if (!("tAtmChannel" in $$source)) {
-            this["tAtmChannel"] = 0;
-        }
-        if (!("tTotalDeviceId" in $$source)) {
-            this["tTotalDeviceId"] = "";
-        }
-        if (!("tTotalChannel" in $$source)) {
-            this["tTotalChannel"] = 0;
+        if (!("sharedMotionY" in $$source)) {
+            this["sharedMotionY"] = (new FiveHoleMotionAxisMapping());
         }
         if (!("probes" in $$source)) {
             this["probes"] = [];
@@ -1531,14 +1620,22 @@ export class FiveHoleTraversalConfig {
      * Creates a new FiveHoleTraversalConfig instance from a string or object.
      */
     static createFrom($$source: any = {}): FiveHoleTraversalConfig {
-        const $$createField1_0 = $$createType27;
-        const $$createField12_0 = $$createType29;
+        const $$createField1_0 = $$createType28;
+        const $$createField7_0 = $$createType21;
+        const $$createField8_0 = $$createType21;
+        const $$createField9_0 = $$createType30;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("layout" in $$parsedSource) {
             $$parsedSource["layout"] = $$createField1_0($$parsedSource["layout"]);
         }
+        if ("sharedMotionX" in $$parsedSource) {
+            $$parsedSource["sharedMotionX"] = $$createField7_0($$parsedSource["sharedMotionX"]);
+        }
+        if ("sharedMotionY" in $$parsedSource) {
+            $$parsedSource["sharedMotionY"] = $$createField8_0($$parsedSource["sharedMotionY"]);
+        }
         if ("probes" in $$parsedSource) {
-            $$parsedSource["probes"] = $$createField12_0($$parsedSource["probes"]);
+            $$parsedSource["probes"] = $$createField9_0($$parsedSource["probes"]);
         }
         return new FiveHoleTraversalConfig($$parsedSource as Partial<FiveHoleTraversalConfig>);
     }
@@ -1597,8 +1694,8 @@ export class FiveHoleTraversalTaskStatus {
      * Creates a new FiveHoleTraversalTaskStatus instance from a string or object.
      */
     static createFrom($$source: any = {}): FiveHoleTraversalTaskStatus {
-        const $$createField5_0 = $$createType31;
-        const $$createField6_0 = $$createType33;
+        const $$createField5_0 = $$createType32;
+        const $$createField6_0 = $$createType34;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("currentPoint" in $$parsedSource) {
             $$parsedSource["currentPoint"] = $$createField5_0($$parsedSource["currentPoint"]);
@@ -1765,7 +1862,7 @@ export class MotionControllerProfile {
      * Creates a new MotionControllerProfile instance from a string or object.
      */
     static createFrom($$source: any = {}): MotionControllerProfile {
-        const $$createField6_0 = $$createType35;
+        const $$createField6_0 = $$createType36;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("axes" in $$parsedSource) {
             $$parsedSource["axes"] = $$createField6_0($$parsedSource["axes"]);
@@ -1813,7 +1910,7 @@ export class MotionControllerStatus {
      * Creates a new MotionControllerStatus instance from a string or object.
      */
     static createFrom($$source: any = {}): MotionControllerStatus {
-        const $$createField4_0 = $$createType37;
+        const $$createField4_0 = $$createType38;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("axes" in $$parsedSource) {
             $$parsedSource["axes"] = $$createField4_0($$parsedSource["axes"]);
@@ -2025,6 +2122,152 @@ export class StepSegment {
     static createFrom($$source: any = {}): StepSegment {
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         return new StepSegment($$parsedSource as Partial<StepSegment>);
+    }
+}
+
+/**
+ * TempCalibPoint 温度校准单点：设备测量值 vs 手动输入的参考温度。
+ * 线性回归中 x = Measured，y = Reference。
+ */
+export class TempCalibPoint {
+    /**
+     * 设备实测温度
+     */
+    "measured": number;
+
+    /**
+     * 参考温度（手动输入）
+     */
+    "reference": number;
+
+    /** Creates a new TempCalibPoint instance. */
+    constructor($$source: Partial<TempCalibPoint> = {}) {
+        if (!("measured" in $$source)) {
+            this["measured"] = 0;
+        }
+        if (!("reference" in $$source)) {
+            this["reference"] = 0;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new TempCalibPoint instance from a string or object.
+     */
+    static createFrom($$source: any = {}): TempCalibPoint {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new TempCalibPoint($$parsedSource as Partial<TempCalibPoint>);
+    }
+}
+
+/**
+ * TempCalibResult 线性回归拟合结果 y = a*x + b。
+ */
+export class TempCalibResult {
+    /**
+     * 斜率
+     */
+    "a": number;
+
+    /**
+     * 截距
+     */
+    "b": number;
+
+    /**
+     * 决定系数
+     */
+    "r2": number;
+
+    /**
+     * 参与拟合的点数
+     */
+    "points": number;
+
+    /** Creates a new TempCalibResult instance. */
+    constructor($$source: Partial<TempCalibResult> = {}) {
+        if (!("a" in $$source)) {
+            this["a"] = 0;
+        }
+        if (!("b" in $$source)) {
+            this["b"] = 0;
+        }
+        if (!("r2" in $$source)) {
+            this["r2"] = 0;
+        }
+        if (!("points" in $$source)) {
+            this["points"] = 0;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new TempCalibResult instance from a string or object.
+     */
+    static createFrom($$source: any = {}): TempCalibResult {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new TempCalibResult($$parsedSource as Partial<TempCalibResult>);
+    }
+}
+
+/**
+ * TempCalibSampleResult 温度校准单通道采点结果。
+ */
+export class TempCalibSampleResult {
+    /**
+     * 通道索引
+     */
+    "channelIndex": number;
+
+    /**
+     * 通道名称
+     */
+    "channelName": string;
+
+    /**
+     * 采样均值
+     */
+    "meanValue": number;
+
+    /**
+     * 实际采样帧数
+     */
+    "sampleCount": number;
+
+    /**
+     * 采样失败原因（成功时为空）
+     */
+    "error": string;
+
+    /** Creates a new TempCalibSampleResult instance. */
+    constructor($$source: Partial<TempCalibSampleResult> = {}) {
+        if (!("channelIndex" in $$source)) {
+            this["channelIndex"] = 0;
+        }
+        if (!("channelName" in $$source)) {
+            this["channelName"] = "";
+        }
+        if (!("meanValue" in $$source)) {
+            this["meanValue"] = 0;
+        }
+        if (!("sampleCount" in $$source)) {
+            this["sampleCount"] = 0;
+        }
+        if (!("error" in $$source)) {
+            this["error"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new TempCalibSampleResult instance from a string or object.
+     */
+    static createFrom($$source: any = {}): TempCalibSampleResult {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new TempCalibSampleResult($$parsedSource as Partial<TempCalibSampleResult>);
     }
 }
 
@@ -2350,11 +2593,11 @@ export class ThreeHoleTraversalConfig {
      * Creates a new ThreeHoleTraversalConfig instance from a string or object.
      */
     static createFrom($$source: any = {}): ThreeHoleTraversalConfig {
-        const $$createField3_0 = $$createType27;
-        const $$createField4_0 = $$createType39;
-        const $$createField5_0 = $$createType40;
-        const $$createField6_0 = $$createType40;
-        const $$createField7_0 = $$createType42;
+        const $$createField3_0 = $$createType28;
+        const $$createField4_0 = $$createType40;
+        const $$createField5_0 = $$createType41;
+        const $$createField6_0 = $$createType41;
+        const $$createField7_0 = $$createType43;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("layout" in $$parsedSource) {
             $$parsedSource["layout"] = $$createField3_0($$parsedSource["layout"]);
@@ -2418,8 +2661,8 @@ export class ThreeHoleTraversalDataPoint {
      * Creates a new ThreeHoleTraversalDataPoint instance from a string or object.
      */
     static createFrom($$source: any = {}): ThreeHoleTraversalDataPoint {
-        const $$createField3_0 = $$createType43;
-        const $$createField4_0 = $$createType44;
+        const $$createField3_0 = $$createType44;
+        const $$createField4_0 = $$createType45;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("rawData" in $$parsedSource) {
             $$parsedSource["rawData"] = $$createField3_0($$parsedSource["rawData"]);
@@ -2472,8 +2715,8 @@ export class ThreeHoleTraversalTaskStatus {
      * Creates a new ThreeHoleTraversalTaskStatus instance from a string or object.
      */
     static createFrom($$source: any = {}): ThreeHoleTraversalTaskStatus {
-        const $$createField5_0 = $$createType31;
-        const $$createField6_0 = $$createType46;
+        const $$createField5_0 = $$createType32;
+        const $$createField6_0 = $$createType47;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("currentPoint" in $$parsedSource) {
             $$parsedSource["currentPoint"] = $$createField5_0($$parsedSource["currentPoint"]);
@@ -2508,10 +2751,10 @@ export class TraversalLayout {
      * Creates a new TraversalLayout instance from a string or object.
      */
     static createFrom($$source: any = {}): TraversalLayout {
-        const $$createField1_0 = $$createType48;
-        const $$createField2_0 = $$createType50;
-        const $$createField3_0 = $$createType52;
-        const $$createField4_0 = $$createType53;
+        const $$createField1_0 = $$createType49;
+        const $$createField2_0 = $$createType51;
+        const $$createField3_0 = $$createType53;
+        const $$createField4_0 = $$createType54;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("line" in $$parsedSource) {
             $$parsedSource["line"] = $$createField1_0($$parsedSource["line"]);
@@ -2703,33 +2946,34 @@ const $$createType20 = $Create.Array($$createType19);
 const $$createType21 = FiveHoleMotionAxisMapping.createFrom;
 const $$createType22 = FiveHoleCalibFileInfo.createFrom;
 const $$createType23 = $Create.Array($$createType22);
-const $$createType24 = $Create.Nullable($$createType6);
-const $$createType25 = FiveHoleInterpolationResult.createFrom;
-const $$createType26 = $Create.Nullable($$createType25);
-const $$createType27 = TraversalLayout.createFrom;
-const $$createType28 = FiveHoleProbeConfig.createFrom;
-const $$createType29 = $Create.Array($$createType28);
-const $$createType30 = TraversalPoint.createFrom;
-const $$createType31 = $Create.Nullable($$createType30);
-const $$createType32 = FiveHoleProbeStatus.createFrom;
-const $$createType33 = $Create.Array($$createType32);
-const $$createType34 = AxisConfig.createFrom;
-const $$createType35 = $Create.Array($$createType34);
-const $$createType36 = AxisStatus.createFrom;
-const $$createType37 = $Create.Array($$createType36);
-const $$createType38 = ThreeHoleProbeChannelConfig.createFrom;
-const $$createType39 = $Create.Array($$createType38);
-const $$createType40 = MotionAxisMapping.createFrom;
-const $$createType41 = ThreeHoleCalibFileInfo.createFrom;
-const $$createType42 = $Create.Array($$createType41);
-const $$createType43 = ThreeHoleRawData.createFrom;
-const $$createType44 = ThreeHoleInterpolationResult.createFrom;
-const $$createType45 = ThreeHoleTraversalDataPoint.createFrom;
-const $$createType46 = $Create.Array($$createType45);
-const $$createType47 = LineLayout.createFrom;
-const $$createType48 = $Create.Nullable($$createType47);
-const $$createType49 = RectangleLayout.createFrom;
-const $$createType50 = $Create.Nullable($$createType49);
-const $$createType51 = FanLayout.createFrom;
-const $$createType52 = $Create.Nullable($$createType51);
-const $$createType53 = $Create.Array($$createType30);
+const $$createType24 = FiveHoleAtmSource.createFrom;
+const $$createType25 = $Create.Nullable($$createType6);
+const $$createType26 = FiveHoleInterpolationResult.createFrom;
+const $$createType27 = $Create.Nullable($$createType26);
+const $$createType28 = TraversalLayout.createFrom;
+const $$createType29 = FiveHoleProbeConfig.createFrom;
+const $$createType30 = $Create.Array($$createType29);
+const $$createType31 = TraversalPoint.createFrom;
+const $$createType32 = $Create.Nullable($$createType31);
+const $$createType33 = FiveHoleProbeStatus.createFrom;
+const $$createType34 = $Create.Array($$createType33);
+const $$createType35 = AxisConfig.createFrom;
+const $$createType36 = $Create.Array($$createType35);
+const $$createType37 = AxisStatus.createFrom;
+const $$createType38 = $Create.Array($$createType37);
+const $$createType39 = ThreeHoleProbeChannelConfig.createFrom;
+const $$createType40 = $Create.Array($$createType39);
+const $$createType41 = MotionAxisMapping.createFrom;
+const $$createType42 = ThreeHoleCalibFileInfo.createFrom;
+const $$createType43 = $Create.Array($$createType42);
+const $$createType44 = ThreeHoleRawData.createFrom;
+const $$createType45 = ThreeHoleInterpolationResult.createFrom;
+const $$createType46 = ThreeHoleTraversalDataPoint.createFrom;
+const $$createType47 = $Create.Array($$createType46);
+const $$createType48 = LineLayout.createFrom;
+const $$createType49 = $Create.Nullable($$createType48);
+const $$createType50 = RectangleLayout.createFrom;
+const $$createType51 = $Create.Nullable($$createType50);
+const $$createType52 = FanLayout.createFrom;
+const $$createType53 = $Create.Nullable($$createType52);
+const $$createType54 = $Create.Array($$createType31);

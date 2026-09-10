@@ -24,9 +24,17 @@
             启动测试
           </el-button>
         </el-tooltip>
-        <el-button v-if="store.isRunning && !store.isPaused" type="warning" @click="store.pauseTest()">暂停</el-button>
+        <!-- 暂停/停止常显：完成后（completed/error/idle）自动置灰，仅运行中可操作 -->
+        <el-button
+          v-if="!store.isPaused"
+          type="warning"
+          :disabled="!store.isRunning"
+          @click="store.pauseTest()"
+        >
+          暂停
+        </el-button>
         <el-button v-if="store.isPaused" type="success" @click="store.resumeTest()">恢复</el-button>
-        <el-button v-if="store.isRunning" type="danger" @click="store.stopTest()">停止</el-button>
+        <el-button type="danger" :disabled="!store.isRunning" @click="store.stopTest()">停止</el-button>
       </div>
       <!-- 统一进度条 -->
       <div v-if="store.isRunning && store.progress" class="toolbar-progress">
@@ -38,7 +46,8 @@
         <div class="test-progress-meta">
           <span class="meta-item">{{ store.progress.completedPoints }} / {{ store.progress.totalPoints }} 点</span>
           <span class="meta-item phase-badge" :class="store.progress.phase || 'acquiring'">{{ phaseLabel }}</span>
-          <span class="meta-item">X={{ store.progress.currentX.toFixed(1) }}°  Y={{ store.progress.currentY.toFixed(1) }}°</span>
+          <span v-if="store.config.layout.pattern === TraversalPattern.FAN" class="meta-item">R={{ store.progress.currentX.toFixed(1) }}mm  θ={{ store.progress.currentY.toFixed(1) }}°</span>
+          <span v-else class="meta-item">X={{ store.progress.currentX.toFixed(1) }}mm  Y={{ store.progress.currentY.toFixed(1) }}mm</span>
         </div>
       </div>
       <div class="toolbar-right">
@@ -156,15 +165,11 @@
                 </div>
                 <div class="raw-cell">
                   <div class="cell-label">P∞</div>
-                  <ValueDisplay :value="getProbeRaw(probe.probeId)?.pAtm" :precision="getAtmPrecision('p')" color="#00ff88" />
+                  <ValueDisplay :value="getProbeRaw(probe.probeId)?.pAtm" :precision="getAtmPrecision(probe.pAtmSource)" color="#00ff88" />
                 </div>
                 <div class="raw-cell">
-                  <div class="cell-label">T∞ (°C)</div>
-                  <ValueDisplay :value="getProbeRaw(probe.probeId)?.tAtm" :precision="getAtmPrecision('t')" color="#00aaff" />
-                </div>
-                <div class="raw-cell">
-                  <div class="cell-label">T0 (°C)</div>
-                  <ValueDisplay :value="getProbeRaw(probe.probeId)?.tTotal ?? undefined" :precision="getAtmPrecision('tTotal')" color="#ffaa00" />
+                  <div class="cell-label">T∞ 气流温度 (°C)</div>
+                  <ValueDisplay :value="getProbeRaw(probe.probeId)?.tAtm" :precision="getAtmPrecision(probe.tAtmSource)" color="#00aaff" />
                 </div>
               </div>
             </div>
@@ -383,89 +388,6 @@
 
         <!-- 探针配置 -->
         <el-tab-pane label="探针配置">
-          <!-- 全局 PAtm/TAtm/TTotal 数据源 -->
-          <div class="settings-section">
-            <div class="section-title">🌐 大气压/温度数据源（全局共享）</div>
-            <div class="form-row atm-source-row">
-              <!-- P∞ 设备 + 通道 配对 -->
-              <div class="atm-pair">
-                <div class="form-group atm-device-group">
-                  <label class="group-label">大气压 P∞ 设备</label>
-                  <el-select v-model="store.config.pAtmDeviceId" placeholder="选择采集设备" size="small" clearable filterable style="width: 100%">
-                    <el-option v-for="dev in deviceStore.profiles" :key="dev.id" :label="`${dev.name} (${dev.type})`" :value="dev.id" />
-                  </el-select>
-                </div>
-                <div class="form-group atm-channel-group">
-                  <label class="group-label">P∞ 通道</label>
-                  <el-select
-                    :model-value="store.config.pAtmChannel + 1"
-                    size="small"
-                    style="width:80px"
-                    @update:model-value="store.config.pAtmChannel = ($event as number) - 1"
-                  >
-                    <el-option
-                      v-for="n in getChannelOptions(store.config.pAtmDeviceId)"
-                      :key="n"
-                      :label="String(n)"
-                      :value="n"
-                    />
-                  </el-select>
-                </div>
-              </div>
-              <!-- T∞ 设备 + 通道 配对 -->
-              <div class="atm-pair">
-                <div class="form-group atm-device-group">
-                  <label class="group-label">大气温度 T∞ 设备</label>
-                  <el-select v-model="store.config.tAtmDeviceId" placeholder="选择采集设备" size="small" clearable filterable style="width: 100%">
-                    <el-option v-for="dev in deviceStore.profiles" :key="dev.id" :label="`${dev.name} (${dev.type})`" :value="dev.id" />
-                  </el-select>
-                </div>
-                <div class="form-group atm-channel-group">
-                  <label class="group-label">T∞ 通道</label>
-                  <el-select
-                    :model-value="store.config.tAtmChannel + 1"
-                    size="small"
-                    style="width:80px"
-                    @update:model-value="store.config.tAtmChannel = ($event as number) - 1"
-                  >
-                    <el-option
-                      v-for="n in getChannelOptions(store.config.tAtmDeviceId)"
-                      :key="n"
-                      :label="String(n)"
-                      :value="n"
-                    />
-                  </el-select>
-                </div>
-              </div>
-              <!-- T0 总温设备 + 通道 配对（可选：未配置时公式回退用 T∞） -->
-              <div class="atm-pair">
-                <div class="form-group atm-device-group">
-                  <label class="group-label" title="总温 T0 设备（可选）。未配置时公式回退用大气温度 T∞ 计算 SAT，密度计算始终用 T∞。">总温 T0 设备（可选）</label>
-                  <el-select v-model="store.config.tTotalDeviceId" placeholder="未配置用 T∞" size="small" clearable filterable style="width: 100%">
-                    <el-option v-for="dev in deviceStore.profiles" :key="dev.id" :label="`${dev.name} (${dev.type})`" :value="dev.id" />
-                  </el-select>
-                </div>
-                <div class="form-group atm-channel-group">
-                  <label class="group-label">T0 通道</label>
-                  <el-select
-                    :model-value="store.config.tTotalChannel + 1"
-                    size="small"
-                    style="width:80px"
-                    :disabled="!store.config.tTotalDeviceId"
-                    @update:model-value="store.config.tTotalChannel = ($event as number) - 1"
-                  >
-                    <el-option
-                      v-for="n in getChannelOptions(store.config.tTotalDeviceId)"
-                      :key="n"
-                      :label="String(n)"
-                      :value="n"
-                    />
-                  </el-select>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <!-- 每探针配置：头部添加按钮 + tab 切换（上限 MAX_PROBES 根） -->
           <div class="probe-tabs-wrapper">
             <div class="probe-list-header">
@@ -591,6 +513,45 @@
                     </el-table>
                   </div>
 
+                  <!-- 大气压/气流温度数据源（每探针独立：设备读取或手动写入） -->
+                  <div class="channel-block">
+                    <div class="block-label">大气压/气流温度数据源</div>
+                    <div v-for="atm in atmSourceConfigs(probe)" :key="atm.key" class="atm-source-item">
+                      <span class="atm-source-name">{{ atm.label }}</span>
+                      <el-radio-group v-model="atm.source.mode" size="small" :disabled="store.isRunning">
+                        <el-radio-button :value="ATM_SOURCE_MODE.DEVICE">设备读取</el-radio-button>
+                        <el-radio-button :value="ATM_SOURCE_MODE.MANUAL">手动写入</el-radio-button>
+                      </el-radio-group>
+                      <template v-if="atm.source.mode === ATM_SOURCE_MODE.DEVICE">
+                        <el-select v-model="atm.source.deviceId" placeholder="选择采集设备" size="small" clearable filterable style="width: 180px">
+                          <el-option v-for="dev in deviceStore.profiles" :key="dev.id" :label="`${dev.name} (${dev.type})`" :value="dev.id" />
+                        </el-select>
+                        <el-select
+                          :model-value="atm.source.channel + 1"
+                          size="small"
+                          style="width: 80px"
+                          :disabled="!atm.source.deviceId"
+                          @update:model-value="atm.source.channel = ($event as number) - 1"
+                        >
+                          <el-option
+                            v-for="n in getChannelOptions(atm.source.deviceId)"
+                            :key="n"
+                            :label="String(n)"
+                            :value="n"
+                          />
+                        </el-select>
+                      </template>
+                      <el-input-number
+                        v-else
+                        v-model="atm.source.manualValue"
+                        size="small"
+                        :step="0.1"
+                        style="width: 140px"
+                      />
+                      <span v-if="atm.source.mode === ATM_SOURCE_MODE.MANUAL" class="unit-label">{{ atm.unit }}</span>
+                    </div>
+                  </div>
+
                   <!-- 运动轴映射（共用轴位模式下跟随全局设置，控件禁用） -->
                   <div class="channel-block" :class="{ 'motion-shared': store.config.sharedMotion }">
                     <div class="block-label">
@@ -646,7 +607,10 @@ import { useFiveHoleTestStore } from '../stores/fiveHoleTest'
 import type {
   FiveHoleRawData,
   FiveHoleInterpolationResult,
+  FiveHoleAtmSource,
+  FiveHoleProbeConfig,
 } from '../stores/fiveHoleTest/types'
+import { ATM_SOURCE_MODE } from '../stores/fiveHoleTest/types'
 import { useMotionStore } from '../stores/motion'
 import {
   TraversalPattern,
@@ -694,21 +658,17 @@ function getChPrecision(probeId: string, role: FiveHoleChannelRoleValue): number
   if (!ch) return 3
   return getDeviceChannelPrecision(ch.deviceId, ch.channel)
 }
-// 全局 P∞/T∞/T0 精度
-function getAtmPrecision(which: 'p' | 't' | 'tTotal'): number {
-  let deviceId: string
-  let channel: number
-  if (which === 'p') {
-    deviceId = store.config.pAtmDeviceId
-    channel = store.config.pAtmChannel
-  } else if (which === 't') {
-    deviceId = store.config.tAtmDeviceId
-    channel = store.config.tAtmChannel
-  } else {
-    deviceId = store.config.tTotalDeviceId
-    channel = store.config.tTotalChannel
-  }
-  return getDeviceChannelPrecision(deviceId, channel)
+// 探针级 P∞/T∞ 精度（device 模式按数据源设备通道取精度，manual 模式用默认精度）
+function getAtmPrecision(src: FiveHoleAtmSource | undefined): number {
+  if (!src || src.mode !== ATM_SOURCE_MODE.DEVICE || !src.deviceId) return 3
+  return getDeviceChannelPrecision(src.deviceId, src.channel)
+}
+// 探针级大气数据源配置项（P∞/T∞ 结构相同，模板 v-for 复用）
+function atmSourceConfigs(probe: FiveHoleProbeConfig) {
+  return [
+    { key: 'p', label: '大气压 P∞', unit: 'kPa', source: probe.pAtmSource },
+    { key: 't', label: '气流温度 T∞', unit: '°C', source: probe.tAtmSource },
+  ]
 }
 function getDeviceChannelPrecision(deviceId: string, channel: number): number {
   const profile = deviceStore.profiles.find(p => p.id === deviceId)
@@ -823,7 +783,7 @@ const { rectXStep, rectYStep } = useLayoutStepSync(
   computed(() => store.config.layout),
 )
 
-// 扇形步长快捷设置（同步到 fan.rSteps/thetaSteps 分段，并同步起始值）
+// 扇形步长快捷设置（同步到 fan.rSteps/thetaSteps 分段）
 const fanRStep = ref(5)
 const fanThetaStep = ref(15)
 watch(
@@ -849,8 +809,6 @@ watch(
     if (!fan) return
     fan.rSteps = [{ start: val.rStart, end: val.rEnd, step: val.rStep }]
     fan.thetaSteps = [{ start: val.thetaStart, end: val.thetaEnd, step: val.thetaStep }]
-    fan.rStart = val.rStart
-    fan.thetaStart = val.thetaStart
   },
   { immediate: true, deep: true },
 )
@@ -1239,11 +1197,13 @@ onUnmounted(() => {
   gap: 8px;
   height: 100%;
   min-height: 0;
+  // 卡片保持内容自然高度，总高超出时内部滚动，避免卡片被压缩导致内容溢出重叠
+  overflow-y: auto;
 }
 
 .probe-card-wrapper {
-  flex: 1;
-  min-height: 0;
+  flex: 1 0 auto;
+  min-height: fit-content;
 
   :deep(.glass-card) {
     padding: 10px 12px;
@@ -1650,22 +1610,20 @@ onUnmounted(() => {
   }
 }
 
-// P∞/T∞ 数据源配对布局：设备选择与通道选择紧邻成组
-.atm-source-row {
-  gap: 16px;
-}
-.atm-pair {
+// 探针级 P∞/T∞ 数据源行：名称 + 模式切换 + 设备/通道 或 手动值
+.atm-source-item {
   display: flex;
-  flex: 1;
-  min-width: 0;
-  gap: 8px;
-  align-items: flex-end;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-sm;
+  flex-wrap: wrap;
+
+  &:last-child { margin-bottom: 0; }
 }
-.atm-device-group {
-  flex: 1;
-  min-width: 0;
-}
-.atm-channel-group {
+.atm-source-name {
+  font-size: $font-size-sm;
+  color: $text-tertiary;
+  width: 96px;
   flex-shrink: 0;
 }
 

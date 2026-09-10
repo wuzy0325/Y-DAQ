@@ -142,6 +142,31 @@ const (
 	ValveStateUnknown     ValveState = "Unknown"     // 未初始化或读阀失败（设备读阀=0 或读阀异常）
 )
 
+// TempSource EA2508A 温度通道传感器来源（@16 命令，参考 LabVIEW 协议）
+type TempSource string
+
+const (
+	TempSourceInternal     TempSource = "internal"     // 内部温度传感器（@1612）
+	TempSourceThermocouple TempSource = "thermocouple" // 外界热电偶传感器（@1613）
+	TempSourcePT100        TempSource = "pt100"        // 外接PT100传感器（@1614）
+)
+
+// CmdCode 返回 @16 命令的值编码（12/13/14），ok=false 表示非法来源
+func (s TempSource) CmdCode() (code int, ok bool) {
+	switch s {
+	case TempSourceInternal:
+		return 12, true
+	case TempSourceThermocouple:
+		return 13, true
+	case TempSourcePT100:
+		return 14, true
+	}
+	return 0, false
+}
+
+// EA2508ATempThermocoupleTypes EA2508A 温度通道 @17 命令支持的热电偶类型（单字符）
+var EA2508ATempThermocoupleTypes = map[string]bool{"T": true, "K": true, "J": true, "E": true, "S": true}
+
 // ChannelConfig 通道配置
 type ChannelConfig struct {
 	Index     int     `json:"index"`
@@ -151,10 +176,16 @@ type ChannelConfig struct {
 	Precision int     `json:"precision"`
 	RangeMin  float64 `json:"rangeMin"`
 	RangeMax         float64 `json:"rangeMax"`
-	ThermocoupleType string  `json:"thermocoupleType,omitempty"` // 热电偶类型（K/J/T/E/N/S/R/B/C/WRE325/WRE526/WRE520），仅 EA2516T
+	ThermocoupleType string  `json:"thermocoupleType,omitempty"` // 热电偶类型（EA2516T: K/J/T/E/N/S/R/B/C；EA2508A 温度通道: T/K/J/E/S）
+	TempSource       string  `json:"tempSource,omitempty"`       // EA2508A 温度通道传感器来源（internal/thermocouple/pt100）
 	ZeroOffset       float64 `json:"zeroOffset,omitempty"`       // 零位偏移（校准时记录的当前读数，后续采集时减去）
 	ZeroOffsetUnit   string  `json:"zeroOffsetUnit,omitempty"`   // 零位偏移记录时的单位（用于换单位后换算）
 	ZeroCalibratedAt int64   `json:"zeroCalibratedAt,omitempty"` // 零位校准时刻（Unix 毫秒），0 表示未校准
+	TempCalibA       float64 `json:"tempCalibA,omitempty"`        // 温度线性校准斜率 y = a*x + b
+	TempCalibB       float64 `json:"tempCalibB,omitempty"`        // 温度线性校准截距
+	TempCalibR2      float64 `json:"tempCalibR2,omitempty"`       // 温度线性校准决定系数
+	TempCalibPoints  int     `json:"tempCalibPoints,omitempty"`  // 温度校准参与拟合点数
+	TempCalibratedAt int64   `json:"tempCalibratedAt,omitempty"`  // 温度校准时刻（Unix 毫秒），0 表示未校准
 }
 
 // DeviceProfile 设备完整配置

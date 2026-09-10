@@ -63,6 +63,9 @@ func (s *DataService) ExportCalibrationPDF() error {
 	dlg.AddFilter("PDF文件", "*.pdf")
 	filePath, err := dlg.PromptForSingleSelection()
 	if err != nil {
+		if isDialogCancelled(err) {
+			return nil // 用户取消对话框，静默返回
+		}
 		return err
 	}
 	if filePath == "" {
@@ -89,6 +92,9 @@ func (s *DataService) LoadCSVFile() (string, error) {
 		AddFilter("所有文件", "*.*").
 		PromptForSingleSelection()
 	if err != nil {
+		if isDialogCancelled(err) {
+			return "", nil // 用户取消对话框，静默返回
+		}
 		return "", err
 	}
 	if filePath == "" {

@@ -10,11 +10,15 @@ import { useMotionStore } from './motion'
 import { ensureDevicesAcquiring as ensureDevicesAcquiringByIds } from './device'
 import { downloadCSV } from '../utils/csv'
 import { createWailsEventListener } from '../utils/wailsEvents'
+import {
+  ATM_SOURCE_MODE,
+} from './fiveHoleTest/types'
 import type {
   FiveHoleTraversalConfig,
   FiveHoleProbeConfig,
   FiveHoleProbeChannelConfig,
   FiveHoleCalibFileInfo,
+  FiveHoleAtmSource,
   FiveHoleTraversalTaskStatus,
   FiveHoleTraversalProgressEvent,
   FiveHoleTraversalRealtimeEvent,
@@ -25,9 +29,9 @@ import type {
 
 // ==================== 默认配置构造 ====================
 
-/** 最大探针数（与后端 Validate() enabledCount > 3 拒绝逻辑保持一致）
+/** 最大探针数（与后端 Validate() enabledCount > 8 拒绝逻辑保持一致）
  *  如未来放开，仅需调整此常量即可同步影响 store 守卫与 View UI */
-export const MAX_PROBES = 3
+export const MAX_PROBES = 8
 
 /** 生成 probeN 字符串（N 从 1 开始） */
 function probeIdFor(n: number): string {
@@ -54,6 +58,11 @@ function defaultProbeChannels(): FiveHoleProbeChannelConfig[] {
   ]
 }
 
+/** 默认大气压/气流温度数据源（设备读取模式，待用户选择设备通道） */
+function defaultAtmSource(channel: number): FiveHoleAtmSource {
+  return { mode: ATM_SOURCE_MODE.DEVICE, deviceId: '', channel, manualValue: 0 }
+}
+
 function defaultProbe(probeId: string): FiveHoleProbeConfig {
   return {
     probeId,
@@ -62,6 +71,8 @@ function defaultProbe(probeId: string): FiveHoleProbeConfig {
     motionX: { controllerId: '', axis: AxisName.X },
     motionY: { controllerId: '', axis: AxisName.Y },
     calibFiles: [],
+    pAtmSource: defaultAtmSource(16),
+    tAtmSource: defaultAtmSource(17),
   }
 }
 
@@ -81,8 +92,6 @@ function defaultConfig(): FiveHoleTraversalConfig {
       fan: {
         rSteps: [{ start: 0, end: 20, step: 5 }],
         thetaSteps: [{ start: 0, end: 90, step: 15 }],
-        rStart: 0,
-        thetaStart: 0,
         rAxis: AxisName.X,
         thetaAxis: AxisName.U,
       },
@@ -91,12 +100,6 @@ function defaultConfig(): FiveHoleTraversalConfig {
     samplesPerPoint: 10,
     sampleIntervalMs: 50,
     motionTimeoutMs: 30000,
-    pAtmDeviceId: '',
-    pAtmChannel: 16,
-    tAtmDeviceId: '',
-    tAtmChannel: 17,
-    tTotalDeviceId: '',
-    tTotalChannel: 0,
     sharedMotion: false,
     sharedMotionX: { controllerId: '', axis: AxisName.X },
     sharedMotionY: { controllerId: '', axis: AxisName.Y },
@@ -198,12 +201,17 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
   // 确保所有涉及到的采集设备都已连接并启动采集
   async function ensureDevicesAcquiring() {
     const deviceIds = new Set<string>()
-    if (config.value.pAtmDeviceId) deviceIds.add(config.value.pAtmDeviceId)
-    if (config.value.tAtmDeviceId) deviceIds.add(config.value.tAtmDeviceId)
     for (const probe of config.value.probes) {
       if (!probe.enabled) continue
       for (const ch of probe.probeChannels) {
         if (ch.enabled && ch.deviceId) deviceIds.add(ch.deviceId)
+      }
+      // 探针级大气压/气流温度数据源（device 模式时需确保设备采集中）
+      if (probe.pAtmSource?.mode === ATM_SOURCE_MODE.DEVICE && probe.pAtmSource.deviceId) {
+        deviceIds.add(probe.pAtmSource.deviceId)
+      }
+      if (probe.tAtmSource?.mode === ATM_SOURCE_MODE.DEVICE && probe.tAtmSource.deviceId) {
+        deviceIds.add(probe.tAtmSource.deviceId)
       }
     }
     const errs = await ensureDevicesAcquiringByIds(deviceIds)
@@ -395,9 +403,13 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
     if (probeData.length === 0) return
 
     const BOM = '\uFEFF'
+    // 点位/方向列标签：扇面为 R/θ（轴坐标），其余为 X/Y（与后端 csv_writer 保持一致）
+    const isFan = config.value.layout.pattern === TraversalPattern.FAN
+    const [primaryCol, secondaryCol] = isFan ? ['R(mm)', 'θ(°)'] : ['X', 'Y']
+    const [primaryDir, secondaryDir] = isFan ? ['R', 'θ'] : ['X', 'Y']
     const headers = [
-      '点号', '探针ID', 'X', 'Y',
-      'X方向位移机构名', 'X方向轴号', 'Y方向位移机构名', 'Y方向轴号',
+      '点号', '探针ID', primaryCol, secondaryCol,
+      `${primaryDir}方向位移机构名`, `${primaryDir}方向轴号`, `${secondaryDir}方向位移机构名`, `${secondaryDir}方向轴号`,
       'P1', 'P2', 'P3', 'P4', 'P5', 'P∞', 'T∞',
       '总压Pt', '静压Ps', '马赫数Ma', '攻角Alpha', '侧滑角Beta', '速度V',
       '校正空速CAS', '静温SAT', '动压Qc', '密度ρ',
@@ -523,8 +535,6 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
       layout.fan = {
         rSteps: [{ start: 0, end: 20, step: 5 }],
         thetaSteps: [{ start: 0, end: 90, step: 15 }],
-        rStart: 0,
-        thetaStart: 0,
         rAxis: AxisName.X,
         thetaAxis: AxisName.U,
       }
@@ -532,7 +542,8 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
   }
 
   // 迁移旧配置字段：motionAlpha/motionBeta -> motionX/motionY；line.axis 小写 -> 大写；
-  // 补全共用轴位字段（旧配置无 sharedMotion/sharedMotionX/sharedMotionY）
+  // 补全共用轴位字段（旧配置无 sharedMotion/sharedMotionX/sharedMotionY）；
+  // 全局 pAtm/tAtm/tTotal 字段 -> 探针级 pAtmSource/tAtmSource（tTotal 已移除，直接删除）
   function migrateLegacyConfig() {
     const cfg = config.value as any
     if (!cfg.probes) return
@@ -548,12 +559,35 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
         probe.motionY = probe.motionBeta
         delete probe.motionBeta
       }
+      // 旧全局大气数据源迁移到探针级（仅探针尚无数据源配置时）
+      if (!probe.pAtmSource) {
+        probe.pAtmSource = cfg.pAtmDeviceId
+          ? { mode: ATM_SOURCE_MODE.DEVICE, deviceId: cfg.pAtmDeviceId, channel: cfg.pAtmChannel ?? 16, manualValue: 0 }
+          : defaultAtmSource(16)
+      }
+      if (!probe.tAtmSource) {
+        probe.tAtmSource = cfg.tAtmDeviceId
+          ? { mode: ATM_SOURCE_MODE.DEVICE, deviceId: cfg.tAtmDeviceId, channel: cfg.tAtmChannel ?? 17, manualValue: 0 }
+          : defaultAtmSource(17)
+      }
     }
+    // 删除已废弃的全局字段（含 tTotal，功能已移除）
+    delete cfg.pAtmDeviceId
+    delete cfg.pAtmChannel
+    delete cfg.tAtmDeviceId
+    delete cfg.tAtmChannel
+    delete cfg.tTotalDeviceId
+    delete cfg.tTotalChannel
     if (cfg.layout?.line?.axis === 'x') cfg.layout.line.axis = AxisName.X
     if (cfg.layout?.line?.axis === 'y') cfg.layout.line.axis = AxisName.Y
     if (cfg.layout?.rectangle) {
       if (!cfg.layout.rectangle.xAxis) cfg.layout.rectangle.xAxis = AxisName.X
       if (!cfg.layout.rectangle.yAxis) cfg.layout.rectangle.yAxis = AxisName.Y
+    }
+    // 删除扇面已废弃的相对原点字段（点位已改为轴绝对坐标，rSteps[0].start 即起始位置）
+    if (cfg.layout?.fan) {
+      delete cfg.layout.fan.rStart
+      delete cfg.layout.fan.thetaStart
     }
     ensureLayoutObjects()
   }

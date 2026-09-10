@@ -83,6 +83,10 @@ func (c *Core) Startup(app *application.App) {
 	c.DeviceManager.SetOnStatusChange(func(statuses []types.DeviceStatus) {
 		c.App.Event.Emit("device:status-updated", statuses)
 	})
+	// 温度校准写入/清除后广播，前端据此刷新 profiles（DeviceView"已校准"徽标等）
+	c.DeviceManager.SetOnTempCalibChange(func(deviceID string) {
+		c.App.Event.Emit("device:temp-calib-updated", deviceID)
+	})
 	c.DeviceManager.Init()
 
 	c.MotionManager.SetConfigStore(c.ConfigManager.Motion)

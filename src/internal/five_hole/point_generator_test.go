@@ -237,8 +237,6 @@ func TestGeneratePoints_Fan_SingleRadiusSingleAngle(t *testing.T) {
 		Fan: &types.FanLayout{
 			RSteps:     []types.StepSegment{{Start: 10, End: 10, Step: 1}},
 			ThetaSteps: []types.StepSegment{{Start: 30, End: 30, Step: 1}},
-			RStart:     10,
-			ThetaStart: 30,
 			RAxis:      "X",
 			ThetaAxis:  "U",
 		},
@@ -250,8 +248,9 @@ func TestGeneratePoints_Fan_SingleRadiusSingleAngle(t *testing.T) {
 	if len(points) != 1 {
 		t.Fatalf("expected 1 point, got %d", len(points))
 	}
-	if points[0].X != 0 || points[0].Y != 0 {
-		t.Fatalf("first point should be relative origin, got (%f, %f)", points[0].X, points[0].Y)
+	// 点位为轴坐标：X=R 轴绝对位置，Y=θ 轴绝对位置
+	if points[0].X != 10 || points[0].Y != 30 {
+		t.Fatalf("first point should be axis position (10, 30), got (%f, %f)", points[0].X, points[0].Y)
 	}
 }
 
@@ -265,8 +264,6 @@ func TestGeneratePoints_Fan_MultiRadiusSingleAngle(t *testing.T) {
 		Fan: &types.FanLayout{
 			RSteps:     []types.StepSegment{{Start: 0, End: 10, Step: 5}}, // 0, 5, 10
 			ThetaSteps: []types.StepSegment{{Start: 0, End: 0, Step: 1}},   // 0
-			RStart:     0,
-			ThetaStart: 0,
 			RAxis:      "X",
 			ThetaAxis:  "U",
 		},
@@ -296,8 +293,6 @@ func TestGeneratePoints_Fan_MultiRadiusMultiAngle(t *testing.T) {
 		Fan: &types.FanLayout{
 			RSteps:     []types.StepSegment{{Start: 0, End: 10, Step: 10}}, // 0, 10
 			ThetaSteps: []types.StepSegment{{Start: 0, End: 90, Step: 90}},  // 0, 90
-			RStart:     0,
-			ThetaStart: 0,
 			RAxis:      "X",
 			ThetaAxis:  "U",
 		},
@@ -310,11 +305,12 @@ func TestGeneratePoints_Fan_MultiRadiusMultiAngle(t *testing.T) {
 		t.Fatalf("expected 4 points, got %d", len(points))
 	}
 	// 顺序：先遍历 θ，再遍历 R（与矩形保持一致）
+	// 点位为轴坐标：X=R（mm），Y=θ（°）
 	expected := []types.TraversalPoint{
-		{X: 0, Y: 0},  // R=0, θ=0
-		{X: 0, Y: 0},  // R=0, θ=90
-		{X: 10, Y: 0}, // R=10, θ=0
-		{X: 0, Y: 10}, // R=10, θ=90
+		{X: 0, Y: 0},   // R=0, θ=0
+		{X: 0, Y: 90},  // R=0, θ=90
+		{X: 10, Y: 0},  // R=10, θ=0
+		{X: 10, Y: 90}, // R=10, θ=90
 	}
 	for i, p := range points {
 		if !approxEqual(p.X, expected[i].X) || !approxEqual(p.Y, expected[i].Y) {
@@ -324,14 +320,12 @@ func TestGeneratePoints_Fan_MultiRadiusMultiAngle(t *testing.T) {
 }
 
 func TestGeneratePoints_Fan_NonZeroStart(t *testing.T) {
-	// 起始半径 5、起始角度 30°，验证相对原点行为
+	// 非零起始半径 5、起始角度 30°，验证点位为轴绝对坐标
 	layout := types.TraversalLayout{
 		Pattern: types.TraversalPatternFan,
 		Fan: &types.FanLayout{
 			RSteps:     []types.StepSegment{{Start: 5, End: 15, Step: 10}}, // 5, 15
 			ThetaSteps: []types.StepSegment{{Start: 30, End: 30, Step: 1}},  // 30
-			RStart:     5,
-			ThetaStart: 30,
 			RAxis:      "X",
 			ThetaAxis:  "U",
 		},
@@ -343,11 +337,11 @@ func TestGeneratePoints_Fan_NonZeroStart(t *testing.T) {
 	if len(points) != 2 {
 		t.Fatalf("expected 2 points, got %d", len(points))
 	}
-	if !approxEqual(points[0].X, 0) || !approxEqual(points[0].Y, 0) {
-		t.Fatalf("first point should be relative origin, got (%f, %f)", points[0].X, points[0].Y)
+	if !approxEqual(points[0].X, 5) || !approxEqual(points[0].Y, 30) {
+		t.Fatalf("first point should be axis position (5, 30), got (%f, %f)", points[0].X, points[0].Y)
 	}
-	// 第二点：ΔR=10，角度相对 0°，沿起始角度方向
-	if !approxEqual(points[1].X, 10) || !approxEqual(points[1].Y, 0) {
-		t.Fatalf("second point should be (10, 0), got (%f, %f)", points[1].X, points[1].Y)
+	// 第二点：R 轴位置 15，θ 轴位置 30
+	if !approxEqual(points[1].X, 15) || !approxEqual(points[1].Y, 30) {
+		t.Fatalf("second point should be (15, 30), got (%f, %f)", points[1].X, points[1].Y)
 	}
 }

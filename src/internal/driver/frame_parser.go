@@ -159,6 +159,10 @@ func (r *DAQTFrameReader) Feed(data []byte) {
 // BIN=1 + TIME/HEAD=1: 带时间戳定长帧（8B 时间戳 + 64B float32 = 72B）
 // BIN=0 + TIME/HEAD=1: 变长 ASCII 帧
 // 否则: frameSize 定长帧（64B binary 或 192B ASCII）
+//
+// 容忍迟到 ACK：设备固件在 @f0 后并行发送 ACK 与数据流，顺序不保证
+// （约 10~15% 数据帧先到或带 1 个前导残杂字节 'A'=0x41）。
+// 用偏移 0/1 帧合法性对齐真实边界，支持丢弃 1 个前导字节自愈。
 func (r *DAQTFrameReader) HasCompleteFrame() bool {
 	if r.metadataMode {
 		if r.frameSize == types.DAQTBinaryFrameSize {
@@ -166,7 +170,7 @@ func (r *DAQTFrameReader) HasCompleteFrame() bool {
 		}
 		return r.hasVariableFrame()
 	}
-	return len(r.buffer) >= r.frameSize
+	return r.hasAlignedFixedFrame()
 }
 
 // ReadFrame 读取一帧数据（从缓冲区移除）
@@ -177,7 +181,7 @@ func (r *DAQTFrameReader) ReadFrame() []byte {
 		}
 		return r.readVariableFrame()
 	}
-	return r.readFixedFrame()
+	return r.readAlignedFixedFrame()
 }
 
 // Reset 清空缓冲区（保留 frameSize 配置）
@@ -193,6 +197,70 @@ func (r *DAQTFrameReader) readFixedFrame() []byte {
 	copy(frame, r.buffer[:r.frameSize])
 	r.buffer = r.buffer[r.frameSize:]
 	return frame
+}
+
+// hasAlignedFixedFrame 检查是否有可对齐的定长帧。
+// 容忍迟到 ACK：设备固件在 @f0 后并行发送 ACK 与数据流，顺序不保证
+// （约 10~15% 数据帧先到或带 1 个前导残杂字节 'A'=0x41）。
+// 策略：当缓冲区首字节为 'A'(0x41) 时，优先尝试偏移 1（'A' 作为 ACK 的概率
+// 远高于作为有效数据首字节）；否则用偏移 0。
+func (r *DAQTFrameReader) hasAlignedFixedFrame() bool {
+	if len(r.buffer) < r.frameSize {
+		return false
+	}
+	// 首字节为 'A' 且有足够数据：优先偏移 1
+	if len(r.buffer) > 0 && r.buffer[0] == 'A' && len(r.buffer) >= r.frameSize+1 {
+		if r.isFixedFrameValidAt(1) {
+			return true
+		}
+	}
+	// 否则用偏移 0
+	return r.isFixedFrameValidAt(0)
+}
+
+// readAlignedFixedFrame 读取对齐后的定长帧（自动丢弃前导残杂字节）。
+func (r *DAQTFrameReader) readAlignedFixedFrame() []byte {
+	if len(r.buffer) < r.frameSize {
+		return nil
+	}
+	offset := 0
+	// 首字节为 'A' 且偏移 1 合法：丢弃迟到 ACK
+	if len(r.buffer) > 0 && r.buffer[0] == 'A' && len(r.buffer) >= r.frameSize+1 {
+		if r.isFixedFrameValidAt(1) {
+			offset = 1
+		}
+	}
+	frame := make([]byte, r.frameSize)
+	copy(frame, r.buffer[offset:offset+r.frameSize])
+	r.buffer = r.buffer[offset+r.frameSize:]
+	return frame
+}
+
+// isFixedFrameValidAt 检查指定偏移处的帧是否合法。
+// 二进制帧：解析后用 isValidDAQTFrame 校验通道值物理范围。
+// ASCII 帧：检查字段格式（数字/小数点/空格）。
+func (r *DAQTFrameReader) isFixedFrameValidAt(offset int) bool {
+	if offset+r.frameSize > len(r.buffer) {
+		return false
+	}
+	frame := r.buffer[offset : offset+r.frameSize]
+	// 二进制帧：解析校验通道值
+	if r.frameSize == types.DAQTBinaryFrameSize {
+		values := make([]float64, 16)
+		for i := 0; i < 16; i++ {
+			bits := binary.LittleEndian.Uint32(frame[i*4 : i*4+4])
+			values[i] = float64(math.Float32frombits(bits))
+		}
+		reverseFloat64(values)
+		return isValidDAQTFrame(values)
+	}
+	// ASCII 帧：检查首字段是否可解析为浮点数
+	if r.frameSize == types.DAQTASCIIFrameSize {
+		var val float64
+		n, _ := fmt.Sscanf(string(frame[:12]), "%f", &val)
+		return n == 1
+	}
+	return true
 }
 
 // readBinaryTimestampFrame 读取带时间戳的二进制帧（BIN=1 + TIME/HEAD=1）

@@ -54,13 +54,22 @@ func makeMockMultiDeviceBatchGetter5H() FiveHoleMultiDeviceBatchGetter {
 	}
 }
 
+// applyMockAtmSources5H 为所有探针注入 devP/devT 大气数据源
+// （匹配 makeMockMultiDeviceBatchGetter5H；Validate 跳过禁用探针，统一注入无副作用）
+func applyMockAtmSources5H(cfg *types.FiveHoleTraversalConfig) {
+	for i := range cfg.Probes {
+		cfg.Probes[i].PAtmSource = types.FiveHoleAtmSource{Mode: types.FiveHoleSourceDevice, DeviceID: "devP", Channel: 0}
+		cfg.Probes[i].TAtmSource = types.FiveHoleAtmSource{Mode: types.FiveHoleSourceDevice, DeviceID: "devT", Channel: 0}
+	}
+}
+
 // makeServiceConfig5H 构造一个能通过 Validate 的最小 1 点位五孔配置（快速完成）
-// 使用 makeEnabledProbe（DeviceID=d1）+ devP/devT 大气设备，匹配 makeMockMultiDeviceBatchGetter5H
+// 使用 makeEnabledProbe（DeviceID=d1）+ 探针级 devP/devT 大气数据源，匹配 makeMockMultiDeviceBatchGetter5H
 func makeServiceConfig5H(t *testing.T) types.FiveHoleTraversalConfig {
 	t.Helper()
-	cfg := makeValidFiveHoleConfig(t, makeEnabledProbe("probe1"))
-	cfg.PAtmDeviceID = "devP"
-	cfg.TAtmDeviceID = "devT"
+	probe := makeEnabledProbe("probe1")
+	cfg := makeValidFiveHoleConfig(t, probe)
+	applyMockAtmSources5H(&cfg)
 	return cfg
 }
 
@@ -321,7 +330,8 @@ func TestService5H_Start_AfterComplete_Succeeds(t *testing.T) {
 	}
 
 	waitForCompleteEvent5H(t, publisher, 3*time.Second)
-	waitForStatusEventually5H(t, service, types.TraversalStatusIdle, 1*time.Second)
+	// 自然完成后状态自动标记为 completed（completed 状态下允许 Start 新测试）
+	waitForStatusEventually5H(t, service, types.TraversalStatusCompleted, 1*time.Second)
 
 	time.Sleep(20 * time.Millisecond)
 
@@ -568,8 +578,7 @@ func TestService5H_Start_InitializesProbeStatuses_ForEnabledProbesOnly(t *testin
 	}
 
 	cfg := makeValidFiveHoleConfig(t, probe1, probe2, probe3)
-	cfg.PAtmDeviceID = "devP"
-	cfg.TAtmDeviceID = "devT"
+	applyMockAtmSources5H(&cfg)
 
 	mover, _ := makeMockMover5H()
 	waiter, _ := makeMockWaiter5H()
@@ -693,8 +702,7 @@ func TestService5H_MultiProbe_ProbeStatuses_UpdateIndependently(t *testing.T) {
 	}
 
 	cfg := makeValidFiveHoleConfig(t, probe1, probe2)
-	cfg.PAtmDeviceID = "devP"
-	cfg.TAtmDeviceID = "devT"
+	applyMockAtmSources5H(&cfg)
 
 	mover, _ := makeMockMover5H()
 	waiter, _ := makeMockWaiter5H()
@@ -776,8 +784,7 @@ func TestService5H_Stop_ClosesAllProbeCSVWriters(t *testing.T) {
 	}
 
 	cfg := makeValidFiveHoleConfig(t, probe1, probe2)
-	cfg.PAtmDeviceID = "devP"
-	cfg.TAtmDeviceID = "devT"
+	applyMockAtmSources5H(&cfg)
 
 	mover, _ := makeMockMover5H()
 	waiter, _ := makeMockWaiter5H()

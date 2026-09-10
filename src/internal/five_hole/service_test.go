@@ -103,10 +103,6 @@ func makeValidFiveHoleConfig(t *testing.T, enabledProbes ...types.FiveHoleProbeC
 		SamplesPerPoint:  1,
 		SampleIntervalMs: 10,
 		MotionTimeoutMs:  1000,
-		PAtmDeviceID:     "devP",
-		PAtmChannel:      0,
-		TAtmDeviceID:     "devT",
-		TAtmChannel:      0,
 		Probes:           probes,
 		Layout: types.TraversalLayout{
 			Pattern: types.TraversalPatternRectangle,
@@ -124,6 +120,7 @@ func makeValidFiveHoleConfig(t *testing.T, enabledProbes ...types.FiveHoleProbeC
 }
 
 // makeEnabledProbe 构造一个启用的探针配置（含 P1-P5 通道 + 运动轴 + 占位校准文件信息）
+// PAtm/TAtm 默认手动模式（无需真实设备即可通过 Validate）
 func makeEnabledProbe(probeID string) types.FiveHoleProbeConfig {
 	return types.FiveHoleProbeConfig{
 		ProbeID: probeID,
@@ -135,8 +132,10 @@ func makeEnabledProbe(probeID string) types.FiveHoleProbeConfig {
 			{Role: types.Role5H_P4, DeviceID: "d1", Channel: 3, Enabled: true},
 			{Role: types.Role5H_P5, DeviceID: "d1", Channel: 4, Enabled: true},
 		},
-		MotionX: types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "X"},
-		MotionY: types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "Y"},
+		MotionX:     types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "X"},
+		MotionY:     types.FiveHoleMotionAxisMapping{ControllerID: "c1", Axis: "Y"},
+		PAtmSource:  types.FiveHoleAtmSource{Mode: types.FiveHoleSourceManual, ManualValue: 101.325},
+		TAtmSource:  types.FiveHoleAtmSource{Mode: types.FiveHoleSourceManual, ManualValue: 20},
 		CalibFiles: []types.FiveHoleCalibFileInfo{
 			{FilePath: "fake.cal", FileName: "fake.cal", CMa: 0.5},
 		},
@@ -252,16 +251,10 @@ func makeFanConfig(t *testing.T, probes ...types.FiveHoleProbeConfig) types.Five
 		SamplesPerPoint:  1,
 		SampleIntervalMs: 10,
 		MotionTimeoutMs:  1000,
-		PAtmDeviceID:     "devP",
-		PAtmChannel:      0,
-		TAtmDeviceID:     "devT",
-		TAtmChannel:      0,
 		Probes:           ps,
 		Layout: types.TraversalLayout{
 			Pattern: types.TraversalPatternFan,
 			Fan: &types.FanLayout{
-				RStart:     0,
-				ThetaStart: 0,
 				RSteps:     []types.StepSegment{{Start: 0, End: 10, Step: 5}},
 				ThetaSteps: []types.StepSegment{{Start: 0, End: 30, Step: 15}},
 			},

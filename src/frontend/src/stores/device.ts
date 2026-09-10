@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import { DeviceService } from '@bindings/yx-daq/internal/app'
 import { createWailsEventListener } from '../utils/wailsEvents'
 
-interface ChannelConfig {
+export interface ChannelConfig {
   index: number
   name: string
   enabled: boolean
@@ -12,6 +12,7 @@ interface ChannelConfig {
   rangeMin: number
   rangeMax: number
   thermocoupleType?: string
+  tempSource?: string
   zeroOffset?: number
   zeroOffsetUnit?: string
   zeroCalibratedAt?: number
@@ -166,6 +167,14 @@ export const useDeviceStore = defineStore('device', () => {
     return withDeviceAction('setSingleThermocoupleType', () => DeviceService.SetSingleThermocoupleType(id, channelIndex, tcType), fetchProfiles)
   }
 
+  async function setTempSource(id: string, source: string): Promise<string | null> {
+    return withDeviceAction('setTempSource', () => DeviceService.SetTempSource(id, source), fetchProfiles)
+  }
+
+  async function setTempThermocoupleType(id: string, tcType: string): Promise<string | null> {
+    return withDeviceAction('setTempThermocoupleType', () => DeviceService.SetTempThermocoupleType(id, tcType), fetchProfiles)
+  }
+
   async function zeroCalibrate(id: string): Promise<string | null> {
     return withDeviceAction('zeroCalibrate', () => DeviceService.ZeroCalibrate(id), fetchProfiles)
   }
@@ -264,6 +273,8 @@ export const useDeviceStore = defineStore('device', () => {
       },
     },
     { channel: 'device:status-updated', handler: (event: any) => { statuses.value = event.data as DeviceStatus[] } },
+    // 温度校准写入/清除后刷新 profiles（DeviceView 编辑对话框的温度校准字段随之更新）
+    { channel: 'device:temp-calib-updated', handler: () => { fetchProfiles() } },
   ])
 
   function startListening() {
@@ -288,6 +299,7 @@ export const useDeviceStore = defineStore('device', () => {
     getDeviceStatus, isDeviceConnecting,
     fetchProfiles, fetchStatuses, updateProfile, setUnit,
     setThermocoupleType, setSingleThermocoupleType,
+    setTempSource, setTempThermocoupleType,
     zeroCalibrate, zeroCalibrateChannel, clearZeroOffset, clearAllZeroOffsets,
     zeroCalibrateAll,
     connectDevice, disconnectDevice,

@@ -22,10 +22,24 @@ export function AddDeviceProfile(profile: types$0.DeviceProfile): $CancellablePr
 }
 
 /**
+ * ClearAllTempCalib 清除指定设备所有通道的温度校准
+ */
+export function ClearAllTempCalib(id: string): $CancellablePromise<void> {
+    return $Call.ByID(2369670389, id);
+}
+
+/**
  * ClearAllZeroOffsets 清除指定设备所有通道的零位偏移
  */
 export function ClearAllZeroOffsets(id: string): $CancellablePromise<void> {
     return $Call.ByID(1903488134, id);
+}
+
+/**
+ * ClearTempCalib 清除指定通道的温度校准
+ */
+export function ClearTempCalib(id: string, channelIndex: number): $CancellablePromise<void> {
+    return $Call.ByID(3210373118, id, channelIndex);
 }
 
 /**
@@ -107,6 +121,20 @@ export function SetSingleThermocoupleType(id: string, channelIndex: number, tcTy
 }
 
 /**
+ * SetTempSource 设置 EA2508A 温度通道传感器来源（@16 命令，持久化+连接时下发）
+ */
+export function SetTempSource(id: string, source: string): $CancellablePromise<void> {
+    return $Call.ByID(3049331939, id, source);
+}
+
+/**
+ * SetTempThermocoupleType 设置 EA2508A 温度通道热电偶类型（@17 命令，仅外界热电偶来源时有效）
+ */
+export function SetTempThermocoupleType(id: string, tcType: string): $CancellablePromise<void> {
+    return $Call.ByID(220806069, id, tcType);
+}
+
+/**
  * SetThermocoupleType 设置设备热电偶类型（全通道批量设置）
  */
 export function SetThermocoupleType(id: string, tcTypes: string): $CancellablePromise<void> {
@@ -156,6 +184,31 @@ export function StopAcquisitionAll(): $CancellablePromise<void> {
 }
 
 /**
+ * TempCalibFit 温度校准线性回归拟合 y = a*x + b
+ */
+export function TempCalibFit(points: types$0.TempCalibPoint[]): $CancellablePromise<types$0.TempCalibResult> {
+    return $Call.ByID(501050672, points).then(($result: any) => {
+        return $$createType8($result);
+    });
+}
+
+/**
+ * TempCalibSample 温度校准批量采点：对勾选通道各采 10 帧取均值
+ */
+export function TempCalibSample(id: string, channelIndices: number[]): $CancellablePromise<types$0.TempCalibSampleResult[]> {
+    return $Call.ByID(2500718923, id, channelIndices).then(($result: any) => {
+        return $$createType10($result);
+    });
+}
+
+/**
+ * TempCalibWrite 温度校准写入指定通道
+ */
+export function TempCalibWrite(id: string, channelIndex: number, result: types$0.TempCalibResult): $CancellablePromise<void> {
+    return $Call.ByID(110555688, id, channelIndex, result);
+}
+
+/**
  * UpdateDeviceProfile 更新设备配置
  */
 export function UpdateDeviceProfile(profile: types$0.DeviceProfile): $CancellablePromise<void> {
@@ -174,7 +227,7 @@ export function ZeroCalibrate(id: string): $CancellablePromise<void> {
  */
 export function ZeroCalibrateAll(): $CancellablePromise<types$0.ZeroCalibrateResult[]> {
     return $Call.ByID(1773570314).then(($result: any) => {
-        return $$createType9($result);
+        return $$createType12($result);
     });
 }
 
@@ -194,5 +247,8 @@ const $$createType4 = types$0.DataPayload.createFrom;
 const $$createType5 = $Create.Array($$createType4);
 const $$createType6 = types$0.DiscoveredDevice.createFrom;
 const $$createType7 = $Create.Array($$createType6);
-const $$createType8 = types$0.ZeroCalibrateResult.createFrom;
-const $$createType9 = $Create.Array($$createType8);
+const $$createType8 = types$0.TempCalibResult.createFrom;
+const $$createType9 = types$0.TempCalibSampleResult.createFrom;
+const $$createType10 = $Create.Array($$createType9);
+const $$createType11 = types$0.ZeroCalibrateResult.createFrom;
+const $$createType12 = $Create.Array($$createType11);

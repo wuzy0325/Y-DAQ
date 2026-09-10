@@ -2,6 +2,7 @@ package driver
 
 import (
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 	"time"
@@ -38,6 +39,21 @@ func (d *YXDAQTDriver) sendCommandExact(cmd string, expectedLen int) (string, er
 // sendCommandSilence sends a command expecting a variable-length response with silence window
 func (d *YXDAQTDriver) sendCommandSilence(cmd string) (string, error) {
 	return d.sendCommandWithType(cmd, ResponseSilenceWindow, 0)
+}
+
+// sendCommandACK 发送设置类命令（@fe/@f3 等）并校验单字节 ACK 响应。
+// 设备返回 'A' 表示成功，'E' 表示拒绝（sendCommandWithType 已处理），
+// 其他字节视为协议错误。
+// 调用方不得持有 d.mu（sendCommandWithType 内部加锁 d.mu，会导致自死锁）。
+func (d *YXDAQTDriver) sendCommandACK(cmd string) error {
+	resp, err := d.sendCommandExact(cmd, 1)
+	if err != nil {
+		return err
+	}
+	if trimSpace(resp) != "A" {
+		return fmt.Errorf("命令 %s 的 ACK 应答无效: %q（应为 A）", cmd, resp)
+	}
+	return nil
 }
 
 // sendCommandWithType sends a command and registers a pending response expectation
@@ -91,20 +107,32 @@ func (d *YXDAQTDriver) writeCmdOnly(cmd string) error {
 }
 
 // syncHardwareConfig 连接后同步硬件配置
+// 参考实机协议（device-lab/skills/daq-t1603/SKILL.md）：
+//   - @e3 响应 = 16 字节类型数据 + 单个 LF = 17 字节
+//   - @fd MCH 读回值是设备端持久化的历史掩码，不代表应用配置，不写回
+//   - @fe BIN 1 必须用 ACK 校验 + readback 确认（temp 固件 ACK 但不切换）
+//   - @fe TIME 按当前配置设置（FrameReader 支持 72 字节带时间戳帧）
+//   - @fe HEAD 0 强制关闭序号帧（FrameReader 不支持 68 字节序号帧）
 func (d *YXDAQTDriver) syncHardwareConfig() {
 	config := DAQTHardwareConfig{}
 
-	if resp, err := d.sendCommandExact("@e3", 16); err == nil {
-		config.ThermocoupleTypes = resp
-	}
-	if resp, err := d.sendCommandExact("@fd MCH", 4); err == nil {
-		config.ChannelMask = resp
-	}
-	if resp, err := d.sendCommandSilence("@fd SPS"); err == nil {
-		if v, e := strconv.Atoi(trimSpace(resp)); e == nil {
-			config.SamplingRate = v
+	// @e3: 实机响应 16 字节类型数据 + 单个 LF，共 17 字节
+	if resp, err := d.sendCommandExact("@e3", 17); err == nil {
+		value := strings.TrimSuffix(resp, "\n")
+		value = trimSpace(value)
+		if len(value) == 16 {
+			config.ThermocoupleTypes = value
 		}
 	}
+
+	// @fd MCH: 不写回 config.ChannelMask。
+	// 读回值是设备端持久化的历史掩码（如出厂遗留 "0000"），不代表应用配置；
+	// 若写回 "0000" 会导致后续 @f0 0000 2 零通道采集。
+	// 仍读取以维持协议响应边界与后续命令时序。
+	if _, err := d.sendCommandExact("@fd MCH", 4); err == nil {
+		// 故意不写回 ChannelMask
+	}
+
 	if resp, err := d.sendCommandExact("@fd BIN", 1); err == nil {
 		config.BinaryFormat = trimSpace(resp) == "1"
 	}
@@ -113,6 +141,11 @@ func (d *YXDAQTDriver) syncHardwareConfig() {
 	}
 	if resp, err := d.sendCommandExact("@fd HEAD", 1); err == nil {
 		config.ShowSequence = trimSpace(resp) == "1"
+	}
+	if resp, err := d.sendCommandSilence("@fd SPS"); err == nil {
+		if v, e := strconv.Atoi(trimSpace(resp)); e == nil {
+			config.SamplingRate = v
+		}
 	}
 	if resp, err := d.sendCommandSilence("@fd AVG"); err == nil {
 		if v, e := strconv.Atoi(trimSpace(resp)); e == nil {
@@ -134,20 +167,48 @@ func (d *YXDAQTDriver) syncHardwareConfig() {
 			config.TriggerCount = v
 		}
 	}
-	if resp, err := d.sendCommandExact("@fd CHECK", 4); err == nil {
-		config.OpenCircuitCheck = resp
+
+	// 强制 BIN=1 启用二进制采集模式（16×float32 LE，64 字节帧，效率最高）。
+	// @fe 命令返回单字节 ACK（A=成功/E=拒绝），用 sendCommandACK 读取校验。
+	if err := d.sendCommandACK("@fe BIN 1"); err != nil {
+		slog.Warn("DAQ-T: 强制 BIN=1 失败", "host", d.Host, "port", d.Port, "err", err)
+	} else {
+		// readback 验证：temp 型号固件对 @fe BIN 1 仍回 ACK 'A' 但实际不切换，
+		// 必须读 @fd BIN 确认实际状态，否则 FrameReader 按 64 字节二进制解析
+		// 设备实际发送的 ASCII 帧会导致帧错位。
+		time.Sleep(50 * time.Millisecond)
+		if resp, err := d.sendCommandExact("@fd BIN", 1); err == nil {
+			val := trimSpace(resp)
+			switch val {
+			case "1":
+				config.BinaryFormat = true
+			case "0":
+				config.IsTempModel = true
+				config.BinaryFormat = false
+				slog.Warn("DAQ-T: BIN=1 未生效（temp 固件？），回退 ASCII 模式",
+					"host", d.Host, "port", d.Port)
+			default:
+				slog.Warn("DAQ-T: @fd BIN readback 返回非法值",
+					"host", d.Host, "port", d.Port, "resp", val)
+			}
+		}
 	}
 
-	// 连接后主动设置 BIN=1，启用二进制采集模式
-	d.writeCmdOnly("@fe BIN 1")
-	time.Sleep(100 * time.Millisecond)
-	if resp, err := d.sendCommandExact("@fd BIN", 1); err == nil {
-		if trimSpace(resp) == "1" {
-			config.BinaryFormat = true
-		} else {
-			config.IsTempModel = true
-			config.BinaryFormat = false
-		}
+	// 强制 TIME 按当前配置设置（FrameReader 支持 BIN=1+TIME=1 的 72 字节帧）。
+	desiredTime := 0
+	if config.ShowTimestamp {
+		desiredTime = 1
+	}
+	if err := d.sendCommandACK(fmt.Sprintf("@fe TIME %d", desiredTime)); err != nil {
+		slog.Warn("DAQ-T: 设置 TIME 失败", "host", d.Host, "port", d.Port, "err", err)
+	}
+
+	// 强制 HEAD=0：当前 FrameReader 不支持 BIN=1+HEAD=1 的 68 字节序号帧，
+	// 设备持久化的 HEAD=1 会导致 readBinaryTimestampFrame 按 72 字节解析 68 字节帧→错位。
+	if err := d.sendCommandACK("@fe HEAD 0"); err != nil {
+		slog.Warn("DAQ-T: 强制 HEAD=0 失败", "host", d.Host, "port", d.Port, "err", err)
+	} else {
+		config.ShowSequence = false
 	}
 
 	d.hwConfig = config
@@ -197,7 +258,7 @@ func (d *YXDAQTDriver) applyNormalizedConfig(periodMs int) error {
 			sps = 1000
 		}
 		if err := d.writeCmdOnly(fmt.Sprintf("@fe SPS %d", sps)); err != nil {
-			return fmt.Errorf("set SPS failed: %w", err)
+			return fmt.Errorf("设置采样频率失败: %w", err)
 		}
 		time.Sleep(50 * time.Millisecond)
 	}
@@ -223,17 +284,36 @@ func (d *YXDAQTDriver) selectFrameParser() {
 }
 
 // SetThermocoupleType 设置热电偶类型
+// @f3 命令返回单字节 ACK（A=成功/E=拒绝），用 sendCommandACK 读取校验。
+// 发送后需 readback 验证（读 @e3 比对），不匹配时返回错误并同步 hwConfig.ThermocoupleTypes。
+// 调用方不得持有 d.mu（sendCommandACK 内部加锁 d.mu，会导致自死锁）。
 func (d *YXDAQTDriver) SetThermocoupleType(tcTypes string) error {
 	if len(tcTypes) != 16 {
 		return fmt.Errorf("thermocouple types must be 16 characters, got %d", len(tcTypes))
 	}
 	cmd := fmt.Sprintf("@f3 0%s0", tcTypes)
-	resp, err := d.sendCommand(cmd)
-	if err != nil {
+	if err := d.sendCommandACK(cmd); err != nil {
 		return fmt.Errorf("set thermocouple type failed: %w", err)
 	}
-	if strings.ToUpper(trimSpace(resp)) == "E" {
-		return fmt.Errorf("device rejected thermocouple type command")
+
+	// readback 验证：发 @f3 命令后读 @e3 比对，确保设备实际接受了配置。
+	// 某些固件可能 ACK 'A' 但不实际切换，readback 可暴露这种静默失败。
+	time.Sleep(50 * time.Millisecond)
+	if resp, err := d.sendCommandExact("@e3", 17); err == nil {
+		value := strings.TrimSuffix(resp, "\n")
+		value = trimSpace(value)
+		if len(value) == 16 && value != tcTypes {
+			// readback 不匹配：同步 hwConfig 为设备实际值，让上层感知真实状态
+			d.mu.Lock()
+			d.hwConfig.ThermocoupleTypes = value
+			d.mu.Unlock()
+			return fmt.Errorf("热电偶类型回读不一致: 已发送 %q, 设备返回 %q", tcTypes, value)
+		}
+		if len(value) == 16 {
+			d.mu.Lock()
+			d.hwConfig.ThermocoupleTypes = value
+			d.mu.Unlock()
+		}
 	}
 	return nil
 }
@@ -262,6 +342,46 @@ func (d *YXDAQTDriver) SetSingleThermocoupleType(channelIndex int, tcType string
 
 	// 发送完整的热电偶类型命令
 	return d.SetThermocoupleType(newTypes)
+}
+
+// SetSamplingRate 设置硬件采样率（SPS = 1000/periodMs，即采集间隔毫秒）。
+// 采集中拒绝设置以避免帧错位/缓冲区污染。
+// @fe SPS <value> 返回单字节 ACK，用 sendCommandACK 校验；
+// 发送后 readback @fd SPS 确认实际值，不一致时返回错误或同步实际值。
+// 调用方不得持有 d.mu（sendCommandACK 内部加锁 d.mu，会导致自死锁）。
+func (d *YXDAQTDriver) SetSamplingRate(periodMs int) error {
+	if d.IsAcquiring() {
+		return fmt.Errorf("采集进行中，不允许设置采样频率")
+	}
+	if periodMs <= 0 {
+		return fmt.Errorf("采样周期必须为正数，当前 %d", periodMs)
+	}
+	sps := 1000 / periodMs
+	if sps < 1 {
+		sps = 1
+	}
+	if sps > 1000 {
+		sps = 1000
+	}
+
+	if err := d.sendCommandACK(fmt.Sprintf("@fe SPS %d", sps)); err != nil {
+		return fmt.Errorf("设置采样频率失败: %w", err)
+	}
+
+	// readback 验证：读 @fd SPS 确认设备实际采样率。
+	// @fd SPS 响应无分隔符且长度可变，用静默窗口读取。
+	time.Sleep(50 * time.Millisecond)
+	if resp, err := d.sendCommandSilence("@fd SPS"); err == nil {
+		if v, e := strconv.Atoi(trimSpace(resp)); e == nil {
+			d.mu.Lock()
+			d.hwConfig.SamplingRate = v
+			d.mu.Unlock()
+			if v != sps {
+				return fmt.Errorf("采样频率回读不一致: 已发送 %d, 设备返回 %d", sps, v)
+			}
+		}
+	}
+	return nil
 }
 
 // SetTemperatureUnit 设置温度单位（℃/℉/K）

@@ -53,6 +53,7 @@ type DeviceManager struct {
 	latestData  map[string]types.DataPayload
 	runtimeStatus map[string]types.ConnectionStatus
 	onStatusChange func(statuses []types.DeviceStatus)
+	onTempCalibChange func(deviceID string)
 }
 
 // NewDeviceManager 创建设备管理器
@@ -328,6 +329,12 @@ type ThermocoupleTypeSetter interface {
 type ValveController interface {
 	ReadValveState() (types.ValveState, error)
 	SetValveState(state types.ValveState) error
+}
+
+// TempChannelConfigurator EA2508A 温度通道配置接口（@16 来源 + @17 热电偶类型，仅 EA2508A 驱动实现）
+type TempChannelConfigurator interface {
+	SetTempSource(source string) error
+	SetTempThermocoupleType(tcType string) error
 }
 
 // ConfigSyncNotifier 配置同步通知能力接口（仅 EA2516T 驱动实现）

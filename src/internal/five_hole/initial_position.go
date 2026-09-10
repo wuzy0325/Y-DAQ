@@ -81,7 +81,7 @@ func (s *FiveHoleTraversalService) returnToInitialPositions(config types.FiveHol
 		return
 	}
 	slog.Info("五孔: 测试结束，开始返回初始位置")
-	if err := coordinator.ReturnProbesToInitialPositions(initialPositions, config.Probes, config.MotionTimeoutMs); err != nil {
+	if err := coordinator.ReturnProbesToInitialPositions(initialPositions, config.Probes, config.Layout, config.MotionTimeoutMs); err != nil {
 		slog.Warn("五孔: 返回初始位置失败", "err", err)
 	} else {
 		slog.Info("五孔: 已返回初始位置")

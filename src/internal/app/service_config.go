@@ -44,6 +44,9 @@ func (s *ConfigService) SelectDataSavePath() (string, error) {
 		CanChooseFiles(false).
 		PromptForSingleSelection()
 	if err != nil {
+		if isDialogCancelled(err) {
+			return "", nil // 用户取消对话框，静默返回
+		}
 		return "", err
 	}
 	return dir, nil

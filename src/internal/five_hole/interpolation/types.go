@@ -46,9 +46,7 @@ type InterpolationInput struct {
 	P4   float64  `json:"P4"`   // 左孔压力
 	P5   float64  `json:"P5"`   // 右孔压力
 	PAtm float64  `json:"Patm"` // 大气压力
-	TAtm float64  `json:"Tatm"` // 大气温度
-	// TTotal 总温（TAT）：nil 表示未配置或读取失败，CalculateSAT 回退用 TAtm（旧行为）
-	TTotal *float64 `json:"Ttotal,omitempty"`
+	TAtm float64  `json:"Tatm"` // 气流温度
 }
 
 // Interpolator 通用插值器接口

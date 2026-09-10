@@ -95,6 +95,16 @@ func (s *DeviceService) SetSingleThermocoupleType(id string, channelIndex int, t
 	return s.Core.DeviceManager.SetSingleThermocoupleType(id, channelIndex, tcType)
 }
 
+// SetTempSource 设置 EA2508A 温度通道传感器来源（@16 命令，持久化+连接时下发）
+func (s *DeviceService) SetTempSource(id string, source string) error {
+	return s.Core.DeviceManager.SetTempSource(id, source)
+}
+
+// SetTempThermocoupleType 设置 EA2508A 温度通道热电偶类型（@17 命令，仅外界热电偶来源时有效）
+func (s *DeviceService) SetTempThermocoupleType(id string, tcType string) error {
+	return s.Core.DeviceManager.SetTempThermocoupleType(id, tcType)
+}
+
 // ReadValveState 读取设备校准阀位（每次从设备读取，不持久化）
 func (s *DeviceService) ReadValveState(id string) (types.ValveState, error) {
 	return s.Core.DeviceManager.ReadValveState(id)
@@ -128,6 +138,31 @@ func (s *DeviceService) ClearZeroOffset(id string, channelIndex int) error {
 // ClearAllZeroOffsets 清除指定设备所有通道的零位偏移
 func (s *DeviceService) ClearAllZeroOffsets(id string) error {
 	return s.Core.DeviceManager.ClearAllZeroOffsets(id)
+}
+
+// TempCalibSample 温度校准批量采点：对勾选通道各采 10 帧取均值
+func (s *DeviceService) TempCalibSample(id string, channelIndices []int) ([]types.TempCalibSampleResult, error) {
+	return s.Core.DeviceManager.TempCalibSample(id, channelIndices)
+}
+
+// TempCalibFit 温度校准线性回归拟合 y = a*x + b
+func (s *DeviceService) TempCalibFit(points []types.TempCalibPoint) (types.TempCalibResult, error) {
+	return s.Core.DeviceManager.TempCalibFit(points)
+}
+
+// TempCalibWrite 温度校准写入指定通道
+func (s *DeviceService) TempCalibWrite(id string, channelIndex int, result types.TempCalibResult) error {
+	return s.Core.DeviceManager.TempCalibWrite(id, channelIndex, result)
+}
+
+// ClearTempCalib 清除指定通道的温度校准
+func (s *DeviceService) ClearTempCalib(id string, channelIndex int) error {
+	return s.Core.DeviceManager.ClearTempCalib(id, channelIndex)
+}
+
+// ClearAllTempCalib 清除指定设备所有通道的温度校准
+func (s *DeviceService) ClearAllTempCalib(id string) error {
+	return s.Core.DeviceManager.ClearAllTempCalib(id)
 }
 
 // ScanDevices 扫描设备

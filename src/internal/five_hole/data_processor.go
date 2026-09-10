@@ -30,15 +30,12 @@ func (dp *DataProcessor) SetBatchGetter(getter FiveHoleMultiDeviceBatchGetter) {
 }
 
 // ReadAllProbesRawData 读取所有启用探针的原始数据
-//   - 全局 PAtm/TAtm/TTotal 一次读取（三根共用）
 //   - 各探针 P1-P5 按设备分组并行读取
+//   - 各探针 PAtm/TAtm 按其数据源配置解析：device=设备读取（按探针独立）/ manual=手动固定值
 //   - lastTimestamps: 上次采样各设备的 timestamp，用于判断新帧（首次传 nil）
 //   - 返回本次采样的 timestamps 供下次调用传入
 func (dp *DataProcessor) ReadAllProbesRawData(
 	probes []types.FiveHoleProbeConfig,
-	pAtmDeviceID string, pAtmChannel int,
-	tAtmDeviceID string, tAtmChannel int,
-	tTotalDeviceID string, tTotalChannel int,
 	lastTimestamps map[string]int64,
 ) ([]*types.FiveHoleRawData, map[string]int64, error) {
 	if dp.batchGetter == nil {
@@ -47,48 +44,14 @@ func (dp *DataProcessor) ReadAllProbesRawData(
 
 	currentTimestamps := make(map[string]int64)
 
-	// 读取全局 PAtm/TAtm/TTotal（同时返回 timestamp 用于后续去重）
+	// 各探针并行读取 P1-P5 + 解析各自 PAtm/TAtm 数据源
 	// 语义：
-	//   - 未配置（deviceID 为空）：PAtm/TAtm = 0，TTotal = nil，无 err（实时监控阶段容忍未配置）
-	//   - 已配置但读取失败：PAtm/TAtm = 0，TTotal = nil，回传 err（samplePoint 视为致命走暂停；emitRealtime 仍用 results 容错推送）
-	//     results 中各探针 P1-P5 已填充完整，调用方可选用以实现"谁配置谁更新"
-	var pAtmVal, tAtmVal float64
-	var tTotalVal *float64
-	var pAtmErr, tAtmErr, tTotalErr error
-	if pAtmDeviceID != "" {
-		var pAtmTs int64
-		pAtmVal, pAtmTs, pAtmErr = dp.readSingleChannel(pAtmDeviceID, pAtmChannel)
-		if pAtmErr == nil {
-			currentTimestamps[pAtmDeviceID] = pAtmTs
-		}
-		// 失败时 pAtmVal 保持 0，下游插值不可信由 err 回传警示调用方
-	}
-	if tAtmDeviceID != "" {
-		var tAtmTs int64
-		tAtmVal, tAtmTs, tAtmErr = dp.readSingleChannel(tAtmDeviceID, tAtmChannel)
-		if tAtmErr == nil && tAtmDeviceID != pAtmDeviceID {
-			currentTimestamps[tAtmDeviceID] = tAtmTs
-		}
-	}
-	if tTotalDeviceID != "" {
-		var tTotalTs int64
-		var v float64
-		v, tTotalTs, tTotalErr = dp.readSingleChannel(tTotalDeviceID, tTotalChannel)
-		if tTotalErr == nil {
-			tTotalVal = &v
-			if tTotalDeviceID != pAtmDeviceID && tTotalDeviceID != tAtmDeviceID {
-				currentTimestamps[tTotalDeviceID] = tTotalTs
-			}
-		}
-		// 失败时 tTotalVal 保持 nil，下游插值回退用 TAtm
-	}
-	// errors.Join 合并 PAtm/TAtm/TTotal 错误（Go 1.20+）
-	atmErr := errors.Join(pAtmErr, tAtmErr, tTotalErr)
-
-	// 各探针并行读取 P1-P5
+	//   - manual 模式：直接取 ManualValue，无需读取设备
+	//   - device 模式：读取指定设备通道，失败时该值降级为 0 并回传 err
 	results := make([]*types.FiveHoleRawData, len(probes))
 	var mu sync.Mutex
 	var wg sync.WaitGroup
+	var atmErrs []error
 
 	for i, probe := range probes {
 		if !probe.Enabled {
@@ -101,9 +64,11 @@ func (dp *DataProcessor) ReadAllProbesRawData(
 			if rawData == nil {
 				return // 数据缺失，静默跳过（WARN 已在 readProbeRawData 内限频）
 			}
+			// 解析该探针的 PAtm/TAtm 数据源（设备读取或手动值）
+			pAtmVal, pAtmErr := dp.resolveAtmSource(p.ProbeID, "大气压", p.PAtmSource, probeTimestamps)
+			tAtmVal, tAtmErr := dp.resolveAtmSource(p.ProbeID, "气流温度", p.TAtmSource, probeTimestamps)
 			rawData.PAtm = pAtmVal
 			rawData.TAtm = tAtmVal
-			rawData.TTotal = tTotalVal
 			mu.Lock()
 			results[idx] = rawData
 			for did, ts := range probeTimestamps {
@@ -111,15 +76,42 @@ func (dp *DataProcessor) ReadAllProbesRawData(
 					currentTimestamps[did] = ts
 				}
 			}
+			if pAtmErr != nil || tAtmErr != nil {
+				atmErrs = append(atmErrs, errors.Join(pAtmErr, tAtmErr))
+			}
 			mu.Unlock()
 		}(i, probe)
 	}
 
 	wg.Wait()
-	// PAtm/TAtm/TTotal 读取失败时回传 err，但 results 仍填充完整 P1-P5 数据：
+	// PAtm/TAtm 读取失败时回传 err，但 results 仍填充完整 P1-P5 数据：
 	//   - samplePoint: err 视为致命，丢弃 probeSamples + break，由下轮 WaitForFreshData 触发自动暂停
 	//   - emitRealtimeForAllProbes: 限频 WARN，仍用 results 推送（实现"谁配置谁更新"）
-	return results, currentTimestamps, atmErr
+	return results, currentTimestamps, errors.Join(atmErrs...)
+}
+
+// resolveAtmSource 解析单探针的大气压/气流温度数据源
+//   - manual：直接返回手动值
+//   - device：读取指定设备通道，成功时记录 timestamp 到 probeTimestamps（供新帧去重）
+//     未配置设备（DeviceID 为空）返回 0 不报错（实时监控阶段容忍未配置）
+func (dp *DataProcessor) resolveAtmSource(probeID, name string, src types.FiveHoleAtmSource, probeTimestamps map[string]int64) (float64, error) {
+	if src.Mode == types.FiveHoleSourceManual {
+		return src.ManualValue, nil
+	}
+	// device 模式（Mode 为空视为 device，兼容旧配置缺省值）
+	if src.DeviceID == "" {
+		return 0, nil
+	}
+	val, ts, err := dp.readSingleChannel(src.DeviceID, src.Channel)
+	if err != nil {
+		return 0, fmt.Errorf("探针%s的%s读取失败: %w", probeID, name, err)
+	}
+	if probeTimestamps != nil {
+		if existing, ok := probeTimestamps[src.DeviceID]; !ok || ts > existing {
+			probeTimestamps[src.DeviceID] = ts
+		}
+	}
+	return val, nil
 }
 
 // WaitForFreshData 等待任一指定设备产生新帧（timestamp 严格大于 lastTimestamps[did]）
