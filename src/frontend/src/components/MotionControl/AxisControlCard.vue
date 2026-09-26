@@ -63,7 +63,7 @@
         </button>
       </div>
       <div class="position-track">
-        <span class="track-end">-{{ formatPosition(maxPosition) }}</span>
+        <span class="track-end">{{ formatTrackEnd(rangeMin) }}</span>
         <div class="track-bg">
           <div
             class="track-fill"
@@ -74,7 +74,7 @@
             :style="{ left: `${positionPercent}%`, borderColor: axisColor, background: axisColor }"
           />
         </div>
-        <span class="track-end">+{{ formatPosition(maxPosition) }}</span>
+        <span class="track-end">{{ formatTrackEnd(rangeMax) }}</span>
       </div>
       <div v-if="axis.negLimitActive || axis.posLimitActive" class="limit-warning">
         <el-icon><WarningFilled /></el-icon>
@@ -94,7 +94,7 @@
           :precision="2"
           :step="stepValue"
           :min="0.01"
-          :max="maxPosition"
+          :max="defaultRange"
           size="small"
           controls-position="right"
           class="step-input"
@@ -132,8 +132,8 @@
           v-model="localTarget"
           :precision="2"
           :step="stepValue"
-          :min="-maxPosition"
-          :max="maxPosition"
+          :min="rangeMin"
+          :max="rangeMax"
           size="small"
           controls-position="right"
           class="target-input"
@@ -185,6 +185,13 @@ const props = defineProps<{
     isHomed: boolean
     posLimitActive: boolean
     negLimitActive: boolean
+    config?: {
+      softLimit?: {
+        enabled: boolean
+        min: number
+        max: number
+      }
+    }
   }
   axisColor: string
 }>()
@@ -202,8 +209,19 @@ watch(() => props.axis.targetPosition, (val) => { localTarget.value = val })
 watch(() => props.axis.relativeDistance, (val) => { localRelative.value = val })
 
 const unit = computed(() => store.getAxisUnit(props.axis.kind as any))
-const maxPosition = computed(() => props.axis.kind === 'LINEAR' ? 200 : 180)
+const defaultRange = computed(() => props.axis.kind === 'LINEAR' ? 200 : 180)
 const stepValue = computed(() => props.axis.kind === 'LINEAR' ? 1 : 0.5)
+
+// 刻度范围：优先取轴软限位（启用时），否则回退默认范围；
+// 范围固定不随当前位置自动扩张，超出范围的指示点贴边显示
+const rangeMin = computed(() => {
+  const sl = props.axis.config?.softLimit
+  return sl?.enabled ? sl.min : -defaultRange.value
+})
+const rangeMax = computed(() => {
+  const sl = props.axis.config?.softLimit
+  return sl?.enabled ? sl.max : defaultRange.value
+})
 
 const isRunning = computed(() => props.axis.runState === 'running')
 const isJogging = computed(() => props.axis.runState === 'jogging_minus' || props.axis.runState === 'jogging_plus')
@@ -231,9 +249,10 @@ const runStateClass = computed(() => {
 })
 
 const positionPercent = computed(() => {
-  const pos = props.axis.currentPosition
-  const max = maxPosition.value
-  return Math.max(0, Math.min(100, ((pos + max) / (2 * max)) * 100))
+  const span = rangeMax.value - rangeMin.value
+  if (span <= 0) return 50
+  const percent = ((props.axis.currentPosition - rangeMin.value) / span) * 100
+  return Math.max(0, Math.min(100, percent))
 })
 
 const cardStyle = computed(() => ({
@@ -251,6 +270,10 @@ const iconStyle = computed(() => ({
 
 function formatPosition(val: number) {
   return val.toFixed(2)
+}
+
+function formatTrackEnd(val: number) {
+  return `${val >= 0 ? '+' : ''}${val.toFixed(2)}`
 }
 
 function onTargetChange(val: number | undefined) {
