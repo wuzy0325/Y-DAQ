@@ -9,6 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"yx-daq/internal/logger"
 	"yx-daq/internal/types"
 )
 
@@ -264,6 +265,7 @@ func (s *FiveHoleTraversalService) StopRealtimeMonitor() {
 
 // runRealtimeMonitor 实时监控协程
 func (s *FiveHoleTraversalService) runRealtimeMonitor() {
+	defer logger.Recover("five-hole-monitor")
 	defer s.monitorWg.Done()
 	defer s.monitorRunning.Store(false)
 
@@ -377,10 +379,11 @@ func (s *FiveHoleTraversalService) Start(config types.FiveHoleTraversalConfig) (
 	// 启动测试协程
 	doneCloseOnce := &sync.Once{}
 	go func() {
-		s.runTestLoop(taskID, config, initialPositions)
-		doneCloseOnce.Do(func() {
+		defer logger.Recover("five-hole-test-loop")
+		defer doneCloseOnce.Do(func() {
 			s.testManager.CloseDoneCh()
 		})
+		s.runTestLoop(taskID, config, initialPositions)
 	}()
 
 	return taskID, nil

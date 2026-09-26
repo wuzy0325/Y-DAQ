@@ -57,6 +57,13 @@ describe('enums', () => {
       expect(deviceTypeRegistry[DeviceType.EA2516A].isTemperature).toBe(false)
       expect(deviceTypeRegistry[DeviceType.SIMULATED].isTemperature).toBe(false)
     })
+
+    it('仅 EA2508A/EA2516A 支持大气压/温度使能（supportsAtm）', () => {
+      expect(deviceTypeRegistry[DeviceType.EA2508A].supportsAtm).toBe(true)
+      expect(deviceTypeRegistry[DeviceType.EA2516A].supportsAtm).toBe(true)
+      expect(deviceTypeRegistry[DeviceType.EA2516T].supportsAtm).toBe(false)
+      expect(deviceTypeRegistry[DeviceType.SIMULATED].supportsAtm).toBe(false)
+    })
   })
 
   describe('getDeviceInfo', () => {

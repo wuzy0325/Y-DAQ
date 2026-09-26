@@ -9,6 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"yx-daq/internal/logger"
 	"yx-daq/internal/types"
 )
 
@@ -100,6 +101,7 @@ func (dp *DataProcessor) IsRealtimeRecording() bool {
 
 // runRealtimeMonitor 实时监控协程
 func (dp *DataProcessor) runRealtimeMonitor() {
+	defer logger.Recover("three-hole-monitor")
 	defer dp.monitorRunning.Store(false)
 
 	ticker := time.NewTicker(100 * time.Millisecond)

@@ -19,6 +19,10 @@ export function getRunStateText(state: AxisRunState): string {
   return map[state]
 }
 
+export function getAxisSoftLimitDefaults(kind: AxisKind): { min: number; max: number } {
+  return kind === 'LINEAR' ? { min: -100, max: 100 } : { min: -360, max: 360 }
+}
+
 export function createDefaultAxisConfig(name: string, kind: AxisKind): AxisConfig {
   return {
     name,
@@ -38,6 +42,10 @@ export function createDefaultAxisConfig(name: string, kind: AxisKind): AxisConfi
       settleMs: 100,
       minStep: 0,
       timeoutMs: 5000,
+    },
+    softLimit: {
+      enabled: false,
+      ...getAxisSoftLimitDefaults(kind),
     },
   }
 }

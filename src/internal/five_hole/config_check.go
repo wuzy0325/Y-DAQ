@@ -9,6 +9,11 @@ import (
 // CheckMotionConflict 检查五孔配置中各探针位移机构轴是否冲突
 // （同一控制器的同一轴不能被多个探针同时使用）
 func CheckMotionConflict(config types.FiveHoleTraversalConfig) error {
+	// 共用轴位模式：所有启用探针统一使用 SharedMotionX/Y（同一物理轴被多探针共用是预期行为），
+	// 不在此做物理轴冲突检查（归一化与物理轴去重由 test 流程 ApplySharedMotion/motion_coordinator 处理）
+	if config.SharedMotion {
+		return nil
+	}
 	axisMap := make(map[string]string) // key: "controllerID:axis" -> probeID
 	for _, probe := range config.Probes {
 		if !probe.Enabled {

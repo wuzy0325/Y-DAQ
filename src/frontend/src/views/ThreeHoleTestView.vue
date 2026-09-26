@@ -383,6 +383,19 @@ const motionStore = useMotionStore()
 const probeParam = (route.query.probe as string) || 'probe1'
 store.init(probeParam)
 
+// 运动控制可能在独立窗口中被改名/增删；返回本窗口时刷新控制器下拉名称。
+// 独立窗口与主窗口各自拥有独立的 Pinia 实例，无法共享 reactive 状态，需在窗口聚焦时重新拉取。
+const refreshMotionOnFocus = () => {
+  motionStore.fetchProfiles()
+  motionStore.fetchStatuses()
+}
+function refreshMotionOnWindowFocus() {
+  window.addEventListener('focus', refreshMotionOnFocus)
+}
+function stopRefreshMotionOnWindowFocus() {
+  window.removeEventListener('focus', refreshMotionOnFocus)
+}
+
 function getChannelPrecision(role: string): number {
   const chConfig = store.config.probeChannels.find(c => c.role === role)
   if (!chConfig) return 3
@@ -595,6 +608,8 @@ const maChartOption = shallowRef(makeWaveOption([], '#b829ff'))
 const alphaChartOption = shallowRef(makeWaveOption([], '#00f5ff', '°'))
 
 let waveUpdateTimer: number | null = null
+// 组件是否已卸载：onMounted 为异步流程，卸载后不能再注册全局 focus 监听
+let viewDisposed = false
 let waveDirty = false
 
 function scheduleWaveUpdate() {
@@ -643,9 +658,13 @@ onMounted(async () => {
   motionStore.fetchStatuses()
   nextTick(drawPointCanvas)
   isRecording.value = await ThreeHoleService.IsThreeHoleRealtimeRecording(probeParam)
+  // 运动控制可能在独立窗口中被改名/增删，返回本窗口时刷新控制器下拉名称
+  if (!viewDisposed) refreshMotionOnWindowFocus()
 })
 
 onUnmounted(() => {
+  viewDisposed = true
+  stopRefreshMotionOnWindowFocus()
   store.stopListening()
   store.stopRealtimeMonitor()
   // 清理波形节流定时器，避免组件卸载后回调仍写入已销毁的图表引用

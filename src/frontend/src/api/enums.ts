@@ -25,6 +25,7 @@ export interface DeviceTypeInfo {
   totalChCount: number
   isTemperature: boolean
   isRealDAQ: boolean
+  supportsAtm: boolean // 是否支持大气压/温度采集使能（c 05 位图 0x0800）
   defaultHost: string
   defaultPort: number
   defaultUnit: string
@@ -33,22 +34,22 @@ export interface DeviceTypeInfo {
 export const deviceTypeRegistry: Record<DeviceTypeValue, DeviceTypeInfo> = {
   [DeviceType.EA2508A]: {
     type: 'EA2508A', label: 'EA2508A',
-    pressureChCount: 8, totalChCount: 10, isTemperature: false, isRealDAQ: true,
+    pressureChCount: 8, totalChCount: 10, isTemperature: false, isRealDAQ: true, supportsAtm: true,
     defaultHost: '192.168.3.101', defaultPort: 9000, defaultUnit: 'kPa',
   },
   [DeviceType.EA2516A]: {
     type: 'EA2516A', label: 'EA2516A',
-    pressureChCount: 16, totalChCount: 18, isTemperature: false, isRealDAQ: true,
+    pressureChCount: 16, totalChCount: 18, isTemperature: false, isRealDAQ: true, supportsAtm: true,
     defaultHost: '192.168.3.101', defaultPort: 9000, defaultUnit: 'kPa',
   },
   [DeviceType.EA2516T]: {
     type: 'EA2516T', label: 'EA2516T',
-    pressureChCount: 16, totalChCount: 16, isTemperature: true, isRealDAQ: true,
+    pressureChCount: 16, totalChCount: 16, isTemperature: true, isRealDAQ: true, supportsAtm: false,
     defaultHost: '192.168.1.7', defaultPort: 9000, defaultUnit: '°C',
   },
   [DeviceType.SIMULATED]: {
     type: 'SIMULATED', label: '模拟设备',
-    pressureChCount: 16, totalChCount: 18, isTemperature: false, isRealDAQ: false,
+    pressureChCount: 16, totalChCount: 18, isTemperature: false, isRealDAQ: false, supportsAtm: false,
     defaultHost: '127.0.0.1', defaultPort: 9000, defaultUnit: 'kPa',
   },
 }

@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import { MotionService } from '@bindings/yx-daq/internal/app'
 import * as types from '@bindings/yx-daq/internal/types'
 import { createWailsEventListener } from '../utils/wailsEvents'
+import { getAxisSoftLimitDefaults } from './motion/helpers'
 
   // 轴类型
 type AxisKind = 'LINEAR' | 'ROTARY'
@@ -48,6 +49,11 @@ interface AxisConfig {
     settleMs: number
     minStep: number
     timeoutMs: number
+  }
+  softLimit: {
+    enabled: boolean
+    min: number
+    max: number
   }
 }
 
@@ -117,6 +123,10 @@ function createDefaultAxisConfig(name: string, kind: AxisKind): AxisConfig {
       settleMs: 100,
       minStep: 0,
       timeoutMs: 5000
+    },
+    softLimit: {
+      enabled: false,
+      ...getAxisSoftLimitDefaults(kind)
     }
   }
 }
@@ -487,8 +497,17 @@ export const useMotionStore = defineStore('motion', () => {
   async function startJog(axis: string, direction: 'minus' | 'plus'): Promise<ActionResult> {
     return withAxisAction(axis, async (controllerId, bindingAxis, uiState) => {
       const dir = direction === 'plus' ? 1 : -1
-      await MotionService.MotionJog(controllerId, bindingAxis, dir, uiState.relativeDistance, uiState.config.maxSpeed)
-      uiState.runState = direction === 'minus' ? 'jogging_minus' : 'jogging_plus'
+      const targetState = direction === 'minus' ? 'jogging_minus' : 'jogging_plus'
+      // 先占位再发命令：MotionJog 在途期间再次点击会被 requireIdle 拒绝，
+      // 避免双击/回车发出两个并发点动（后端异步模拟会绕过硬限位校验）
+      const prevState = uiState.runState
+      uiState.runState = targetState
+      try {
+        await MotionService.MotionJog(controllerId, bindingAxis, dir, uiState.relativeDistance, uiState.config.maxSpeed)
+      } catch (e) {
+        uiState.runState = prevState
+        throw e
+      }
       addLog(`${axis}轴开始${direction === 'minus' ? '反向' : '正向'}点动`)
     }, { requireIdle: true })
   }
@@ -614,10 +633,10 @@ export const useMotionStore = defineStore('motion', () => {
     const id = `mc-${Date.now()}`
     try {
       const defaultAxes = [
-        types.AxisConfig.createFrom({ name: 'X', enabled: true, kind: 'LINEAR', inverted: false, stepAngleDeg: 1.8, microSteps: 16, lead: 5, gearRatio: 1, maxSpeed: 50, encoderScale: 0.005, encoderCompensation: types.EncoderCompensationConfig.createFrom({ enabled: false, tolerance: 0.01, maxCycles: 3, settleMs: 100, minStep: 0, timeoutMs: 5000 }) }),
-        types.AxisConfig.createFrom({ name: 'Y', enabled: true, kind: 'LINEAR', inverted: false, stepAngleDeg: 1.8, microSteps: 16, lead: 5, gearRatio: 1, maxSpeed: 50, encoderScale: 0.005, encoderCompensation: types.EncoderCompensationConfig.createFrom({ enabled: false, tolerance: 0.01, maxCycles: 3, settleMs: 100, minStep: 0, timeoutMs: 5000 }) }),
-        types.AxisConfig.createFrom({ name: 'Z', enabled: true, kind: 'LINEAR', inverted: false, stepAngleDeg: 1.8, microSteps: 16, lead: 5, gearRatio: 1, maxSpeed: 50, encoderScale: 0.005, encoderCompensation: types.EncoderCompensationConfig.createFrom({ enabled: false, tolerance: 0.01, maxCycles: 3, settleMs: 100, minStep: 0, timeoutMs: 5000 }) }),
-        types.AxisConfig.createFrom({ name: 'U', enabled: true, kind: 'ROTARY', inverted: false, stepAngleDeg: 1.8, microSteps: 16, lead: 0, gearRatio: 4, maxSpeed: 30, encoderScale: 0.005, encoderCompensation: types.EncoderCompensationConfig.createFrom({ enabled: false, tolerance: 0.01, maxCycles: 3, settleMs: 100, minStep: 0, timeoutMs: 5000 }) }),
+        types.AxisConfig.createFrom({ name: 'X', enabled: true, kind: 'LINEAR', inverted: false, stepAngleDeg: 1.8, microSteps: 16, lead: 5, gearRatio: 1, maxSpeed: 50, encoderScale: 0.005, encoderCompensation: types.EncoderCompensationConfig.createFrom({ enabled: false, tolerance: 0.01, maxCycles: 3, settleMs: 100, minStep: 0, timeoutMs: 5000 }), softLimit: { enabled: false, min: -100, max: 100 } }),
+        types.AxisConfig.createFrom({ name: 'Y', enabled: true, kind: 'LINEAR', inverted: false, stepAngleDeg: 1.8, microSteps: 16, lead: 5, gearRatio: 1, maxSpeed: 50, encoderScale: 0.005, encoderCompensation: types.EncoderCompensationConfig.createFrom({ enabled: false, tolerance: 0.01, maxCycles: 3, settleMs: 100, minStep: 0, timeoutMs: 5000 }), softLimit: { enabled: false, min: -100, max: 100 } }),
+        types.AxisConfig.createFrom({ name: 'Z', enabled: true, kind: 'LINEAR', inverted: false, stepAngleDeg: 1.8, microSteps: 16, lead: 5, gearRatio: 1, maxSpeed: 50, encoderScale: 0.005, encoderCompensation: types.EncoderCompensationConfig.createFrom({ enabled: false, tolerance: 0.01, maxCycles: 3, settleMs: 100, minStep: 0, timeoutMs: 5000 }), softLimit: { enabled: false, min: -100, max: 100 } }),
+        types.AxisConfig.createFrom({ name: 'U', enabled: true, kind: 'ROTARY', inverted: false, stepAngleDeg: 1.8, microSteps: 16, lead: 0, gearRatio: 4, maxSpeed: 30, encoderScale: 0.005, encoderCompensation: types.EncoderCompensationConfig.createFrom({ enabled: false, tolerance: 0.01, maxCycles: 3, settleMs: 100, minStep: 0, timeoutMs: 5000 }), softLimit: { enabled: false, min: -360, max: 360 } }),
       ]
       const fullProfile = types.MotionControllerProfile.createFrom({
         id,

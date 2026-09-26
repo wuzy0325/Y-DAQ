@@ -12,6 +12,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"yx-daq/internal/logger"
 	"yx-daq/internal/types"
 )
 
@@ -24,6 +25,8 @@ type B140Driver struct {
 	conn      net.Conn
 	connected atomic.Bool
 	reader    *bufio.Reader
+	// deviceID 配置中的控制器 ID（仅用于通信日志可读性，由驱动工厂在创建后注入）
+	deviceID string
 }
 
 // NewB140Driver 创建B140驱动
@@ -36,6 +39,25 @@ func NewB140Driver(address string, port, timeoutMs int) *B140Driver {
 		port:      port,
 		timeoutMs: timeoutMs,
 	}
+}
+
+// SetDeviceID 设置控制器 ID（仅用于通信日志；由驱动工厂在创建后注入）
+func (d *B140Driver) SetDeviceID(id string) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.deviceID = id
+}
+
+// commFields 组装通信日志公共字段
+func (d *B140Driver) commFields() []any {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return d.commFieldsLocked()
+}
+
+// commFieldsLocked 组装通信日志公共字段（调用方必须持有 d.mu）
+func (d *B140Driver) commFieldsLocked() []any {
+	return []any{"device", d.deviceID, "host", d.address, "port", d.port}
 }
 
 // Connect 建立TCP连接
@@ -86,16 +108,22 @@ func (d *B140Driver) SendCommand(cmd string) (string, error) {
 
 	if _, err := fmt.Fprintf(d.conn, "%s\r", cmd); err != nil {
 		d.connected.Store(false)
+		logger.CommError("B140 send command failed",
+			append(d.commFieldsLocked(), "op", "send-command", "cmd", logger.Truncate(cmd, 256), "err", err)...)
 		return "", fmt.Errorf("send command %q failed: %w", cmd, err)
 	}
 
 	// B140/Galil responses terminate with ':' on success or '?' on error.
 	resp, err := d.readResponse()
 	if err != nil {
+		logger.CommError("B140 read response failed",
+			append(d.commFieldsLocked(), "op", "send-command", "cmd", logger.Truncate(cmd, 256), "err", err)...)
 		return "", fmt.Errorf("read response for %q failed: %w", cmd, err)
 	}
 
 	if strings.HasSuffix(resp, "?") {
+		logger.CommError("B140 command rejected",
+			append(d.commFieldsLocked(), "op", "send-command", "cmd", logger.Truncate(cmd, 256), "resp", logger.Truncate(resp, 256))...)
 		return resp, fmt.Errorf("B140 command error: %s", cmd)
 	}
 
@@ -118,9 +146,14 @@ func (d *B140Driver) readResponse() (string, error) {
 
 // B140MotionController B140运动控制器（高层接口）
 type B140MotionController struct {
-	driver             *B140Driver
+	driver *B140Driver
+	// mu 保护 axes 与 *Signature 字段的并发访问（轮询/移动/配置更新分属不同 goroutine）
+	mu                 sync.RWMutex
 	axes               []types.AxisConfig
 	directionSignature string // cached MT/CE signature
+	softLimitSignature string // cached FL/BL signature
+	// applyLimitMu 串行化软限位下发，避免并发下发命令交错
+	applyLimitMu sync.Mutex
 }
 
 // NewB140MotionController 创建B140运动控制器
@@ -129,6 +162,28 @@ func NewB140MotionController(driver *B140Driver, axes []types.AxisConfig) *B140M
 		driver: driver,
 		axes:   axes,
 	}
+}
+
+// axesSnapshot 返回当前轴配置切片；切片整体替换、元素只读，调用方可安全遍历
+func (c *B140MotionController) axesSnapshot() []types.AxisConfig {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.axes
+}
+
+// softLimitSigSnapshot 读取软限位签名
+func (c *B140MotionController) softLimitSigSnapshot() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.softLimitSignature
+}
+
+// resetSignatures 清空方向/软限位签名，使下次访问强制重新下发
+func (c *B140MotionController) resetSignatures() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.directionSignature = ""
+	c.softLimitSignature = ""
 }
 
 // Connect 连接并使能所有轴
@@ -143,24 +198,33 @@ func (c *B140MotionController) Connect() error {
 	}
 
 	// 配置各轴方向
-	c.directionSignature = ""
+	c.resetSignatures()
 	if err := c.ensureAxisDirectionConfigured(); err != nil {
 		slog.Warn("axis direction config warning", "err", err)
 	}
+
+	// 下发各轴软限位（FL/BL）
+	c.ensureSoftLimitsConfigured()
 
 	return nil
 }
 
 // Disconnect 断开连接
 func (c *B140MotionController) Disconnect() {
-	c.directionSignature = ""
+	c.resetSignatures()
 	c.driver.Disconnect()
 }
 
 // UpdateAxes applies edited axis parameters to an already connected controller.
 func (c *B140MotionController) UpdateAxes(axes []types.AxisConfig) {
+	c.mu.Lock()
 	c.axes = axes
 	c.directionSignature = ""
+	c.softLimitSignature = ""
+	c.mu.Unlock()
+	if c.IsConnected() {
+		c.ensureSoftLimitsConfigured()
+	}
 }
 
 // IsConnected 是否已连接
@@ -168,7 +232,7 @@ func (c *B140MotionController) IsConnected() bool {
 	return c.driver.IsConnected()
 }
 
-// resolveAxis 查找轴名映射并确保方向已配置
+// resolveAxis 查找轴名映射并确保方向与软限位已配置
 func (c *B140MotionController) resolveAxis(axis types.AxisName) (string, error) {
 	bAxis, ok := types.AxisNameToB140[axis]
 	if !ok {
@@ -177,6 +241,7 @@ func (c *B140MotionController) resolveAxis(axis types.AxisName) (string, error) 
 	if err := c.ensureAxisDirectionConfigured(); err != nil {
 		slog.Warn("axis direction config warning", "err", err)
 	}
+	c.ensureSoftLimitsConfigured()
 	return bAxis, nil
 }
 
@@ -184,6 +249,10 @@ func (c *B140MotionController) resolveAxis(axis types.AxisName) (string, error) 
 func (c *B140MotionController) MoveTo(axis types.AxisName, position float64) error {
 	bAxis, err := c.resolveAxis(axis)
 	if err != nil {
+		return err
+	}
+
+	if err := c.checkSoftLimit(axis, position); err != nil {
 		return err
 	}
 
@@ -205,6 +274,10 @@ func (c *B140MotionController) MoveTo(axis types.AxisName, position float64) err
 func (c *B140MotionController) MoveBy(axis types.AxisName, delta float64) error {
 	bAxis, err := c.resolveAxis(axis)
 	if err != nil {
+		return err
+	}
+
+	if err := c.checkSoftLimitDelta(axis, bAxis, delta); err != nil {
 		return err
 	}
 
@@ -233,6 +306,14 @@ func (c *B140MotionController) Jog(axis types.AxisName, direction int, distance 
 		return err
 	}
 
+	stepEngineering := distance
+	if direction < 0 {
+		stepEngineering = -distance
+	}
+	if err := c.checkSoftLimitDelta(axis, bAxis, stepEngineering); err != nil {
+		return err
+	}
+
 	ax := c.findAxis(axis)
 	if ax != nil {
 		maxSpeed := ax.MaxSpeed
@@ -250,10 +331,6 @@ func (c *B140MotionController) Jog(axis types.AxisName, direction int, distance 
 		}
 	}
 
-	stepEngineering := distance
-	if direction < 0 {
-		stepEngineering = -distance
-	}
 	stepPulse := c.engineeringToPulse(axis, stepEngineering)
 	if _, err := c.driver.SendCommand(fmt.Sprintf("PR%s=%d", bAxis, int(math.Round(stepPulse)))); err != nil {
 		return err
@@ -380,7 +457,7 @@ func (c *B140MotionController) GetAllAxisStatus() ([]types.AxisStatus, error) {
 	limitMap := c.readAllLimits()
 
 	statuses := []types.AxisStatus{}
-	for _, ax := range c.axes {
+	for _, ax := range c.axesSnapshot() {
 		if !ax.Enabled {
 			continue
 		}
@@ -610,8 +687,10 @@ func (c *B140MotionController) encoderCountToEngineering(axis types.AxisName, co
 	return count * scale
 }
 
-// findAxis 查找轴配置
+// findAxis 查找轴配置。返回的指针指向不可变切片元素，仅可读取。
 func (c *B140MotionController) findAxis(axis types.AxisName) *types.AxisConfig {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	for i := range c.axes {
 		if c.axes[i].Name == axis {
 			return &c.axes[i]
@@ -764,10 +843,13 @@ func (c *B140MotionController) SetAxisDirection(axis types.AxisName, reverse boo
 // ensureAxisDirectionConfigured 配置各轴电机/编码器方向（签名缓存，仅变更时重发）
 func (c *B140MotionController) ensureAxisDirectionConfigured() error {
 	sig := c.buildDirectionSignature()
-	if sig == c.directionSignature {
+	c.mu.RLock()
+	cached := c.directionSignature
+	c.mu.RUnlock()
+	if sig == cached {
 		return nil
 	}
-	for _, ax := range c.axes {
+	for _, ax := range c.axesSnapshot() {
 		if !ax.Enabled {
 			continue
 		}
@@ -775,14 +857,17 @@ func (c *B140MotionController) ensureAxisDirectionConfigured() error {
 			return err
 		}
 	}
+	c.mu.Lock()
 	c.directionSignature = sig
+	c.mu.Unlock()
 	return nil
 }
 
 // buildDirectionSignature 构建轴方向配置签名
 func (c *B140MotionController) buildDirectionSignature() string {
-	parts := make([]string, 0, len(c.axes))
-	for _, ax := range c.axes {
+	axes := c.axesSnapshot()
+	parts := make([]string, 0, len(axes))
+	for _, ax := range axes {
 		inverted := 0
 		if ax.Inverted {
 			inverted = 1

@@ -12,18 +12,18 @@ import (
 
 // DAQTHardwareConfig DAQ-T 硬件配置（从设备读取）
 type DAQTHardwareConfig struct {
-	ThermocoupleTypes  string
-	ChannelMask        string
-	SamplingRate       int
-	BinaryFormat       bool
-	ShowTimestamp      bool
-	ShowSequence       bool
-	AverageCount       int
-	TriggerMode        int
-	TriggerEdge        int
-	TriggerCount       int
-	IsTempModel        bool // temp 型号固件不支持 BIN=1
-	OpenCircuitCheck   string
+	ThermocoupleTypes string
+	ChannelMask       string
+	SamplingRate      int
+	BinaryFormat      bool
+	ShowTimestamp     bool
+	ShowSequence      bool
+	AverageCount      int
+	TriggerMode       int
+	TriggerEdge       int
+	TriggerCount      int
+	IsTempModel       bool // temp 型号固件不支持 BIN=1
+	OpenCircuitCheck  string
 }
 
 // sendCommand sends a command and waits for response using the pending queue
@@ -37,8 +37,10 @@ func (d *YXDAQTDriver) sendCommandExact(cmd string, expectedLen int) (string, er
 }
 
 // sendCommandSilence sends a command expecting a variable-length response with silence window
+// 超时取 1.5s：SPS/AVG/TNUM 属辅助查询，部分固件不支持（不响应），
+// 用长超时会拖垮连接同步，进而导致 StartAcquisition 等待配置同步超时
 func (d *YXDAQTDriver) sendCommandSilence(cmd string) (string, error) {
-	return d.sendCommandWithType(cmd, ResponseSilenceWindow, 0)
+	return d.sendCommandWithTimeout(cmd, ResponseSilenceWindow, 0, 1500*time.Millisecond)
 }
 
 // sendCommandACK 发送设置类命令（@fe/@f3 等）并校验单字节 ACK 响应。
@@ -58,12 +60,24 @@ func (d *YXDAQTDriver) sendCommandACK(cmd string) error {
 
 // sendCommandWithType sends a command and registers a pending response expectation
 func (d *YXDAQTDriver) sendCommandWithType(cmd string, respType ResponseType, expectedLen int) (string, error) {
-	if !d.connected.Load() || d.Conn == nil {
+	return d.sendCommandWithTimeout(cmd, respType, expectedLen, 5*time.Second)
+}
+
+// sendCommandWithTimeout 带超时的命令发送。
+// 超时路径必须移除刚压入的 pending entry：否则残留 entry 会被下一条命令的响应
+// 误匹配（队列错位），导致后续命令拿到错误响应、配置同步/采集启动失败。
+func (d *YXDAQTDriver) sendCommandWithTimeout(cmd string, respType ResponseType, expectedLen int, timeout time.Duration) (string, error) {
+	if !d.connected.Load() {
 		return "", fmt.Errorf("device not connected")
 	}
 
 	fullCmd := cmd + types.DAQTCmdTerminator
 	respCh := make(chan string, 1)
+
+	conn := d.connRef()
+	if conn == nil {
+		return "", fmt.Errorf("device not connected")
+	}
 
 	entry := &PendingEntry{
 		Cmd:         cmd,
@@ -71,16 +85,12 @@ func (d *YXDAQTDriver) sendCommandWithType(cmd string, respType ResponseType, ex
 		ExpectedLen: expectedLen,
 		SilenceMs:   30,
 		RespCh:      respCh,
-		Deadline:    time.Now().Add(5 * time.Second),
+		Deadline:    time.Now().Add(timeout),
 	}
 
 	d.pending.Push(entry)
 
-	d.mu.Lock()
-	_, err := d.Conn.Write([]byte(fullCmd))
-	d.mu.Unlock()
-
-	if err != nil {
+	if _, err := conn.Write([]byte(fullCmd)); err != nil {
 		// Remove the entry we just pushed (match by cmd to avoid FIFO disorder)
 		d.pending.RemoveByCmd(cmd)
 		return "", fmt.Errorf("send command %q failed: %w", cmd, err)
@@ -96,7 +106,8 @@ func (d *YXDAQTDriver) sendCommandWithType(cmd string, respType ResponseType, ex
 			return "", fmt.Errorf("device rejected command %q (error response E)", cmd)
 		}
 		return resp, nil
-	case <-time.After(5 * time.Second):
+	case <-time.After(timeout):
+		d.pending.RemoveByCmd(cmd)
 		return "", fmt.Errorf("command %q timeout", cmd)
 	}
 }
@@ -203,17 +214,25 @@ func (d *YXDAQTDriver) syncHardwareConfig() {
 		slog.Warn("DAQ-T: 设置 TIME 失败", "host", d.Host, "port", d.Port, "err", err)
 	}
 
-	// 强制 HEAD=0：当前 FrameReader 不支持 BIN=1+HEAD=1 的 68 字节序号帧，
-	// 设备持久化的 HEAD=1 会导致 readBinaryTimestampFrame 按 72 字节解析 68 字节帧→错位。
+	// 强制 HEAD=0：二进制模式下 HEAD=0/TIME=0 为最稳的 64B 定长帧，误码自校验能力最强。
+	// ACK 失败时读回实际状态，避免 FrameReader 与设备模式不一致：
+	// 二进制模式下 HEAD=1 时设备发送 72B 帧（序号并入 8B 时间戳头），
+	// 与 TIME=1 帧长相同，metadata 模式按 72B 解析仍正确
 	if err := d.sendCommandACK("@fe HEAD 0"); err != nil {
 		slog.Warn("DAQ-T: 强制 HEAD=0 失败", "host", d.Host, "port", d.Port, "err", err)
+		if resp, readErr := d.sendCommandExact("@fd HEAD", 1); readErr == nil {
+			config.ShowSequence = trimSpace(resp) == "1"
+		}
 	} else {
 		config.ShowSequence = false
 	}
 
+	// 必须在 d.mu 保护下更新共享状态（StartAcquisition/GetHardwareConfig 并发读取）
+	d.mu.Lock()
 	d.hwConfig = config
 	d.frameReader.SetBinaryMode(config.BinaryFormat)
-	d.frameReader.SetMetadataMode(config.ShowTimestamp || config.ShowSequence)
+	d.frameReader.SetMetadataMode(config.ShowTimestamp, config.ShowSequence)
+	d.mu.Unlock()
 
 	// 将热电偶类型同步到通道配置
 	if len(config.ThermocoupleTypes) == 16 {
@@ -242,9 +261,21 @@ func (d *YXDAQTDriver) syncHardwareConfig() {
 // applyNormalizedConfig 采集启动前归一化配置
 // ★ 只确保 BIN=1（如果设备支持），不自动修改 TIME/HEAD，保持用户配置不变
 // periodMs: 采集周期(毫秒)，用于设置硬件采样率 SPS = 1000/periodMs
+//
+// 调用约束：不得持有 d.mu（sendCommandACK/writeCmdOnly 内部会锁 d.mu）
 func (d *YXDAQTDriver) applyNormalizedConfig(periodMs int) error {
-	if d.hwConfig.BinaryFormat {
-		d.writeCmdOnly("@fe BIN 1")
+	d.mu.Lock()
+	binary := d.hwConfig.BinaryFormat
+	ts := d.hwConfig.ShowTimestamp
+	seq := d.hwConfig.ShowSequence
+	d.mu.Unlock()
+
+	if binary {
+		// 用带 ACK 校验的发送：@fe 的 'A' 必须被消费，
+		// 否则残留 ACK 字节会被 FrameReader 误当作数据帧前缀导致错位
+		if err := d.sendCommandACK("@fe BIN 1"); err != nil {
+			slog.Warn("DAQ-T: 启动前强制 BIN=1 失败", "host", d.Host, "port", d.Port, "err", err)
+		}
 		time.Sleep(50 * time.Millisecond)
 	}
 
@@ -257,15 +288,17 @@ func (d *YXDAQTDriver) applyNormalizedConfig(periodMs int) error {
 		if sps > 1000 {
 			sps = 1000
 		}
-		if err := d.writeCmdOnly(fmt.Sprintf("@fe SPS %d", sps)); err != nil {
+		if err := d.sendCommandACK(fmt.Sprintf("@fe SPS %d", sps)); err != nil {
 			return fmt.Errorf("设置采样频率失败: %w", err)
 		}
 		time.Sleep(50 * time.Millisecond)
 	}
 
 	// ★ 注意：不自动发 @fe TIME/HEAD，保持用户配置不变
-	d.frameReader.SetBinaryMode(d.hwConfig.BinaryFormat)
-	d.frameReader.SetMetadataMode(d.hwConfig.ShowTimestamp || d.hwConfig.ShowSequence)
+	d.mu.Lock()
+	d.frameReader.SetBinaryMode(binary)
+	d.frameReader.SetMetadataMode(ts, seq)
+	d.mu.Unlock()
 
 	// 根据配置选择帧解析策略
 	d.selectFrameParser()
@@ -274,6 +307,9 @@ func (d *YXDAQTDriver) applyNormalizedConfig(periodMs int) error {
 
 // selectFrameParser 根据当前配置选择帧解析策略
 func (d *YXDAQTDriver) selectFrameParser() {
+	// 赋值必须持 d.mu：processData 在锁内读取 frameParser，避免数据竞态
+	d.mu.Lock()
+	defer d.mu.Unlock()
 	if d.hwConfig.BinaryFormat {
 		d.frameParser = &DAQTBinaryParser{}
 	} else if d.hwConfig.ShowTimestamp || d.hwConfig.ShowSequence {

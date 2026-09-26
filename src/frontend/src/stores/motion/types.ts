@@ -39,6 +39,11 @@ export interface AxisConfig {
     minStep: number
     timeoutMs: number
   }
+  softLimit: {
+    enabled: boolean
+    min: number
+    max: number
+  }
 }
 
 export interface MotionControllerProfile {

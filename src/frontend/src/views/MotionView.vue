@@ -402,6 +402,7 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { Edit, Link, CircleClose, Delete, Plus, Connection, WarningFilled, Aim, Loading } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { useMotionStore } from '../stores/motion'
+import { getAxisSoftLimitDefaults } from '../stores/motion/helpers'
 import { MotionService } from '@bindings/yx-daq/internal/app'
 import GlassCard from '../components/GlassCard.vue'
 import AxisConfigDialog from '../components/MotionControl/AxisConfigDialog.vue'
@@ -432,6 +433,11 @@ interface AxisConfig {
     settleMs: number
     minStep: number
     timeoutMs: number
+  }
+  softLimit: {
+    enabled: boolean
+    min: number
+    max: number
   }
 }
 interface MotionControllerProfile {
@@ -606,6 +612,10 @@ async function saveEdit() {
         // 保留原 profile 的编码器相关字段（表格不展示）
         encoderScale: origAxis?.encoderScale ?? 0.005,
         encoderCompensation: origAxis?.encoderCompensation ?? a.encoderCompensation,
+        // 保留软限位配置（在轴参数配置对话框中编辑）
+        softLimit: a.softLimit
+          ? { ...a.softLimit }
+          : (origAxis?.softLimit ?? { enabled: false, ...getAxisSoftLimitDefaults(a.kind) }),
       }
     })
     const profile: MotionControllerProfile = {
@@ -1038,11 +1048,22 @@ onUnmounted(() => {
   flex: 1;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-auto-rows: 1fr;
+  /* 行高至少容纳卡片内容，空间充足时等分扩展；空间不足时纵向滚动，避免卡片内容溢出互相重叠 */
+  grid-auto-rows: minmax(min-content, 1fr);
   align-content: stretch;
   gap: 14px;
   min-height: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 2px;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 2px;
+  }
 }
 
 .no-active-placeholder {

@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
-	"strconv"
-	"strings"
+	"sync/atomic"
 	"time"
 
 	"yx-daq/internal/types"
@@ -17,16 +16,24 @@ type XYDAQDriver struct {
 	*TCPDriverBase
 	streamID      int
 	deviceType    types.DeviceType
-	pressureCount int // 压力通道数（8或16）
-	totalChannels int // 总通道数（压力+大气压+大气温度）
-	frameSize     int // 数据帧大小（字节）
+	pressureCount int          // 压力通道数（8或16）
+	totalChannels int          // 总通道数（压力+大气压+大气温度）
+	frameSize     int          // 数据帧大小（字节）
+	lastPeriodMs  atomic.Int32 // 最近一次采集周期（重连恢复采集时使用）
+	atmEnabled    atomic.Bool  // 大气压/大气温度采集使能（c 05 位图 0x0800）
 }
 
-// NewXYDAQDriver 创建XY-DAQ驱动（DAQ8/DAQ16通用）
-func NewXYDAQDriver(host string, port, streamID int, channels []types.ChannelConfig, deviceType types.DeviceType) *XYDAQDriver {
+// maxXYFrameLen XY-DAQ 帧长度合法性上限。
+// 正常数据帧 ≤ 79 字节（77+2 前缀），ASCII 响应帧更短；
+// 超过该值的前缀必为残杂字节导致的错位，应触发重新对齐
+const maxXYFrameLen = 512
+
+// NewXYDAQDriver 创建XY-DAQ驱动（DAQ8/DAQ16通用）。
+// atmEnabled 控制数据流是否包含大气压/大气温度（对应 c 05 位图 0x0800）。
+func NewXYDAQDriver(host string, port, streamID int, channels []types.ChannelConfig, deviceType types.DeviceType, atmEnabled bool) *XYDAQDriver {
 	pressureCount := deviceType.PressureChannelCount()
 	totalChannels := deviceType.TotalChannelCount()
-	return &XYDAQDriver{
+	d := &XYDAQDriver{
 		TCPDriverBase: NewTCPDriverBase(host, port, channels),
 		streamID:      streamID,
 		deviceType:    deviceType,
@@ -34,15 +41,27 @@ func NewXYDAQDriver(host string, port, streamID int, channels []types.ChannelCon
 		totalChannels: totalChannels,
 		frameSize:     deviceType.StreamFrameSize(),
 	}
+	d.atmEnabled.Store(atmEnabled)
+	return d
 }
 
 // Connect 建立TCP连接
 func (d *XYDAQDriver) Connect() error {
+	// 显式连接清空上次用户主动断开留下的终止标记（重连循环内部不复位该标记）
+	d.ResetUserDisconnected()
 	if err := d.DialConnect(); err != nil {
 		return err
 	}
 	// 注册重连 hook，之后 HandleDisconnect 重连成功时会自动调用 initAfterConnect
 	d.SetOnReconnect(d.initAfterConnect)
+	// 注册采集恢复 hook：断连前正在采集时，重连成功后自动恢复采集
+	d.SetOnResumeAcquire(func() error {
+		periodMs := int(d.lastPeriodMs.Load())
+		if periodMs <= 0 {
+			periodMs = 50
+		}
+		return d.StartAcquisition(periodMs)
+	})
 	return d.initAfterConnect()
 }
 
@@ -50,12 +69,14 @@ func (d *XYDAQDriver) Connect() error {
 // 包含：w1601 模式切换、EU 单位读取、启动数据接收协程
 func (d *XYDAQDriver) initAfterConnect() error {
 	// 启用2字节长度前缀模式
-	if _, err := d.Conn.Write([]byte("w1601\r")); err != nil {
-		d.Conn.Close()
+	if err := d.WriteCommandOnly("w1601\r"); err != nil {
+		d.closeConnLocked()
 		d.connected.Store(false)
 		return fmt.Errorf("send w1601 failed: %w", err)
 	}
 	time.Sleep(50 * time.Millisecond)
+	// 排空 w1601 的 ACK 响应，避免残留字节被后续直读命令误当作响应
+	d.ConsumeOptionalACK(50)
 
 	// 读取设备EU单位并更新通道配置
 	d.readAndUpdateEUUnit()
@@ -88,6 +109,9 @@ func (d *XYDAQDriver) StartAcquisition(periodMs int) error {
 		return nil
 	}
 
+	// 记录采集周期，断连重连后用于恢复采集
+	d.lastPeriodMs.Store(int32(periodMs))
+
 	streamTag := fmt.Sprintf("%d", d.streamID)
 
 	// 配置数据流参数: 内部时钟/大端/连续
@@ -97,8 +121,8 @@ func (d *XYDAQDriver) StartAcquisition(periodMs int) error {
 	}
 	time.Sleep(100 * time.Millisecond)
 
-	// 配置返回内容: 压力+大气压+温度
-	cmd2 := fmt.Sprintf("c 05 %s 0810\r", streamTag)
+	// 配置返回内容: 压力+大气压+温度（0810）或仅压力（0010）
+	cmd2 := fmt.Sprintf("c 05 %s %s\r", streamTag, streamContentMask(d.atmEnabled.Load()))
 	if _, err := d.Conn.Write([]byte(cmd2)); err != nil {
 		return fmt.Errorf("configure stream content failed: %w", err)
 	}
@@ -143,11 +167,20 @@ func (d *XYDAQDriver) StopAcquisition() error {
 }
 
 // processData 处理接收缓冲区数据（2字节长度前缀拆包）
+// 遇到垃圾长度前缀（残杂字节/半帧残留导致）时逐字节丢弃重新对齐，自愈帧错位，
+// 避免等待不可能达到的字节数导致数据流永久停摆
 func (d *XYDAQDriver) processData(_ []byte) {
+	dropped := 0
 	for len(d.RecvBuffer) >= 2 {
 		// 2字节大端长度前缀
 		frameLen := int(binary.BigEndian.Uint16(d.RecvBuffer[:2]))
-		if frameLen < 2 || len(d.RecvBuffer) < frameLen {
+		if frameLen < 2 || frameLen > maxXYFrameLen {
+			// 非法长度前缀：丢弃首字节重新对齐
+			d.RecvBuffer = d.RecvBuffer[1:]
+			dropped++
+			continue
+		}
+		if len(d.RecvBuffer) < frameLen {
 			break
 		}
 
@@ -164,6 +197,9 @@ func (d *XYDAQDriver) processData(_ []byte) {
 			d.RouteToCmdRespCh(payload)
 		}
 	}
+	if dropped > 0 {
+		slog.Warn("XY-DAQ frame desync, dropped bytes to realign", "host", d.Host, "port", d.Port, "dropped", dropped)
+	}
 }
 
 // handleStreamFrame 处理二进制数据流帧
@@ -175,12 +211,17 @@ func (d *XYDAQDriver) handleStreamFrame(frame []byte) {
 		return
 	}
 	// 帧结构: 头(5B) + CH1(4B float32 BE) + ... + CHn(4B)
-	if len(frame) < d.frameSize {
-		return
+	channelCount, frameSize := d.frameSpec()
+	if len(frame) < frameSize {
+		// 容错：atm 使能但设备未应用 0810 位图时按仅压力帧解析，避免静默无数据
+		if !d.atmEnabled.Load() || len(frame) != d.deviceType.PressureOnlyFrameSize() {
+			return
+		}
+		channelCount = d.pressureCount
 	}
 
-	values := make([]float64, d.totalChannels)
-	for i := 0; i < d.totalChannels; i++ {
+	values := make([]float64, channelCount)
+	for i := 0; i < channelCount; i++ {
 		offset := types.StreamFrameHeaderSize + i*4
 		bits := binary.BigEndian.Uint32(frame[offset : offset+4])
 		values[i] = float64(math.Float32frombits(bits))
@@ -200,20 +241,24 @@ func (d *XYDAQDriver) handleStreamFrame(frame []byte) {
 // SendCommand 发送命令并等待ASCII响应（用于查询类命令）
 // 注意：此方法在receiveLoop启动前调用，直接从conn读取响应
 func (d *XYDAQDriver) SendCommand(cmd string) (string, error) {
-	if !d.connected.Load() || d.Conn == nil {
+	if !d.connected.Load() {
+		return "", fmt.Errorf("device not connected")
+	}
+	conn := d.connRef()
+	if conn == nil {
 		return "", fmt.Errorf("device not connected")
 	}
 
 	// 发送命令
-	if _, err := d.Conn.Write([]byte(cmd + "\r")); err != nil {
+	if _, err := conn.Write([]byte(cmd + "\r")); err != nil {
 		return "", fmt.Errorf("send command %q failed: %w", cmd, err)
 	}
 
 	// 读取响应（带超时）
-	d.Conn.SetReadDeadline(time.Now().Add(2 * time.Second))
+	conn.SetReadDeadline(time.Now().Add(2 * time.Second))
 	buf := make([]byte, 1024)
-	n, err := d.Conn.Read(buf)
-	d.Conn.SetReadDeadline(time.Time{}) // 清除超时
+	n, err := conn.Read(buf)
+	conn.SetReadDeadline(time.Time{}) // 清除超时
 	if err != nil {
 		return "", fmt.Errorf("read response for %q failed: %w", cmd, err)
 	}
@@ -232,7 +277,7 @@ func (d *XYDAQDriver) SendCommand(cmd string) (string, error) {
 
 // sendUnitCommand sends unit read/write commands via length-prefix protocol
 func (d *XYDAQDriver) sendUnitCommand(cmd string) (string, error) {
-	if !d.connected.Load() || d.Conn == nil {
+	if !d.connected.Load() {
 		return "", fmt.Errorf("device not connected")
 	}
 
@@ -244,12 +289,13 @@ func (d *XYDAQDriver) sendUnitCommand(cmd string) (string, error) {
 		default:
 		}
 
-		d.mu.Lock()
-		if _, err := d.Conn.Write([]byte(cmd)); err != nil {
-			d.mu.Unlock()
+		conn := d.connRef()
+		if conn == nil {
+			return "", fmt.Errorf("device not connected")
+		}
+		if _, err := conn.Write([]byte(cmd)); err != nil {
 			return "", fmt.Errorf("send unit command %q failed: %w", cmd, err)
 		}
-		d.mu.Unlock()
 
 		select {
 		case payload := <-d.CmdRespCh:
@@ -260,15 +306,19 @@ func (d *XYDAQDriver) sendUnitCommand(cmd string) (string, error) {
 		}
 	}
 
-	// receiveLoop 未运行时直接读写（Connect 初始化阶段）
-	if _, err := d.Conn.Write([]byte(cmd)); err != nil {
+	// receiveLoop 未运行时直接读写（Connect 初始化阶段 / 重连 hook 阶段）
+	conn := d.connRef()
+	if conn == nil {
+		return "", fmt.Errorf("device not connected")
+	}
+	if _, err := conn.Write([]byte(cmd)); err != nil {
 		return "", fmt.Errorf("send unit command %q failed: %w", cmd, err)
 	}
 
-	d.Conn.SetReadDeadline(time.Now().Add(3 * time.Second))
+	conn.SetReadDeadline(time.Now().Add(3 * time.Second))
 	buf := make([]byte, 1024)
-	n, err := d.Conn.Read(buf)
-	d.Conn.SetReadDeadline(time.Time{})
+	n, err := conn.Read(buf)
+	conn.SetReadDeadline(time.Time{})
 	if err != nil {
 		return "", fmt.Errorf("read unit command response failed: %w", err)
 	}
@@ -350,104 +400,4 @@ func trimSpace(s string) string {
 		s = s[:len(s)-1]
 	}
 	return s
-}
-
-// ReadValveState 读取校准阀位（命令 `@01  0`）。
-// 返回 ValveStateCalibration(=1) / ValveStateMeasurement(=2/3) / ValveStateUnknown(=0)。
-// 设备拒绝（Nxx）作为错误抛出，避免上层误把错误码当成阀位。
-func (d *XYDAQDriver) ReadValveState() (types.ValveState, error) {
-	resp, err := d.sendUnitCommand("@01  0")
-	if err != nil {
-		return types.ValveStateUnknown, fmt.Errorf("read valve state: %w", err)
-	}
-	return parseValveReadResponse(resp)
-}
-
-// SetValveState 切换校准阀位。Calibration→w0C01，Measurement→w0C00。
-// 采集进行中严禁切阀（压力瞬变会损坏数据/传感器），由调用方（DeviceManager）拦截。
-// 设备拒绝（Nxx）作为专属错误返回，便于前端给出可读提示。
-func (d *XYDAQDriver) SetValveState(state types.ValveState) error {
-	cmd, err := valveSetCommandFor(state)
-	if err != nil {
-		return err
-	}
-	resp, err := d.sendUnitCommand(cmd)
-	if err != nil {
-		return fmt.Errorf("set valve state: %w", err)
-	}
-	return interpretValveSetResponse(cmd, resp)
-}
-
-// parseValveReadResponse 把硬件读阀响应映射为统一阀位三态。
-// 抽为纯函数便于单测覆盖所有分支（NACK / 数字 0~3 / 文本同义词 / 未识别）。
-func parseValveReadResponse(resp string) (types.ValveState, error) {
-	raw := strings.TrimSpace(resp)
-	// 设备拒绝命令：以 N 开头并跟两位数字
-	if isNACK(raw) {
-		return types.ValveStateUnknown, fmt.Errorf("device rejected read valve: %s", raw)
-	}
-	val := strings.TrimSpace(strings.TrimPrefix(raw, "A"))
-	if val == "" {
-		val = raw
-	}
-	if num, parseErr := strconv.Atoi(strings.TrimSpace(val)); parseErr == nil {
-		switch num {
-		case 1:
-			return types.ValveStateCalibration, nil
-		case 2, 3:
-			// 现场兼容：部分固件在 RUN/测量态返回 3
-			return types.ValveStateMeasurement, nil
-		case 0:
-			// 0 在不同固件下可能表示「测量态」或「未初始化」，
-			// 没有现场固件文档前不武断归类为 measurement
-			return types.ValveStateUnknown, nil
-		}
-	}
-	switch strings.ToLower(strings.TrimSpace(val)) {
-	case "calibration", "calibrate":
-		return types.ValveStateCalibration, nil
-	case "measurement", "measure":
-		return types.ValveStateMeasurement, nil
-	default:
-		return types.ValveStateUnknown, nil
-	}
-}
-
-// valveSetCommandFor 把业务态映射到具体协议命令字。
-func valveSetCommandFor(state types.ValveState) (string, error) {
-	switch state {
-	case types.ValveStateCalibration:
-		return "w0C01", nil
-	case types.ValveStateMeasurement:
-		return "w0C00", nil
-	default:
-		return "", fmt.Errorf("invalid valve state: %s", state)
-	}
-}
-
-// interpretValveSetResponse 把写阀响应分类：成功 / 设备拒绝 / 协议异常。
-func interpretValveSetResponse(cmd, resp string) error {
-	trimmed := strings.TrimSpace(resp)
-	if isNACK(trimmed) {
-		// 固件拒绝（如 N09 拒绝校准），明确告知用户「设备拒绝」
-		return fmt.Errorf("device rejected valve command %s: %s", cmd, trimmed)
-	}
-	if trimmed != "A" {
-		return fmt.Errorf("set valve state failed: response %q", trimmed)
-	}
-	return nil
-}
-
-// isNACK 判定响应是否为设备拒绝错误码（Nxx）。
-// 协议中 N 开头后跟两位数字（如 N09、N03）表示固件拒绝。
-func isNACK(resp string) bool {
-	if len(resp) < 2 || resp[0] != 'N' {
-		return false
-	}
-	for i := 1; i < len(resp); i++ {
-		if resp[i] < '0' || resp[i] > '9' {
-			return false
-		}
-	}
-	return true
 }

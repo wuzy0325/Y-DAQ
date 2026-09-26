@@ -66,6 +66,7 @@
               v-if="row.type === 'EA2508A'"
               :model-value="tempSourceOf(row)"
               :loading="tempSourceLoading[row.id]"
+              :disabled="!!configDisabledReason(row)"
               size="small"
               class="temp-src-select"
               placeholder="--"
@@ -87,7 +88,7 @@
               v-if="row.type === 'EA2508A'"
               :model-value="tempTcTypeOf(row)"
               :loading="tempTcLoading[row.id]"
-              :disabled="tempSourceOf(row) !== TempSource.THERMOCOUPLE"
+              :disabled="!!configDisabledReason(row) || tempSourceOf(row) !== TempSource.THERMOCOUPLE"
               size="small"
               class="temp-tc-select"
               :placeholder="tempSourceOf(row) === TempSource.THERMOCOUPLE ? '--' : '不适用'"
@@ -103,10 +104,23 @@
             <span v-else class="readonly-text">--</span>
           </template>
         </el-table-column>
+        <el-table-column label="大气压/温度" width="105" align="center">
+          <template #default="{ row }">
+            <el-switch
+              v-if="isAtmSupported(row.type)"
+              :model-value="atmEnabledOf(row)"
+              :loading="atmLoading[row.id]"
+              :disabled="!!configDisabledReason(row)"
+              size="small"
+              @change="(val: string | number | boolean) => handleSetAtmEnabled(row, !!val)"
+            />
+            <span v-else class="readonly-text">--</span>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="260" align="right">
           <template #default="{ row }">
             <el-button-group class="action-group">
-              <el-button title="编辑设备" size="small" @click="openEditDialog(row.id)">
+              <el-button :title="configDisabledReason(row) || '编辑设备'" size="small" :disabled="!!configDisabledReason(row)" @click="openEditDialog(row.id)">
                 <el-icon><Edit /></el-icon>
               </el-button>
               <el-button v-if="row.status !== 'Connected'" title="连接设备" type="primary" size="small" :loading="deviceStore.isDeviceConnecting(row.id)" @click="handleConnect(row.id)">
@@ -129,7 +143,7 @@
                   <VideoPlay v-else />
                 </el-icon>
               </el-button>
-              <el-button title="删除设备" size="small" type="danger" :disabled="deviceStore.isDeviceConnecting(row.id)" @click="removeDevice(row.id)">
+              <el-button :title="configDisabledReason(row) || '删除设备'" size="small" type="danger" :disabled="deviceStore.isDeviceConnecting(row.id) || !!configDisabledReason(row)" @click="removeDevice(row.id)">
                 <el-icon><Delete /></el-icon>
               </el-button>
             </el-button-group>
@@ -205,6 +219,13 @@
         <div class="param-hint">
           单位/精度适用于 CH1-CH{{ getPressureCount(newDevice.type) }}
         </div>
+        <div v-if="isAtmSupported(newDevice.type)" class="form-row atm-switch-row">
+          <div class="form-group auto-connect-row">
+            <span class="auto-connect-label">采集大气压力与温度</span>
+            <el-switch v-model="newDevice.atmEnabled" size="small" />
+          </div>
+          <span class="hint-text">关闭后数据流仅含压力通道</span>
+        </div>
       </div>
 
       <template #footer>
@@ -270,8 +291,15 @@
           </div>
           <div class="form-group">
             <label class="group-label">特殊通道</label>
-            <span class="special-channels" v-if="editProfileType !== 'EA2516T'">CH{{ editPressureCount + 1 }}: 大气压 | CH{{ editPressureCount + 2 }}: 大气温度</span>
+            <span class="special-channels" v-if="editProfileType !== 'EA2516T'">
+              CH{{ editPressureCount + 1 }}: 大气压 | CH{{ editPressureCount + 2 }}: 大气温度
+              <template v-if="isAtmSupported(editProfileType) && !editForm.atmEnabled">（已关闭）</template>
+            </span>
             <span class="special-channels" v-else>16 通道热电偶温度</span>
+          </div>
+          <div v-if="isAtmSupported(editProfileType)" class="form-group auto-connect-row">
+            <label class="group-label">大气压/温度</label>
+            <el-switch v-model="editForm.atmEnabled" size="small" />
           </div>
         </div>
       </div>
@@ -280,21 +308,6 @@
       <div class="channel-section">
         <div class="channel-section-header">
           <div class="section-title">📋 通道配置</div>
-          <div class="batch-zero-actions" v-if="isPressureDevice(editProfileType)">
-            <el-button
-              size="small"
-              type="primary"
-              :loading="zeroCalibrating"
-              :disabled="!canZeroCalibrate"
-              @click="handleZeroCalibrateAll"
-            >批量校零</el-button>
-            <el-button
-              size="small"
-              type="warning"
-              :disabled="!hasAnyZeroOffset"
-              @click="handleClearAllZeroOffsets"
-            >批量去校零</el-button>
-          </div>
         </div>
         <el-table :data="editChannels" size="small" class="channel-table" :max-height="320">
           <el-table-column prop="index" label="#" width="45" align="center">
@@ -309,7 +322,7 @@
           </el-table-column>
           <el-table-column label="启用" width="65" align="center">
             <template #default="{ row }">
-              <el-switch v-model="row.enabled" size="small" />
+              <el-switch v-model="row.enabled" size="small" :disabled="isAtmRowDisabled(row)" />
             </template>
           </el-table-column>
           <el-table-column label="单位" width="65" align="center">
@@ -351,32 +364,10 @@
               <span v-else class="readonly-text">--</span>
             </template>
           </el-table-column>
-          <el-table-column v-if="isPressureDevice(editProfileType)" label="校零" width="80" align="center">
-            <template #default="{ row }">
-              <template v-if="row.index < editPressureCount">
-                <el-button
-                  v-if="!row.zeroCalibratedAt"
-                  size="small"
-                  type="primary"
-                  link
-                  :loading="zeroCalibrating"
-                  :disabled="!canZeroCalibrate"
-                  @click="handleZeroCalibrateChannel(row.index)"
-                >校零</el-button>
-                <el-button
-                  v-else
-                  size="small"
-                  type="warning"
-                  link
-                  :disabled="zeroCalibrating"
-                  @click="handleClearZeroOffset(row.index)"
-                >去校零</el-button>
-              </template>
-            </template>
-          </el-table-column>
         </el-table>
         <div class="channel-hint" v-if="isPressureDevice(editProfileType)">
           0-{{ editPressureCount - 1 }}: 压力通道 | {{ editPressureCount }}: 大气压 | {{ editPressureCount + 1 }}: 大气温度
+          <template v-if="isAtmSupported(editProfileType) && !editForm.atmEnabled">（大气压/温度已关闭，通道不参与采集）</template>
         </div>
         <div class="channel-hint" v-else>
           0-15: 温度通道（热电偶）
@@ -453,6 +444,11 @@ function isPressureDevice(type: string): boolean {
   return !info.isTemperature
 }
 
+// 大气压/温度使能开关仅支持真实压力设备 EA2508A/EA2516A（模拟设备不走该数据流协议）
+function isAtmSupported(type: string): boolean {
+  return getDeviceInfo(type as DeviceTypeValue).supportsAtm
+}
+
 // ==================== 阀位控制 ====================
 // 阀位状态按需查询：设备已连接时从硬件读取，未连接或读取失败显示"未知"
 // 阀位不持久化到本地，每次重新连接后需重新查询
@@ -481,6 +477,14 @@ function valvePlaceholder(id: string): string {
 function valveDisabledReason(row: { id: string; status: string; acquiring: boolean }): string {
   if (row.status !== 'Connected') return '设备未连接'
   if (row.acquiring) return '采集进行中，不允许切换阀位'
+  return ''
+}
+
+// 配置(温度源/热电偶类型/编辑/删除)禁用原因：返回非空字符串时控件禁用。
+// 采集过程中禁止修改配置，与后端 ensureConfigMutable 保护一致；校零/温度校准豁免。
+// 注意：未连接设备仍可编辑（后端走"未连接仅持久化"路径），不在此禁用。
+function configDisabledReason(row: { acquiring: boolean }): string {
+  if (row.acquiring) return '采集进行中，不允许修改配置'
   return ''
 }
 
@@ -591,6 +595,34 @@ async function handleSetTempTcType(row: { id: string }, tcType: string) {
   }
 }
 
+// ==================== 大气压/温度采集使能 ====================
+// c 05 数据流位图：0810=压力+大气压+大气温度；0010=仅压力（EA2508A/EA2516A）。
+// 已连接设备写入驱动状态，下次启动采集时下发命令；未连接仅持久化。
+const atmLoading = reactive<Record<string, boolean>>({})
+
+// 旧配置/旧绑定缺少 atmEnabled 字段时视为启用（与后端 UnmarshalJSON 默认一致）
+function profileAtmEnabled(profile?: { atmEnabled?: boolean }): boolean {
+  return profile?.atmEnabled !== false
+}
+
+function atmEnabledOf(row: { id: string }): boolean {
+  return profileAtmEnabled(deviceStore.profiles.find(p => p.id === row.id))
+}
+
+async function handleSetAtmEnabled(row: { id: string }, enabled: boolean) {
+  atmLoading[row.id] = true
+  try {
+    const err = await deviceStore.setAtmEnabled(row.id, enabled)
+    if (err) {
+      ElMessage.error(`设置大气压/温度使能失败: ${err}`)
+    } else {
+      ElMessage.success(enabled ? '已启用大气压/温度采集（下次启动采集生效）' : '已关闭大气压/温度采集（下次启动采集生效）')
+    }
+  } finally {
+    atmLoading[row.id] = false
+  }
+}
+
 // 连接状态映射
 function statusClass(status: string): string {
   switch (status) {
@@ -636,6 +668,7 @@ const newDevice = ref({
   unit: 'kPa',
   precision: 3,
   autoConnect: true,
+  atmEnabled: true,
 })
 
 function openAddDialog() {
@@ -648,6 +681,7 @@ function openAddDialog() {
     unit: 'kPa',
     precision: 3,
     autoConnect: true,
+    atmEnabled: true,
   }
   showAddDialog.value = true
 }
@@ -666,6 +700,7 @@ async function addDevice() {
   try {
     const channels = []
     const info = getDeviceInfo(newDevice.value.type as DeviceTypeValue)
+    const atmCapable = isAtmSupported(newDevice.value.type)
     const totalCh = info.totalChCount
     for (let i = 0; i < totalCh; i++) {
       if (info.isTemperature) {
@@ -686,7 +721,8 @@ async function addDevice() {
         channels.push({
           index: i,
           name: i < info.pressureChCount ? `CH${i+1}` : (isAtmPressure ? '大气压' : '大气温度'),
-          enabled: true,
+          // 大气压/大气温度通道启用状态随主开关，其余通道默认启用
+          enabled: atmCapable && (isAtmPressure || isAtmTemp) ? newDevice.value.atmEnabled : true,
           unit: isAtmPressure ? 'Pa' : (isAtmTemp ? '°C' : newDevice.value.unit),
           precision: newDevice.value.precision,
           rangeMin: 0,
@@ -706,6 +742,8 @@ async function addDevice() {
       streamId: 1,
       periodMs: Math.round(1000 / newDevice.value.publishRate),
       autoConnect: newDevice.value.autoConnect,
+      // 大气压/温度使能仅对真实压力设备有效（EA2508A/EA2516A），其余保持默认启用
+      atmEnabled: isAtmSupported(newDevice.value.type) ? newDevice.value.atmEnabled : true,
       channels,
     })
 
@@ -749,6 +787,7 @@ const editForm = ref({
   unit: 'kPa',
   precision: 3,
   autoConnect: true,
+  atmEnabled: true,
   thermocoupleType: 'K',
 })
 
@@ -776,6 +815,11 @@ const editPressureCount = computed(() => {
   return Math.max(editChannels.value.length - 2, 8)
 })
 
+// 大气压/温度关闭时，通道表中 CH(pc+1)/CH(pc+2) 行的启用开关禁用（不参与采集）
+function isAtmRowDisabled(row: EditChannel): boolean {
+  return isAtmSupported(editProfileType.value) && !editForm.value.atmEnabled && row.index >= editPressureCount.value
+}
+
 // 常用压力单位选项（仅零位校准白名单内 6 种，删除 mmHg/atm/mbar）
 const unitOptions = ['psi', 'kgf/cm²', 'bar', 'kPa', 'MPa', 'Pa']
 
@@ -802,6 +846,7 @@ function openEditDialog(id: string) {
     unit: ch0Unit,
     precision: ch0Precision,
     autoConnect: (profile as any).autoConnect !== false,
+    atmEnabled: profileAtmEnabled(profile),
     thermocoupleType: ch0TcType,
   }
   editProfileType.value = profile.type
@@ -862,23 +907,8 @@ function onChannelThermocoupleChange(row: EditChannel) {
 watch(() => editForm.value.unit, () => syncUnitToChannels())
 watch(() => editForm.value.precision, () => syncPrecisionToChannels())
 
-// ==================== 零位校准 ====================
-const zeroCalibrating = ref(false)
-
-// 当前编辑设备是否已连接且正在采集（校零前置条件）
-const canZeroCalibrate = computed(() => {
-  const status = deviceStore.statuses.find(s => s.id === editForm.value.id)
-  return status?.status === 'Connected' && status?.acquiring
-})
-
-// 当前编辑设备是否存在任何已校零的压力通道（批量去校零按钮启用条件）
-// 仅当至少一个压力通道已校零时才允许批量清除，避免无意义操作。
-// isPressureDevice 守卫由按钮组 v-if 保证，此处无需重复判断。
-const hasAnyZeroOffset = computed(() => {
-  const pc = editPressureCount.value
-  return editChannels.value.some(c => c.index < pc && c.zeroCalibratedAt)
-})
-
+// ==================== 零位显示 ====================
+// 校零/去校零操作入口在仪表盘（实时压力数据卡片），此处仅格式化编辑对话框中的零位展示。
 function formatZeroValue(value: number | undefined): string {
   if (!value) return '0'
   return Math.abs(value) < 0.001 ? '0' : value.toFixed(3)
@@ -890,85 +920,6 @@ function formatZeroTime(ts: number | undefined): string {
   const hh = String(d.getHours()).padStart(2, '0')
   const mm = String(d.getMinutes()).padStart(2, '0')
   return `${hh}:${mm}校准`
-}
-
-// 校零后从后端 profile 同步零位字段到 editChannels（保留其他未保存编辑）
-async function syncZeroOffsetsFromProfile() {
-  await deviceStore.fetchProfiles()
-  const profile = deviceStore.profiles.find(p => p.id === editForm.value.id)
-  if (!profile) return
-  for (const ec of editChannels.value) {
-    const pc = profile.channels.find(c => c.index === ec.index)
-    if (pc) {
-      ec.zeroOffset = pc.zeroOffset
-      ec.zeroOffsetUnit = pc.zeroOffsetUnit
-      ec.zeroCalibratedAt = pc.zeroCalibratedAt
-    }
-  }
-}
-
-async function handleZeroCalibrateAll() {
-  ElMessage({ message: '请保持设备静止，正在采样...', type: 'warning', duration: 1200 })
-  zeroCalibrating.value = true
-  try {
-    const err = await deviceStore.zeroCalibrate(editForm.value.id)
-    if (err) {
-      ElMessage.error(`批量校零失败: ${err}`)
-    } else {
-      ElMessage.success('批量校零完成')
-      await syncZeroOffsetsFromProfile()
-    }
-  } finally {
-    zeroCalibrating.value = false
-  }
-}
-
-async function handleZeroCalibrateChannel(channelIndex: number) {
-  ElMessage({ message: '请保持设备静止，正在采样...', type: 'warning', duration: 1200 })
-  zeroCalibrating.value = true
-  try {
-    const err = await deviceStore.zeroCalibrateChannel(editForm.value.id, channelIndex)
-    if (err) {
-      ElMessage.error(`通道 ${channelIndex} 校零失败: ${err}`)
-    } else {
-      ElMessage.success(`通道 ${channelIndex} 校零完成`)
-      await syncZeroOffsetsFromProfile()
-    }
-  } finally {
-    zeroCalibrating.value = false
-  }
-}
-
-async function handleClearZeroOffset(channelIndex: number) {
-  const err = await deviceStore.clearZeroOffset(editForm.value.id, channelIndex)
-  if (err) {
-    ElMessage.error(`清除零位失败: ${err}`)
-  } else {
-    ElMessage.success('零位已清除')
-    await syncZeroOffsetsFromProfile()
-  }
-}
-
-// 批量去校零：清除当前编辑设备所有压力通道的零位偏移。
-// 后端 ClearAllZeroOffsets 会清除所有通道（含大气压/大气温度通道，它们本就无零位）。
-// 按钮已通过 :disabled="!hasAnyZeroOffset" 禁用无校零项场景，此处无需重复判断。
-async function handleClearAllZeroOffsets() {
-  try {
-    await ElMessageBox.confirm(
-      '将清除该设备所有压力通道的零位偏移，此操作不可恢复。是否继续？',
-      '批量去校零确认',
-      { confirmButtonText: '清除', cancelButtonText: '取消', type: 'warning' },
-    )
-  } catch {
-    return // 用户取消
-  }
-  const err = await deviceStore.clearAllZeroOffsets(editForm.value.id)
-  if (err) {
-    ElMessage.error(`批量去校零失败: ${err}`)
-  } else {
-    ElMessage.success('批量去校零完成')
-    await syncZeroOffsetsFromProfile()
-  }
 }
 
 // ==================== 跨设备批量校零 ====================
@@ -1041,6 +992,11 @@ async function handleBatchZeroCalibrate() {
 async function saveEdit() {
   saving.value = true
   try {
+    const st = deviceStore.getDeviceStatus(editForm.value.id)
+    if (st?.acquiring) {
+      ElMessage.warning('采集进行中，不允许修改配置')
+      return
+    }
     const profile = deviceStore.profiles.find(p => p.id === editForm.value.id)
     if (!profile) {
       ElMessage.error('设备配置不存在')
@@ -1052,11 +1008,13 @@ async function saveEdit() {
     const pc = editPressureCount.value
     const isTempDevice = editProfileType.value === 'EA2516T'
     const isEA2508A = editProfileType.value === 'EA2508A'
+    const isAtmCapable = isAtmSupported(editProfileType.value)
     const lastIdx = channelsSnapshot.length - 1
     const updatedChannels = channelsSnapshot.map(c => ({
       index: c.index,
       name: c.name,
-      enabled: c.enabled,
+      // 大气压/大气温度通道启用状态随主开关（后端 syncAtmChannelEnabled 兜底）
+      enabled: isAtmCapable && c.index >= pc ? formSnapshot.atmEnabled : c.enabled,
       unit: isTempDevice ? '°C' : (c.index === pc ? 'Pa' : (c.index === pc + 1 ? '°C' : formSnapshot.unit)),
       precision: formSnapshot.precision,
       rangeMin: c.rangeMin,
@@ -1079,6 +1037,8 @@ async function saveEdit() {
       streamId: profile.streamId,
       periodMs: Math.round(1000 / formSnapshot.publishRate),
       autoConnect: formSnapshot.autoConnect,
+      // 大气压/温度使能仅对真实压力设备有效，其余设备保持默认启用
+      atmEnabled: isAtmSupported(editProfileType.value) ? formSnapshot.atmEnabled : true,
       channels: updatedChannels,
     })
 
@@ -1434,6 +1394,11 @@ async function removeDevice(id: string) {
   align-items: center;
   gap: 8px;
 }
+
+.atm-switch-row {
+  margin-top: 12px;
+  align-items: center;
+}
 .auto-connect-label {
   font-size: 12px;
   color: rgba(255,255,255,0.75);
@@ -1455,13 +1420,6 @@ async function removeDevice(id: string) {
   .section-title {
     margin-bottom: 0;
   }
-}
-
-// 批量校零/去校零按钮组：紧邻排列，统一间距
-.batch-zero-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
 }
 
 .zero-info {

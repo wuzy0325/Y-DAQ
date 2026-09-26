@@ -104,7 +104,7 @@ type FiveHoleTraversalService struct {
 ├── .gitignore / .golangci.yml / .mcp.json / .gitnexus-rules.json / .impeccable.md
 │
 ├── src/                      # ★ 源码归拢目录（Wails v3 工程根 / Go 模块根）
-│   ├── main.go               # Wails v3 入口：NewCore + 8 个 Service 注册 + application.New()
+│   ├── main.go               # Wails v3 入口：NewCore + 9 个 Service 注册 + application.New()
 │   ├── go.mod / go.sum       # Go 模块依赖（module 名 yx-daq）
 │   ├── wails.json            # Wails v3 项目配置
 │   ├── Taskfile.yml          # Wails v3 构建任务（build/dev/run，BIN_DIR="../bin"）
@@ -149,6 +149,7 @@ src/internal/
 │   ├── service_calibration.go# CalibrationService → 五孔校准绑定
 │   ├── service_data.go       # DataService → 录制/回放绑定
 │   ├── service_config.go     # ConfigService → 配置/路径绑定
+│   ├── service_log.go        # LogService → 日志查看/导出/配置绑定
 │   └── event_publishers.go   # 事件发布器实现（持有 *application.App 引用）
 │
 ├── types/                    # 共享类型、常量、枚举（纯定义，无业务逻辑，零依赖）
@@ -156,6 +157,7 @@ src/internal/
 │   ├── motion.go
 │   ├── calibration.go
 │   ├── config_types.go
+│   ├── logging.go
 │   ├── three_hole_traversal.go
 │   ├── five_hole_traversal.go
 │   └── constants.go
@@ -212,7 +214,10 @@ src/internal/
 │   └── types_local.go        # 包内私有类型
 │
 └── logger/                   # 结构化日志（log/slog）
-    └── logger.go
+    ├── logger.go             # Init/Configure/Close、级别、导出/清空
+    ├── rotate.go             # 按天+大小滚动的日志 writer
+    ├── comm.go               # 设备通信错误日志（CommError）
+    └── recover.go            # goroutine panic 捕获（Recover）
 ```
 
 **关键说明**：

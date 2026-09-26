@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"yx-daq/internal/driver"
+	"yx-daq/internal/logger"
 	"yx-daq/internal/types"
 )
 
@@ -50,6 +51,7 @@ type MotionControllerFactory func(profile types.MotionControllerProfile) MotionC
 var controllerFactories = map[types.MotionControllerType]MotionControllerFactory{
 	types.MotionTypeEA25MC04: func(p types.MotionControllerProfile) MotionController {
 		b140Drv := driver.NewB140Driver(p.Address, p.Port, p.TimeoutMs)
+		b140Drv.SetDeviceID(p.ID)
 		return driver.NewB140MotionController(b140Drv, p.Axes)
 	},
 	types.MotionTypeSimulated: func(p types.MotionControllerProfile) MotionController {
@@ -363,6 +365,7 @@ func (m *MotionControllerManager) buildStatusAll(includeLive bool) []types.Motio
 
 // StartPolling 启动状态轮询（CompareAndSwap 守护单实例）
 func (m *MotionControllerManager) StartPolling() {
+	defer logger.Recover("motion-poll")
 	if !m.pollRunning.CompareAndSwap(false, true) {
 		return
 	}
@@ -439,6 +442,13 @@ func (m *MotionControllerManager) Init() {
 					slog.Info("migrate legacy motion controller type", "id", p.ID, "old", p.Type, "new", newType)
 					p.Type = newType
 					migrated++
+				}
+				for j := range p.Axes {
+					if p.Axes[j].NormalizeSoftLimit() {
+						slog.Info("normalize legacy soft limit", "id", p.ID, "axis", p.Axes[j].Name,
+							"min", p.Axes[j].SoftLimit.Min, "max", p.Axes[j].SoftLimit.Max)
+						migrated++
+					}
 				}
 			}
 			m.Lock()
@@ -609,12 +619,12 @@ func (m *MotionControllerManager) SetAxisDirection(id string, axis types.AxisNam
 func (m *MotionControllerManager) UpdateProfile(profile types.MotionControllerProfile) {
 	m.Lock()
 	m.profiles[profile.ID] = profile
-	if ctrl, ok := m.instances[profile.ID]; ok {
-		if updater, canUpdate := ctrl.(axisConfigUpdater); canUpdate {
-			updater.UpdateAxes(profile.Axes)
-		}
-	}
+	ctrl := m.instances[profile.ID]
 	m.Unlock()
+	// 锁外应用轴配置：可能触发控制器通信（如 B140 下发软限位 FL/BL），避免阻塞状态轮询
+	if updater, canUpdate := ctrl.(axisConfigUpdater); canUpdate {
+		updater.UpdateAxes(profile.Axes)
+	}
 	m.saveProfilesWithLog("motion")
 }
 

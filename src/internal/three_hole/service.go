@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"yx-daq/internal/logger"
 	"yx-daq/internal/types"
 )
 
@@ -162,12 +163,13 @@ func (s *ThreeHoleTraversalService) Start(config types.ThreeHoleTraversalConfig)
 	// 启动测试协程
 	doneCloseOnce := &sync.Once{}
 	go func() {
-		s.runTestLoop(taskID, config)
-		doneCloseOnce.Do(func() {
+		defer logger.Recover("three-hole-test-loop")
+		defer doneCloseOnce.Do(func() {
 			if s.testManager.doneCh != nil {
 				close(s.testManager.doneCh)
 			}
 		})
+		s.runTestLoop(taskID, config)
 	}()
 
 	return taskID, nil

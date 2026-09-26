@@ -2,8 +2,11 @@ package storage
 
 import (
 	"encoding/csv"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
+	"sync"
 	"testing"
 
 	"yx-daq/internal/types"
@@ -97,7 +100,7 @@ func TestDataStorage_HandlePayload_NotRecording(t *testing.T) {
 	}
 }
 
-func TestDataStorage_HandlePayload_WritesRows(t *testing.T) {
+func TestDataStorage_HandlePayload_WritesWideRow(t *testing.T) {
 	dir := t.TempDir()
 	s := NewDataStorageService(dir)
 
@@ -139,31 +142,79 @@ func TestDataStorage_HandlePayload_WritesRows(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadAll failed: %v", err)
 	}
-	// 期望 1 表头 + 3 数据行
-	if len(records) != 4 {
-		t.Fatalf("expected 4 records (1 header + 3 data), got %d", len(records))
+	// 期望 1 表头 + 1 数据行（所有通道在一横行）
+	if len(records) != 2 {
+		t.Fatalf("expected 2 records (1 header + 1 wide row), got %d", len(records))
 	}
-	// 表头
-	if records[0][0] != "Timestamp" || records[0][3] != "ChannelName" {
-		t.Errorf("unexpected header: %v", records[0])
+	// 表头：Timestamp, DeviceID + 每通道一列（含单位）
+	expectedHeader := []string{"Timestamp", "DeviceID", "CH6 (kPa)", "CH7 (kPa)", "CH8 (kPa)"}
+	if len(records[0]) != len(expectedHeader) {
+		t.Fatalf("header fields = %d, want %d: %v", len(records[0]), len(expectedHeader), records[0])
 	}
-	// 第一条数据：CH6（chIdx=5 +1），值 1.0，单位 kPa
-	if records[1][1] != "d1" {
-		t.Errorf("record[1] DeviceID = %q", records[1][1])
+	for i, want := range expectedHeader {
+		if records[0][i] != want {
+			t.Errorf("header[%d] = %q, want %q", i, records[0][i], want)
+		}
 	}
-	if records[1][3] != "CH6" {
-		t.Errorf("record[1] ChannelName = %q, want CH6", records[1][3])
+	// 数据行：时间戳, 设备, 各通道值横排
+	row := records[1]
+	// 时间戳用 ="..." 公式包裹强制文本显示，内部为本地时区格式
+	if !strings.HasPrefix(row[0], `="`) || !strings.HasSuffix(row[0], `"`) ||
+		len(row[0]) != len(`="2006-01-02 15:04:05.000"`) {
+		t.Errorf("row timestamp = %q, want format =\"yyyy-mm-dd hh:mm:ss.mmm\"", row[0])
 	}
-	if records[1][4] != "1.000000" {
-		t.Errorf("record[1] Value = %q, want 1.000000", records[1][4])
+	if row[1] != "d1" {
+		t.Errorf("row DeviceID = %q", row[1])
 	}
-	if records[1][5] != "kPa" {
-		t.Errorf("record[1] Unit = %q, want kPa", records[1][5])
+	if row[2] != "1.000000" || row[3] != "2.000000" || row[4] != "3.000000" {
+		t.Errorf("row channel values = %v, want [1.000000 2.000000 3.000000]", row[2:])
 	}
 }
 
-func TestDataStorage_HandlePayload_DefaultUnit(t *testing.T) {
-	// ChannelUnits 为空时单位应回退到 "Pa"
+func TestDataStorage_HandlePayload_MultipleFrames(t *testing.T) {
+	dir := t.TempDir()
+	s := NewDataStorageService(dir)
+	if err := s.StartRecording(); err != nil {
+		t.Fatalf("StartRecording failed: %v", err)
+	}
+
+	base := types.DataPayload{
+		DeviceID:       "d1",
+		Channels:       []float64{10.0, 20.0},
+		ChannelIndices: []int{0, 1},
+		ChannelUnits:   []string{"Pa", "Pa"},
+	}
+	base.Timestamp = 1700000000000
+	if err := s.HandlePayload(base); err != nil {
+		t.Fatalf("HandlePayload #1 failed: %v", err)
+	}
+	base.Timestamp = 1700000000100
+	base.Channels = []float64{11.0, 21.0}
+	if err := s.HandlePayload(base); err != nil {
+		t.Fatalf("HandlePayload #2 failed: %v", err)
+	}
+	s.StopRecording()
+
+	files, _ := os.ReadDir(dir)
+	f, _ := os.Open(filepath.Join(dir, files[0].Name()))
+	defer f.Close()
+	f.Read(make([]byte, 3))
+	r := csv.NewReader(f)
+	records, _ := r.ReadAll()
+	// 1 表头 + 2 数据行，每行两个通道横排
+	if len(records) != 3 {
+		t.Fatalf("expected 3 records (1 header + 2 rows), got %d", len(records))
+	}
+	if records[1][2] != "10.000000" || records[1][3] != "20.000000" {
+		t.Errorf("frame1 values = %v", records[1][2:])
+	}
+	if records[2][2] != "11.000000" || records[2][3] != "21.000000" {
+		t.Errorf("frame2 values = %v", records[2][2:])
+	}
+}
+
+func TestDataStorage_HandlePayload_DefaultUnitInHeader(t *testing.T) {
+	// ChannelUnits 为空时表头单位应省略（仅 CH{n}）
 	dir := t.TempDir()
 	s := NewDataStorageService(dir)
 	if err := s.StartRecording(); err != nil {
@@ -186,13 +237,16 @@ func TestDataStorage_HandlePayload_DefaultUnit(t *testing.T) {
 	f.Read(make([]byte, 3)) // skip BOM
 	r := csv.NewReader(f)
 	records, _ := r.ReadAll()
-	if records[1][5] != "Pa" {
-		t.Errorf("default unit = %q, want Pa", records[1][5])
+	if records[0][2] != "CH1" {
+		t.Errorf("header channel = %q, want CH1", records[0][2])
+	}
+	if records[1][2] != "1.000000" {
+		t.Errorf("row value = %q, want 1.000000", records[1][2])
 	}
 }
 
 func TestDataStorage_HandlePayload_ChannelIndexOutOfBounds(t *testing.T) {
-	// ChannelIndices 长度 < Channels 长度 时，剩余应使用 chIdx=0
+	// ChannelIndices 长度 < Channels 长度 时，剩余通道按位置索引（i）对齐
 	dir := t.TempDir()
 	s := NewDataStorageService(dir)
 	if err := s.StartRecording(); err != nil {
@@ -202,7 +256,7 @@ func TestDataStorage_HandlePayload_ChannelIndexOutOfBounds(t *testing.T) {
 	if err := s.HandlePayload(types.DataPayload{
 		DeviceID:       "d1",
 		Channels:       []float64{1.0, 2.0},
-		ChannelIndices: []int{5}, // 只有一个，第二个通道应使用 chIdx=0
+		ChannelIndices: []int{5}, // 只有一个，第二个通道应使用位置索引 1
 		ChannelUnits:   []string{"Pa"},
 	}); err != nil {
 		t.Fatalf("HandlePayload failed: %v", err)
@@ -215,9 +269,12 @@ func TestDataStorage_HandlePayload_ChannelIndexOutOfBounds(t *testing.T) {
 	f.Read(make([]byte, 3))
 	r := csv.NewReader(f)
 	records, _ := r.ReadAll()
-	// 第二条数据 CH1（chIdx=0 +1）
-	if records[2][3] != "CH1" {
-		t.Errorf("out-of-bounds channel should use CH1, got %q", records[2][3])
+	// 表头：CH6 (Pa)（索引5+1，含单位）、CH2（位置索引1+1，无单位）
+	if records[0][2] != "CH6 (Pa)" || records[0][3] != "CH2" {
+		t.Errorf("header = %v, want [CH6 (Pa) CH2]", records[0][2:])
+	}
+	if records[1][2] != "1.000000" || records[1][3] != "2.000000" {
+		t.Errorf("row values = %v, want [1.000000 2.000000]", records[1][2:])
 	}
 }
 
@@ -364,5 +421,162 @@ func TestDataStorage_ExportCalibrationCSV_EmptyData(t *testing.T) {
 	records, _ := r.ReadAll()
 	if len(records) != 1 {
 		t.Errorf("expected only header (1 record), got %d", len(records))
+	}
+}
+
+// readSingleRecording 读取录制目录中唯一 CSV，返回去掉表头后的全部记录
+func readSingleRecording(t *testing.T, dir string) [][]string {
+	t.Helper()
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatalf("ReadDir failed: %v", err)
+	}
+	if len(files) != 1 {
+		t.Fatalf("expected 1 recording file, got %d", len(files))
+	}
+	f, err := os.Open(filepath.Join(dir, files[0].Name()))
+	if err != nil {
+		t.Fatalf("Open recording failed: %v", err)
+	}
+	defer f.Close()
+	f.Read(make([]byte, 3))
+	r := csv.NewReader(f)
+	r.FieldsPerRecord = -1
+	records, err := r.ReadAll()
+	if err != nil {
+		t.Fatalf("ReadAll failed: %v", err)
+	}
+	return records
+}
+
+// 多设备并行录制：后到设备引入新通道索引时应扩列，历史行补空保持对齐，新通道数据不得丢失
+func TestDataStorage_HandlePayload_ExpandsColumnsForLateDevice(t *testing.T) {
+	dir := t.TempDir()
+	s := NewDataStorageService(dir)
+	if err := s.StartRecording(); err != nil {
+		t.Fatalf("StartRecording failed: %v", err)
+	}
+
+	// 首帧设备：2 个通道（索引 0/1）
+	first := types.DataPayload{
+		DeviceID:       "dev-a",
+		Timestamp:      1700000000000,
+		Channels:       []float64{1.0, 2.0},
+		ChannelIndices: []int{0, 1},
+		ChannelUnits:   []string{"Pa", "Pa"},
+	}
+	if err := s.HandlePayload(first); err != nil {
+		t.Fatalf("HandlePayload #1 failed: %v", err)
+	}
+
+	// 后到设备：通道索引 5 不在首帧布局中，应扩列
+	if err := s.HandlePayload(types.DataPayload{
+		DeviceID:       "dev-b",
+		Timestamp:      1700000000100,
+		Channels:       []float64{6.0},
+		ChannelIndices: []int{5},
+		ChannelUnits:   []string{"kPa"},
+	}); err != nil {
+		t.Fatalf("HandlePayload #2 failed: %v", err)
+	}
+
+	// 首帧设备再来一帧：仍应对齐原列，扩列处留空
+	first.Timestamp = 1700000000200
+	if err := s.HandlePayload(first); err != nil {
+		t.Fatalf("HandlePayload #3 failed: %v", err)
+	}
+	s.StopRecording()
+
+	records := readSingleRecording(t, dir)
+	if len(records) != 4 {
+		t.Fatalf("expected 4 records (header + 3 rows), got %d", len(records))
+	}
+	expectedHeader := []string{"Timestamp", "DeviceID", "CH1 (Pa)", "CH2 (Pa)", "CH6 (kPa)"}
+	if len(records[0]) != len(expectedHeader) {
+		t.Fatalf("header = %v, want %v", records[0], expectedHeader)
+	}
+	for i, want := range expectedHeader {
+		if records[0][i] != want {
+			t.Errorf("header[%d] = %q, want %q", i, records[0][i], want)
+		}
+	}
+	// 扩列前写下的历史行：尾部补空
+	if len(records[1]) != 5 || records[1][2] != "1.000000" || records[1][4] != "" {
+		t.Errorf("historical row should be padded with empty trailing cells, got %v", records[1])
+	}
+	// 新通道数据写入扩列后的 CH6
+	if records[2][4] != "6.000000" || records[2][2] != "" {
+		t.Errorf("late device row = %v, want CH1 empty and CH6 6.000000", records[2])
+	}
+	// 旧设备后续帧：原列保持，扩列处为空
+	if records[3][2] != "1.000000" || records[3][4] != "" {
+		t.Errorf("later frame of first device = %v", records[3])
+	}
+}
+
+// 时间戳在磁盘上被 encoding/csv 转义为 "=""..."（= 公式包裹 + CSV 引号转义），
+// 前端回放解析依赖该格式（见 usePlayback.ts unwrapTimestamp），不可悄悄去掉公式包裹
+func TestDataStorage_HandlePayload_TimestampEscapedOnDisk(t *testing.T) {
+	dir := t.TempDir()
+	s := NewDataStorageService(dir)
+	if err := s.StartRecording(); err != nil {
+		t.Fatalf("StartRecording failed: %v", err)
+	}
+	if err := s.HandlePayload(types.DataPayload{
+		DeviceID:       "d1",
+		Timestamp:      1700000000000,
+		Channels:       []float64{1.0},
+		ChannelIndices: []int{0},
+		ChannelUnits:   []string{"Pa"},
+	}); err != nil {
+		t.Fatalf("HandlePayload failed: %v", err)
+	}
+	s.StopRecording()
+
+	files, _ := os.ReadDir(dir)
+	raw, err := os.ReadFile(filepath.Join(dir, files[0].Name()))
+	if err != nil {
+		t.Fatalf("ReadFile failed: %v", err)
+	}
+	if !strings.Contains(string(raw), `"=""`) {
+		t.Errorf("timestamp should be CSV-escaped as \"=\"\"... on disk, raw content:\n%s", raw)
+	}
+}
+
+// 多设备并发写同一录制文件：headerWritten/headerChannels 与 writer 必须串行化（-race 下验证）
+func TestDataStorage_HandlePayload_ConcurrentDevices(t *testing.T) {
+	dir := t.TempDir()
+	s := NewDataStorageService(dir)
+	if err := s.StartRecording(); err != nil {
+		t.Fatalf("StartRecording failed: %v", err)
+	}
+
+	const devices = 4
+	const frames = 25
+	var wg sync.WaitGroup
+	for d := 0; d < devices; d++ {
+		wg.Add(1)
+		go func(device int) {
+			defer wg.Done()
+			for i := 0; i < frames; i++ {
+				_ = s.HandlePayload(types.DataPayload{
+					DeviceID:       fmt.Sprintf("dev-%d", device),
+					Timestamp:      int64(1700000000000 + i),
+					Channels:       []float64{float64(device*100 + i)},
+					ChannelIndices: []int{0},
+					ChannelUnits:   []string{"Pa"},
+				})
+			}
+		}(d)
+	}
+	wg.Wait()
+	s.StopRecording()
+
+	records := readSingleRecording(t, dir)
+	if len(records) != 1+devices*frames {
+		t.Fatalf("expected %d records (1 header + %d rows), got %d", 1+devices*frames, devices*frames, len(records))
+	}
+	if records[0][2] != "CH1 (Pa)" {
+		t.Errorf("header channel = %q, want CH1 (Pa)", records[0][2])
 	}
 }

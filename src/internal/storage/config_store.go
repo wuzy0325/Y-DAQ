@@ -43,7 +43,10 @@ func (s *ConfigStore[T]) Load() error {
 		return s.writeLocked()
 	}
 
-	var parsed T
+	// 以构造时的默认值为基底反序列化：JSON 中缺失的字段保留默认值。
+	// 若直接反序列化到零值，损坏修复产生的空对象（{}）会把默认配置整体清掉
+	// （如 logging.json 的 Console/CommEnabled/FrontendErrors 被静默关闭）
+	parsed := s.data
 	if err := json.Unmarshal(raw, &parsed); err != nil {
 		return s.writeLocked()
 	}
@@ -116,6 +119,7 @@ type ConfigManager struct {
 	Acquisition     *ConfigStore[types.AcquisitionConfig]
 	Calibration     *ConfigStore[types.CalibrationConfig] // 五孔校准配置
 	Storage         *ConfigStore[types.StorageConfig]
+	Logging         *ConfigStore[types.LoggingConfig]
 	ThreeHoleProbe1 *ConfigStore[types.ThreeHoleTraversalConfig]
 	ThreeHoleProbe2 *ConfigStore[types.ThreeHoleTraversalConfig]
 }
@@ -128,6 +132,7 @@ func NewConfigManager(configDir string) *ConfigManager {
 		Acquisition:     NewConfigStore(filepath.Join(configDir, "acquisition.json"), types.AcquisitionConfig{}),
 		Calibration:     NewConfigStore(filepath.Join(configDir, "calibration.json"), types.CalibrationConfig{}),
 		Storage:         NewConfigStore(filepath.Join(configDir, "storage.json"), types.StorageConfig{}),
+		Logging:         NewConfigStore(filepath.Join(configDir, "logging.json"), types.DefaultLoggingConfig()),
 		ThreeHoleProbe1: NewConfigStore(filepath.Join(configDir, "three_hole_probe1.json"), types.ThreeHoleTraversalConfig{}),
 		ThreeHoleProbe2: NewConfigStore(filepath.Join(configDir, "three_hole_probe2.json"), types.ThreeHoleTraversalConfig{}),
 	}
@@ -149,6 +154,9 @@ func (m *ConfigManager) LoadAll() error {
 		firstErr = err
 	}
 	if err := m.Storage.Load(); err != nil && firstErr == nil {
+		firstErr = err
+	}
+	if err := m.Logging.Load(); err != nil && firstErr == nil {
 		firstErr = err
 	}
 	if err := m.ThreeHoleProbe1.Load(); err != nil && firstErr == nil {

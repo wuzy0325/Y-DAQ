@@ -118,19 +118,31 @@ func (p *DAQTMetadataParser) Parse(frame []byte) ([]float64, error) {
 // --- DAQ-T 帧读取器 ---
 
 // DAQTFrameReader DAQ-T 帧读取器（缓冲 + 拆帧）
+//
+// 二进制模式支持 4 种帧长（设备协议，参考 wista 可用实现）：
+//   - BIN=1 无元数据：64B
+//   - BIN=1 + HEAD=1：4B 序号 + 64B = 68B
+//   - BIN=1 + TIME=1：8B 时间戳 + 64B = 72B
+//   - BIN=1 + TIME=1 + HEAD=1：4B 序号 + 8B 时间戳 + 64B = 76B
+//
+// 读取后统一剥离头部，向解析器返回纯 64B float32 数据。
 type DAQTFrameReader struct {
-	buffer       []byte
-	frameSize    int
-	metadataMode bool
+	buffer        []byte
+	frameSize     int // 数据载荷长度：binary=64 / ascii=192 / serial=46
+	binary        bool
+	timestampMode bool
+	sequenceMode  bool
+	metadataMode  bool // timestampMode || sequenceMode（ASCII 变长帧路由依据）
 }
 
 // NewDAQTFrameReader 创建 DAQ-T 帧读取器（默认二进制模式）
 func NewDAQTFrameReader() *DAQTFrameReader {
-	return &DAQTFrameReader{frameSize: 64}
+	return &DAQTFrameReader{frameSize: 64, binary: true}
 }
 
 // SetBinaryMode 设置二进制/ASCII 定长模式
 func (r *DAQTFrameReader) SetBinaryMode(isBinary bool) {
+	r.binary = isBinary
 	if isBinary {
 		r.frameSize = 64
 	} else {
@@ -138,16 +150,39 @@ func (r *DAQTFrameReader) SetBinaryMode(isBinary bool) {
 	}
 }
 
-// SetMetadataMode 设置变长元数据模式
-func (r *DAQTFrameReader) SetMetadataMode(enabled bool) {
-	r.metadataMode = enabled
+// SetMetadataMode 设置元数据模式（时间戳/序号），两者可独立开启
+func (r *DAQTFrameReader) SetMetadataMode(timestamp, sequence bool) {
+	r.timestampMode = timestamp
+	r.sequenceMode = sequence
+	r.metadataMode = timestamp || sequence
 }
 
 // SetSerialMode 设置串口协议模式（46字节帧）
 func (r *DAQTFrameReader) SetSerialMode(enabled bool) {
 	if enabled {
 		r.frameSize = 46
+		r.binary = false
 	}
+}
+
+// headerSize 返回二进制元数据头长度（序号 4B + 时间戳 8B）
+func (r *DAQTFrameReader) headerSize() int {
+	if !r.binary {
+		return 0
+	}
+	n := 0
+	if r.sequenceMode {
+		n += 4
+	}
+	if r.timestampMode {
+		n += 8
+	}
+	return n
+}
+
+// totalFixedFrameSize 定长帧总长（含元数据头）
+func (r *DAQTFrameReader) totalFixedFrameSize() int {
+	return r.frameSize + r.headerSize()
 }
 
 // Feed 向缓冲区追加数据
@@ -155,30 +190,23 @@ func (r *DAQTFrameReader) Feed(data []byte) {
 	r.buffer = append(r.buffer, data...)
 }
 
-// HasCompleteFrame 检查缓冲区中是否有完整帧
-// BIN=1 + TIME/HEAD=1: 带时间戳定长帧（8B 时间戳 + 64B float32 = 72B）
-// BIN=0 + TIME/HEAD=1: 变长 ASCII 帧
-// 否则: frameSize 定长帧（64B binary 或 192B ASCII）
+// HasCompleteFrame 检查缓冲区中是否有完整帧。
+// ASCII 变长元数据帧（BIN=0 + TIME/HEAD=1）按字段数判定；
+// 其余（二进制含元数据、纯 ASCII 定长）按对齐后的定长帧判定。
 //
 // 容忍迟到 ACK：设备固件在 @f0 后并行发送 ACK 与数据流，顺序不保证
 // （约 10~15% 数据帧先到或带 1 个前导残杂字节 'A'=0x41）。
 // 用偏移 0/1 帧合法性对齐真实边界，支持丢弃 1 个前导字节自愈。
 func (r *DAQTFrameReader) HasCompleteFrame() bool {
-	if r.metadataMode {
-		if r.frameSize == types.DAQTBinaryFrameSize {
-			return len(r.buffer) >= types.DAQTBinaryFrameSizeWithTs
-		}
+	if r.metadataMode && !r.binary {
 		return r.hasVariableFrame()
 	}
 	return r.hasAlignedFixedFrame()
 }
 
-// ReadFrame 读取一帧数据（从缓冲区移除）
+// ReadFrame 读取一帧数据（从缓冲区移除，返回纯载荷）
 func (r *DAQTFrameReader) ReadFrame() []byte {
-	if r.metadataMode {
-		if r.frameSize == types.DAQTBinaryFrameSize {
-			return r.readBinaryTimestampFrame()
-		}
+	if r.metadataMode && !r.binary {
 		return r.readVariableFrame()
 	}
 	return r.readAlignedFixedFrame()
@@ -189,27 +217,18 @@ func (r *DAQTFrameReader) Reset() {
 	r.buffer = r.buffer[:0]
 }
 
-func (r *DAQTFrameReader) readFixedFrame() []byte {
-	if len(r.buffer) < r.frameSize {
-		return nil
-	}
-	frame := make([]byte, r.frameSize)
-	copy(frame, r.buffer[:r.frameSize])
-	r.buffer = r.buffer[r.frameSize:]
-	return frame
-}
-
 // hasAlignedFixedFrame 检查是否有可对齐的定长帧。
 // 容忍迟到 ACK：设备固件在 @f0 后并行发送 ACK 与数据流，顺序不保证
 // （约 10~15% 数据帧先到或带 1 个前导残杂字节 'A'=0x41）。
 // 策略：当缓冲区首字节为 'A'(0x41) 时，优先尝试偏移 1（'A' 作为 ACK 的概率
 // 远高于作为有效数据首字节）；否则用偏移 0。
 func (r *DAQTFrameReader) hasAlignedFixedFrame() bool {
-	if len(r.buffer) < r.frameSize {
+	size := r.totalFixedFrameSize()
+	if len(r.buffer) < size {
 		return false
 	}
 	// 首字节为 'A' 且有足够数据：优先偏移 1
-	if len(r.buffer) > 0 && r.buffer[0] == 'A' && len(r.buffer) >= r.frameSize+1 {
+	if r.buffer[0] == 'A' && len(r.buffer) >= size+1 {
 		if r.isFixedFrameValidAt(1) {
 			return true
 		}
@@ -218,37 +237,41 @@ func (r *DAQTFrameReader) hasAlignedFixedFrame() bool {
 	return r.isFixedFrameValidAt(0)
 }
 
-// readAlignedFixedFrame 读取对齐后的定长帧（自动丢弃前导残杂字节）。
+// readAlignedFixedFrame 读取对齐后的定长帧（自动丢弃前导残杂字节，返回纯载荷）。
 func (r *DAQTFrameReader) readAlignedFixedFrame() []byte {
-	if len(r.buffer) < r.frameSize {
+	size := r.totalFixedFrameSize()
+	if len(r.buffer) < size {
 		return nil
 	}
 	offset := 0
 	// 首字节为 'A' 且偏移 1 合法：丢弃迟到 ACK
-	if len(r.buffer) > 0 && r.buffer[0] == 'A' && len(r.buffer) >= r.frameSize+1 {
+	if r.buffer[0] == 'A' && len(r.buffer) >= size+1 {
 		if r.isFixedFrameValidAt(1) {
 			offset = 1
 		}
 	}
+	header := r.headerSize()
 	frame := make([]byte, r.frameSize)
-	copy(frame, r.buffer[offset:offset+r.frameSize])
-	r.buffer = r.buffer[offset+r.frameSize:]
+	copy(frame, r.buffer[offset+header:offset+header+r.frameSize])
+	r.buffer = r.buffer[offset+size:]
 	return frame
 }
 
 // isFixedFrameValidAt 检查指定偏移处的帧是否合法。
-// 二进制帧：解析后用 isValidDAQTFrame 校验通道值物理范围。
-// ASCII 帧：检查字段格式（数字/小数点/空格）。
+// 二进制帧：跳过元数据头后解析，用 isValidDAQTFrame 校验通道值物理范围。
+// ASCII 帧：检查首字段格式（数字/小数点/空格）。
 func (r *DAQTFrameReader) isFixedFrameValidAt(offset int) bool {
-	if offset+r.frameSize > len(r.buffer) {
+	size := r.totalFixedFrameSize()
+	if offset+size > len(r.buffer) {
 		return false
 	}
-	frame := r.buffer[offset : offset+r.frameSize]
-	// 二进制帧：解析校验通道值
-	if r.frameSize == types.DAQTBinaryFrameSize {
+	frame := r.buffer[offset : offset+size]
+	// 二进制帧：跳过元数据头解析载荷校验通道值
+	if r.binary {
+		payload := frame[r.headerSize():]
 		values := make([]float64, 16)
 		for i := 0; i < 16; i++ {
-			bits := binary.LittleEndian.Uint32(frame[i*4 : i*4+4])
+			bits := binary.LittleEndian.Uint32(payload[i*4 : i*4+4])
 			values[i] = float64(math.Float32frombits(bits))
 		}
 		reverseFloat64(values)
@@ -261,20 +284,6 @@ func (r *DAQTFrameReader) isFixedFrameValidAt(offset int) bool {
 		return n == 1
 	}
 	return true
-}
-
-// readBinaryTimestampFrame 读取带时间戳的二进制帧（BIN=1 + TIME/HEAD=1）
-// 剥离 8 字节时间戳头，返回纯 float32 数据
-// 帧总长 = DAQTBinaryFrameSizeWithTs，数据部分 = DAQTBinaryFrameSize
-func (r *DAQTFrameReader) readBinaryTimestampFrame() []byte {
-	if len(r.buffer) < types.DAQTBinaryFrameSizeWithTs {
-		return nil
-	}
-	frame := make([]byte, types.DAQTBinaryFrameSize)
-	tsHdr := types.DAQTBinaryFrameSizeWithTs - types.DAQTBinaryFrameSize // 8 字节时间戳头
-	copy(frame, r.buffer[tsHdr:types.DAQTBinaryFrameSizeWithTs])
-	r.buffer = r.buffer[types.DAQTBinaryFrameSizeWithTs:]
-	return frame
 }
 
 func (r *DAQTFrameReader) hasVariableFrame() bool {

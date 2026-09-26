@@ -40,6 +40,8 @@ type Core struct {
 
 	threeHoleMotionMu sync.Mutex
 	fiveHoleMotionMu  sync.Mutex
+	dataStorageErrMu  sync.Mutex
+	lastDataStorageErr string
 }
 
 // NewCore 创建核心业务管理器
@@ -61,21 +63,21 @@ func NewCore() *Core {
 func (c *Core) Startup(app *application.App) {
 	c.App = app
 
-	if err := logger.Init(); err != nil {
-		slog.Error("logger init failed", "err", err)
-	}
-
 	configDir := c.getConfigDir()
 	c.ConfigManager = storage.NewConfigManager(configDir)
 	if err := c.ConfigManager.LoadAll(); err != nil {
 		slog.Error("load config failed", "err", err)
 	}
+	// 应用持久化日志配置（logger.Init 已在 main 启动早期以默认配置完成引导）
+	logger.Configure(c.ConfigManager.Logging.Get())
 
 	c.DataStorage = storage.NewDataStorageService(c.GetDataDir())
 	c.DeviceManager.SetDataSink(func(payload types.DataPayload) {
 		c.AcquisitionHub.OnData(payload)
 		if c.DataStorage.IsRecording() {
-			c.DataStorage.HandlePayload(payload)
+			if err := c.DataStorage.HandlePayload(payload); err != nil {
+				c.logDataStorageError(err)
+			}
 		}
 	})
 
@@ -385,6 +387,7 @@ func (c *Core) createThreeHoleService(probeID string) *three_hole.ThreeHoleTrave
 // broadcastStatus 定时推送状态，采用变化检测避免重复推送相同状态。
 // get 返回需推送的状态数据，仅在 JSON 序列化结果变化时才 Emit。
 func (c *Core) broadcastStatus(interval time.Duration, get func() any, eventName string) {
+	defer logger.Recover("status-broadcast")
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	var lastJSON string
@@ -425,6 +428,19 @@ func (c *Core) broadcastDeviceStatus() {
 		func() any { return c.DeviceManager.GetStatusAll() },
 		"device:status-updated",
 	)
+}
+
+// logDataStorageError 记录录制写入失败：按错误内容去重，避免逐帧刷屏。
+// 录制失败若被静默吞掉，用户会看到"录制中"但数据缺行，必须上报日志。
+func (c *Core) logDataStorageError(err error) {
+	msg := err.Error()
+	c.dataStorageErrMu.Lock()
+	changed := msg != c.lastDataStorageErr
+	c.lastDataStorageErr = msg
+	c.dataStorageErrMu.Unlock()
+	if changed {
+		slog.Error("recording payload failed", "err", err)
+	}
 }
 
 func (c *Core) getConfigDir() string {

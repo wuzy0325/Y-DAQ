@@ -396,7 +396,7 @@
                 type="primary"
                 size="small"
                 plain
-                :disabled="store.isRunning || store.config.probes.length >= store.maxProbes"
+                :disabled="store.isRunning || store.isStarting || store.config.probes.length >= store.maxProbes"
                 @click="store.addProbe()"
               >
                 + 添加探针
@@ -459,8 +459,8 @@
                       size="small"
                       type="danger"
                       plain
-                      :disabled="store.isRunning || store.config.probes.length <= 1"
-                      @click="store.removeProbe(probe.probeId)"
+                      :disabled="store.isRunning || store.isStarting || store.config.probes.length <= 1"
+                      @click="handleRemoveProbe(probe)"
                     >
                       删除
                     </el-button>
@@ -545,7 +545,7 @@
                         v-else
                         v-model="atm.source.manualValue"
                         size="small"
-                        :step="0.1"
+                        :step="atm.step"
                         style="width: 140px"
                       />
                       <span v-if="atm.source.mode === ATM_SOURCE_MODE.MANUAL" class="unit-label">{{ atm.unit }}</span>
@@ -602,6 +602,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { Setting, FolderOpened } from '@element-plus/icons-vue'
+import { ConfigService, FiveHoleService } from '@bindings/yx-daq/internal/app'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useDeviceStore } from '../stores/device'
 import { useFiveHoleTestStore } from '../stores/fiveHoleTest'
 import type {
@@ -627,16 +629,48 @@ import { useAutoSaveConfig } from '../composables/useAutoSaveConfig'
 import { useLayoutStepSync } from '../composables/useLayoutStepSync'
 import { usePointPreviewCanvas } from '../composables/usePointPreviewCanvas'
 import { useTestRealtimeRecording } from '../composables/useTestRealtimeRecording'
-import { ConfigService, FiveHoleService } from '@bindings/yx-daq/internal/app'
 
 const store = useFiveHoleTestStore()
 const deviceStore = useDeviceStore()
 const motionStore = useMotionStore()
 
+// 运动控制可能在独立窗口中被改名/增删；返回本窗口时刷新控制器下拉名称。
+// 独立窗口与主窗口各自拥有独立的 Pinia 实例，无法共享 reactive 状态，需在窗口聚焦时重新拉取。
+const refreshMotionOnFocus = () => {
+  motionStore.fetchProfiles()
+  motionStore.fetchStatuses()
+}
+function refreshMotionOnWindowFocus() {
+  window.addEventListener('focus', refreshMotionOnFocus)
+}
+function stopRefreshMotionOnWindowFocus() {
+  window.removeEventListener('focus', refreshMotionOnFocus)
+}
+
 // 根据探针 ID 推断显示名（probe1 → 探针 1，未匹配时回退到原 ID）
 function probeLabel(probeId: string): string {
   const match = /^probe(\d+)$/.exec(probeId)
   return match ? `探针 ${match[1]}` : probeId
+}
+
+// 删除探针：先弹确认；删除后 store 会把剩余探针重新连续编号
+async function handleRemoveProbe(probe: FiveHoleProbeConfig) {
+  const label = probeLabel(probe.probeId)
+  try {
+    await ElMessageBox.confirm(
+      `将删除「${label}」的通道映射、运动轴与校准配置，删除后剩余探针会重新连续编号。是否继续？`,
+      '删除探针确认',
+      { confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning' },
+    )
+  } catch {
+    return // 用户取消
+  }
+  const ok = await store.removeProbe(probe.probeId)
+  if (ok) {
+    ElMessage.success(`已删除 ${label}`)
+  } else {
+    ElMessage.error(store.lastError || `删除 ${label} 失败`)
+  }
 }
 
 // ==================== 实时数据提取 ====================
@@ -666,8 +700,8 @@ function getAtmPrecision(src: FiveHoleAtmSource | undefined): number {
 // 探针级大气数据源配置项（P∞/T∞ 结构相同，模板 v-for 复用）
 function atmSourceConfigs(probe: FiveHoleProbeConfig) {
   return [
-    { key: 'p', label: '大气压 P∞', unit: 'kPa', source: probe.pAtmSource },
-    { key: 't', label: '气流温度 T∞', unit: '°C', source: probe.tAtmSource },
+    { key: 'p', label: '大气压 P∞', unit: 'Pa', step: 100, source: probe.pAtmSource },
+    { key: 't', label: '气流温度 T∞', unit: '°C', step: 0.1, source: probe.tAtmSource },
   ]
 }
 function getDeviceChannelPrecision(deviceId: string, channel: number): number {
@@ -876,6 +910,8 @@ const { markInitialized } = useAutoSaveConfig({
 })
 
 let canvasResizeObserver: ResizeObserver | null = null
+// 组件是否已卸载：onMounted 为异步流程，卸载后不能再注册全局 focus 监听
+let viewDisposed = false
 
 onMounted(async () => {
   store.startListening()
@@ -892,6 +928,8 @@ onMounted(async () => {
   } catch (e) {
     console.warn('IsFiveHoleRealtimeRecording failed:', e)
   }
+  // 运动控制可能在独立窗口中被改名/增删，返回本窗口时刷新控制器下拉名称
+  if (!viewDisposed) refreshMotionOnWindowFocus()
   // 监听容器尺寸变化，自适应重绘 canvas
   const canvas = pointCanvasRef.value
   if (canvas?.parentElement) {
@@ -901,6 +939,8 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  viewDisposed = true
+  stopRefreshMotionOnWindowFocus()
   store.stopListening()
   store.stopRealtimeMonitor()
   if (canvasResizeObserver) {

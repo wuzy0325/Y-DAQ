@@ -39,6 +39,8 @@ export interface MockState {
   recordingFiles: string[]
   // 配置
   dataSavePath: string
+  // 日志配置
+  loggingConfig: any
 
   // 调用日志（测试可断言某方法是否被调用）
   calls: { method: string; args: any[] }[]
@@ -66,6 +68,14 @@ function createInitialState(): MockState {
     recording: false,
     recordingFiles: ['rec-001.csv', 'rec-002.csv'],
     dataSavePath: 'C:/Users/test/.yx-daq',
+    loggingConfig: {
+      level: 'info',
+      console: true,
+      commEnabled: true,
+      frontendErrors: true,
+      retentionDays: 30,
+      maxFileSizeMb: 50,
+    },
     calls: [],
   }
 }

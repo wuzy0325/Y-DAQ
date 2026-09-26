@@ -21,11 +21,15 @@ var driverFactories = map[types.DeviceType]DriverFactory{
 }
 
 func newXYDAQDriver(profile types.DeviceProfile) DeviceDriver {
-	return driver.NewXYDAQDriver(profile.Host, profile.Port, profile.StreamID, profile.Channels, profile.Type)
+	drv := driver.NewXYDAQDriver(profile.Host, profile.Port, profile.StreamID, profile.Channels, profile.Type, profile.AtmEnabled)
+	drv.SetDeviceID(profile.ID)
+	return drv
 }
 
 func newYXDAQTDriver(profile types.DeviceProfile) DeviceDriver {
-	return driver.NewYXDAQTDriver(profile.Host, profile.Port, profile.Channels)
+	drv := driver.NewYXDAQTDriver(profile.Host, profile.Port, profile.Channels)
+	drv.SetDeviceID(profile.ID)
+	return drv
 }
 
 func newSimulatedDriver(profile types.DeviceProfile) DeviceDriver {
@@ -91,36 +95,71 @@ func (m *DeviceManager) emitStatusChange() {
 
 // AddProfile 添加设备配置
 func (m *DeviceManager) AddProfile(profile types.DeviceProfile) {
+	syncAtmChannelEnabled(&profile)
 	m.addProfile(profile.ID, profile)
 	m.saveProfilesWithLog("device")
 }
 
-// UpdateProfile 更新设备配置
-func (m *DeviceManager) UpdateProfile(profile types.DeviceProfile) {
+// UpdateProfile 更新设备配置。
+// 采集过程中禁止修改配置：设备正在采集时拒绝更新，避免在途数据帧与通道配置错位。
+// 已连接设备的通道热更新（UpdateChannels）在锁外调用，避免持锁调用驱动方法。
+func (m *DeviceManager) UpdateProfile(profile types.DeviceProfile) error {
+	m.RLock()
+	_, exists := m.profiles[profile.ID]
+	drv, connected := m.instances[profile.ID]
+	m.RUnlock()
+	if !exists {
+		return fmt.Errorf("设备配置不存在: %s", profile.ID)
+	}
+	// 未连接设备 instances 中无驱动（drv 为 nil），不能做采集校验，直接允许修改
+	if connected {
+		if err := m.ensureConfigMutable(profile.ID, drv); err != nil {
+			return err
+		}
+	}
+
+	syncAtmChannelEnabled(&profile)
+
 	m.Lock()
-	if _, ok := m.profiles[profile.ID]; ok {
-		m.profiles[profile.ID] = profile
-	}
-	if drv, ok := m.instances[profile.ID]; ok {
-		drv.UpdateChannels(profile.Channels)
-	}
+	m.profiles[profile.ID] = profile
 	m.Unlock()
+	if connected {
+		drv.UpdateChannels(profile.Channels)
+		// 大气压/温度使能热更新（下次启动采集时下发 c 05 命令）
+		if cfg, ok := drv.(AtmChannelConfigurator); ok {
+			cfg.SetAtmEnabled(profile.AtmEnabled)
+		}
+	}
 	m.saveProfilesWithLog("device")
+	return nil
 }
 
-// RemoveProfile 删除设备配置（同时断开连接和停止采集）
-func (m *DeviceManager) RemoveProfile(id string) {
-	m.Lock()
-	if drv, ok := m.instances[id]; ok {
-		drv.Disconnect()
-		delete(m.instances, id)
+// RemoveProfile 删除设备配置（同时断开连接和停止采集）。
+// 采集过程中禁止删除：删除会断开连接并移除配置，属配置改变，正在采集时拒绝。
+func (m *DeviceManager) RemoveProfile(id string) error {
+	m.RLock()
+	drv, ok := m.instances[id]
+	m.RUnlock()
+	if ok {
+		if err := m.ensureConfigMutable(id, drv); err != nil {
+			return err
+		}
 	}
+
+	m.Lock()
+	drv, hasDrv := m.instances[id]
+	delete(m.instances, id)
 	delete(m.profiles, id)
 	delete(m.latestData, id)
 	delete(m.runtimeStatus, id)
 	m.Unlock()
+	// 驱动关闭含 FIN/接收协程 join 等待，锁外执行避免阻塞管理器
+	if hasDrv {
+		drv.Disconnect()
+	}
 	m.saveProfilesWithLog("device")
 	m.emitStatusChange()
+	return nil
 }
 
 // GetProfileByID 根据ID获取设备配置
@@ -142,8 +181,21 @@ func (m *DeviceManager) Connect(id string) error {
 	}
 
 	m.Lock()
+	// 并发点击连接防护：上一次连接流程未结束时再次连接会拨出第二条 TCP
+	// 连接，被单连接设备直接拒绝（或两条连接并存导致数据错乱）
+	if m.runtimeStatus[id] == types.StatusConnecting {
+		m.Unlock()
+		return fmt.Errorf("device is connecting")
+	}
+	// 设备只允许单连接：先摘除并断开同一 profile 的旧实例，
+	// 避免拨出第二条 TCP 连接被设备拒绝，或两条连接并存导致数据错乱
+	existing, hasExisting := m.instances[id]
+	delete(m.instances, id)
 	m.runtimeStatus[id] = types.StatusConnecting
 	m.Unlock()
+	if hasExisting {
+		existing.Disconnect()
+	}
 	m.emitStatusChange()
 
 	factory, ok := driverFactories[profile.Type]
@@ -183,7 +235,16 @@ func (m *DeviceManager) Connect(id string) error {
 	}
 
 	if err := drv.Connect(); err != nil {
+		// 清理可能已建立的连接（拨号成功但初始化失败的半开连接），
+		// 避免泄漏设备单连接槽位导致后续重连被设备拒绝
+		drv.Disconnect()
 		m.Lock()
+		if _, exists := m.profiles[id]; !exists {
+			// 拨号期间设备已被删除：不回写状态，否则删除后又冒出一条状态记录
+			delete(m.runtimeStatus, id)
+			m.Unlock()
+			return fmt.Errorf("device profile removed during connect")
+		}
 		if m.runtimeStatus[id] == types.StatusDisconnected {
 			m.Unlock()
 			return fmt.Errorf("connection cancelled")
@@ -208,6 +269,13 @@ func (m *DeviceManager) Connect(id string) error {
 	}
 
 	m.Lock()
+	if _, exists := m.profiles[id]; !exists {
+		// 拨号期间设备已被删除：断开刚建立的连接，不复活设备
+		delete(m.runtimeStatus, id)
+		m.Unlock()
+		drv.Disconnect()
+		return fmt.Errorf("device profile removed during connect")
+	}
 	if m.runtimeStatus[id] == types.StatusDisconnected {
 		m.Unlock()
 		drv.Disconnect()
@@ -226,12 +294,16 @@ func (m *DeviceManager) Connect(id string) error {
 // Disconnect 断开设备
 func (m *DeviceManager) Disconnect(id string) {
 	m.Lock()
-	if drv, ok := m.instances[id]; ok {
-		drv.Disconnect()
+	drv, ok := m.instances[id]
+	if ok {
 		delete(m.instances, id)
 	}
 	m.runtimeStatus[id] = types.StatusDisconnected
 	m.Unlock()
+	// 驱动关闭含 FIN/接收协程 join 等待，锁外执行避免阻塞管理器
+	if ok {
+		drv.Disconnect()
+	}
 	m.emitStatusChange()
 }
 
@@ -314,39 +386,6 @@ func (m *DeviceManager) GetAllLatestData() []types.DataPayload {
 	return snapshots
 }
 
-// UnitSetter 单位设置接口（仅XY-DAQ驱动实现）
-type UnitSetter interface {
-	SetUnit(unit string) error
-}
-
-// ThermocoupleTypeSetter 热电偶类型设置接口（仅 EA2516T 驱动实现）
-type ThermocoupleTypeSetter interface {
-	SetThermocoupleType(tcTypes string) error
-	SetSingleThermocoupleType(channelIndex int, tcType string) error
-}
-
-// ValveController 校准阀控制接口（仅 EA2516A 压力驱动 + 模拟设备实现）
-type ValveController interface {
-	ReadValveState() (types.ValveState, error)
-	SetValveState(state types.ValveState) error
-}
-
-// TempChannelConfigurator EA2508A 温度通道配置接口（@16 来源 + @17 热电偶类型，仅 EA2508A 驱动实现）
-type TempChannelConfigurator interface {
-	SetTempSource(source string) error
-	SetTempThermocoupleType(tcType string) error
-}
-
-// ConfigSyncNotifier 配置同步通知能力接口（仅 EA2516T 驱动实现）
-type ConfigSyncNotifier interface {
-	OnConfigSynced(cb func(driver.DAQTHardwareConfig))
-}
-
-// StatusChangeNotifier 状态变更通知能力接口（仅 TCP 驱动实现）
-type StatusChangeNotifier interface {
-	SetOnStatusChange(func())
-}
-
 // Init 初始化（从配置文件加载设备，若无则创建默认模拟设备）
 func (m *DeviceManager) Init() {
 	loaded := false
@@ -354,6 +393,7 @@ func (m *DeviceManager) Init() {
 		profiles := m.configStore.Get()
 		if len(profiles) > 0 {
 			migrated := 0
+			normalized := 0
 			for i := range profiles {
 				p := &profiles[i]
 				if newType, changed := types.MigrateDeviceType(p.Type); changed {
@@ -361,13 +401,16 @@ func (m *DeviceManager) Init() {
 					p.Type = newType
 					migrated++
 				}
+				if syncAtmChannelEnabled(p) {
+					normalized++
+				}
 				m.Lock()
 				m.profiles[p.ID] = *p
 				m.Unlock()
 			}
 			loaded = true
-			slog.Info("loaded device profiles from config", "count", len(profiles), "migrated", migrated)
-			if migrated > 0 {
+			slog.Info("loaded device profiles from config", "count", len(profiles), "migrated", migrated, "normalized", normalized)
+			if migrated > 0 || normalized > 0 {
 				m.saveProfilesWithLog("device")
 			}
 		}
@@ -407,6 +450,7 @@ func (m *DeviceManager) Init() {
 			Port:        9000,
 			StreamID:    1,
 			AutoConnect: true,
+			AtmEnabled:  true,
 			Channels:    defaultChannels,
 		}
 
@@ -419,7 +463,10 @@ func (m *DeviceManager) Init() {
 	m.AutoConnect()
 }
 
-// AutoConnect 自动连接所有启用了自动连接的设备
+// AutoConnect 自动连接所有启用了自动连接的设备。
+// 每台设备在独立协程中连接：TCP 拨号需等待超时（离线设备约 5s），同步连接会阻塞
+// Core.Startup；而 Wails v3 在所有 ServiceStartup 完成后才创建并显示窗口，
+// 导致启动到出现画面被拨号超时拖慢。与 MotionManager 的异步自动连接策略一致。
 func (m *DeviceManager) AutoConnect() {
 	m.RLock()
 	type kv struct {
@@ -433,13 +480,14 @@ func (m *DeviceManager) AutoConnect() {
 	m.RUnlock()
 
 	for _, pair := range pairs {
-		if !pair.auto {
+		if !pair.auto || m.IsConnected(pair.id) {
 			continue
 		}
-		if !m.IsConnected(pair.id) {
-			if err := m.Connect(pair.id); err != nil {
-				slog.Error("auto connect device failed", "id", pair.id, "err", err)
+		id := pair.id
+		go func() {
+			if err := m.Connect(id); err != nil {
+				slog.Error("auto connect device failed", "id", id, "err", err)
 			}
-		}
+		}()
 	}
 }

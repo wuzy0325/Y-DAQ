@@ -114,6 +114,13 @@ export function ScanDevices(): $CancellablePromise<types$0.DiscoveredDevice[]> {
 }
 
 /**
+ * SetAtmEnabled 设置压力设备大气压/温度采集使能（EA2508A/EA2516A，持久化+下次采集生效）
+ */
+export function SetAtmEnabled(id: string, enabled: boolean): $CancellablePromise<void> {
+    return $Call.ByID(746624257, id, enabled);
+}
+
+/**
  * SetSingleThermocoupleType 设置单个通道的热电偶类型
  */
 export function SetSingleThermocoupleType(id: string, channelIndex: number, tcType: string): $CancellablePromise<void> {

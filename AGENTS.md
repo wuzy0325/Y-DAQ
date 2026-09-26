@@ -81,7 +81,7 @@ Test files (pattern: `src/**/*.{test,spec}.{js,ts}`): 按 `src/internal/` 和 `s
 
 > 所有源码（Go + 前端 + Wails 工程文件）统一在 `src/` 下。`wails3`/`go` 命令在 `src/` 运行，构建产物输出到仓库根 `bin/`。
 
-- `src/main.go` — entrypoint, creates `Core`, embeds `frontend/dist` via `//go:embed`, Wails v3 `application.New()` with 8 Services
+- `src/main.go` — entrypoint, creates `Core`, embeds `frontend/dist` via `//go:embed`, Wails v3 `application.New()` with 9 Services
 - `src/internal/app/` — Wails v3 service layer: `Core` (lifecycle/DI), `CoreService`, `DeviceService`, `MotionService`, `ThreeHoleService`, `FiveHoleService`, `CalibrationService`, `DataService`, `ConfigService`. Events: `daq:data-snapshot`, `device:status-updated`, `motion:status-updated`, `calibration:*`, `three-hole:*`, `five-hole:*`
 - `src/internal/types/` — shared types and constants (包括五孔和三孔探针类型，零依赖)
 - `src/internal/driver/` — hardware drivers: `xy_daq16.go` / `yx_daqt.go` (TCP 采集), `b140.go` (motion TCP), `simulated_device.go`, `simulated_motion.go`

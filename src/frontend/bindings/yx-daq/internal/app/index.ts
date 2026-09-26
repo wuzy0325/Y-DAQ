@@ -6,6 +6,7 @@ import * as ConfigService from "./configservice";
 import * as DataService from "./dataservice";
 import * as DeviceService from "./deviceservice";
 import * as FiveHoleService from "./fiveholeservice";
+import * as LogService from "./logservice";
 import * as MotionService from "./motionservice";
 import * as ThreeHoleService from "./threeholeservice";
 export {
@@ -14,6 +15,7 @@ export {
     DataService,
     DeviceService,
     FiveHoleService,
+    LogService,
     MotionService,
     ThreeHoleService
 };

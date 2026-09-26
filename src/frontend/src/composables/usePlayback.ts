@@ -11,6 +11,33 @@ export interface PlaybackRow {
 
 const CHANNEL_COLORS = ['#b829ff', '#00f5ff', '#00ff88', '#ffaa00', '#ff3366', '#00aaff', '#d966ff', '#66faff']
 
+// parseChannelHeader 解析宽表表头列，如 "CH6 (kPa)" → { name: 'CH6', unit: 'kPa' }
+function parseChannelHeader(raw: string): { name: string; unit: string } {
+  const m = raw.match(/^CH(\d+)(?:\s*\(([^)]*)\))?$/)
+  if (m) return { name: `CH${m[1]}`, unit: m[2]?.trim() ?? '' }
+  return { name: raw, unit: '' }
+}
+
+// unquoteCSVField 还原 CSV 字段的引号转义（encoding/csv 对含引号字段会包裹并双写引号），
+// 例如磁盘上的时间戳字段 =\"...\" 实际存为 "=\"\"...\"\""
+function unquoteCSVField(raw: string): string {
+  const t = raw.trim()
+  if (t.length >= 2 && t.startsWith('"') && t.endsWith('"')) {
+    return t.slice(1, -1).replace(/""/g, '"')
+  }
+  return t
+}
+
+// unwrapTimestamp 剥离录制文件中 ="..." 公式包裹（强制 Excel 按文本显示时间用），
+// 先按 CSV 规则解引号转义（新录制文件），再剥离公式包裹；兼容无包裹的旧格式
+function unwrapTimestamp(raw: string): string {
+  const t = unquoteCSVField(raw)
+  if (t.startsWith('="') && t.endsWith('"') && t.length > 3) {
+    return t.slice(2, -1)
+  }
+  return t
+}
+
 export function usePlayback() {
   const playbackData = ref<PlaybackRow[]>([])
   const playbackIndex = ref(0)
@@ -26,18 +53,47 @@ export function usePlayback() {
     const lines = content.split('\n').filter(l => l.trim())
     if (lines.length < 2) return
 
+    const headerCols = lines[0].split(',')
+    const isWide = headerCols.length >= 2 && headerCols[0].trim() === 'Timestamp' && headerCols[1].trim() === 'DeviceID'
+      && headerCols.length > 2 && /^CH\d+/.test(headerCols[2].trim())
+
     const dataRows: PlaybackRow[] = []
-    for (let i = 1; i < lines.length; i++) {
-      const cols = lines[i].split(',')
-      if (cols.length >= 6) {
-        dataRows.push({
-          timestamp: cols[0].trim(),
-          deviceId: cols[1].trim(),
-          channelIndex: parseInt(cols[2].trim()) || 0,
-          channelName: cols[3].trim(),
-          value: parseFloat(cols[4].trim()) || 0,
-          unit: cols[5].trim(),
-        })
+    if (isWide) {
+      // 宽表格式：Timestamp, DeviceID, CH6 (kPa), CH7 (kPa), ...（每帧一行，所有通道横排）
+      const channelCols = headerCols.slice(2).map(raw => parseChannelHeader(raw.trim()))
+      if (channelCols.length === 0) return
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',')
+        if (cols.length < 2) continue
+        const timestamp = unwrapTimestamp(cols[0])
+        const deviceId = cols[1].trim()
+        for (let c = 0; c < channelCols.length; c++) {
+          const rawVal = (cols[c + 2] ?? '').trim()
+          if (rawVal === '') continue
+          dataRows.push({
+            timestamp,
+            deviceId,
+            channelIndex: c,
+            channelName: channelCols[c].name,
+            value: parseFloat(rawVal) || 0,
+            unit: channelCols[c].unit,
+          })
+        }
+      }
+    } else {
+      // 旧版长表格式：Timestamp, DeviceID, ChannelIndex, ChannelName, Value, Unit
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',')
+        if (cols.length >= 6) {
+          dataRows.push({
+            timestamp: unwrapTimestamp(cols[0]),
+            deviceId: cols[1].trim(),
+            channelIndex: parseInt(cols[2].trim()) || 0,
+            channelName: cols[3].trim(),
+            value: parseFloat(cols[4].trim()) || 0,
+            unit: cols[5].trim(),
+          })
+        }
       }
     }
 

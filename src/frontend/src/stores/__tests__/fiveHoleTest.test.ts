@@ -892,7 +892,7 @@ describe('stores/fiveHoleTest', () => {
       ])
     })
 
-    it("removeProbe('probe2') 在 [probe1, probe2, probe3] 时 → [probe1, probe3]，且 probe1/probe3 的 calibFiles、通道配置、运动轴映射均不受影响", () => {
+    it("removeProbe('probe2') 在 [probe1, probe2, probe3] 时 → [probe1, probe2]（原 probe3 重编号），且各探针 calibFiles、通道配置、运动轴映射随探针迁移", async () => {
       const store = useFiveHoleTestStore()
       store.addProbe()
       store.addProbe()
@@ -907,9 +907,10 @@ describe('stores/fiveHoleTest', () => {
       probe3.probeChannels[2].deviceId = 'dev-p3'
       probe3.motionX = { controllerId: 'mc3', axis: AxisName.Z }
 
-      store.removeProbe('probe2')
+      await store.removeProbe('probe2')
 
-      expect(store.config.probes.map(p => p.probeId)).toEqual(['probe1', 'probe3'])
+      // 删除后剩余探针连续编号：原 probe3 → probe2
+      expect(store.config.probes.map(p => p.probeId)).toEqual(['probe1', 'probe2'])
       // probe1 完整保留
       const p1After = store.config.probes.find(p => p.probeId === 'probe1')!
       expect(p1After.calibFiles).toHaveLength(1)
@@ -918,26 +919,61 @@ describe('stores/fiveHoleTest', () => {
       expect(p1After.probeChannels[0].channel).toBe(7)
       expect(p1After.motionX).toEqual({ controllerId: 'mc1', axis: AxisName.X })
       expect(p1After.motionY).toEqual({ controllerId: 'mc2', axis: AxisName.Y })
-      // probe3 完整保留
-      const p3After = store.config.probes.find(p => p.probeId === 'probe3')!
-      expect(p3After.probeChannels[2].deviceId).toBe('dev-p3')
-      expect(p3After.motionX).toEqual({ controllerId: 'mc3', axis: AxisName.Z })
+      // 原 probe3 的配置随探针迁移到 probe2
+      const p2After = store.config.probes.find(p => p.probeId === 'probe2')!
+      expect(p2After.probeChannels[2].deviceId).toBe('dev-p3')
+      expect(p2After.motionX).toEqual({ controllerId: 'mc3', axis: AxisName.Z })
     })
 
-    it('removeProbe 在 1 根时 no-op（至少保留 1 根）', () => {
+    it('删除 probe1 → 剩余探针整体前移重编号，并迁移后端校准 / 实时 / 已完成数据', async () => {
+      const store = useFiveHoleTestStore()
+      store.addProbe()
+      store.addProbe()
+      store.calibLoadedMap = { probe1: true, probe2: true, probe3: true }
+      store.calibFilesMap = { probe1: ['a.prb'], probe2: ['b.prb'], probe3: ['c.prb'] }
+      store.realtime = {
+        taskId: 't', pointId: 'p', phase: 'realtime',
+        probeRealtime: [
+          { probeId: 'probe1', rawData: {}, interpResult: {} },
+          { probeId: 'probe2', rawData: {}, interpResult: {} },
+          { probeId: 'probe3', rawData: {}, interpResult: {} },
+        ],
+      } as any
+      store.completeProbeDataPoints = {
+        probe1: [{ probeId: 'probe1', pointId: '1' }],
+        probe2: [{ probeId: 'probe2', pointId: '2' }],
+      } as any
+
+      await store.removeProbe('probe1')
+
+      expect(store.config.probes.map(p => p.probeId)).toEqual(['probe1', 'probe2'])
+      // 校准缓存随探针前移
+      expect(store.calibLoadedMap).toEqual({ probe1: true, probe2: true })
+      expect(store.calibFilesMap).toEqual({ probe1: ['b.prb'], probe2: ['c.prb'] })
+      // 改名探针按新 ID 重新载入后端插值器
+      expect(mockFiveHoleService.LoadFiveHoleCalibFiles).toHaveBeenCalledWith('probe1', ['b.prb'])
+      expect(mockFiveHoleService.LoadFiveHoleCalibFiles).toHaveBeenCalledWith('probe2', ['c.prb'])
+      // 实时数据丢弃已删除探针并前移 probeId
+      expect(store.realtime?.probeRealtime.map(i => i.probeId)).toEqual(['probe1', 'probe2'])
+      // 已完成数据点前移，内部 probeId 同步
+      expect(Object.keys(store.completeProbeDataPoints ?? {})).toEqual(['probe1'])
+      expect(store.completeProbeDataPoints?.probe1[0].probeId).toBe('probe1')
+    })
+
+    it('removeProbe 在 1 根时 no-op（至少保留 1 根）', async () => {
       const store = useFiveHoleTestStore()
       expect(store.config.probes).toHaveLength(1)
-      store.removeProbe('probe1')
+      await store.removeProbe('probe1')
       expect(store.config.probes).toHaveLength(1)
       expect(store.config.probes[0].probeId).toBe('probe1')
     })
 
-    it('removeProbe 在 isRunning=true 时 no-op', () => {
+    it('removeProbe 在 isRunning=true 时 no-op', async () => {
       const store = useFiveHoleTestStore()
       store.addProbe()
       store.addProbe()
       store.taskStatus = { status: 'running' } as any
-      store.removeProbe('probe2')
+      await store.removeProbe('probe2')
       // 应保留 3 根
       expect(store.config.probes).toHaveLength(3)
       expect(store.config.probes.map(p => p.probeId)).toEqual(['probe1', 'probe2', 'probe3'])
@@ -950,39 +986,37 @@ describe('stores/fiveHoleTest', () => {
       expect(store.config.probes).toHaveLength(1)
     })
 
-    it('删除 probe2 后 addProbe() → 复用 probe2 ID（最小未用编号）', () => {
+    it('删除 probe2 后剩余探针重编号，addProbe() 追加 probe3', async () => {
       const store = useFiveHoleTestStore()
       store.addProbe()
       store.addProbe()
-      // [probe1, probe2, probe3] → 删除 probe2 → [probe1, probe3]
-      store.removeProbe('probe2')
-      expect(store.config.probes.map(p => p.probeId)).toEqual(['probe1', 'probe3'])
-      // 再次 addProbe → 复用 probe2
+      // [probe1, probe2, probe3] → 删除 probe2 → [probe1, probe2(原 probe3)]
+      await store.removeProbe('probe2')
+      expect(store.config.probes.map(p => p.probeId)).toEqual(['probe1', 'probe2'])
+      // 再次 addProbe → 追加 probe3（最小未用编号）
       store.addProbe()
-      expect(store.config.probes.map(p => p.probeId)).toEqual(['probe1', 'probe3', 'probe2'])
+      expect(store.config.probes.map(p => p.probeId)).toEqual(['probe1', 'probe2', 'probe3'])
     })
 
-    it('removeProbe 同步清理 calibLoadedMap / calibFilesMap 对应 key', () => {
+    it('removeProbe 重编号并迁移 calibLoadedMap / calibFilesMap，同时按新 ID 重载后端校准', async () => {
       const store = useFiveHoleTestStore()
       store.addProbe()
       store.addProbe()
       // 预置 calib 缓存
       store.calibLoadedMap = { probe1: true, probe2: true, probe3: true }
       store.calibFilesMap = { probe1: ['a.prb'], probe2: ['b.prb'], probe3: ['c.prb'] }
-      store.removeProbe('probe2')
-      expect('probe2' in store.calibLoadedMap).toBe(false)
-      expect('probe2' in store.calibFilesMap).toBe(false)
-      // 其他探针的 calib 缓存不受影响
-      expect(store.calibLoadedMap.probe1).toBe(true)
-      expect(store.calibLoadedMap.probe3).toBe(true)
-      expect(store.calibFilesMap.probe1).toEqual(['a.prb'])
-      expect(store.calibFilesMap.probe3).toEqual(['c.prb'])
+      await store.removeProbe('probe2')
+      // 原 probe2 缓存丢弃，原 probe3 缓存迁移到 probe2
+      expect(store.calibLoadedMap).toEqual({ probe1: true, probe2: true })
+      expect(store.calibFilesMap).toEqual({ probe1: ['a.prb'], probe2: ['c.prb'] })
+      // 改名探针按新 ID 重载后端插值器
+      expect(mockFiveHoleService.LoadFiveHoleCalibFiles).toHaveBeenCalledWith('probe2', ['c.prb'])
     })
 
-    it('removeProbe 接收不存在的 probeId → no-op', () => {
+    it('removeProbe 接收不存在的 probeId → no-op', async () => {
       const store = useFiveHoleTestStore()
       store.addProbe()
-      store.removeProbe('probeX')
+      await store.removeProbe('probeX')
       expect(store.config.probes).toHaveLength(2)
       expect(store.config.probes.map(p => p.probeId)).toEqual(['probe1', 'probe2'])
     })

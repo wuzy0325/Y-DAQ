@@ -22,13 +22,13 @@ func (s *DeviceService) AddDeviceProfile(profile types.DeviceProfile) {
 }
 
 // UpdateDeviceProfile 更新设备配置
-func (s *DeviceService) UpdateDeviceProfile(profile types.DeviceProfile) {
-	s.Core.DeviceManager.UpdateProfile(profile)
+func (s *DeviceService) UpdateDeviceProfile(profile types.DeviceProfile) error {
+	return s.Core.DeviceManager.UpdateProfile(profile)
 }
 
 // RemoveDeviceProfile 删除设备配置
-func (s *DeviceService) RemoveDeviceProfile(id string) {
-	s.Core.DeviceManager.RemoveProfile(id)
+func (s *DeviceService) RemoveDeviceProfile(id string) error {
+	return s.Core.DeviceManager.RemoveProfile(id)
 }
 
 // ConnectDevice 连接设备
@@ -83,6 +83,11 @@ func (s *DeviceService) GetDeviceStatusAll() []types.DeviceStatus {
 // SetUnit 设置设备压力单位
 func (s *DeviceService) SetUnit(id string, unit string) error {
 	return s.Core.DeviceManager.SetUnit(id, unit)
+}
+
+// SetAtmEnabled 设置压力设备大气压/温度采集使能（EA2508A/EA2516A，持久化+下次采集生效）
+func (s *DeviceService) SetAtmEnabled(id string, enabled bool) error {
+	return s.Core.DeviceManager.SetAtmEnabled(id, enabled)
 }
 
 // SetThermocoupleType 设置设备热电偶类型（全通道批量设置）

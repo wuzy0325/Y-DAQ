@@ -26,6 +26,8 @@ interface DeviceProfile {
   port: number
   streamId: number
   periodMs: number
+  autoConnect?: boolean
+  atmEnabled?: boolean
   channels: ChannelConfig[]
 }
 
@@ -157,6 +159,11 @@ export const useDeviceStore = defineStore('device', () => {
 
   async function setUnit(id: string, unit: string): Promise<string | null> {
     return withDeviceAction('setUnit', () => DeviceService.SetUnit(id, unit), fetchProfiles)
+  }
+
+  // 设置压力设备大气压/温度采集使能（EA2508A/EA2516A，持久化+下次采集生效）
+  async function setAtmEnabled(id: string, enabled: boolean): Promise<string | null> {
+    return withDeviceAction('setAtmEnabled', () => DeviceService.SetAtmEnabled(id, enabled), fetchProfiles)
   }
 
   async function setThermocoupleType(id: string, tcTypes: string): Promise<string | null> {
@@ -297,7 +304,7 @@ export const useDeviceStore = defineStore('device', () => {
     profiles, statuses, snapshots, latestData, connectingIds,
     isConnected, isAcquiring,
     getDeviceStatus, isDeviceConnecting,
-    fetchProfiles, fetchStatuses, updateProfile, setUnit,
+    fetchProfiles, fetchStatuses, updateProfile, setUnit, setAtmEnabled,
     setThermocoupleType, setSingleThermocoupleType,
     setTempSource, setTempThermocoupleType,
     zeroCalibrate, zeroCalibrateChannel, clearZeroOffset, clearAllZeroOffsets,

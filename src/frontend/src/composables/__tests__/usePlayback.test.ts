@@ -112,6 +112,116 @@ describe('composables/usePlayback', () => {
       expect(inst.playbackData.value[0].channelIndex).toBe(0)
       expect(inst.playbackData.value[0].value).toBe(0)
     })
+
+    it('宽表格式：一帧一行，所有通道横排 → 拆分为多条', () => {
+      const inst = setup()
+      const wideContent = [
+        'Timestamp,DeviceID,CH1 (Pa),CH2 (Pa)',
+        '2024-01-01 10:00:00.000,d1,100.5,200.3',
+        '2024-01-01 10:00:00.100,d1,101.5,201.3',
+      ].join('\n')
+      inst.parseAndLoadCSV(wideContent)
+      expect(inst.playbackData.value).toHaveLength(4)
+      const r0 = inst.playbackData.value[0]
+      expect(r0.timestamp).toBe('2024-01-01 10:00:00.000')
+      expect(r0.deviceId).toBe('d1')
+      expect(r0.channelName).toBe('CH1')
+      expect(r0.unit).toBe('Pa')
+      expect(r0.value).toBeCloseTo(100.5)
+      const r1 = inst.playbackData.value[1]
+      expect(r1.channelName).toBe('CH2')
+      expect(r1.value).toBeCloseTo(200.3)
+      expect(inst.playbackData.value[2].timestamp).toBe('2024-01-01 10:00:00.100')
+      expect(inst.playbackData.value[2].value).toBeCloseTo(101.5)
+    })
+
+    it('宽表格式：无单位表头 → unit 为空字符串', () => {
+      const inst = setup()
+      const wideContent = [
+        'Timestamp,DeviceID,CH1,CH2',
+        '2024-01-01 10:00:00.000,d1,10,20',
+      ].join('\n')
+      inst.parseAndLoadCSV(wideContent)
+      expect(inst.playbackData.value).toHaveLength(2)
+      expect(inst.playbackData.value[0].unit).toBe('')
+      expect(inst.playbackData.value[0].value).toBeCloseTo(10)
+    })
+
+    it('宽表格式：时间列带 ="..." 公式包裹 → 剥离后解析（新录制格式）', () => {
+      const inst = setup()
+      const wideContent = [
+        'Timestamp,DeviceID,CH1 (Pa)',
+        '="2024-01-01 10:00:00.000",d1,100.5',
+        '="2024-01-01 10:00:00.100",d1,101.5',
+      ].join('\n')
+      inst.parseAndLoadCSV(wideContent)
+      expect(inst.playbackData.value).toHaveLength(2)
+      expect(inst.playbackData.value[0].timestamp).toBe('2024-01-01 10:00:00.000')
+      expect(inst.playbackData.value[1].timestamp).toBe('2024-01-01 10:00:00.100')
+    })
+
+    it('长表格式：时间列带 ="..." 公式包裹 → 剥离后解析（兼容旧文件）', () => {
+      const inst = setup()
+      const longContent = [
+        'Timestamp,DeviceID,ChannelIndex,ChannelName,Value,Unit',
+        '="2024-01-01 10:00:00.000",d1,0,CH1,100.5,Pa',
+        '="2024-01-01 10:00:00.100",d1,0,CH1,101.5,Pa',
+      ].join('\n')
+      inst.parseAndLoadCSV(longContent)
+      expect(inst.playbackData.value).toHaveLength(2)
+      expect(inst.playbackData.value[0].timestamp).toBe('2024-01-01 10:00:00.000')
+      expect(inst.playbackData.value[1].timestamp).toBe('2024-01-01 10:00:00.100')
+    })
+
+    it('宽表格式：磁盘真实格式（CSV 引号转义的时间戳）→ 还原后解析', () => {
+      const inst = setup()
+      // Go encoding/csv 会把 ="..." 字段转义为 "=""..."": 与真实录制文件字节一致
+      const wideContent = [
+        'Timestamp,DeviceID,CH1 (Pa)',
+        '"=""2024-01-01 10:00:00.000""",d1,100.5',
+        '"=""2024-01-01 10:00:00.100""",d1,101.5',
+      ].join('\n')
+      inst.parseAndLoadCSV(wideContent)
+      expect(inst.playbackData.value).toHaveLength(2)
+      expect(inst.playbackData.value[0].timestamp).toBe('2024-01-01 10:00:00.000')
+      expect(inst.playbackData.value[1].timestamp).toBe('2024-01-01 10:00:00.100')
+    })
+
+    it('长表格式：磁盘真实格式（CSV 引号转义的时间戳）→ 还原后解析', () => {
+      const inst = setup()
+      const longContent = [
+        'Timestamp,DeviceID,ChannelIndex,ChannelName,Value,Unit',
+        '"=""2024-01-01 10:00:00.000""",d1,0,CH1,100.5,Pa',
+        '"=""2024-01-01 10:00:00.100""",d1,0,CH1,101.5,Pa',
+      ].join('\n')
+      inst.parseAndLoadCSV(longContent)
+      expect(inst.playbackData.value).toHaveLength(2)
+      expect(inst.playbackData.value[0].timestamp).toBe('2024-01-01 10:00:00.000')
+      expect(inst.playbackData.value[1].timestamp).toBe('2024-01-01 10:00:00.100')
+    })
+
+    it('宽表格式：空值单元格被跳过', () => {
+      const inst = setup()
+      const wideContent = [
+        'Timestamp,DeviceID,CH1 (Pa),CH2 (Pa),CH3 (Pa)',
+        '2024-01-01 10:00:00.000,d1,10,,30', // CH2 缺值
+      ].join('\n')
+      inst.parseAndLoadCSV(wideContent)
+      expect(inst.playbackData.value).toHaveLength(2)
+      expect(inst.playbackData.value[0].channelName).toBe('CH1')
+      expect(inst.playbackData.value[1].channelName).toBe('CH3')
+    })
+
+    it('宽表格式：处理 BOM 头', () => {
+      const inst = setup()
+      const wideContent = [
+        'Timestamp,DeviceID,CH1 (Pa)',
+        '2024-01-01 10:00:00.000,d1,100.5',
+      ].join('\n')
+      inst.parseAndLoadCSV('\uFEFF' + wideContent)
+      expect(inst.playbackData.value).toHaveLength(1)
+      expect(inst.playbackData.value[0].value).toBeCloseTo(100.5)
+    })
   })
 
   describe('playback 控制', () => {

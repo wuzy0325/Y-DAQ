@@ -1,6 +1,51 @@
 package types
 
-import "testing"
+import (
+	"encoding/json"
+	"testing"
+)
+
+// TestDeviceProfile_AtmEnabledJSON 验证 atmEnabled 持久化的向后兼容：
+// 旧配置缺少字段时必须默认启用（保持历史 0810 数据流），显式 false 不能被覆盖。
+func TestDeviceProfile_AtmEnabledJSON(t *testing.T) {
+	cases := []struct {
+		name string
+		raw  string
+		want bool
+	}{
+		{"missing defaults true", `{"id":"d1","type":"EA2516A"}`, true},
+		{"explicit true", `{"id":"d1","atmEnabled":true}`, true},
+		{"explicit false", `{"id":"d1","atmEnabled":false}`, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var p DeviceProfile
+			if err := json.Unmarshal([]byte(tc.raw), &p); err != nil {
+				t.Fatalf("unmarshal failed: %v", err)
+			}
+			if p.AtmEnabled != tc.want {
+				t.Errorf("AtmEnabled = %v, want %v", p.AtmEnabled, tc.want)
+			}
+		})
+	}
+}
+
+// TestDeviceProfile_AtmEnabledRoundTrip 验证 marshal→unmarshal 往返保留显式值
+func TestDeviceProfile_AtmEnabledRoundTrip(t *testing.T) {
+	for _, want := range []bool{true, false} {
+		raw, err := json.Marshal(DeviceProfile{ID: "d1", AtmEnabled: want})
+		if err != nil {
+			t.Fatalf("marshal failed: %v", err)
+		}
+		var got DeviceProfile
+		if err := json.Unmarshal(raw, &got); err != nil {
+			t.Fatalf("unmarshal failed: %v", err)
+		}
+		if got.AtmEnabled != want {
+			t.Errorf("round trip AtmEnabled = %v, want %v", got.AtmEnabled, want)
+		}
+	}
+}
 
 func TestDeviceType_Info_KnownTypes(t *testing.T) {
 	cases := []struct {
@@ -10,11 +55,12 @@ func TestDeviceType_Info_KnownTypes(t *testing.T) {
 		wantFrame        int
 		wantIsDAQ        bool
 		wantIsTemp       bool
+		wantAtmCap       bool
 	}{
-		{DeviceTypeEA2508A, 8, 10, 45, true, false},
-		{DeviceTypeEA2516A, 16, 18, 77, true, false},
-		{DeviceTypeEA2516T, 16, 16, 0, true, true},
-		{DeviceTypeSimulated, 16, 18, 77, false, false},
+		{DeviceTypeEA2508A, 8, 10, 45, true, false, true},
+		{DeviceTypeEA2516A, 16, 18, 77, true, false, true},
+		{DeviceTypeEA2516T, 16, 16, 0, true, true, false},
+		{DeviceTypeSimulated, 16, 18, 77, false, false, false},
 	}
 	for _, tc := range cases {
 		t.Run(string(tc.t), func(t *testing.T) {
@@ -36,6 +82,12 @@ func TestDeviceType_Info_KnownTypes(t *testing.T) {
 			}
 			if info.IsTemperature != tc.wantIsTemp {
 				t.Errorf("IsTemperature = %v, want %v", info.IsTemperature, tc.wantIsTemp)
+			}
+			if info.SupportsAtm != tc.wantAtmCap || tc.t.IsAtmCapable() != tc.wantAtmCap {
+				t.Errorf("IsAtmCapable = %v, want %v", tc.t.IsAtmCapable(), tc.wantAtmCap)
+			}
+			if want := StreamFrameHeaderSize + tc.wantPressure*4; tc.t.PressureOnlyFrameSize() != want {
+				t.Errorf("PressureOnlyFrameSize = %d, want %d", tc.t.PressureOnlyFrameSize(), want)
 			}
 		})
 	}

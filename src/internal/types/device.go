@@ -1,5 +1,7 @@
 package types
 
+import "encoding/json"
+
 // DeviceType 设备类型标识
 type DeviceType string
 
@@ -19,6 +21,7 @@ type DeviceTypeInfo struct {
 	FrameSize       int  // 数据帧大小（0 = 驱动自定义）
 	IsTemperature   bool // 是否为温度采集设备
 	IsRealDAQ       bool // 是否为真实 DAQ 设备（非模拟）
+	SupportsAtm     bool // 是否支持大气压/温度采集使能（c 05 位图 0x0800）
 	DefaultHost     string
 	DefaultPort     int
 	DefaultUnit     string // 主通道默认单位
@@ -29,12 +32,14 @@ var deviceTypeRegistry = map[DeviceType]DeviceTypeInfo{
 	DeviceTypeEA2508A: {
 		Type: "EA2508A", Label: "EA2508A",
 		PressureChCount: 8, TotalChCount: 10, FrameSize: 45,
-		IsRealDAQ: true, DefaultHost: "192.168.3.101", DefaultPort: 9000, DefaultUnit: "kPa",
+		IsRealDAQ: true, SupportsAtm: true,
+		DefaultHost: "192.168.3.101", DefaultPort: 9000, DefaultUnit: "kPa",
 	},
 	DeviceTypeEA2516A: {
 		Type: "EA2516A", Label: "EA2516A",
 		PressureChCount: 16, TotalChCount: 18, FrameSize: 77,
-		IsRealDAQ: true, DefaultHost: "192.168.3.101", DefaultPort: 9000, DefaultUnit: "kPa",
+		IsRealDAQ: true, SupportsAtm: true,
+		DefaultHost: "192.168.3.101", DefaultPort: 9000, DefaultUnit: "kPa",
 	},
 	DeviceTypeEA2516T: {
 		Type: "EA2516T", Label: "EA2516T",
@@ -72,6 +77,16 @@ func (t DeviceType) TotalChannelCount() int {
 // StreamFrameSize 返回该设备类型的数据帧大小（字节）
 func (t DeviceType) StreamFrameSize() int {
 	return t.Info().FrameSize
+}
+
+// PressureOnlyFrameSize 返回仅含压力通道的数据帧大小（字节）
+func (t DeviceType) PressureOnlyFrameSize() int {
+	return StreamFrameHeaderSize + t.PressureChannelCount()*4
+}
+
+// IsAtmCapable 是否支持大气压/温度采集使能控制（仅真实压力设备 EA2508A/EA2516A）
+func (t DeviceType) IsAtmCapable() bool {
+	return t.Info().SupportsAtm
 }
 
 // IsDAQDevice 是否为真实DAQ设备（非模拟）
@@ -169,23 +184,23 @@ var EA2508ATempThermocoupleTypes = map[string]bool{"T": true, "K": true, "J": tr
 
 // ChannelConfig 通道配置
 type ChannelConfig struct {
-	Index     int     `json:"index"`
-	Name      string  `json:"name"`
-	Enabled   bool    `json:"enabled"`
-	Unit      string  `json:"unit"`
-	Precision int     `json:"precision"`
-	RangeMin  float64 `json:"rangeMin"`
+	Index            int     `json:"index"`
+	Name             string  `json:"name"`
+	Enabled          bool    `json:"enabled"`
+	Unit             string  `json:"unit"`
+	Precision        int     `json:"precision"`
+	RangeMin         float64 `json:"rangeMin"`
 	RangeMax         float64 `json:"rangeMax"`
 	ThermocoupleType string  `json:"thermocoupleType,omitempty"` // 热电偶类型（EA2516T: K/J/T/E/N/S/R/B/C；EA2508A 温度通道: T/K/J/E/S）
 	TempSource       string  `json:"tempSource,omitempty"`       // EA2508A 温度通道传感器来源（internal/thermocouple/pt100）
 	ZeroOffset       float64 `json:"zeroOffset,omitempty"`       // 零位偏移（校准时记录的当前读数，后续采集时减去）
 	ZeroOffsetUnit   string  `json:"zeroOffsetUnit,omitempty"`   // 零位偏移记录时的单位（用于换单位后换算）
 	ZeroCalibratedAt int64   `json:"zeroCalibratedAt,omitempty"` // 零位校准时刻（Unix 毫秒），0 表示未校准
-	TempCalibA       float64 `json:"tempCalibA,omitempty"`        // 温度线性校准斜率 y = a*x + b
-	TempCalibB       float64 `json:"tempCalibB,omitempty"`        // 温度线性校准截距
-	TempCalibR2      float64 `json:"tempCalibR2,omitempty"`       // 温度线性校准决定系数
+	TempCalibA       float64 `json:"tempCalibA,omitempty"`       // 温度线性校准斜率 y = a*x + b
+	TempCalibB       float64 `json:"tempCalibB,omitempty"`       // 温度线性校准截距
+	TempCalibR2      float64 `json:"tempCalibR2,omitempty"`      // 温度线性校准决定系数
 	TempCalibPoints  int     `json:"tempCalibPoints,omitempty"`  // 温度校准参与拟合点数
-	TempCalibratedAt int64   `json:"tempCalibratedAt,omitempty"`  // 温度校准时刻（Unix 毫秒），0 表示未校准
+	TempCalibratedAt int64   `json:"tempCalibratedAt,omitempty"` // 温度校准时刻（Unix 毫秒），0 表示未校准
 }
 
 // DeviceProfile 设备完整配置
@@ -198,7 +213,27 @@ type DeviceProfile struct {
 	StreamID    int             `json:"streamId"`
 	PeriodMs    int             `json:"periodMs"`    // 采集周期(毫秒)，0表示使用默认50ms
 	AutoConnect bool            `json:"autoConnect"` // 是否自动连接
+	AtmEnabled  bool            `json:"atmEnabled"`  // 是否采集大气压/大气温度（c 05 位图 0x0800，仅 EA2508A/EA2516A；默认 true）
 	Channels    []ChannelConfig `json:"channels"`
+}
+
+// UnmarshalJSON 自定义反序列化：旧配置文件无 atmEnabled 字段时默认启用，
+// 保持历史行为（数据流包含大气压/大气温度，c 05 位图 0810）。
+func (p *DeviceProfile) UnmarshalJSON(data []byte) error {
+	type alias DeviceProfile
+	aux := struct {
+		*alias
+		AtmEnabled *bool `json:"atmEnabled"`
+	}{alias: (*alias)(p)}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	if aux.AtmEnabled != nil {
+		p.AtmEnabled = *aux.AtmEnabled
+	} else {
+		p.AtmEnabled = true
+	}
+	return nil
 }
 
 // DeviceInstance 运行时设备实例

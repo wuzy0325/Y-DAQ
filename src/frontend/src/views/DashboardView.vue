@@ -111,6 +111,27 @@
         <!-- 实时压力数据 -->
         <GlassCard title="实时压力数据" icon="📊" class="chart-card">
           <template #actions>
+            <el-button
+              v-if="isSelectedPressureDevice"
+              size="small"
+              type="primary"
+              :title="zeroDisabledReason || '校零（设备静止且零压时执行）'"
+              :loading="zeroCalibrating"
+              :disabled="!!zeroDisabledReason || zeroCalibrating"
+              @click="handleZeroCalibrate"
+            >
+              校零
+            </el-button>
+            <el-button
+              v-if="isSelectedPressureDevice"
+              size="small"
+              type="warning"
+              :title="hasAnyZeroOffset ? '去校零（清除所有零位偏移）' : '无零位可清除'"
+              :disabled="!hasAnyZeroOffset || zeroCalibrating"
+              @click="handleClearZero"
+            >
+              去校零
+            </el-button>
             <el-popover
               v-model:visible="channelSelectorVisible"
               placement="bottom-end"
@@ -165,7 +186,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, shallowRef, triggerRef } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { VideoPlay, VideoPause } from '@element-plus/icons-vue'
 import { useDeviceStore } from '../stores/device'
 import { getDeviceInfo, type DeviceTypeValue } from '../api/enums'
@@ -303,6 +324,92 @@ const selectedChannelConfigs = computed(() => {
   if (!profile) return []
   return profile.channels.filter(ch => ch.enabled)
 })
+
+// ==================== 零位校准（当前选中设备） ====================
+// 校零前置条件：设备已连接且正在采集（与后端 collectZeroCalibTargets 校验一致）。
+// 采集期间设备管理页的编辑对话框不可打开，故校零入口放在实时数据卡片操作区。
+const zeroCalibrating = ref(false)
+
+const selectedStatus = computed(() => deviceStore.statuses.find(s => s.id === selectedDeviceId.value))
+
+// 选中设备是否为压力设备（温度设备 EA2516T 不支持校零，不显示按钮）
+const isSelectedPressureDevice = computed(() => {
+  const type = deviceStore.profiles.find(p => p.id === selectedDeviceId.value)?.type
+  return type ? !getDeviceInfo(type as DeviceTypeValue).isTemperature : false
+})
+
+// 返回非空字符串时校零按钮禁用
+const zeroDisabledReason = computed(() => {
+  const st = selectedStatus.value
+  if (!st || st.status !== 'Connected') return '设备未连接'
+  if (!st.acquiring) return '设备未采集'
+  return ''
+})
+
+// 选中设备是否存在已校零的压力通道（去校零按钮启用条件）
+const hasAnyZeroOffset = computed(() => {
+  const profile = deviceStore.profiles.find(p => p.id === selectedDeviceId.value)
+  if (!profile) return false
+  const pc = getDeviceInfo(profile.type as DeviceTypeValue).pressureChCount
+  return profile.channels.some(c => c.index < pc && c.zeroCalibratedAt)
+})
+
+// 校零：对选中设备所有启用压力通道执行零位校准（后端采样 10 帧取均值）
+async function handleZeroCalibrate() {
+  const st = selectedStatus.value
+  if (!st) return
+  if (zeroDisabledReason.value) {
+    ElMessage.warning(zeroDisabledReason.value)
+    return
+  }
+  try {
+    await ElMessageBox.confirm(
+      `将对设备 "${st.name}" 的所有启用压力通道执行零位校准，请确保设备静止并处于A-测量位。是否继续？`,
+      '校零确认',
+      { confirmButtonText: '开始校零', cancelButtonText: '取消', type: 'warning' },
+    )
+  } catch {
+    return // 用户取消
+  }
+  zeroCalibrating.value = true
+  ElMessage({ message: '请保持设备静止，正在采样...', type: 'warning', duration: 1200 })
+  try {
+    const err = await deviceStore.zeroCalibrate(st.id)
+    if (err) {
+      ElMessage.error(`校零失败: ${err}`)
+    } else {
+      ElMessage.success(`设备 "${st.name}" 校零完成`)
+    }
+  } finally {
+    zeroCalibrating.value = false
+  }
+}
+
+// 去校零：清除选中设备所有压力通道的零位偏移，不可恢复
+async function handleClearZero() {
+  const st = selectedStatus.value
+  if (!st) return
+  try {
+    await ElMessageBox.confirm(
+      `将清除设备 "${st.name}" 所有压力通道的零位偏移，此操作不可恢复。是否继续？`,
+      '去校零确认',
+      { confirmButtonText: '清除', cancelButtonText: '取消', type: 'warning' },
+    )
+  } catch {
+    return // 用户取消
+  }
+  zeroCalibrating.value = true
+  try {
+    const err = await deviceStore.clearAllZeroOffsets(st.id)
+    if (err) {
+      ElMessage.error(`去校零失败: ${err}`)
+    } else {
+      ElMessage.success('零位已清除')
+    }
+  } finally {
+    zeroCalibrating.value = false
+  }
+}
 
 // 获取通道实时值（无数据时返回 undefined，ValueDisplay 会显示 --）
 function getChannelValue(channelIndex: number): number | undefined {

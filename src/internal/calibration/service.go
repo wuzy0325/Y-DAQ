@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"yx-daq/internal/logger"
 	"yx-daq/internal/types"
 )
 
@@ -130,6 +131,7 @@ func (s *CalibrationService) GetStatus() types.CalibrationTaskStatus {
 
 // runCalibrationLoop 校准主循环
 func (s *CalibrationService) runCalibrationLoop() {
+	defer logger.Recover("calibration-loop")
 	defer func() {
 		s.running.Store(false)
 	}()

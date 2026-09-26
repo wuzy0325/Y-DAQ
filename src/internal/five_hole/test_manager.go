@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"yx-daq/internal/logger"
 	"yx-daq/internal/types"
 )
 
@@ -152,6 +153,7 @@ func (tm *TestManager) Stop() {
 
 // waitForTestComplete 等待测试完成（用于清理状态）
 func (tm *TestManager) waitForTestComplete(doneCh chan struct{}, myGen int64) {
+	defer logger.Recover("five-hole-test-complete")
 	// 等待测试完成或取消
 	<-doneCh
 

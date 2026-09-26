@@ -3,6 +3,7 @@ import {
   getAxisUnit,
   getAxisKindText,
   getRunStateText,
+  getAxisSoftLimitDefaults,
   createDefaultAxisConfig,
   createDefaultAxisUIState,
 } from '../helpers'
@@ -44,6 +45,15 @@ describe('motion/helpers', () => {
     })
   })
 
+  describe('getAxisSoftLimitDefaults', () => {
+    it('LINEAR → ±100', () => {
+      expect(getAxisSoftLimitDefaults('LINEAR')).toEqual({ min: -100, max: 100 })
+    })
+    it('ROTARY → ±360', () => {
+      expect(getAxisSoftLimitDefaults('ROTARY')).toEqual({ min: -360, max: 360 })
+    })
+  })
+
   describe('createDefaultAxisConfig', () => {
     it('LINEAR 轴默认值', () => {
       const cfg = createDefaultAxisConfig('X', 'LINEAR')
@@ -63,6 +73,7 @@ describe('motion/helpers', () => {
       expect(cfg.encoderCompensation.settleMs).toBe(100)
       expect(cfg.encoderCompensation.minStep).toBe(0)
       expect(cfg.encoderCompensation.timeoutMs).toBe(5000)
+      expect(cfg.softLimit).toEqual({ enabled: false, min: -100, max: 100 })
     })
 
     it('ROTARY 轴默认值（lead=0, maxSpeed=30）', () => {
@@ -71,6 +82,7 @@ describe('motion/helpers', () => {
       expect(cfg.kind).toBe('ROTARY')
       expect(cfg.lead).toBe(0) // ROTARY 导程 0
       expect(cfg.maxSpeed).toBe(30) // ROTARY 最大速度 30
+      expect(cfg.softLimit).toEqual({ enabled: false, min: -360, max: 360 })
     })
   })
 

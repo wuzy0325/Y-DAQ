@@ -52,6 +52,27 @@ type EncoderCompensationConfig struct {
 	TimeoutMs int     `json:"timeoutMs"`
 }
 
+// SoftLimitConfig 软限位配置（工程单位，含端点）
+type SoftLimitConfig struct {
+	Enabled bool    `json:"enabled"`
+	Min     float64 `json:"min"`
+	Max     float64 `json:"max"`
+}
+
+// NormalizeSoftLimit 兼容旧配置：软限位区间为 0/0（历史数据零值，且区间无效）
+// 时按轴类型回填默认范围。返回是否发生了回填。
+func (c *AxisConfig) NormalizeSoftLimit() bool {
+	if c.SoftLimit.Min != 0 || c.SoftLimit.Max != 0 {
+		return false
+	}
+	if c.Kind == AxisKindRotary {
+		c.SoftLimit.Min, c.SoftLimit.Max = -360, 360
+	} else {
+		c.SoftLimit.Min, c.SoftLimit.Max = -100, 100
+	}
+	return true
+}
+
 // AxisConfig 轴配置
 type AxisConfig struct {
 	Name                AxisName                  `json:"name"`
@@ -65,6 +86,7 @@ type AxisConfig struct {
 	MaxSpeed            float64                   `json:"maxSpeed"`
 	EncoderScale        float64                   `json:"encoderScale"`
 	EncoderCompensation EncoderCompensationConfig `json:"encoderCompensation"`
+	SoftLimit           SoftLimitConfig           `json:"softLimit"`
 }
 
 // MotionControllerProfile 运动控制器配置
@@ -108,9 +130,9 @@ type LimitStatus struct {
 // DefaultAxisConfigs 返回默认的四轴配置
 func DefaultAxisConfigs() []AxisConfig {
 	return []AxisConfig{
-		{Name: AxisX, Enabled: true, Kind: AxisKindLinear, Inverted: false, StepAngleDeg: 1.8, MicroSteps: 16, Lead: 5, GearRatio: 1, MaxSpeed: 50, EncoderScale: 0.005},
-		{Name: AxisY, Enabled: true, Kind: AxisKindLinear, Inverted: false, StepAngleDeg: 1.8, MicroSteps: 16, Lead: 5, GearRatio: 1, MaxSpeed: 50, EncoderScale: 0.005},
-		{Name: AxisZ, Enabled: true, Kind: AxisKindLinear, Inverted: false, StepAngleDeg: 1.8, MicroSteps: 16, Lead: 5, GearRatio: 1, MaxSpeed: 50, EncoderScale: 0.005},
-		{Name: AxisU, Enabled: true, Kind: AxisKindRotary, Inverted: false, StepAngleDeg: 1.8, MicroSteps: 16, Lead: 0, GearRatio: 1, MaxSpeed: 30, EncoderScale: 0.005},
+		{Name: AxisX, Enabled: true, Kind: AxisKindLinear, Inverted: false, StepAngleDeg: 1.8, MicroSteps: 16, Lead: 5, GearRatio: 1, MaxSpeed: 50, EncoderScale: 0.005, SoftLimit: SoftLimitConfig{Min: -100, Max: 100}},
+		{Name: AxisY, Enabled: true, Kind: AxisKindLinear, Inverted: false, StepAngleDeg: 1.8, MicroSteps: 16, Lead: 5, GearRatio: 1, MaxSpeed: 50, EncoderScale: 0.005, SoftLimit: SoftLimitConfig{Min: -100, Max: 100}},
+		{Name: AxisZ, Enabled: true, Kind: AxisKindLinear, Inverted: false, StepAngleDeg: 1.8, MicroSteps: 16, Lead: 5, GearRatio: 1, MaxSpeed: 50, EncoderScale: 0.005, SoftLimit: SoftLimitConfig{Min: -100, Max: 100}},
+		{Name: AxisU, Enabled: true, Kind: AxisKindRotary, Inverted: false, StepAngleDeg: 1.8, MicroSteps: 16, Lead: 0, GearRatio: 1, MaxSpeed: 30, EncoderScale: 0.005, SoftLimit: SoftLimitConfig{Min: -360, Max: 360}},
 	}
 }

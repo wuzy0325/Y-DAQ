@@ -122,6 +122,9 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
   const calibLoadedMap = ref<Record<string, boolean>>({})
   const calibFilesMap = ref<Record<string, string[]>>({})
   const lastError = ref<string>('')
+  // 启动请求在途标记：StartFiveHoleTraversal 返回前 isRunning 仍为 false，
+  // 此窗口内必须禁止增删探针（否则重编号会与已启动的后端任务错位）
+  const isStarting = ref(false)
 
   // 配置持久化 key（全局单实例，不按 probeID 区分）
   const configStorageKey = 'fiveHoleTestConfig'
@@ -146,24 +149,97 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
 
   // ==================== 探针增删（动态化） ====================
 
-  /** 添加一根探针：满 MAX_PROBES 或运行中时 no-op；否则复用最小未用编号 */
+  /** 添加一根探针：满 MAX_PROBES / 运行中 / 启动中时 no-op；否则复用最小未用编号 */
   function addProbe() {
-    if (isRunning.value) return
+    if (isRunning.value || isStarting.value) return
     if (config.value.probes.length >= MAX_PROBES) return
     const next = nextProbeNumber(config.value.probes.map(p => p.probeId))
     config.value.probes.push(defaultProbe(probeIdFor(next)))
   }
 
-  /** 删除指定探针：仅剩 1 根 / 运行中 / probeId 不存在时 no-op
-   *  仅清理前端 calib 缓存；后端 interpolators map 条目保留，便于同 ID 复用 */
-  function removeProbe(probeId: string) {
-    if (isRunning.value) return
-    if (config.value.probes.length <= 1) return
+  /** 删除指定探针：仅剩 1 根 / 运行中 / 启动中 / probeId 不存在时 no-op
+   *  删除后剩余探针按列表顺序重新连续编号（probe1..probeN），
+   *  同步迁移校准缓存与实时/完成数据，并按新 probeId 重载后端插值器。
+   *  返回是否成功（校准重载失败返回 false） */
+  async function removeProbe(probeId: string): Promise<boolean> {
+    if (isRunning.value || isStarting.value) return false
+    if (config.value.probes.length <= 1) return false
     const idx = config.value.probes.findIndex(p => p.probeId === probeId)
-    if (idx < 0) return
+    if (idx < 0) return false
     config.value.probes.splice(idx, 1)
-    delete calibLoadedMap.value[probeId]
-    delete calibFilesMap.value[probeId]
+    return await renumberProbes()
+  }
+
+  /** 将探针按列表顺序重编号为 probe1..probeN（删除后消除编号空洞）
+   *  按 probeId 索引的前端缓存同步迁移；后端 interpolators 以 probeId 为键，
+   *  改名探针必须按新 ID 重新载入校准文件，否则 Start 校验会失败。
+   *  即使编号已连续也必须执行清理：删除末尾探针时无编号空洞，
+   *  但其残留的缓存/实时/完成数据必须移除，否则新增探针会继承旧状态。
+   *  返回是否全部成功（校准重载失败返回 false） */
+  async function renumberProbes(): Promise<boolean> {
+    const oldIds = config.value.probes.map(p => p.probeId)
+    const newIds = oldIds.map((_, i) => probeIdFor(i + 1))
+
+    config.value.probes.forEach((probe, i) => {
+      probe.probeId = newIds[i]
+    })
+
+    // 校准缓存迁移：先按旧 ID 快照再整体重建，避免新旧 ID 交叉覆盖；
+    // 整体重建会自然丢弃已删除探针的残留条目
+    const idMap = new Map<string, string>()
+    const loaded: Record<string, boolean> = {}
+    const files: Record<string, string[]> = {}
+    newIds.forEach((newId, i) => {
+      const oldId = oldIds[i]
+      idMap.set(oldId, newId)
+      if (calibLoadedMap.value[oldId]) loaded[newId] = true
+      if (calibFilesMap.value[oldId]) files[newId] = calibFilesMap.value[oldId]
+    })
+    calibLoadedMap.value = loaded
+    calibFilesMap.value = files
+
+    let reloadFailed = false
+    const reloadTasks = newIds
+      .filter((newId, i) => newId !== oldIds[i] && (files[newId]?.length ?? 0) > 0)
+      .map(async newId => {
+        try {
+          await FiveHoleService.LoadFiveHoleCalibFiles(newId, files[newId])
+        } catch (e) {
+          console.error(`探针重编号后重载校准文件失败 (${newId}):`, e)
+          lastError.value = `探针 ${newId} 校准文件重载失败: ${e}`
+          calibLoadedMap.value[newId] = false
+          reloadFailed = true
+        }
+      })
+    await Promise.all(reloadTasks)
+
+    // 实时数据 / 任务状态 / 已完成数据点中的 probeId 同步迁移，丢弃已删除探针的数据
+    if (realtime.value) {
+      realtime.value = {
+        ...realtime.value,
+        probeRealtime: realtime.value.probeRealtime
+          .filter(item => idMap.has(item.probeId))
+          .map(item => ({ ...item, probeId: idMap.get(item.probeId)! })),
+      }
+    }
+    if (taskStatus.value) {
+      taskStatus.value = {
+        ...taskStatus.value,
+        probeStatuses: (taskStatus.value.probeStatuses ?? [])
+          .filter(ps => idMap.has(ps.probeId))
+          .map(ps => ({ ...ps, probeId: idMap.get(ps.probeId)! })),
+      }
+    }
+    if (completeProbeDataPoints.value) {
+      const oldPoints = completeProbeDataPoints.value
+      const remapped: Record<string, FiveHoleTraversalDataPoint[]> = {}
+      newIds.forEach((newId, i) => {
+        const points = oldPoints[oldIds[i]]
+        if (points) remapped[newId] = points.map(p => ({ ...p, probeId: newId }))
+      })
+      completeProbeDataPoints.value = remapped
+    }
+    return !reloadFailed
   }
 
   // ==================== API 调用 ====================
@@ -228,7 +304,7 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
   }
 
   async function startTest() {
-    if (isRunning.value) return
+    if (isRunning.value || isStarting.value) return
     if (taskStatus.value?.status === 'running' || taskStatus.value?.status === 'paused') {
       lastError.value = '请先停止当前正在运行的测试'
       return
@@ -257,6 +333,7 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
     // 清理上一次测试的缓存数据点，避免导出 CSV 时返回旧数据
     completeProbeDataPoints.value = null
 
+    isStarting.value = true
     try {
       await FiveHoleService.StartFiveHoleTraversal(config.value as any)
       await fetchStatus()
@@ -264,6 +341,9 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
       console.error('startTest failed:', e)
       lastError.value = `启动测试失败: ${e}`
       resetRuntimeState()
+    } finally {
+      // 启动请求返回后才解除探针增删保护；此时 taskStatus 已确认 running
+      isStarting.value = false
     }
   }
 
@@ -601,7 +681,7 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
 
   return {
     // 状态
-    taskStatus, progress, realtime, isRunning, isPaused, lastError,
+    taskStatus, progress, realtime, isRunning, isStarting, isPaused, lastError,
     calibLoadedMap, calibFilesMap, allCalibLoaded,
     config, statusText, enabledProbes, maxProbes,
     completeProbeDataPoints,

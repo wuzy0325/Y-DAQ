@@ -12,6 +12,7 @@ const { mockDeviceService, mockEventsOn, mockEventsOff } = vi.hoisted(() => ({
     GetDeviceProfiles: vi.fn(),
     UpdateDeviceProfile: vi.fn(),
     SetUnit: vi.fn(),
+    SetAtmEnabled: vi.fn(),
     SetThermocoupleType: vi.fn(),
     SetSingleThermocoupleType: vi.fn(),
   },
@@ -163,6 +164,7 @@ describe('stores/device :: useDeviceStore（computed + getters）', () => {
     setActivePinia(createPinia())
     mockDeviceService.GetDeviceProfiles.mockReset()
     mockDeviceService.GetDeviceStatusAll.mockReset()
+    mockDeviceService.SetAtmEnabled.mockReset()
   })
 
   it('isConnected：任一 status===Connected → true', () => {
@@ -194,6 +196,23 @@ describe('stores/device :: useDeviceStore（computed + getters）', () => {
     ] as any
     expect(store.getDeviceStatus('d2')?.status).toBe('Disconnected')
     expect(store.getDeviceStatus('unknown')).toBeUndefined()
+  })
+
+  it('setAtmEnabled：调用 Service 并刷新 profiles，失败返回错误消息', async () => {
+    const store = useDeviceStore()
+    mockDeviceService.SetAtmEnabled.mockResolvedValue(undefined)
+    mockDeviceService.GetDeviceProfiles.mockResolvedValue([
+      { id: 'd1', atmEnabled: false },
+    ])
+
+    const err = await store.setAtmEnabled('d1', false)
+    expect(err).toBeNull()
+    expect(mockDeviceService.SetAtmEnabled).toHaveBeenCalledWith('d1', false)
+    expect(store.profiles).toEqual([{ id: 'd1', atmEnabled: false }])
+
+    mockDeviceService.SetAtmEnabled.mockRejectedValue(new Error('采集进行中'))
+    const err2 = await store.setAtmEnabled('d1', true)
+    expect(err2).toContain('采集进行中')
   })
 
   it('isDeviceConnecting：connectingIds 包含或 status===Connecting → true', () => {

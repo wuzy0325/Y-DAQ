@@ -2,6 +2,7 @@ package manager
 
 import (
 	"errors"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -17,6 +18,7 @@ type mockDeviceDriver struct {
 	channels   []types.ChannelConfig
 	onData     types.DataCallback
 	unit       string
+	atmEnabled atomic.Bool
 	connectErr error
 }
 
@@ -57,6 +59,10 @@ func (m *mockDeviceDriver) SetUnit(unit string) error {
 	return nil
 }
 
+func (m *mockDeviceDriver) SetAtmEnabled(enabled bool) {
+	m.atmEnabled.Store(enabled)
+}
+
 var errNotConnected = errors.New("device not connected")
 
 func newTestManager() *DeviceManager {
@@ -74,6 +80,19 @@ func newSimProfile(id string) types.DeviceProfile {
 		Channels: []types.ChannelConfig{
 			{Index: 0, Name: "CH1", Enabled: true},
 		},
+	}
+}
+
+func newAtmCapableProfile(id string, deviceType types.DeviceType) types.DeviceProfile {
+	total := deviceType.TotalChannelCount()
+	channels := make([]types.ChannelConfig, total)
+	for i := range channels {
+		channels[i] = types.ChannelConfig{Index: i, Name: "CH", Enabled: true}
+	}
+	return types.DeviceProfile{
+		ID: id, Name: "压力设备", Type: deviceType,
+		Host: "127.0.0.1", Port: 9000, StreamID: 1,
+		AtmEnabled: true, Channels: channels,
 	}
 }
 
@@ -142,6 +161,155 @@ func TestDeviceManager_UpdateProfile_SyncsChannelsToConnectedDriver(t *testing.T
 
 	if len(mock.channels) != 1 || mock.channels[0].Name != "Updated" {
 		t.Errorf("expected driver channels updated, got %v", mock.channels)
+	}
+}
+
+// ==================== 大气压/温度使能 ====================
+
+func TestDeviceManager_UpdateProfile_SyncsAtmEnabledToConnectedDriver(t *testing.T) {
+	m := newTestManager()
+	p := newSimProfile("dev-1")
+	p.AtmEnabled = false
+	m.AddProfile(p)
+
+	mock := &mockDeviceDriver{}
+	mock.connected.Store(true)
+	mock.atmEnabled.Store(false)
+	injectMock(m, "dev-1", mock)
+
+	p.AtmEnabled = true
+	if err := m.UpdateProfile(p); err != nil {
+		t.Fatalf("UpdateProfile failed: %v", err)
+	}
+	if !mock.atmEnabled.Load() {
+		t.Error("expected driver atmEnabled updated to true")
+	}
+}
+
+func TestDeviceManager_SetAtmEnabled(t *testing.T) {
+	m := newTestManager()
+	p := newSimProfile("dev-1")
+	p.Type = types.DeviceTypeEA2516A
+	p.AtmEnabled = true
+	m.AddProfile(p)
+
+	mock := &mockDeviceDriver{}
+	mock.connected.Store(true)
+	mock.atmEnabled.Store(true)
+	injectMock(m, "dev-1", mock)
+
+	if err := m.SetAtmEnabled("dev-1", false); err != nil {
+		t.Fatalf("SetAtmEnabled failed: %v", err)
+	}
+	got := m.GetProfileByID("dev-1")
+	if got == nil || got.AtmEnabled {
+		t.Error("expected profile AtmEnabled=false")
+	}
+	if mock.atmEnabled.Load() {
+		t.Error("expected driver atmEnabled=false")
+	}
+}
+
+func TestDeviceManager_SetAtmEnabled_SyncsChannelFlags(t *testing.T) {
+	m := newTestManager()
+	p := newAtmCapableProfile("dev-1", types.DeviceTypeEA2516A)
+	m.AddProfile(p)
+
+	mock := &mockDeviceDriver{}
+	mock.connected.Store(true)
+	injectMock(m, "dev-1", mock)
+
+	if err := m.SetAtmEnabled("dev-1", false); err != nil {
+		t.Fatalf("SetAtmEnabled(false) failed: %v", err)
+	}
+	got := m.GetProfileByID("dev-1")
+	if got == nil || got.AtmEnabled {
+		t.Fatal("expected profile AtmEnabled=false")
+	}
+	for idx := 0; idx < 16; idx++ {
+		if !got.Channels[idx].Enabled {
+			t.Errorf("pressure channel %d should stay enabled", idx)
+		}
+	}
+	for _, idx := range []int{16, 17} {
+		if got.Channels[idx].Enabled {
+			t.Errorf("atm channel %d should be disabled when atm disabled", idx)
+		}
+	}
+
+	if err := m.SetAtmEnabled("dev-1", true); err != nil {
+		t.Fatalf("SetAtmEnabled(true) failed: %v", err)
+	}
+	got = m.GetProfileByID("dev-1")
+	for _, idx := range []int{16, 17} {
+		if !got.Channels[idx].Enabled {
+			t.Errorf("atm channel %d should be re-enabled when atm enabled", idx)
+		}
+	}
+}
+
+func TestDeviceManager_UpdateProfile_SyncsAtmChannelFlags(t *testing.T) {
+	m := newTestManager()
+	p := newAtmCapableProfile("dev-1", types.DeviceTypeEA2508A)
+	m.AddProfile(p)
+
+	mock := &mockDeviceDriver{}
+	mock.connected.Store(true)
+	injectMock(m, "dev-1", mock)
+
+	p.AtmEnabled = false
+	if err := m.UpdateProfile(p); err != nil {
+		t.Fatalf("UpdateProfile failed: %v", err)
+	}
+	got := m.GetProfileByID("dev-1")
+	if got == nil {
+		t.Fatal("expected profile")
+	}
+	for _, idx := range []int{8, 9} {
+		if got.Channels[idx].Enabled {
+			t.Errorf("atm channel %d should be disabled", idx)
+		}
+	}
+	if !got.Channels[0].Enabled {
+		t.Error("pressure channel 0 should stay enabled")
+	}
+}
+
+func TestDeviceManager_AddProfile_SyncsAtmChannelFlags(t *testing.T) {
+	m := newTestManager()
+	p := newAtmCapableProfile("dev-1", types.DeviceTypeEA2508A)
+	p.AtmEnabled = false
+	m.AddProfile(p)
+
+	got := m.GetProfileByID("dev-1")
+	for _, idx := range []int{8, 9} {
+		if got.Channels[idx].Enabled {
+			t.Errorf("atm channel %d should be disabled on add", idx)
+		}
+	}
+}
+
+func TestDeviceManager_SetAtmEnabled_UnsupportedType(t *testing.T) {
+	m := newTestManager()
+	m.AddProfile(newSimProfile("dev-1")) // SIMULATED 不支持
+	if err := m.SetAtmEnabled("dev-1", false); err == nil {
+		t.Fatal("expected error for unsupported device type")
+	}
+}
+
+func TestDeviceManager_SetAtmEnabled_AcquiringRejected(t *testing.T) {
+	m := newTestManager()
+	p := newSimProfile("dev-1")
+	p.Type = types.DeviceTypeEA2508A
+	m.AddProfile(p)
+
+	mock := &mockDeviceDriver{}
+	mock.connected.Store(true)
+	mock.acquiring.Store(true)
+	injectMock(m, "dev-1", mock)
+
+	if err := m.SetAtmEnabled("dev-1", false); err == nil {
+		t.Fatal("expected error while acquiring")
 	}
 }
 
@@ -363,3 +531,99 @@ func TestDeviceManager_SetUnit_NotConnected(t *testing.T) {
 		t.Fatal("expected error for nonexistent device")
 	}
 }
+
+// 采集过程中的设备禁止修改配置（SetUnit 应被拦截）
+func TestDeviceManager_SetUnit_Acquiring(t *testing.T) {
+	m := newTestManager()
+	m.AddProfile(newSimProfile("dev-1"))
+
+	mock := &mockDeviceDriver{}
+	mock.connected.Store(true)
+	mock.acquiring.Store(true)
+	injectMock(m, "dev-1", mock)
+
+	err := m.SetUnit("dev-1", "kPa")
+	if err == nil {
+		t.Fatal("expected error when acquiring")
+	}
+	if !strings.Contains(err.Error(), "采集进行中") {
+		t.Errorf("expected acquiring-protection error, got %v", err)
+	}
+	if mock.unit != "" {
+		t.Errorf("expected unit unchanged while acquiring, got %s", mock.unit)
+	}
+}
+
+// 采集过程中禁止更新设备配置（UpdateProfile 应被拦截，配置与驱动通道均不变）
+func TestDeviceManager_UpdateProfile_Acquiring(t *testing.T) {
+	m := newTestManager()
+	m.AddProfile(newSimProfile("dev-1"))
+
+	mock := &mockDeviceDriver{}
+	mock.connected.Store(true)
+	mock.acquiring.Store(true)
+	injectMock(m, "dev-1", mock)
+
+	updated := newSimProfile("dev-1")
+	updated.Channels = []types.ChannelConfig{{Index: 0, Name: "CHANGED", Enabled: false}}
+	err := m.UpdateProfile(updated)
+	if err == nil {
+		t.Fatal("expected error when acquiring")
+	}
+	if !strings.Contains(err.Error(), "采集进行中") {
+		t.Errorf("expected acquiring-protection error, got %v", err)
+	}
+	if p := m.GetProfileByID("dev-1"); p != nil && p.Channels[0].Name == "CHANGED" {
+		t.Error("expected profile unchanged while acquiring")
+	}
+	if len(mock.channels) != 0 {
+		t.Errorf("expected driver channels not hot-updated, got %v", mock.channels)
+	}
+}
+
+// 采集过程中禁止删除设备配置（RemoveProfile 应被拦截，设备保持连接）
+func TestDeviceManager_RemoveProfile_Acquiring(t *testing.T) {
+	m := newTestManager()
+	m.AddProfile(newSimProfile("dev-1"))
+
+	mock := &mockDeviceDriver{}
+	mock.connected.Store(true)
+	mock.acquiring.Store(true)
+	injectMock(m, "dev-1", mock)
+
+	err := m.RemoveProfile("dev-1")
+	if err == nil {
+		t.Fatal("expected error when acquiring")
+	}
+	if !strings.Contains(err.Error(), "采集进行中") {
+		t.Errorf("expected acquiring-protection error, got %v", err)
+	}
+	if m.GetProfileByID("dev-1") == nil {
+		t.Error("expected profile preserved while acquiring")
+	}
+	if !mock.IsConnected() {
+		t.Error("expected device still connected after rejected removal")
+	}
+}
+
+// 未连接设备（instances 无实例）编辑配置不得 panic，且应正常持久化新配置。
+// 回归：UpdateProfile 曾把 nil 驱动传给 ensureConfigMutable，触发 nil 解引用崩溃。
+func TestDeviceManager_UpdateProfile_NotConnected(t *testing.T) {
+	m := newTestManager()
+	m.AddProfile(newSimProfile("dev-1"))
+
+	updated := newSimProfile("dev-1")
+	updated.Name = "改名设备"
+	updated.Host = "192.168.1.50"
+	if err := m.UpdateProfile(updated); err != nil {
+		t.Fatalf("unexpected error updating disconnected device: %v", err)
+	}
+	p := m.GetProfileByID("dev-1")
+	if p == nil {
+		t.Fatal("expected profile to exist")
+	}
+	if p.Name != "改名设备" || p.Host != "192.168.1.50" {
+		t.Errorf("profile not updated: name=%q host=%q", p.Name, p.Host)
+	}
+}
+

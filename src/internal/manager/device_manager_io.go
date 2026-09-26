@@ -83,6 +83,10 @@ func (m *DeviceManager) SetUnit(id string, unit string) error {
 		return fmt.Errorf("device not connected: %s", id)
 	}
 
+	if err := m.ensureConfigMutable(id, drv); err != nil {
+		return err
+	}
+
 	setter, ok := drv.(UnitSetter)
 	if !ok {
 		return fmt.Errorf("device does not support SetUnit: %s", id)
@@ -114,6 +118,10 @@ func (m *DeviceManager) SetThermocoupleType(id string, tcTypes string) error {
 	m.RUnlock()
 	if !ok {
 		return fmt.Errorf("device not connected: %s", id)
+	}
+
+	if err := m.ensureConfigMutable(id, drv); err != nil {
+		return err
 	}
 
 	setter, ok := drv.(ThermocoupleTypeSetter)
@@ -150,6 +158,10 @@ func (m *DeviceManager) SetSingleThermocoupleType(id string, channelIndex int, t
 	m.RUnlock()
 	if !ok {
 		return fmt.Errorf("device not connected: %s", id)
+	}
+
+	if err := m.ensureConfigMutable(id, drv); err != nil {
+		return err
 	}
 
 	setter, ok := drv.(ThermocoupleTypeSetter)
@@ -213,6 +225,24 @@ func (m *DeviceManager) SetValveState(id string, state types.ValveState) error {
 	return ctrl.SetValveState(state)
 }
 
+// ensureConfigMutable 校验设备当前未在采集中。
+// 采集过程中禁止修改配置（单位/热电偶类型/温度源/通道编辑/删除等），避免在途数据帧岔错，
+// 与校零/温度校准（天然在采集中进行，豁免）、阀位切换、采样频率的采集保护保持一致。
+// 错误附设备名，便于用户在多设备场景定位是哪台设备被拦截。
+func (m *DeviceManager) ensureConfigMutable(id string, drv DeviceDriver) error {
+	// drv 为 nil 表示设备未连接（instances 中无实例），无采集态概念，视为可修改
+	if drv == nil || !drv.IsAcquiring() {
+		return nil
+	}
+	m.RLock()
+	name := id
+	if p, ok := m.profiles[id]; ok && p.Name != "" {
+		name = p.Name
+	}
+	m.RUnlock()
+	return fmt.Errorf("设备「%s」采集进行中，不允许修改配置", name)
+}
+
 // SetTempSource 设置 EA2508A 温度通道传感器来源（@16 命令，写入硬件并持久化）。
 // 未连接时仅持久化，连接后由驱动自动下发。
 func (m *DeviceManager) SetTempSource(id string, source string) error {
@@ -232,6 +262,9 @@ func (m *DeviceManager) SetTempSource(id string, source string) error {
 	}
 
 	if connected {
+		if err := m.ensureConfigMutable(id, drv); err != nil {
+			return err
+		}
 		cfg, ok := drv.(TempChannelConfigurator)
 		if !ok {
 			return fmt.Errorf("设备不支持温度通道配置: %s", id)
@@ -288,6 +321,9 @@ func (m *DeviceManager) SetTempThermocoupleType(id string, tcType string) error 
 	}
 
 	if connected {
+		if err := m.ensureConfigMutable(id, drv); err != nil {
+			return err
+		}
 		cfg, ok := drv.(TempChannelConfigurator)
 		if !ok {
 			return fmt.Errorf("设备不支持温度通道配置: %s", id)

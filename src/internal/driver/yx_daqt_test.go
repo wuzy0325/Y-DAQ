@@ -3,7 +3,9 @@ package driver
 import (
 	"encoding/binary"
 	"math"
+	"net"
 	"testing"
+	"time"
 )
 
 // --- FrameParser 策略接口测试 ---
@@ -224,6 +226,112 @@ func TestDAQTFrameReader_NoACKPrefix(t *testing.T) {
 }
 
 // --- 辅助函数测试 ---
+
+// TestDAQTFrameReader_MetadataFrameSizes 验证二进制元数据帧长：
+// HEAD=1 68B（4B 序号头）、TIME=1 72B（8B 时间戳头）、两者 76B（12B 头）。
+// 读取后统一返回 64B 纯载荷。
+func TestDAQTFrameReader_MetadataFrameSizes(t *testing.T) {
+	makePayload := func() []byte {
+		frame := make([]byte, 64)
+		bits := math.Float32bits(25.0)
+		frame[0] = byte(bits)
+		frame[1] = byte(bits >> 8)
+		frame[2] = byte(bits >> 16)
+		frame[3] = byte(bits >> 24)
+		return frame
+	}
+
+	cases := []struct {
+		name      string
+		timestamp bool
+		sequence  bool
+		header    int
+	}{
+		{"seq-only-68", false, true, 4},
+		{"ts-only-72", true, false, 8},
+		{"ts-and-seq-76", true, true, 12},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			reader := NewDAQTFrameReader()
+			reader.SetBinaryMode(true)
+			reader.SetMetadataMode(tc.timestamp, tc.sequence)
+
+			raw := append(make([]byte, tc.header), makePayload()...)
+			reader.Feed(raw)
+			if !reader.HasCompleteFrame() {
+				t.Fatal("expected complete metadata frame")
+			}
+			result := reader.ReadFrame()
+			if len(result) != 64 {
+				t.Fatalf("expected 64-byte payload, got %d", len(result))
+			}
+			parser := &DAQTBinaryParser{}
+			values, err := parser.Parse(result)
+			if err != nil {
+				t.Fatalf("parse failed: %v", err)
+			}
+			if values[15] < 24.9 || values[15] > 25.1 {
+				t.Errorf("CH15 expected ~25.0, got %f", values[15])
+			}
+		})
+	}
+}
+
+// TestYXDAQTDriver_StartAcquisition_NoDeadlock 回归：StartAcquisition 曾持有 d.mu
+// 调用 writeCmdOnly/sendCommandACK，而后者内部再次获取 d.mu（connRef），
+// Go mutex 不可重入导致采集启动永久卡死、断开也无法释放连接。
+func TestYXDAQTDriver_StartAcquisition_NoDeadlock(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen failed: %v", err)
+	}
+	defer ln.Close()
+
+	go func() {
+		conn, err := ln.Accept()
+		if err != nil {
+			return
+		}
+		defer conn.Close()
+		buf := make([]byte, 1024)
+		for {
+			if _, err := conn.Read(buf); err != nil {
+				return
+			}
+			// 所有命令统一回单字节 ACK 'A'
+			if _, err := conn.Write([]byte("A")); err != nil {
+				return
+			}
+		}
+	}()
+
+	port := ln.Addr().(*net.TCPAddr).Port
+	drv := NewYXDAQTDriver("127.0.0.1", port, nil)
+	if err := drv.DialConnect(); err != nil {
+		t.Fatalf("dial failed: %v", err)
+	}
+	drv.StartReceiveLoop(drv.processData)
+	drv.mu.Lock()
+	drv.configSyncDone = true
+	drv.mu.Unlock()
+
+	errCh := make(chan error, 1)
+	go func() { errCh <- drv.StartAcquisition(100) }()
+
+	select {
+	case err := <-errCh:
+		if err != nil {
+			t.Fatalf("StartAcquisition failed: %v", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("StartAcquisition blocked (mutex deadlock)")
+	}
+	if !drv.IsAcquiring() {
+		t.Fatal("driver should be acquiring after StartAcquisition")
+	}
+	drv.CloseDisconnect()
+}
 
 func TestReverseFloat64(t *testing.T) {
 	values := []float64{1, 2, 3, 4, 5}

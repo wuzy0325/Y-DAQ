@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"yx-daq/internal/logger"
 	"yx-daq/internal/types"
 )
 
@@ -112,6 +113,7 @@ func (h *AcquisitionHub) ClearDevice(deviceID string) {
 // StartPublishing 启动定时发布
 // ctx 取消时退出循环（与 MotionControllerManager.StartPolling 的 context 风格一致）
 func (h *AcquisitionHub) StartPublishing(ctx context.Context) {
+	defer logger.Recover("acquisition-publish")
 	ticker := time.NewTicker(time.Duration(1000/h.GetPublishHz()) * time.Millisecond)
 	defer ticker.Stop()
 

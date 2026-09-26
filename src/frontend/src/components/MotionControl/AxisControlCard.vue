@@ -171,7 +171,7 @@ import {
   VideoPlay, VideoPause, Loading, WarningFilled,
   Minus, Plus,
 } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useMotionStore } from '../../stores/motion'
 
 const props = defineProps<{
@@ -278,6 +278,15 @@ async function onStop() {
 }
 
 async function onHome() {
+  try {
+    await ElMessageBox.confirm(
+      `将把 ${props.axis.name} 轴当前位置（${formatPosition(props.axis.currentPosition)}${unit.value}）定义为零点，是否继续？`,
+      `${props.axis.name}轴置零确认`,
+      { confirmButtonText: '置零', cancelButtonText: '取消', type: 'warning' },
+    )
+  } catch {
+    return // 用户取消
+  }
   const result = await store.definePosition(props.axis.name, 0)
   if (!result.success) ElMessage.warning(result.error || `${props.axis.name}轴置零失败`)
 }
@@ -297,7 +306,7 @@ async function onHome() {
   flex-direction: column;
   gap: 10px;
   transition: all 0.3s ease;
-  min-height: 0;
+  /* 不使用 min-height: 0：保证卡片内容自然高度参与网格 minmax(min-content, 1fr) 计算，防止内容溢出卡片 */
   overflow: visible;
   position: relative;
 
