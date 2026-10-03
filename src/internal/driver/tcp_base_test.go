@@ -74,6 +74,28 @@ func TestTCPDriverBase_UpdateAndGetChannels(t *testing.T) {
 	}
 }
 
+// TestTCPDriverBase_BuildDataPayload_MapsByChannelIndex 验证按 ch.Index 取值，
+// 通道配置切片顺序变化不会导致通道串位
+func TestTCPDriverBase_BuildDataPayload_MapsByChannelIndex(t *testing.T) {
+	channels := []types.ChannelConfig{
+		{Index: 2, Name: "CH3", Enabled: true, Unit: "kPa"},
+		{Index: 0, Name: "CH1", Enabled: true, Unit: "kPa"},
+		{Index: 1, Name: "CH2", Enabled: false, Unit: "kPa"},
+	}
+	base := NewTCPDriverBase("127.0.0.1", 9000, channels)
+
+	payload := base.BuildDataPayload([]float64{10, 20, 30}, "dev")
+	if len(payload.Channels) != 2 || len(payload.ChannelIndices) != 2 {
+		t.Fatalf("got %d channels, want 2", len(payload.Channels))
+	}
+	if payload.ChannelIndices[0] != 2 || payload.Channels[0] != 30 {
+		t.Errorf("first enabled = idx %d value %v, want idx 2 value 30", payload.ChannelIndices[0], payload.Channels[0])
+	}
+	if payload.ChannelIndices[1] != 0 || payload.Channels[1] != 10 {
+		t.Errorf("second enabled = idx %d value %v, want idx 0 value 10", payload.ChannelIndices[1], payload.Channels[1])
+	}
+}
+
 func TestTCPDriverBase_ConnectedState(t *testing.T) {
 	base := NewTCPDriverBase("127.0.0.1", 9000, nil)
 

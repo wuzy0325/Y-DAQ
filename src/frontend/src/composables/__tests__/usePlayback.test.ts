@@ -222,6 +222,44 @@ describe('composables/usePlayback', () => {
       expect(inst.playbackData.value).toHaveLength(1)
       expect(inst.playbackData.value[0].value).toBeCloseTo(100.5)
     })
+
+    it('宽表多设备文件：图表按 设备+通道 拆分曲线，不把其他设备的 0.x 混入主设备', () => {
+      const inst = setup()
+      const wideContent = [
+        'Timestamp,DeviceID,CH1 (Pa)',
+        '"=""2024-01-01 10:00:00.000""",dev-main,1000.5',
+        '"=""2024-01-01 10:00:00.010""",dev-idle,0.3',
+        '"=""2024-01-01 10:00:00.020""",dev-main,1001.5',
+        '"=""2024-01-01 10:00:00.030""",dev-idle,0.4',
+      ].join('\n')
+      inst.parseAndLoadCSV(wideContent)
+      expect(inst.playbackData.value).toHaveLength(4)
+
+      inst.playbackIndex.value = 3
+      const opt = inst.playbackChartOption.value as any
+      const names = opt.series.map((s: any) => s.name)
+      expect(names).toHaveLength(2)
+      expect(names.some((n: string) => n.includes('dev-main') && n.includes('CH1'))).toBe(true)
+      expect(names.some((n: string) => n.includes('dev-idle') && n.includes('CH1'))).toBe(true)
+      // 每条曲线只包含本设备的值
+      const mainSeries = opt.series.find((s: any) => s.name.includes('dev-main'))
+      const idleSeries = opt.series.find((s: any) => s.name.includes('dev-idle'))
+      expect(mainSeries.data.every((p: number[]) => p[1] > 100)).toBe(true)
+      expect(idleSeries.data.every((p: number[]) => p[1] < 1)).toBe(true)
+    })
+
+    it('宽表单设备文件：图表曲线仍用通道名，不加设备前缀', () => {
+      const inst = setup()
+      const wideContent = [
+        'Timestamp,DeviceID,CH1 (Pa)',
+        '2024-01-01 10:00:00.000,d1,100.5',
+        '2024-01-01 10:00:00.100,d1,101.5',
+      ].join('\n')
+      inst.parseAndLoadCSV(wideContent)
+      inst.playbackIndex.value = 1
+      const opt = inst.playbackChartOption.value as any
+      expect(opt.series[0].name).toBe('CH1')
+    })
   })
 
   describe('playback 控制', () => {

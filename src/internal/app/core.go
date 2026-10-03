@@ -30,7 +30,7 @@ type Core struct {
 	AcquisitionHub    *manager.AcquisitionHub
 	CalibService      *calibration.CalibrationService
 	ThreeHoleServices map[string]*three_hole.ThreeHoleTraversalService // probe1, probe2
-	FiveHoleService   *five_hole.FiveHoleTraversalService             // 五孔单实例管理 1-3 探针
+	FiveHoleService   *five_hole.FiveHoleTraversalService              // 五孔单实例管理 1-3 探针
 	ConfigManager     *storage.ConfigManager
 	DataStorage       *storage.DataStorageService
 	PdfReport         *storage.PdfReportService
@@ -38,9 +38,9 @@ type Core struct {
 	publishCtx        context.Context
 	publishCancel     context.CancelFunc
 
-	threeHoleMotionMu sync.Mutex
-	fiveHoleMotionMu  sync.Mutex
-	dataStorageErrMu  sync.Mutex
+	threeHoleMotionMu  sync.Mutex
+	fiveHoleMotionMu   sync.Mutex
+	dataStorageErrMu   sync.Mutex
 	lastDataStorageErr string
 }
 
@@ -72,6 +72,13 @@ func (c *Core) Startup(app *application.App) {
 	logger.Configure(c.ConfigManager.Logging.Get())
 
 	c.DataStorage = storage.NewDataStorageService(c.GetDataDir())
+	// 录制文件按设备拆分命名：DeviceID → 设备名（解析不到时回退 DeviceID）
+	c.DataStorage.SetDeviceNameResolver(func(deviceID string) string {
+		if p := c.DeviceManager.GetProfileByID(deviceID); p != nil {
+			return p.Name
+		}
+		return ""
+	})
 	c.DeviceManager.SetDataSink(func(payload types.DataPayload) {
 		c.AcquisitionHub.OnData(payload)
 		if c.DataStorage.IsRecording() {

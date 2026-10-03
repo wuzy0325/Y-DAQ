@@ -185,10 +185,20 @@ func (d *XYDAQDriver) processData(_ []byte) {
 		}
 
 		frame := d.RecvBuffer[:frameLen]
+		payload := frame[2:] // 去掉长度前缀
+
+		// 二进制帧长度固定（头 5B + N×4B）。前缀落在合法区间但载荷长度与设备类型
+		// 不匹配时，说明前缀是错位字节的组合（残杂/半帧残留），若按 frameLen 消费
+		// 会把错位字节错当成压力帧解析出 0.x 之类伪数据；只丢弃首字节重新对齐
+		if len(payload) > 0 && payload[0] < 0x20 && !d.isExpectedBinaryPayloadLen(len(payload)) {
+			d.RecvBuffer = d.RecvBuffer[1:]
+			dropped++
+			continue
+		}
+
 		d.RecvBuffer = d.RecvBuffer[frameLen:]
 
 		// 判断帧类型
-		payload := frame[2:] // 去掉长度前缀
 		if len(payload) > 0 && payload[0] < 0x20 {
 			// 二进制帧
 			d.handleStreamFrame(payload)
@@ -200,6 +210,13 @@ func (d *XYDAQDriver) processData(_ []byte) {
 	if dropped > 0 {
 		slog.Warn("XY-DAQ frame desync, dropped bytes to realign", "host", d.Host, "port", d.Port, "dropped", dropped)
 	}
+}
+
+// isExpectedBinaryPayloadLen 判断去前缀后的载荷长度是否为当前设备类型的合法二进制帧长：
+// 含大气压/温度帧（EA2508A=45 / EA2516A=77）或仅压力帧（37/69）。
+// atm 使能但设备未应用 0810 位图时可能只发压力帧，两种长度都接受。
+func (d *XYDAQDriver) isExpectedBinaryPayloadLen(payloadLen int) bool {
+	return payloadLen == d.frameSize || payloadLen == d.deviceType.PressureOnlyFrameSize()
 }
 
 // handleStreamFrame 处理二进制数据流帧
@@ -226,6 +243,10 @@ func (d *XYDAQDriver) handleStreamFrame(frame []byte) {
 		bits := binary.BigEndian.Uint32(frame[offset : offset+4])
 		values[i] = float64(math.Float32frombits(bits))
 	}
+	if !isValidXYFrame(values) {
+		slog.Warn("XY-DAQ stream frame values invalid, dropped", "host", d.Host, "port", d.Port)
+		return
+	}
 
 	// 反转压力通道顺序：硬件按 CHn→CH1 逆序发送，需反转为 CH1→CHn
 	for i := 0; i < d.pressureCount/2; i++ {
@@ -236,6 +257,19 @@ func (d *XYDAQDriver) handleStreamFrame(frame []byte) {
 	deviceID := fmt.Sprintf("%s:%d", d.Host, d.Port)
 	payload := d.BuildDataPayload(values, deviceID)
 	d.EmitData(payload)
+}
+
+// isValidXYFrame 校验解析后的通道值物理可信：NaN/Inf 或量级超过 1e9 的读数
+// 在任何支持单位下都不可能来自健康设备，是字节错位/损坏帧的特征，整帧丢弃，
+// 避免污染显示、存储与零位校准采样。
+// 不能按具体压力范围校验：单位随配置变化（Pa/kPa/psi），且表压/差压可合法为负或接近 0。
+func isValidXYFrame(values []float64) bool {
+	for _, v := range values {
+		if math.IsNaN(v) || math.IsInf(v, 0) || v > 1e9 || v < -1e9 {
+			return false
+		}
+	}
+	return true
 }
 
 // SendCommand 发送命令并等待ASCII响应（用于查询类命令）

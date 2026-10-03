@@ -39,7 +39,7 @@ type TCPDriverBase struct {
 	onResumeAcquire  func() error // 重连成功后恢复采集的 hook（子类通过 SetOnResumeAcquire 注册）
 	// beforeClose 关闭连接前的回调（子类注册发送设备停止命令，如 DAQT 的 @f1），
 	// 避免设备保持推流状态、连接槽位释放缓慢
-	beforeClose  func(net.Conn)
+	beforeClose func(net.Conn)
 	// recvLoopDone 当前接收循环的退出信号（StartReceiveLoop 创建，循环退出时 close）
 	recvLoopDone chan struct{}
 }
@@ -489,17 +489,20 @@ func (b *TCPDriverBase) EmitData(payload types.DataPayload) {
 	}
 }
 
-// BuildDataPayload 构建数据载荷（映射到已启用通道）
+// BuildDataPayload 构建数据载荷（映射到已启用通道）。
+// 按 ch.Index 取值而非切片位置：values 以硬件通道号（= ChannelConfig.Index）为下标，
+// 通道配置切片顺序不参与映射，避免配置顺序变化时通道串位。
 func (b *TCPDriverBase) BuildDataPayload(values []float64, deviceID string) types.DataPayload {
 	enabledValues := []float64{}
 	enabledIndices := []int{}
 	enabledUnits := []string{}
-	for i, ch := range b.channels {
-		if ch.Enabled && i < len(values) {
-			enabledValues = append(enabledValues, values[i])
-			enabledIndices = append(enabledIndices, i)
-			enabledUnits = append(enabledUnits, ch.Unit)
+	for _, ch := range b.channels {
+		if !ch.Enabled || ch.Index < 0 || ch.Index >= len(values) {
+			continue
 		}
+		enabledValues = append(enabledValues, values[ch.Index])
+		enabledIndices = append(enabledIndices, ch.Index)
+		enabledUnits = append(enabledUnits, ch.Unit)
 	}
 
 	return types.DataPayload{

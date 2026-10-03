@@ -168,3 +168,90 @@ func TestXYDAQDriver_HandleStreamFrame_AtmDisabledShortFrame(t *testing.T) {
 		t.Fatalf("short frame should be dropped, got %d channels", len(got.Channels))
 	}
 }
+
+// TestXYDAQDriver_ProcessData_RealignsMisalignedBinaryFrame 验证错位长度前缀
+// 落在合法区间但不匹配设备帧长时，不按错误长度消费字节而是逐字节重对齐，
+// 后续真实帧仍能完整解析（回归：帧错位解析出 0.x 伪压力值）
+func TestXYDAQDriver_ProcessData_RealignsMisalignedBinaryFrame(t *testing.T) {
+	drv := NewXYDAQDriver("127.0.0.1", 9000, 1, newTestXYChannels(18), types.DeviceTypeEA2516A, true)
+	var got []types.DataPayload
+	drv.SetDataCallback(func(p types.DataPayload) { got = append(got, p) })
+	drv.acquiring.Store(true)
+
+	// 错位区：前缀 0x0049=73 → 载荷 71 字节（合法区间内但非 77/69），
+	// 载荷首字节 0x00 会被误判为二进制帧
+	garbage := make([]byte, 73)
+	garbage[1] = 0x49
+
+	// 真实帧：2B 前缀 + 77B 载荷
+	payload := buildPressureFrame(16, func(ch int) float64 { return float64(ch) + 0.5 })
+	payload = append(payload, 0, 0, 0, 0)
+	binary.BigEndian.PutUint32(payload[types.StreamFrameHeaderSize+16*4:], math.Float32bits(101325))
+	payload = append(payload, 0, 0, 0, 0)
+	binary.BigEndian.PutUint32(payload[types.StreamFrameHeaderSize+17*4:], math.Float32bits(25.5))
+	wire := make([]byte, 2+len(payload))
+	binary.BigEndian.PutUint16(wire[:2], uint16(len(wire)))
+	copy(wire[2:], payload)
+
+	drv.RecvBuffer = append(drv.RecvBuffer, garbage...)
+	drv.RecvBuffer = append(drv.RecvBuffer, wire...)
+	drv.processData(nil)
+
+	if len(got) != 1 {
+		t.Fatalf("emitted %d frames, want 1 (misaligned bytes must be dropped)", len(got))
+	}
+	if got[0].Channels[0] != 1.5 || got[0].Channels[15] != 16.5 || got[0].Channels[16] != 101325 || got[0].Channels[17] != 25.5 {
+		t.Fatalf("frame corrupted after realign: %v", got[0].Channels)
+	}
+	if len(drv.RecvBuffer) != 0 {
+		t.Fatalf("buffer should be drained, got %d bytes", len(drv.RecvBuffer))
+	}
+}
+
+// TestXYDAQDriver_ProcessData_AsciiResponseStillRouted 验证加固后
+// ASCII 命令响应仍正常路由（二进制长度校验不得误伤 ASCII 帧）
+func TestXYDAQDriver_ProcessData_AsciiResponseStillRouted(t *testing.T) {
+	drv := NewXYDAQDriver("127.0.0.1", 9000, 1, newTestXYChannels(18), types.DeviceTypeEA2516A, true)
+
+	wire := []byte{0, 3, 'A'}
+	drv.RecvBuffer = append(drv.RecvBuffer, wire...)
+	drv.processData(nil)
+
+	select {
+	case resp := <-drv.CmdRespCh:
+		if string(resp) != "A" {
+			t.Fatalf("routed response = %q, want %q", string(resp), "A")
+		}
+	default:
+		t.Fatal("ASCII response was not routed to command response channel")
+	}
+}
+
+// TestXYDAQDriver_HandleStreamFrame_RejectsInvalidValues 验证 NaN/Inf/超量级
+// 帧整帧丢弃，不进入显示/存储/零位校准采样
+func TestXYDAQDriver_HandleStreamFrame_RejectsInvalidValues(t *testing.T) {
+	cases := []struct {
+		name string
+		bits uint32
+	}{
+		{"NaN", 0x7FC00001},
+		{"+Inf", 0x7F800000},
+		{"absurd magnitude", 0x7F000000},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			drv := NewXYDAQDriver("127.0.0.1", 9000, 1, newTestXYChannels(16), types.DeviceTypeEA2516A, false)
+			var got types.DataPayload
+			drv.SetDataCallback(func(p types.DataPayload) { got = p })
+			drv.acquiring.Store(true)
+
+			frame := buildPressureFrame(16, func(int) float64 { return 1 })
+			binary.BigEndian.PutUint32(frame[types.StreamFrameHeaderSize:], tc.bits)
+			drv.handleStreamFrame(frame)
+
+			if len(got.Channels) != 0 {
+				t.Fatalf("invalid frame must be dropped, got %v", got.Channels)
+			}
+		})
+	}
+}

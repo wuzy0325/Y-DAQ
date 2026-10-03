@@ -43,6 +43,9 @@ export function usePlayback() {
   const playbackIndex = ref(0)
   const isPlaying = ref(false)
   const playbackSpeed = ref(1)
+  // 文件是否包含多台设备（旧版单文件录制）：图表需按 设备+通道 拆分曲线，
+  // 否则不同设备的同名列会混入同一序列（主要表现为其他设备的 0.x 值混入主设备曲线）
+  const multiDevice = ref(false)
   let playbackTimer: number | null = null
 
   function parseAndLoadCSV(content: string) {
@@ -58,6 +61,16 @@ export function usePlayback() {
       && headerCols.length > 2 && /^CH\d+/.test(headerCols[2].trim())
 
     const dataRows: PlaybackRow[] = []
+    // 解析时增量判定多设备：避免对超大文件再分配一份等长的 deviceId 数组（Set(map())）
+    let multiDeviceFlag = false
+    let firstDeviceId: string | null = null
+    const trackDevice = (deviceId: string) => {
+      if (firstDeviceId === null) {
+        firstDeviceId = deviceId
+      } else if (deviceId !== firstDeviceId) {
+        multiDeviceFlag = true
+      }
+    }
     if (isWide) {
       // 宽表格式：Timestamp, DeviceID, CH6 (kPa), CH7 (kPa), ...（每帧一行，所有通道横排）
       const channelCols = headerCols.slice(2).map(raw => parseChannelHeader(raw.trim()))
@@ -67,6 +80,7 @@ export function usePlayback() {
         if (cols.length < 2) continue
         const timestamp = unwrapTimestamp(cols[0])
         const deviceId = cols[1].trim()
+        trackDevice(deviceId)
         for (let c = 0; c < channelCols.length; c++) {
           const rawVal = (cols[c + 2] ?? '').trim()
           if (rawVal === '') continue
@@ -85,9 +99,11 @@ export function usePlayback() {
       for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].split(',')
         if (cols.length >= 6) {
+          const deviceId = cols[1].trim()
+          trackDevice(deviceId)
           dataRows.push({
             timestamp: unwrapTimestamp(cols[0]),
-            deviceId: cols[1].trim(),
+            deviceId,
             channelIndex: parseInt(cols[2].trim()) || 0,
             channelName: cols[3].trim(),
             value: parseFloat(cols[4].trim()) || 0,
@@ -101,6 +117,7 @@ export function usePlayback() {
       playbackData.value = dataRows
       playbackIndex.value = 0
       isPlaying.value = false
+      multiDevice.value = multiDeviceFlag
     }
   }
 
@@ -177,7 +194,7 @@ export function usePlayback() {
         sampleIndex++
         xAxisData.push(sampleIndex)
       }
-      const key = `${row.channelName}`
+      const key = multiDevice.value ? `${row.deviceId || '未知设备'}·${row.channelName}` : row.channelName
       if (!channelMap.has(key)) {
         channelMap.set(key, [])
       }
