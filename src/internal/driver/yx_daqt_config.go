@@ -88,6 +88,16 @@ func (d *YXDAQTDriver) sendCommandWithTimeout(cmd string, respType ResponseType,
 		Deadline:    time.Now().Add(timeout),
 	}
 
+	// 清空命令响应缓冲区中的残留字节，确保本条命令从干净的协议边界读取响应。
+	// 设备停止采集/切换模式后仍可能有在途数据帧残留在应用层缓冲，若不清空会被
+	// 本条命令的定长读取误当作响应（ACK / @e3 回读错位），这是实机
+	// "设置热电偶类型失败" 的根因（与 wista 0.3.3 修复的残留帧污染同类）。
+	// 命令由调用方串行发送：前一条命令读取完成或超时后本条才发出，
+	// 因此清空不会丢弃本条之外仍在等待的有效响应。
+	d.mu.Lock()
+	d.respBuffer = d.respBuffer[:0]
+	d.mu.Unlock()
+
 	d.pending.Push(entry)
 
 	if _, err := conn.Write([]byte(fullCmd)); err != nil {
@@ -319,9 +329,14 @@ func (d *YXDAQTDriver) selectFrameParser() {
 	}
 }
 
-// SetThermocoupleType 设置热电偶类型
-// @f3 命令返回单字节 ACK（A=成功/E=拒绝），用 sendCommandACK 读取校验。
-// 发送后需 readback 验证（读 @e3 比对），不匹配时返回错误并同步 hwConfig.ThermocoupleTypes。
+// SetThermocoupleType 设置热电偶类型。
+//
+// @f3 命令返回单字节 ACK（A=成功/E=拒绝），以 ACK 作为设置成功的唯一契约
+// （与 wista 一致，不做 @e3 回读强校验）。原因：@e3 回读是定长读取，
+// 停止采集/模式切换后 TCP 缓冲区里的在途数据帧会污染命令响应边界，使回读值
+// 出现 "E" 前缀错位等假不一致（实机 "设置热电偶类型失败" 即此现象）。
+// 残留字节已在 sendCommandWithTimeout 发送前清空；此处不再用 @e3 二次比对，
+// 避免把无害的残留字节放大成用户可见的失败。
 // 调用方不得持有 d.mu（sendCommandACK 内部加锁 d.mu，会导致自死锁）。
 func (d *YXDAQTDriver) SetThermocoupleType(tcTypes string) error {
 	if len(tcTypes) != 16 {
@@ -332,25 +347,11 @@ func (d *YXDAQTDriver) SetThermocoupleType(tcTypes string) error {
 		return fmt.Errorf("set thermocouple type failed: %w", err)
 	}
 
-	// readback 验证：发 @f3 命令后读 @e3 比对，确保设备实际接受了配置。
-	// 某些固件可能 ACK 'A' 但不实际切换，readback 可暴露这种静默失败。
-	time.Sleep(50 * time.Millisecond)
-	if resp, err := d.sendCommandExact("@e3", 17); err == nil {
-		value := strings.TrimSuffix(resp, "\n")
-		value = trimSpace(value)
-		if len(value) == 16 && value != tcTypes {
-			// readback 不匹配：同步 hwConfig 为设备实际值，让上层感知真实状态
-			d.mu.Lock()
-			d.hwConfig.ThermocoupleTypes = value
-			d.mu.Unlock()
-			return fmt.Errorf("热电偶类型回读不一致: 已发送 %q, 设备返回 %q", tcTypes, value)
-		}
-		if len(value) == 16 {
-			d.mu.Lock()
-			d.hwConfig.ThermocoupleTypes = value
-			d.mu.Unlock()
-		}
-	}
+	// ACK 成功即视为设备已接受，直接同步 hwConfig 为请求值，供
+	// SetSingleThermocoupleType 基于当前值做增量修改。
+	d.mu.Lock()
+	d.hwConfig.ThermocoupleTypes = tcTypes
+	d.mu.Unlock()
 	return nil
 }
 
