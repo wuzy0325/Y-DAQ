@@ -17,6 +17,7 @@ import (
 // deviceRecording 单台设备的录制文件（每台设备独立 CSV，避免多设备数据混入同列）
 type deviceRecording struct {
 	deviceID       string
+	deviceName     string // 写入数据列的设备显示名（设备名优先，解析不到回退 deviceID）
 	file           *os.File
 	writer         *csv.Writer
 	path           string
@@ -33,7 +34,7 @@ type deviceRecording struct {
 
 // DataStorageService 数据存储服务。
 // 多设备并行采集时每台设备一个独立文件 recording-<会话时间>_<设备名>.csv，
-// 行=帧（宽表：Timestamp, DeviceID, CH1, CH2...），通道布局以该设备首帧为准。
+// 行=帧（宽表：Timestamp, 设备名称, CH1, CH2...），通道布局以该设备首帧为准。
 // HandlePayload 由各驱动接收协程并发调用，files 与各 deviceRecording 必须加锁串行化
 type DataStorageService struct {
 	mu           sync.Mutex
@@ -57,7 +58,7 @@ func NewDataStorageService(outputDir string) *DataStorageService {
 	}
 }
 
-// SetDeviceNameResolver 设置 DeviceID → 设备名解析器（生成可读文件名用）；
+// SetDeviceNameResolver 设置 DeviceID → 设备名解析器（生成可读文件名与数据列用）；
 // 返回空或未设置时回退用 DeviceID。应在开始录制前调用。
 func (s *DataStorageService) SetDeviceNameResolver(fn func(deviceID string) string) {
 	s.mu.Lock()
@@ -158,16 +159,18 @@ func (s *DataStorageService) HandlePayload(payload types.DataPayload) error {
 	// 见 usePlayback.ts unwrapTimestamp）。
 	timestamp := fmt.Sprintf(`="%s"`, time.UnixMilli(payload.Timestamp).Format("2006-01-02 15:04:05.000"))
 
-	// 按通道索引映射值，随后对齐到表头各列（缺帧通道留空）
+	// 按通道索引映射值与小数位，随后对齐到表头各列（缺帧通道留空）
 	valueByIndex := make(map[int]float64, len(payload.Channels))
+	precisionByIndex := make(map[int]int, len(payload.Channels))
 	for i, idx := range payloadChannelIndices(payload) {
 		valueByIndex[idx] = payload.Channels[i]
+		precisionByIndex[idx] = payloadChannelPrecision(payload, i)
 	}
 
-	record := []string{timestamp, payload.DeviceID}
+	record := []string{timestamp, rec.deviceName}
 	for _, idx := range rec.headerChannels {
 		if val, ok := valueByIndex[idx]; ok {
-			record = append(record, fmt.Sprintf("%.6f", val))
+			record = append(record, formatChannelValue(val, precisionByIndex[idx]))
 		} else {
 			record = append(record, "")
 		}
@@ -188,7 +191,8 @@ func (s *DataStorageService) HandlePayload(payload types.DataPayload) error {
 // createDeviceFileLocked 为设备创建独立录制文件（其首帧到达时调用，调用方须持锁）。
 // 文件名用设备名（解析不到时用 DeviceID），非法字符消毒；同名/同秒重复会话追加序号避免覆盖。
 func (s *DataStorageService) createDeviceFileLocked(deviceID string) (*deviceRecording, error) {
-	base := fmt.Sprintf("recording-%s_%s", s.sessionTag, s.deviceFileLabelLocked(deviceID))
+	deviceName := s.resolveDeviceNameLocked(deviceID)
+	base := fmt.Sprintf("recording-%s_%s", s.sessionTag, sanitizeFileName(deviceName))
 	name := base + ".csv"
 	for i := 2; s.usedNames[name] || fileExists(filepath.Join(s.outputDir, name)); i++ {
 		name = fmt.Sprintf("%s-%d.csv", base, i)
@@ -207,23 +211,23 @@ func (s *DataStorageService) createDeviceFileLocked(deviceID string) (*deviceRec
 
 	s.usedNames[name] = true
 	return &deviceRecording{
-		deviceID: deviceID,
-		file:     file,
-		writer:   csv.NewWriter(file),
-		path:     path,
+		deviceID:   deviceID,
+		deviceName: deviceName,
+		file:       file,
+		writer:     csv.NewWriter(file),
+		path:       path,
 	}, nil
 }
 
-// deviceFileLabelLocked 生成文件名的设备标签：设备名优先，解析不到回退 DeviceID，并消毒非法字符
-func (s *DataStorageService) deviceFileLabelLocked(deviceID string) string {
-	label := ""
+// resolveDeviceNameLocked 解析设备的显示名：设备名优先，解析不到（未设置/空白）回退 DeviceID。
+// 返回值不做文件名消毒，可直接写入数据列。调用方须持锁。
+func (s *DataStorageService) resolveDeviceNameLocked(deviceID string) string {
 	if s.nameResolver != nil {
-		label = s.nameResolver(deviceID)
+		if name := strings.TrimSpace(s.nameResolver(deviceID)); name != "" {
+			return name
+		}
 	}
-	if strings.TrimSpace(label) == "" {
-		label = deviceID
-	}
-	return sanitizeFileName(label)
+	return deviceID
 }
 
 // sanitizeFileName 替换 Windows 文件名非法字符与控制字符，去除首尾空白/点；空则回退 device
@@ -261,6 +265,30 @@ func payloadChannelIndices(payload types.DataPayload) []int {
 		}
 	}
 	return indices
+}
+
+// defaultChannelPrecision 帧未携带通道精度时的回退小数位（保持历史 %.6f 行为）
+const defaultChannelPrecision = 6
+
+// payloadChannelPrecision 返回帧内第 pos 个通道的落盘小数位；
+// ChannelPrecisions 缺失或为负时回退 defaultChannelPrecision，上限裁剪到 15 避免异常配置
+func payloadChannelPrecision(payload types.DataPayload, pos int) int {
+	p := defaultChannelPrecision
+	if pos < len(payload.ChannelPrecisions) {
+		p = payload.ChannelPrecisions[pos]
+	}
+	if p < 0 {
+		p = defaultChannelPrecision
+	}
+	if p > 15 {
+		p = 15
+	}
+	return p
+}
+
+// formatChannelValue 按指定小数位格式化通道值落盘
+func formatChannelValue(val float64, precision int) string {
+	return fmt.Sprintf("%.*f", precision, val)
 }
 
 // channelLabel 生成宽表列名：CH{n} 或 CH{n} (unit)（unit 为空时省略）
@@ -324,9 +352,9 @@ func (s *DataStorageService) ensureChannelLayoutLocked(rec *deviceRecording, pay
 	return nil
 }
 
-// writeHeaderLocked 根据该设备首个数据帧的通道布局写入宽表表头：Timestamp, DeviceID, CH{n} (unit)...
+// writeHeaderLocked 根据该设备首个数据帧的通道布局写入宽表表头：Timestamp, 设备名称, CH{n} (unit)...
 func (s *DataStorageService) writeHeaderLocked(rec *deviceRecording, indices []int, payload types.DataPayload) error {
-	header := []string{"Timestamp", "DeviceID"}
+	header := []string{"Timestamp", "设备名称"}
 	channels := make([]int, 0, len(indices))
 	for pos, idx := range indices {
 		header = append(header, channelLabel(idx, pos, payload))

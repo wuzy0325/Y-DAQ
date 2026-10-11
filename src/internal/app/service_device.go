@@ -90,6 +90,11 @@ func (s *DeviceService) SetAtmEnabled(id string, enabled bool) error {
 	return s.Core.DeviceManager.SetAtmEnabled(id, enabled)
 }
 
+// SetADAveraging 设置压力扫描阀 AD 平均（EA2508A/EA2516A，持久化 + 已连接时立即下发硬件）
+func (s *DeviceService) SetADAveraging(id string, enabled bool, count int) error {
+	return s.Core.DeviceManager.SetADAveraging(id, enabled, count)
+}
+
 // SetThermocoupleType 设置设备热电偶类型（全通道批量设置）
 func (s *DeviceService) SetThermocoupleType(id string, tcTypes string) error {
 	return s.Core.DeviceManager.SetThermocoupleType(id, tcTypes)

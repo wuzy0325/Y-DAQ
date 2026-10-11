@@ -33,6 +33,11 @@ type AtmChannelConfigurator interface {
 	SetAtmEnabled(enabled bool)
 }
 
+// ADAveragingConfigurator AD 平均次数配置接口（仅 EA2508A/EA2516A 驱动实现）
+type ADAveragingConfigurator interface {
+	SetADAveraging(count int) error
+}
+
 // ConfigSyncNotifier 配置同步通知能力接口（仅 EA2516T 驱动实现）
 type ConfigSyncNotifier interface {
 	OnConfigSynced(cb func(driver.DAQTHardwareConfig))

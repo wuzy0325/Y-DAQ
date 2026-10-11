@@ -165,8 +165,8 @@ func TestDataStorage_HandlePayload_WritesWideRow(t *testing.T) {
 	if len(records) != 2 {
 		t.Fatalf("expected 2 records (1 header + 1 wide row), got %d", len(records))
 	}
-	// 表头：Timestamp, DeviceID + 每通道一列（含单位）
-	expectedHeader := []string{"Timestamp", "DeviceID", "CH6 (kPa)", "CH7 (kPa)", "CH8 (kPa)"}
+	// 表头：Timestamp, 设备名称 + 每通道一列（含单位）
+	expectedHeader := []string{"Timestamp", "设备名称", "CH6 (kPa)", "CH7 (kPa)", "CH8 (kPa)"}
 	if len(records[0]) != len(expectedHeader) {
 		t.Fatalf("header fields = %d, want %d: %v", len(records[0]), len(expectedHeader), records[0])
 	}
@@ -183,7 +183,7 @@ func TestDataStorage_HandlePayload_WritesWideRow(t *testing.T) {
 		t.Errorf("row timestamp = %q, want format =\"yyyy-mm-dd hh:mm:ss.mmm\"", row[0])
 	}
 	if row[1] != "d1" {
-		t.Errorf("row DeviceID = %q", row[1])
+		t.Errorf("row 设备名称 = %q", row[1])
 	}
 	if row[2] != csvValueOne || row[3] != "2.000000" || row[4] != "3.000000" {
 		t.Errorf("row channel values = %v, want [1.000000 2.000000 3.000000]", row[2:])
@@ -229,6 +229,35 @@ func TestDataStorage_HandlePayload_MultipleFrames(t *testing.T) {
 	}
 	if records[2][2] != "11.000000" || records[2][3] != "21.000000" {
 		t.Errorf("frame2 values = %v", records[2][2:])
+	}
+}
+
+func TestDataStorage_HandlePayload_RespectsChannelPrecision(t *testing.T) {
+	// 录制落盘小数位应遵循每通道 precision，而非写死 6 位
+	dir := t.TempDir()
+	s := NewDataStorageService(dir)
+	if err := s.StartRecording(); err != nil {
+		t.Fatalf("StartRecording failed: %v", err)
+	}
+
+	if err := s.HandlePayload(types.DataPayload{
+		DeviceID:          "d1",
+		Timestamp:         1700000000000,
+		Channels:          []float64{1.23456, 2.5, 3.14159},
+		ChannelIndices:    []int{0, 1, 2},
+		ChannelUnits:      []string{"Pa", "Pa", "Pa"},
+		ChannelPrecisions: []int{3, 0, 2},
+	}); err != nil {
+		t.Fatalf("HandlePayload failed: %v", err)
+	}
+	s.StopRecording()
+
+	records := readSingleRecording(t, dir)
+	if len(records) != 2 {
+		t.Fatalf("expected 2 records (header + 1 row), got %d", len(records))
+	}
+	if records[1][2] != "1.235" || records[1][3] != "2" || records[1][4] != "3.14" {
+		t.Errorf("row values = %v, want [1.235 2 3.14]", records[1][2:])
 	}
 }
 
@@ -555,7 +584,7 @@ func TestDataStorage_HandlePayload_SeparateFilePerDevice(t *testing.T) {
 	}
 
 	// dev-a 文件只含自己的通道列
-	expectedA := []string{"Timestamp", "DeviceID", "CH1 (Pa)", "CH2 (Pa)"}
+	expectedA := []string{"Timestamp", "设备名称", "CH1 (Pa)", "CH2 (Pa)"}
 	if len(a[0]) != len(expectedA) {
 		t.Fatalf("dev-a header = %v, want %v", a[0], expectedA)
 	}
@@ -569,7 +598,7 @@ func TestDataStorage_HandlePayload_SeparateFilePerDevice(t *testing.T) {
 	}
 
 	// dev-b 文件独立表头：含自己的 CH6 (kPa)，不含 dev-a 的列
-	expectedB := []string{"Timestamp", "DeviceID", "CH6 (kPa)"}
+	expectedB := []string{"Timestamp", "设备名称", "CH6 (kPa)"}
 	if len(b[0]) != len(expectedB) {
 		t.Fatalf("dev-b header = %v, want %v", b[0], expectedB)
 	}
@@ -620,7 +649,7 @@ func TestDataStorage_HandlePayload_ExpandsColumnsWithinDevice(t *testing.T) {
 	if len(records) != 4 {
 		t.Fatalf("expected 4 records (header + 3 rows), got %d", len(records))
 	}
-	expectedHeader := []string{"Timestamp", "DeviceID", "CH1 (Pa)", "CH2 (Pa)", "CH6 (kPa)"}
+	expectedHeader := []string{"Timestamp", "设备名称", "CH1 (Pa)", "CH2 (Pa)", "CH6 (kPa)"}
 	for i, want := range expectedHeader {
 		if records[0][i] != want {
 			t.Errorf("header[%d] = %q, want %q", i, records[0][i], want)
@@ -770,5 +799,44 @@ func TestDataStorage_DeviceFileNaming(t *testing.T) {
 	}
 	if !strings.Contains(joined, "_d3.csv") {
 		t.Errorf("device without name should fall back to DeviceID, got:\n%s", joined)
+	}
+}
+
+// 数据列写入设备名（而非 DeviceID），解析不到时回退 DeviceID
+func TestDataStorage_DeviceNameInDataColumn(t *testing.T) {
+	dir := t.TempDir()
+	s := NewDataStorageService(dir)
+	s.SetDeviceNameResolver(func(id string) string {
+		if id == "d1" {
+			return "风洞1号"
+		}
+		return ""
+	})
+	if err := s.StartRecording(); err != nil {
+		t.Fatalf("StartRecording failed: %v", err)
+	}
+	for _, id := range []string{"d1", "d2"} {
+		if err := s.HandlePayload(types.DataPayload{
+			DeviceID:       id,
+			Timestamp:      1700000000000,
+			Channels:       []float64{1.0},
+			ChannelIndices: []int{0},
+			ChannelUnits:   []string{"Pa"},
+		}); err != nil {
+			t.Fatalf("HandlePayload %s failed: %v", id, err)
+		}
+	}
+	s.StopRecording()
+
+	byDevice := readRecordingsByDevice(t, dir)
+	named, ok := byDevice["风洞1号"]
+	if !ok {
+		t.Fatalf("data column should hold device name, got keys %v", byDevice)
+	}
+	if named[0][1] != "设备名称" {
+		t.Errorf("header[1] = %q, want 设备名称", named[0][1])
+	}
+	if _, ok := byDevice["d2"]; !ok {
+		t.Errorf("device without name should keep DeviceID in data column, got keys %v", byDevice)
 	}
 }

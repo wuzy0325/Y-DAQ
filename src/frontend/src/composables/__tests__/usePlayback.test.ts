@@ -260,6 +260,52 @@ describe('composables/usePlayback', () => {
       const opt = inst.playbackChartOption.value as any
       expect(opt.series[0].name).toBe('CH1')
     })
+
+    it('宽表格式：新录制表头「设备名称」→ 仍按宽表解析', () => {
+      const inst = setup()
+      const wideContent = [
+        'Timestamp,设备名称,CH1 (Pa),CH2 (Pa)',
+        '2024-01-01 10:00:00.000,风洞1号,100.5,200.3',
+        '2024-01-01 10:00:00.100,风洞1号,101.5,201.3',
+      ].join('\n')
+      inst.parseAndLoadCSV(wideContent)
+      expect(inst.playbackData.value).toHaveLength(4)
+      const r0 = inst.playbackData.value[0]
+      expect(r0.deviceId).toBe('风洞1号')
+      expect(r0.channelName).toBe('CH1')
+      expect(r0.value).toBeCloseTo(100.5)
+    })
+
+    it('宽表格式：首通道非 CHx（dpt）→ 仍按宽表解析，不误入长表', () => {
+      const inst = setup()
+      const wideContent = [
+        'Timestamp,设备名称,dpt (Pa),CH2 (Pa),CH3 (Pa)',
+        '"=""2024-01-01 10:00:00.000""",Device-1,-0.094,0.123,-0.032',
+        '"=""2024-01-01 10:00:00.100""",Device-1,-0.095,0.130,-0.030',
+      ].join('\n')
+      inst.parseAndLoadCSV(wideContent)
+      // 2 帧 × 3 通道 = 6 条
+      expect(inst.playbackData.value).toHaveLength(6)
+      const names = new Set(inst.playbackData.value.map(r => r.channelName))
+      expect(names.has('dpt')).toBe(true)
+      expect(names.has('CH2')).toBe(true)
+      expect(names.has('CH3')).toBe(true)
+      // dpt 应含单位剥离后的名字，且值来自正确列
+      const dpt0 = inst.playbackData.value.find(r => r.channelName === 'dpt')!
+      expect(dpt0.value).toBeCloseTo(-0.094)
+      expect(dpt0.unit).toBe('Pa')
+      expect(inst.playbackData.value.filter(r => r.channelName === 'CH2')[0].value).toBeCloseTo(0.123)
+    })
+
+    it('非录制格式（布点导出表头）→ 忽略，不污染图表', () => {
+      const inst = setup()
+      const traversal = [
+        '点号,X,Y,P1,P2,P3,P∞,T∞,总压Pt,静压Ps',
+        'P1,10.0,20.0,100.5,101.2,99.8,101325,293.15,101000,99000',
+      ].join('\n')
+      inst.parseAndLoadCSV(traversal)
+      expect(inst.playbackData.value).toHaveLength(0)
+    })
   })
 
   describe('playback 控制', () => {

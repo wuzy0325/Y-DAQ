@@ -49,13 +49,13 @@ func TestDeviceProfile_AtmEnabledRoundTrip(t *testing.T) {
 
 func TestDeviceType_Info_KnownTypes(t *testing.T) {
 	cases := []struct {
-		t                DeviceType
-		wantPressure     int
-		wantTotal        int
-		wantFrame        int
-		wantIsDAQ        bool
-		wantIsTemp       bool
-		wantAtmCap       bool
+		t            DeviceType
+		wantPressure int
+		wantTotal    int
+		wantFrame    int
+		wantIsDAQ    bool
+		wantIsTemp   bool
+		wantAtmCap   bool
 	}{
 		{DeviceTypeEA2508A, 8, 10, 45, true, false, true},
 		{DeviceTypeEA2516A, 16, 18, 77, true, false, true},
@@ -129,9 +129,9 @@ func TestDeviceType_Methods(t *testing.T) {
 // IsPressureDevice 含 SIMULATED（校零/偏移应用范围更宽）。
 func TestIsPressureDevice(t *testing.T) {
 	cases := []struct {
-		name  string
-		t     DeviceType
-		want  bool
+		name string
+		t    DeviceType
+		want bool
 	}{
 		{"EA2508A 是压力设备", DeviceTypeEA2508A, true},
 		{"EA2516A 是压力设备", DeviceTypeEA2516A, true},
@@ -144,6 +144,54 @@ func TestIsPressureDevice(t *testing.T) {
 				t.Errorf("%s IsPressureDevice = %v, want %v", tc.t, got, tc.want)
 			}
 		})
+	}
+}
+
+// TestEffectiveADAveragingCount AD 平均次数归一化：关闭固定 4，开启取合法值否则回退 8
+func TestEffectiveADAveragingCount(t *testing.T) {
+	cases := []struct {
+		name    string
+		enabled bool
+		count   int
+		want    int
+	}{
+		{"关闭固定4", false, 0, 4},
+		{"关闭忽略count", false, 64, 4},
+		{"开启取8", true, 8, 8},
+		{"开启取16", true, 16, 16},
+		{"开启取32", true, 32, 32},
+		{"开启取64", true, 64, 64},
+		{"开启非法回退8", true, 7, 8},
+		{"开启零值回退8", true, 0, 8},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := EffectiveADAveragingCount(tc.enabled, tc.count); got != tc.want {
+				t.Errorf("EffectiveADAveragingCount(%v, %d) = %d, want %d", tc.enabled, tc.count, got, tc.want)
+			}
+			p := DeviceProfile{ADAveragingEnabled: tc.enabled, ADAveragingCount: tc.count}
+			if got := p.EffectiveADAveragingCount(); got != tc.want {
+				t.Errorf("DeviceProfile.EffectiveADAveragingCount() = %d, want %d", got, tc.want)
+			}
+		})
+	}
+}
+
+// TestDeviceType_SupportsADAveraging 仅真实压力扫描阀 EA2508A/EA2516A 支持
+func TestDeviceType_SupportsADAveraging(t *testing.T) {
+	cases := []struct {
+		t    DeviceType
+		want bool
+	}{
+		{DeviceTypeEA2508A, true},
+		{DeviceTypeEA2516A, true},
+		{DeviceTypeEA2516T, false},
+		{DeviceTypeSimulated, false},
+	}
+	for _, tc := range cases {
+		if got := tc.t.SupportsADAveraging(); got != tc.want {
+			t.Errorf("%s SupportsADAveraging = %v, want %v", tc.t, got, tc.want)
+		}
 	}
 }
 

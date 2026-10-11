@@ -496,6 +496,7 @@ func (b *TCPDriverBase) BuildDataPayload(values []float64, deviceID string) type
 	enabledValues := []float64{}
 	enabledIndices := []int{}
 	enabledUnits := []string{}
+	enabledPrecisions := []int{}
 	for _, ch := range b.channels {
 		if !ch.Enabled || ch.Index < 0 || ch.Index >= len(values) {
 			continue
@@ -503,14 +504,16 @@ func (b *TCPDriverBase) BuildDataPayload(values []float64, deviceID string) type
 		enabledValues = append(enabledValues, values[ch.Index])
 		enabledIndices = append(enabledIndices, ch.Index)
 		enabledUnits = append(enabledUnits, ch.Unit)
+		enabledPrecisions = append(enabledPrecisions, ch.Precision)
 	}
 
 	return types.DataPayload{
-		DeviceID:       deviceID,
-		Timestamp:      time.Now().UnixMilli(),
-		Channels:       enabledValues,
-		ChannelIndices: enabledIndices,
-		ChannelUnits:   enabledUnits,
+		DeviceID:          deviceID,
+		Timestamp:         time.Now().UnixMilli(),
+		Channels:          enabledValues,
+		ChannelIndices:    enabledIndices,
+		ChannelUnits:      enabledUnits,
+		ChannelPrecisions: enabledPrecisions,
 	}
 }
 

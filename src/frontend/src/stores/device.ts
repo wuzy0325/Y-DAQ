@@ -28,6 +28,8 @@ interface DeviceProfile {
   periodMs: number
   autoConnect?: boolean
   atmEnabled?: boolean
+  adAveragingEnabled?: boolean
+  adAveragingCount?: number
   channels: ChannelConfig[]
 }
 
@@ -164,6 +166,11 @@ export const useDeviceStore = defineStore('device', () => {
   // 设置压力设备大气压/温度采集使能（EA2508A/EA2516A，持久化+下次采集生效）
   async function setAtmEnabled(id: string, enabled: boolean): Promise<string | null> {
     return withDeviceAction('setAtmEnabled', () => DeviceService.SetAtmEnabled(id, enabled), fetchProfiles)
+  }
+
+  // 设置压力扫描阀 AD 平均（EA2508A/EA2516A，持久化+已连接时立即下发硬件；关闭时固定 4）
+  async function setADAveraging(id: string, enabled: boolean, count: number): Promise<string | null> {
+    return withDeviceAction('setADAveraging', () => DeviceService.SetADAveraging(id, enabled, count), fetchProfiles)
   }
 
   async function setThermocoupleType(id: string, tcTypes: string): Promise<string | null> {
@@ -304,7 +311,7 @@ export const useDeviceStore = defineStore('device', () => {
     profiles, statuses, snapshots, latestData, connectingIds,
     isConnected, isAcquiring,
     getDeviceStatus, isDeviceConnecting,
-    fetchProfiles, fetchStatuses, updateProfile, setUnit, setAtmEnabled,
+    fetchProfiles, fetchStatuses, updateProfile, setUnit, setAtmEnabled, setADAveraging,
     setThermocoupleType, setSingleThermocoupleType,
     setTempSource, setTempThermocoupleType,
     zeroCalibrate, zeroCalibrateChannel, clearZeroOffset, clearAllZeroOffsets,

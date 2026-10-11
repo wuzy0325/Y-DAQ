@@ -21,7 +21,7 @@ var driverFactories = map[types.DeviceType]DriverFactory{
 }
 
 func newXYDAQDriver(profile types.DeviceProfile) DeviceDriver {
-	drv := driver.NewXYDAQDriver(profile.Host, profile.Port, profile.StreamID, profile.Channels, profile.Type, profile.AtmEnabled)
+	drv := driver.NewXYDAQDriver(profile.Host, profile.Port, profile.StreamID, profile.Channels, profile.Type, profile.AtmEnabled, profile.EffectiveADAveragingCount())
 	drv.SetDeviceID(profile.ID)
 	return drv
 }
@@ -52,11 +52,11 @@ type DeviceDriver interface {
 // DeviceManager 设备管理器
 type DeviceManager struct {
 	BaseProfileManager[types.DeviceProfile]
-	instances   map[string]DeviceDriver
-	dataSink    func(payload types.DataPayload)
-	latestData  map[string]types.DataPayload
-	runtimeStatus map[string]types.ConnectionStatus
-	onStatusChange func(statuses []types.DeviceStatus)
+	instances         map[string]DeviceDriver
+	dataSink          func(payload types.DataPayload)
+	latestData        map[string]types.DataPayload
+	runtimeStatus     map[string]types.ConnectionStatus
+	onStatusChange    func(statuses []types.DeviceStatus)
 	onTempCalibChange func(deviceID string)
 }
 
@@ -128,6 +128,12 @@ func (m *DeviceManager) UpdateProfile(profile types.DeviceProfile) error {
 		// 大气压/温度使能热更新（下次启动采集时下发 c 05 命令）
 		if cfg, ok := drv.(AtmChannelConfigurator); ok {
 			cfg.SetAtmEnabled(profile.AtmEnabled)
+		}
+		// AD 平均次数热更新（立即下发 w05 命令，best-effort）
+		if cfg, ok := drv.(ADAveragingConfigurator); ok {
+			if err := cfg.SetADAveraging(profile.EffectiveADAveragingCount()); err != nil {
+				slog.Warn("update profile: apply AD averaging failed", "device", profile.ID, "err", err)
+			}
 		}
 	}
 	m.saveProfilesWithLog("device")

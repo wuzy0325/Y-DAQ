@@ -34,7 +34,7 @@ func TestXYDAQDriver_FrameSpec(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			drv := NewXYDAQDriver("127.0.0.1", 9000, 1, nil, tc.device, tc.atm)
+			drv := NewXYDAQDriver("127.0.0.1", 9000, 1, nil, tc.device, tc.atm, types.ADAveragingOffCount)
 			ch, size := drv.frameSpec()
 			if ch != tc.wantCh || size != tc.wantSize {
 				t.Errorf("frameSpec() = (%d, %d), want (%d, %d)", ch, size, tc.wantCh, tc.wantSize)
@@ -45,7 +45,7 @@ func TestXYDAQDriver_FrameSpec(t *testing.T) {
 
 // TestXYDAQDriver_SetAtmEnabled 验证运行时切换后帧规格即时更新
 func TestXYDAQDriver_SetAtmEnabled(t *testing.T) {
-	drv := NewXYDAQDriver("127.0.0.1", 9000, 1, nil, types.DeviceTypeEA2516A, true)
+	drv := NewXYDAQDriver("127.0.0.1", 9000, 1, nil, types.DeviceTypeEA2516A, true, types.ADAveragingOffCount)
 	drv.SetAtmEnabled(false)
 	if ch, size := drv.frameSpec(); ch != 16 || size != types.DeviceTypeEA2516A.PressureOnlyFrameSize() {
 		t.Fatalf("after disable: frameSpec() = (%d, %d), want (16, 69)", ch, size)
@@ -78,7 +78,7 @@ func newTestXYChannels(total int) []types.ChannelConfig {
 // TestXYDAQDriver_HandleStreamFrame_AtmDisabled 大气压/温度关闭时只解析压力通道，
 // 大气压/大气温度通道不出现在数据载荷中
 func TestXYDAQDriver_HandleStreamFrame_AtmDisabled(t *testing.T) {
-	drv := NewXYDAQDriver("127.0.0.1", 9000, 1, newTestXYChannels(18), types.DeviceTypeEA2516A, false)
+	drv := NewXYDAQDriver("127.0.0.1", 9000, 1, newTestXYChannels(18), types.DeviceTypeEA2516A, false, types.ADAveragingOffCount)
 	var got types.DataPayload
 	drv.SetDataCallback(func(p types.DataPayload) { got = p })
 	drv.acquiring.Store(true)
@@ -102,7 +102,7 @@ func TestXYDAQDriver_HandleStreamFrame_AtmDisabled(t *testing.T) {
 // TestXYDAQDriver_HandleStreamFrame_AtmEnabled 大气压/温度开启时解析全部通道，
 // 且大气压/大气温度位于压力通道之后
 func TestXYDAQDriver_HandleStreamFrame_AtmEnabled(t *testing.T) {
-	drv := NewXYDAQDriver("127.0.0.1", 9000, 1, newTestXYChannels(18), types.DeviceTypeEA2516A, true)
+	drv := NewXYDAQDriver("127.0.0.1", 9000, 1, newTestXYChannels(18), types.DeviceTypeEA2516A, true, types.ADAveragingOffCount)
 	var got types.DataPayload
 	drv.SetDataCallback(func(p types.DataPayload) { got = p })
 	drv.acquiring.Store(true)
@@ -127,7 +127,7 @@ func TestXYDAQDriver_HandleStreamFrame_AtmEnabled(t *testing.T) {
 // atm 使能但设备未应用 0810 位图（返回仅压力帧）时回退解析，避免静默无数据；
 // 其他非预期帧长仍丢弃
 func TestXYDAQDriver_HandleStreamFrame_AtmEnabledAcceptsPressureOnlyFrame(t *testing.T) {
-	drv := NewXYDAQDriver("127.0.0.1", 9000, 1, newTestXYChannels(18), types.DeviceTypeEA2516A, true)
+	drv := NewXYDAQDriver("127.0.0.1", 9000, 1, newTestXYChannels(18), types.DeviceTypeEA2516A, true, types.ADAveragingOffCount)
 	var got types.DataPayload
 	drv.SetDataCallback(func(p types.DataPayload) { got = p })
 	drv.acquiring.Store(true)
@@ -150,7 +150,7 @@ func TestXYDAQDriver_HandleStreamFrame_AtmEnabledAcceptsPressureOnlyFrame(t *tes
 // TestXYDAQDriver_HandleStreamFrame_AtmDisabledShortFrame 大气压关闭时
 // 收到压力帧长度（69B）即可解析；不足则丢弃
 func TestXYDAQDriver_HandleStreamFrame_AtmDisabledShortFrame(t *testing.T) {
-	drv := NewXYDAQDriver("127.0.0.1", 9000, 1, newTestXYChannels(18), types.DeviceTypeEA2516A, true)
+	drv := NewXYDAQDriver("127.0.0.1", 9000, 1, newTestXYChannels(18), types.DeviceTypeEA2516A, true, types.ADAveragingOffCount)
 	drv.SetAtmEnabled(false)
 	var got types.DataPayload
 	drv.SetDataCallback(func(p types.DataPayload) { got = p })
@@ -173,7 +173,7 @@ func TestXYDAQDriver_HandleStreamFrame_AtmDisabledShortFrame(t *testing.T) {
 // 落在合法区间但不匹配设备帧长时，不按错误长度消费字节而是逐字节重对齐，
 // 后续真实帧仍能完整解析（回归：帧错位解析出 0.x 伪压力值）
 func TestXYDAQDriver_ProcessData_RealignsMisalignedBinaryFrame(t *testing.T) {
-	drv := NewXYDAQDriver("127.0.0.1", 9000, 1, newTestXYChannels(18), types.DeviceTypeEA2516A, true)
+	drv := NewXYDAQDriver("127.0.0.1", 9000, 1, newTestXYChannels(18), types.DeviceTypeEA2516A, true, types.ADAveragingOffCount)
 	var got []types.DataPayload
 	drv.SetDataCallback(func(p types.DataPayload) { got = append(got, p) })
 	drv.acquiring.Store(true)
@@ -211,7 +211,7 @@ func TestXYDAQDriver_ProcessData_RealignsMisalignedBinaryFrame(t *testing.T) {
 // TestXYDAQDriver_ProcessData_AsciiResponseStillRouted 验证加固后
 // ASCII 命令响应仍正常路由（二进制长度校验不得误伤 ASCII 帧）
 func TestXYDAQDriver_ProcessData_AsciiResponseStillRouted(t *testing.T) {
-	drv := NewXYDAQDriver("127.0.0.1", 9000, 1, newTestXYChannels(18), types.DeviceTypeEA2516A, true)
+	drv := NewXYDAQDriver("127.0.0.1", 9000, 1, newTestXYChannels(18), types.DeviceTypeEA2516A, true, types.ADAveragingOffCount)
 
 	wire := []byte{0, 3, 'A'}
 	drv.RecvBuffer = append(drv.RecvBuffer, wire...)
@@ -240,7 +240,7 @@ func TestXYDAQDriver_HandleStreamFrame_RejectsInvalidValues(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			drv := NewXYDAQDriver("127.0.0.1", 9000, 1, newTestXYChannels(16), types.DeviceTypeEA2516A, false)
+			drv := NewXYDAQDriver("127.0.0.1", 9000, 1, newTestXYChannels(16), types.DeviceTypeEA2516A, false, types.ADAveragingOffCount)
 			var got types.DataPayload
 			drv.SetDataCallback(func(p types.DataPayload) { got = p })
 			drv.acquiring.Store(true)

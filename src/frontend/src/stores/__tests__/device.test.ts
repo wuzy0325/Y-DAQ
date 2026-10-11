@@ -13,6 +13,7 @@ const { mockDeviceService, mockEventsOn, mockEventsOff } = vi.hoisted(() => ({
     UpdateDeviceProfile: vi.fn(),
     SetUnit: vi.fn(),
     SetAtmEnabled: vi.fn(),
+    SetADAveraging: vi.fn(),
     SetThermocoupleType: vi.fn(),
     SetSingleThermocoupleType: vi.fn(),
   },
@@ -196,6 +197,23 @@ describe('stores/device :: useDeviceStore（computed + getters）', () => {
     ] as any
     expect(store.getDeviceStatus('d2')?.status).toBe('Disconnected')
     expect(store.getDeviceStatus('unknown')).toBeUndefined()
+  })
+
+  it('setADAveraging：调用 Service（含次数）并刷新 profiles，失败返回错误消息', async () => {
+    const store = useDeviceStore()
+    mockDeviceService.SetADAveraging.mockResolvedValue(undefined)
+    mockDeviceService.GetDeviceProfiles.mockResolvedValue([
+      { id: 'd1', adAveragingEnabled: true, adAveragingCount: 16 },
+    ])
+
+    const err = await store.setADAveraging('d1', true, 16)
+    expect(err).toBeNull()
+    expect(mockDeviceService.SetADAveraging).toHaveBeenCalledWith('d1', true, 16)
+    expect(store.profiles).toEqual([{ id: 'd1', adAveragingEnabled: true, adAveragingCount: 16 }])
+
+    mockDeviceService.SetADAveraging.mockRejectedValue(new Error('采集进行中'))
+    const err2 = await store.setADAveraging('d1', false, 8)
+    expect(err2).toContain('采集进行中')
   })
 
   it('setAtmEnabled：调用 Service 并刷新 profiles，失败返回错误消息', async () => {

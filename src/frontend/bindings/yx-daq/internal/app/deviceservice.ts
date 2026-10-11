@@ -114,6 +114,13 @@ export function ScanDevices(): $CancellablePromise<types$0.DiscoveredDevice[]> {
 }
 
 /**
+ * SetADAveraging 设置压力扫描阀 AD 平均（EA2508A/EA2516A，持久化 + 已连接时立即下发硬件）
+ */
+export function SetADAveraging(id: string, enabled: boolean, count: number): $CancellablePromise<void> {
+    return $Call.ByID(3459949419, id, enabled, count);
+}
+
+/**
  * SetAtmEnabled 设置压力设备大气压/温度采集使能（EA2508A/EA2516A，持久化+下次采集生效）
  */
 export function SetAtmEnabled(id: string, enabled: boolean): $CancellablePromise<void> {

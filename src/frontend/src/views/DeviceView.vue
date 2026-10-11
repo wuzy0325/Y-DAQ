@@ -117,6 +117,30 @@
             <span v-else class="readonly-text">--</span>
           </template>
         </el-table-column>
+        <el-table-column label="AD平均" width="150" align="center">
+          <template #default="{ row }">
+            <div v-if="supportsADAveraging(row.type)" class="ad-avg-cell">
+              <el-switch
+                :model-value="adAvgEnabledOf(row)"
+                :loading="adAvgLoading[row.id]"
+                :disabled="!!configDisabledReason(row)"
+                size="small"
+                @change="(val: string | number | boolean) => handleSetAdAvgEnabled(row, !!val)"
+              />
+              <el-select
+                :model-value="adAvgCountOf(row)"
+                :disabled="!!configDisabledReason(row) || !adAvgEnabledOf(row)"
+                size="small"
+                class="ad-avg-select"
+                :placeholder="String(AD_AVERAGING_OFF_COUNT)"
+                @change="(val: number) => handleSetAdAvgCount(row, val)"
+              >
+                <el-option v-for="n in adAveragingCountOptions" :key="n" :label="String(n)" :value="n" />
+              </el-select>
+            </div>
+            <span v-else class="readonly-text">--</span>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="260" align="right">
           <template #default="{ row }">
             <el-button-group class="action-group">
@@ -226,6 +250,19 @@
           </div>
           <span class="hint-text">关闭后数据流仅含压力通道</span>
         </div>
+        <div v-if="supportsADAveraging(newDevice.type)" class="form-row atm-switch-row">
+          <div class="form-group auto-connect-row">
+            <span class="auto-connect-label">AD平均</span>
+            <el-switch v-model="newDevice.adAveragingEnabled" size="small" />
+          </div>
+          <div class="form-group">
+            <label class="group-label">平均次数</label>
+            <el-select v-model="newDevice.adAveragingCount" :disabled="!newDevice.adAveragingEnabled" size="small" style="width: 90px">
+              <el-option v-for="n in adAveragingCountOptions" :key="n" :label="String(n)" :value="n" />
+            </el-select>
+          </div>
+          <span class="hint-text">关闭时固定 {{ AD_AVERAGING_OFF_COUNT }} 次</span>
+        </div>
       </div>
 
       <template #footer>
@@ -300,6 +337,17 @@
           <div v-if="isAtmSupported(editProfileType)" class="form-group auto-connect-row">
             <label class="group-label">大气压/温度</label>
             <el-switch v-model="editForm.atmEnabled" size="small" />
+          </div>
+          <div v-if="supportsADAveraging(editProfileType)" class="form-group auto-connect-row">
+            <label class="group-label">AD平均</label>
+            <el-switch v-model="editForm.adAveragingEnabled" size="small" />
+          </div>
+          <div v-if="supportsADAveraging(editProfileType)" class="form-group">
+            <label class="group-label">平均次数</label>
+            <el-select v-model="editForm.adAveragingCount" :disabled="!editForm.adAveragingEnabled" size="small" style="width: 90px">
+              <el-option v-for="n in adAveragingCountOptions" :key="n" :label="String(n)" :value="n" />
+            </el-select>
+            <span class="hint-text">关闭固定 {{ AD_AVERAGING_OFF_COUNT }}</span>
           </div>
         </div>
       </div>
@@ -420,7 +468,7 @@ import { Edit, Link, CircleClose, Delete, VideoPlay, VideoPause } from '@element
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useDeviceStore } from '../stores/device'
 import type { ZeroCalibrateResult, ChannelConfig } from '../stores/device'
-import { getDeviceInfo, thermocoupleTypeOptions, getThermocoupleRange, tempSourceOptions, ea2508aTempThermocoupleOptions, TempSource } from '../api/enums'
+import { getDeviceInfo, thermocoupleTypeOptions, getThermocoupleRange, tempSourceOptions, ea2508aTempThermocoupleOptions, TempSource, supportsADAveraging, adAveragingCountOptions, AD_AVERAGING_OFF_COUNT } from '../api/enums'
 import type { DeviceTypeValue } from '../api/enums'
 import GlassCard from '../components/GlassCard.vue'
 import { DeviceService, DataService } from '@bindings/yx-daq/internal/app'
@@ -623,6 +671,50 @@ async function handleSetAtmEnabled(row: { id: string }, enabled: boolean) {
   }
 }
 
+// ==================== AD 平均 ====================
+// 压力扫描阀 AD 平均：关闭时固定最低 4 次，开启时可设 8/16/32/64。
+// 已连接设备立即下发 w05 命令；未连接仅持久化（连接后由驱动下发）。
+const adAvgLoading = reactive<Record<string, boolean>>({})
+
+function adAvgProfileOf(row: { id: string }) {
+  return deviceStore.profiles.find(p => p.id === row.id)
+}
+
+function adAvgEnabledOf(row: { id: string }): boolean {
+  return adAvgProfileOf(row)?.adAveragingEnabled === true
+}
+
+function adAvgCountOf(row: { id: string }): number {
+  const c = adAvgProfileOf(row)?.adAveragingCount
+  return c !== undefined && adAveragingCountOptions.includes(c) ? c : adAveragingCountOptions[0]
+}
+
+async function applyAdAvg(row: { id: string }, enabled: boolean, count: number) {
+  adAvgLoading[row.id] = true
+  try {
+    const err = await deviceStore.setADAveraging(row.id, enabled, count)
+    if (err) {
+      ElMessage.error(`设置AD平均失败: ${err}`)
+    } else {
+      ElMessage.success(
+        enabled
+          ? `AD平均已设为 ${count} 次`
+          : `AD平均已关闭（固定 ${AD_AVERAGING_OFF_COUNT} 次）`,
+      )
+    }
+  } finally {
+    adAvgLoading[row.id] = false
+  }
+}
+
+function handleSetAdAvgEnabled(row: { id: string }, enabled: boolean) {
+  applyAdAvg(row, enabled, adAvgCountOf(row))
+}
+
+function handleSetAdAvgCount(row: { id: string }, count: number) {
+  applyAdAvg(row, true, count)
+}
+
 // 连接状态映射
 function statusClass(status: string): string {
   switch (status) {
@@ -669,6 +761,8 @@ const newDevice = ref({
   precision: 3,
   autoConnect: true,
   atmEnabled: true,
+  adAveragingEnabled: false,
+  adAveragingCount: 8,
 })
 
 function openAddDialog() {
@@ -744,6 +838,9 @@ async function addDevice() {
       autoConnect: newDevice.value.autoConnect,
       // 大气压/温度使能仅对真实压力设备有效（EA2508A/EA2516A），其余保持默认启用
       atmEnabled: isAtmSupported(newDevice.value.type) ? newDevice.value.atmEnabled : true,
+      // AD平均仅对真实压力扫描阀有效（EA2508A/EA2516A）
+      adAveragingEnabled: supportsADAveraging(newDevice.value.type as DeviceTypeValue) ? newDevice.value.adAveragingEnabled : false,
+      adAveragingCount: newDevice.value.adAveragingCount,
       channels,
     })
 
@@ -788,6 +885,8 @@ const editForm = ref({
   precision: 3,
   autoConnect: true,
   atmEnabled: true,
+  adAveragingEnabled: false,
+  adAveragingCount: 8,
   thermocoupleType: 'K',
 })
 
@@ -847,6 +946,8 @@ function openEditDialog(id: string) {
     precision: ch0Precision,
     autoConnect: (profile as any).autoConnect !== false,
     atmEnabled: profileAtmEnabled(profile),
+    adAveragingEnabled: profile.adAveragingEnabled === true,
+    adAveragingCount: profile.adAveragingCount && adAveragingCountOptions.includes(profile.adAveragingCount) ? profile.adAveragingCount : 8,
     thermocoupleType: ch0TcType,
   }
   editProfileType.value = profile.type
@@ -1039,6 +1140,9 @@ async function saveEdit() {
       autoConnect: formSnapshot.autoConnect,
       // 大气压/温度使能仅对真实压力设备有效，其余设备保持默认启用
       atmEnabled: isAtmSupported(editProfileType.value) ? formSnapshot.atmEnabled : true,
+      // AD平均仅对真实压力扫描阀有效（EA2508A/EA2516A）
+      adAveragingEnabled: supportsADAveraging(editProfileType.value as DeviceTypeValue) ? formSnapshot.adAveragingEnabled : false,
+      adAveragingCount: formSnapshot.adAveragingCount,
       channels: updatedChannels,
     })
 
@@ -1514,6 +1618,17 @@ async function removeDevice(id: string) {
 }
 .temp-tc-select {
   width: 90px;
+}
+
+// AD 平均单元格：开关 + 次数下拉
+.ad-avg-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.ad-avg-select {
+  width: 64px;
 }
 
 // 表格内输入框样式统一

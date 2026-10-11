@@ -94,6 +94,13 @@ func (t DeviceType) IsDAQDevice() bool {
 	return t.Info().IsRealDAQ
 }
 
+// SupportsADAveraging 是否支持 AD 平均次数配置（仅真实压力扫描阀 EA2508A/EA2516A，
+// 排除温度设备与模拟设备）。与 SupportsAtm 的设备集合一致但语义独立。
+func (t DeviceType) SupportsADAveraging() bool {
+	info := t.Info()
+	return info.IsRealDAQ && !info.IsTemperature
+}
+
 // IsTemperatureDevice 是否为温度采集设备（热电偶）
 func (t DeviceType) IsTemperatureDevice() bool {
 	return t.Info().IsTemperature
@@ -205,16 +212,50 @@ type ChannelConfig struct {
 
 // DeviceProfile 设备完整配置
 type DeviceProfile struct {
-	ID          string          `json:"id"`
-	Name        string          `json:"name"`
-	Type        DeviceType      `json:"type"`
-	Host        string          `json:"host"`
-	Port        int             `json:"port"`
-	StreamID    int             `json:"streamId"`
-	PeriodMs    int             `json:"periodMs"`    // 采集周期(毫秒)，0表示使用默认50ms
-	AutoConnect bool            `json:"autoConnect"` // 是否自动连接
-	AtmEnabled  bool            `json:"atmEnabled"`  // 是否采集大气压/大气温度（c 05 位图 0x0800，仅 EA2508A/EA2516A；默认 true）
-	Channels    []ChannelConfig `json:"channels"`
+	ID          string     `json:"id"`
+	Name        string     `json:"name"`
+	Type        DeviceType `json:"type"`
+	Host        string     `json:"host"`
+	Port        int        `json:"port"`
+	StreamID    int        `json:"streamId"`
+	PeriodMs    int        `json:"periodMs"`    // 采集周期(毫秒)，0表示使用默认50ms
+	AutoConnect bool       `json:"autoConnect"` // 是否自动连接
+	AtmEnabled  bool       `json:"atmEnabled"`  // 是否采集大气压/大气温度（c 05 位图 0x0800，仅 EA2508A/EA2516A；默认 true）
+	// ADAveragingEnabled AD 平均开关（仅 EA2508A/EA2516A；关闭时固定为最低值 4 次）
+	ADAveragingEnabled bool `json:"adAveragingEnabled,omitempty"`
+	// ADAveragingCount AD 平均次数（开启时有效，取值 8/16/32/64）
+	ADAveragingCount int             `json:"adAveragingCount,omitempty"`
+	Channels         []ChannelConfig `json:"channels"`
+}
+
+// AD 平均次数约定：
+//   - 关闭（不平均）时固定为最低值 4 次
+//   - 开启时可选 8/16/32/64 次
+const (
+	// ADAveragingOffCount AD 平均关闭时的固定次数（最低值）
+	ADAveragingOffCount = 4
+)
+
+// ADAveragingAllowedCounts AD 平均开启时允许选用的次数（升序）
+var ADAveragingAllowedCounts = []int{8, 16, 32, 64}
+
+// EffectiveADAveragingCount 返回下发给硬件的实际 AD 平均次数：
+// 关闭时固定 4；开启时取合法值（8/16/32/64），非法值回退到首个合法值 8。
+func EffectiveADAveragingCount(enabled bool, count int) int {
+	if !enabled {
+		return ADAveragingOffCount
+	}
+	for _, c := range ADAveragingAllowedCounts {
+		if c == count {
+			return c
+		}
+	}
+	return ADAveragingAllowedCounts[0]
+}
+
+// EffectiveADAveragingCount 便捷方法，等价于 EffectiveADAveragingCount(p.ADAveragingEnabled, p.ADAveragingCount)
+func (p *DeviceProfile) EffectiveADAveragingCount() int {
+	return EffectiveADAveragingCount(p.ADAveragingEnabled, p.ADAveragingCount)
 }
 
 // UnmarshalJSON 自定义反序列化：旧配置文件无 atmEnabled 字段时默认启用，
@@ -246,11 +287,12 @@ type DeviceInstance struct {
 
 // DataPayload 数据帧
 type DataPayload struct {
-	DeviceID       string    `json:"deviceId"`
-	Timestamp      int64     `json:"timestamp"`
-	Channels       []float64 `json:"channels"`
-	ChannelIndices []int     `json:"channelIndices"`
-	ChannelUnits   []string  `json:"channelUnits"`
+	DeviceID          string    `json:"deviceId"`
+	Timestamp         int64     `json:"timestamp"`
+	Channels          []float64 `json:"channels"`
+	ChannelIndices    []int     `json:"channelIndices"`
+	ChannelUnits      []string  `json:"channelUnits"`
+	ChannelPrecisions []int     `json:"channelPrecisions"` // 与 Channels 位置对齐的小数位（录制落盘格式用）
 }
 
 // DiscoveredDevice UDP扫描发现的设备

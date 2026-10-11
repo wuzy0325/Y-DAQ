@@ -11,10 +11,13 @@ export interface PlaybackRow {
 
 const CHANNEL_COLORS = ['#b829ff', '#00f5ff', '#00ff88', '#ffaa00', '#ff3366', '#00aaff', '#d966ff', '#66faff']
 
-// parseChannelHeader 解析宽表表头列，如 "CH6 (kPa)" → { name: 'CH6', unit: 'kPa' }
+// parseChannelHeader 解析宽表表头列，如 "CH6 (kPa)" → { name: 'CH6', unit: 'kPa' }，
+// 非 CHx 命名的通道（如 "dpt (Pa)"）同样剥离单位，避免单位混入曲线名
 function parseChannelHeader(raw: string): { name: string; unit: string } {
-  const m = raw.match(/^CH(\d+)(?:\s*\(([^)]*)\))?$/)
-  if (m) return { name: `CH${m[1]}`, unit: m[2]?.trim() ?? '' }
+  const ch = raw.match(/^CH(\d+)(?:\s*\(([^)]*)\))?$/)
+  if (ch) return { name: `CH${ch[1]}`, unit: ch[2]?.trim() ?? '' }
+  const named = raw.match(/^(.*?)\s*\(([^)]*)\)$/)
+  if (named && named[1].trim()) return { name: named[1].trim(), unit: named[2].trim() }
   return { name: raw, unit: '' }
 }
 
@@ -57,8 +60,12 @@ export function usePlayback() {
     if (lines.length < 2) return
 
     const headerCols = lines[0].split(',')
-    const isWide = headerCols.length >= 2 && headerCols[0].trim() === 'Timestamp' && headerCols[1].trim() === 'DeviceID'
-      && headerCols.length > 2 && /^CH\d+/.test(headerCols[2].trim())
+    // 按表头 schema 判别格式（不依赖第二列叫 DeviceID/设备名称，也不要求首通道以 CH 开头，
+    // 如 dpt）。长表特征：Timestamp 首列 + 第三列 ChannelIndex；其余 Timestamp 首列
+    // 且列数 > 2 的按宽表处理
+    const isTimestampFirst = headerCols[0]?.trim() === 'Timestamp'
+    const isLongSchema = isTimestampFirst && headerCols[2]?.trim() === 'ChannelIndex'
+    const isWide = isTimestampFirst && !isLongSchema && headerCols.length > 2
 
     const dataRows: PlaybackRow[] = []
     // 解析时增量判定多设备：避免对超大文件再分配一份等长的 deviceId 数组（Set(map())）
@@ -94,7 +101,7 @@ export function usePlayback() {
           })
         }
       }
-    } else {
+    } else if (isLongSchema) {
       // 旧版长表格式：Timestamp, DeviceID, ChannelIndex, ChannelName, Value, Unit
       for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].split(',')
@@ -111,6 +118,10 @@ export function usePlayback() {
           })
         }
       }
+    } else {
+      // 非录制文件格式（既非宽表也非长表，如三孔/五孔布点导出、校准备份等）：忽略，
+      // 避免把列位置错当通道名/value 解析出一堆无意义曲线
+      return
     }
 
     if (dataRows.length > 0) {
@@ -225,6 +236,7 @@ export function usePlayback() {
         textStyle: { color: '#fff' },
       },
       legend: {
+        type: 'scroll',
         top: 0,
         textStyle: { color: 'rgba(255,255,255,0.6)', fontSize: 10 },
       },

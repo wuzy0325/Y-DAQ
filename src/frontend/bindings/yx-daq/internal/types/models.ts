@@ -523,6 +523,11 @@ export class DataPayload {
     "channelIndices": number[];
     "channelUnits": string[];
 
+    /**
+     * 与 Channels 位置对齐的小数位（录制落盘格式用）
+     */
+    "channelPrecisions": number[];
+
     /** Creates a new DataPayload instance. */
     constructor($$source: Partial<DataPayload> = {}) {
         if (!("deviceId" in $$source)) {
@@ -540,6 +545,9 @@ export class DataPayload {
         if (!("channelUnits" in $$source)) {
             this["channelUnits"] = [];
         }
+        if (!("channelPrecisions" in $$source)) {
+            this["channelPrecisions"] = [];
+        }
 
         Object.assign(this, $$source);
     }
@@ -551,6 +559,7 @@ export class DataPayload {
         const $$createField2_0 = $$createType12;
         const $$createField3_0 = $$createType13;
         const $$createField4_0 = $$createType14;
+        const $$createField5_0 = $$createType13;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("channels" in $$parsedSource) {
             $$parsedSource["channels"] = $$createField2_0($$parsedSource["channels"]);
@@ -560,6 +569,9 @@ export class DataPayload {
         }
         if ("channelUnits" in $$parsedSource) {
             $$parsedSource["channelUnits"] = $$createField4_0($$parsedSource["channelUnits"]);
+        }
+        if ("channelPrecisions" in $$parsedSource) {
+            $$parsedSource["channelPrecisions"] = $$createField5_0($$parsedSource["channelPrecisions"]);
         }
         return new DataPayload($$parsedSource as Partial<DataPayload>);
     }
@@ -590,6 +602,16 @@ export class DeviceProfile {
      * 是否采集大气压/大气温度（c 05 位图 0x0800，仅 EA2508A/EA2516A；默认 true）
      */
     "atmEnabled": boolean;
+
+    /**
+     * ADAveragingEnabled AD 平均开关（仅 EA2508A/EA2516A；关闭时固定为最低值 4 次）
+     */
+    "adAveragingEnabled"?: boolean;
+
+    /**
+     * ADAveragingCount AD 平均次数（开启时有效，取值 8/16/32/64）
+     */
+    "adAveragingCount"?: number;
     "channels": ChannelConfig[];
 
     /** Creates a new DeviceProfile instance. */
@@ -632,10 +654,10 @@ export class DeviceProfile {
      * Creates a new DeviceProfile instance from a string or object.
      */
     static createFrom($$source: any = {}): DeviceProfile {
-        const $$createField9_0 = $$createType16;
+        const $$createField11_0 = $$createType16;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("channels" in $$parsedSource) {
-            $$parsedSource["channels"] = $$createField9_0($$parsedSource["channels"]);
+            $$parsedSource["channels"] = $$createField11_0($$parsedSource["channels"]);
         }
         return new DeviceProfile($$parsedSource as Partial<DeviceProfile>);
     }

@@ -135,17 +135,20 @@ func (s *SimulatedDevice) simulateData(periodMs int) {
 			}
 
 			units := make([]string, len(indices))
+			precisions := make([]int, len(indices))
 			for j, idx := range indices {
 				if idx < len(s.channels) {
 					units[j] = s.channels[idx].Unit
+					precisions[j] = s.channels[idx].Precision
 				}
 			}
 			payload := types.DataPayload{
-				DeviceID:       "simulated",
-				Timestamp:      time.Now().UnixMilli(),
-				Channels:       values,
-				ChannelIndices: indices,
-				ChannelUnits:   units,
+				DeviceID:          "simulated",
+				Timestamp:         time.Now().UnixMilli(),
+				Channels:          values,
+				ChannelIndices:    indices,
+				ChannelUnits:      units,
+				ChannelPrecisions: precisions,
 			}
 
 			if s.onData != nil {

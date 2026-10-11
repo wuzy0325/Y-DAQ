@@ -58,6 +58,18 @@ export function getDeviceInfo(type: DeviceTypeValue): DeviceTypeInfo {
   return deviceTypeRegistry[type] || deviceTypeRegistry[DeviceType.EA2516A]
 }
 
+// 是否支持 AD 平均次数配置（仅真实压力扫描阀 EA2508A/EA2516A，排除温度设备与模拟设备）
+export function supportsADAveraging(type: string): boolean {
+  const info = getDeviceInfo(type as DeviceTypeValue)
+  return info.isRealDAQ && !info.isTemperature
+}
+
+// AD 平均关闭（不平均）时固定的最低次数
+export const AD_AVERAGING_OFF_COUNT = 4
+
+// AD 平均开启时可选次数（与后端 types.ADAveragingAllowedCounts 对齐）
+export const adAveragingCountOptions: number[] = [8, 16, 32, 64]
+
 // 设备类型对应的总通道数（压力 + 大气压 + 大气温度）
 export function getTotalChannelCount(type: DeviceTypeValue): number {
   return getDeviceInfo(type).totalChCount
