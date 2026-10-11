@@ -19,6 +19,7 @@ type mockDeviceDriver struct {
 	onData     types.DataCallback
 	unit       string
 	atmEnabled atomic.Bool
+	adAvgCount atomic.Int32
 	connectErr error
 }
 
@@ -35,11 +36,11 @@ func (m *mockDeviceDriver) Disconnect() {
 	m.acquiring.Store(false)
 }
 
-func (m *mockDeviceDriver) IsConnected() bool    { return m.connected.Load() }
-func (m *mockDeviceDriver) IsAcquiring() bool     { return m.acquiring.Load() }
-func (m *mockDeviceDriver) SetDataCallback(cb types.DataCallback) { m.onData = cb }
+func (m *mockDeviceDriver) IsConnected() bool                       { return m.connected.Load() }
+func (m *mockDeviceDriver) IsAcquiring() bool                       { return m.acquiring.Load() }
+func (m *mockDeviceDriver) SetDataCallback(cb types.DataCallback)   { m.onData = cb }
 func (m *mockDeviceDriver) UpdateChannels(ch []types.ChannelConfig) { m.channels = ch }
-func (m *mockDeviceDriver) GetChannels() []types.ChannelConfig { return m.channels }
+func (m *mockDeviceDriver) GetChannels() []types.ChannelConfig      { return m.channels }
 
 func (m *mockDeviceDriver) StartAcquisition(_ int) error {
 	if !m.connected.Load() {
@@ -61,6 +62,11 @@ func (m *mockDeviceDriver) SetUnit(unit string) error {
 
 func (m *mockDeviceDriver) SetAtmEnabled(enabled bool) {
 	m.atmEnabled.Store(enabled)
+}
+
+func (m *mockDeviceDriver) SetADAveraging(count int) error {
+	m.adAvgCount.Store(int32(count))
+	return nil
 }
 
 var errNotConnected = errors.New("device not connected")
@@ -309,6 +315,60 @@ func TestDeviceManager_SetAtmEnabled_AcquiringRejected(t *testing.T) {
 	injectMock(m, "dev-1", mock)
 
 	if err := m.SetAtmEnabled("dev-1", false); err == nil {
+		t.Fatal("expected error while acquiring")
+	}
+}
+
+// ==================== AD 平均 ====================
+
+func TestDeviceManager_SetADAveraging(t *testing.T) {
+	m := newTestManager()
+	m.AddProfile(newAtmCapableProfile("dev-1", types.DeviceTypeEA2516A))
+
+	mock := &mockDeviceDriver{}
+	mock.connected.Store(true)
+	injectMock(m, "dev-1", mock)
+
+	if err := m.SetADAveraging("dev-1", true, 16); err != nil {
+		t.Fatalf("SetADAveraging failed: %v", err)
+	}
+	got := m.GetProfileByID("dev-1")
+	if got == nil || !got.ADAveragingEnabled || got.ADAveragingCount != 16 {
+		t.Fatalf("profile not updated: %+v", got)
+	}
+	if mock.adAvgCount.Load() != 16 {
+		t.Errorf("driver adAvgCount = %d, want 16", mock.adAvgCount.Load())
+	}
+
+	// 关闭 → 下发固定最低值 4
+	if err := m.SetADAveraging("dev-1", false, 8); err != nil {
+		t.Fatalf("SetADAveraging(off) failed: %v", err)
+	}
+	if mock.adAvgCount.Load() != types.ADAveragingOffCount {
+		t.Errorf("driver adAvgCount = %d, want %d (off)", mock.adAvgCount.Load(), types.ADAveragingOffCount)
+	}
+}
+
+func TestDeviceManager_SetADAveraging_UnsupportedType(t *testing.T) {
+	m := newTestManager()
+	m.AddProfile(newSimProfile("dev-1")) // SIMULATED 不支持
+	if err := m.SetADAveraging("dev-1", true, 8); err == nil {
+		t.Fatal("expected error for unsupported device type")
+	}
+}
+
+func TestDeviceManager_SetADAveraging_AcquiringRejected(t *testing.T) {
+	m := newTestManager()
+	p := newSimProfile("dev-1")
+	p.Type = types.DeviceTypeEA2516A
+	m.AddProfile(p)
+
+	mock := &mockDeviceDriver{}
+	mock.connected.Store(true)
+	mock.acquiring.Store(true)
+	injectMock(m, "dev-1", mock)
+
+	if err := m.SetADAveraging("dev-1", true, 8); err == nil {
 		t.Fatal("expected error while acquiring")
 	}
 }
@@ -626,4 +686,3 @@ func TestDeviceManager_UpdateProfile_NotConnected(t *testing.T) {
 		t.Errorf("profile not updated: name=%q host=%q", p.Name, p.Host)
 	}
 }
-

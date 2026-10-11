@@ -776,6 +776,8 @@ function openAddDialog() {
     precision: 3,
     autoConnect: true,
     atmEnabled: true,
+    adAveragingEnabled: false,
+    adAveragingCount: 8,
   }
   showAddDialog.value = true
 }
