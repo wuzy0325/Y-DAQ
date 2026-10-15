@@ -60,6 +60,7 @@ vi.mock('../../utils/csv', () => ({
 }))
 
 import { useFiveHoleTestStore, MAX_PROBES } from '../fiveHoleTest'
+import { FIVE_HOLE_DATA_MODE } from '../fiveHoleTest/types'
 import { FiveHoleChannelRole, TraversalPattern, AxisName } from '../../api/enums'
 
 describe('stores/fiveHoleTest', () => {
@@ -1103,6 +1104,41 @@ describe('stores/fiveHoleTest', () => {
       expect(store.config.sharedMotion).toBe(true)
       expect(store.config.sharedMotionX).toEqual({ controllerId: 'mc-s', axis: 'Z' })
       expect(store.config.sharedMotionY).toEqual({ controllerId: 'mc-s', axis: 'U' })
+    })
+  })
+
+  // ==================== 数据保存模式 ====================
+  describe('数据保存模式', () => {
+    it('默认配置：dataMode=average（平均）', () => {
+      const store = useFiveHoleTestStore()
+      expect(store.config.dataMode).toBe(FIVE_HOLE_DATA_MODE.AVERAGE)
+    })
+
+    it('loadConfig 旧配置缺 dataMode 字段 → 迁移补全默认 average', async () => {
+      mockFiveHoleService.LoadFiveHoleConfig.mockResolvedValue({
+        name: 'legacy',
+        probes: [
+          { probeId: 'probe1', enabled: true, probeChannels: [], motionX: { controllerId: '', axis: 'X' }, motionY: { controllerId: '', axis: 'Y' }, calibFiles: [] },
+        ],
+        layout: { pattern: 'rectangle' },
+      })
+      const store = useFiveHoleTestStore()
+      await store.loadConfig()
+      expect(store.config.dataMode).toBe(FIVE_HOLE_DATA_MODE.AVERAGE)
+    })
+
+    it('loadConfig 保留已保存的 raw 模式', async () => {
+      mockFiveHoleService.LoadFiveHoleConfig.mockResolvedValue({
+        name: 'raw-mode',
+        dataMode: FIVE_HOLE_DATA_MODE.RAW,
+        probes: [
+          { probeId: 'probe1', enabled: true, probeChannels: [], motionX: { controllerId: '', axis: 'X' }, motionY: { controllerId: '', axis: 'Y' }, calibFiles: [] },
+        ],
+        layout: { pattern: 'rectangle' },
+      })
+      const store = useFiveHoleTestStore()
+      await store.loadConfig()
+      expect(store.config.dataMode).toBe(FIVE_HOLE_DATA_MODE.RAW)
     })
   })
 

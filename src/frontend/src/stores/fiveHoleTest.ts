@@ -12,6 +12,7 @@ import { downloadCSV } from '../utils/csv'
 import { createWailsEventListener } from '../utils/wailsEvents'
 import {
   ATM_SOURCE_MODE,
+  FIVE_HOLE_DATA_MODE,
 } from './fiveHoleTest/types'
 import type {
   FiveHoleTraversalConfig,
@@ -100,6 +101,7 @@ function defaultConfig(): FiveHoleTraversalConfig {
     samplesPerPoint: 10,
     sampleIntervalMs: 50,
     motionTimeoutMs: 30000,
+    dataMode: FIVE_HOLE_DATA_MODE.AVERAGE,
     sharedMotion: false,
     sharedMotionX: { controllerId: '', axis: AxisName.X },
     sharedMotionY: { controllerId: '', axis: AxisName.Y },
@@ -630,6 +632,8 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
     if (cfg.sharedMotion === undefined) cfg.sharedMotion = false
     if (!cfg.sharedMotionX) cfg.sharedMotionX = { controllerId: '', axis: AxisName.X }
     if (!cfg.sharedMotionY) cfg.sharedMotionY = { controllerId: '', axis: AxisName.Y }
+    // 旧配置无 dataMode：默认平均模式
+    if (cfg.dataMode !== FIVE_HOLE_DATA_MODE.RAW) cfg.dataMode = FIVE_HOLE_DATA_MODE.AVERAGE
     for (const probe of cfg.probes) {
       if (probe.motionAlpha) {
         probe.motionX = probe.motionAlpha

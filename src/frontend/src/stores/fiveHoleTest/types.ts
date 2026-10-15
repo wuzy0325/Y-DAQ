@@ -162,6 +162,16 @@ export interface FiveHoleProbeConfig {
   tAtmSource: FiveHoleAtmSource
 }
 
+// ==================== 数据保存模式 ====================
+
+// 每个点位多次采样后的保存方式
+export const FIVE_HOLE_DATA_MODE = {
+  AVERAGE: 'average', // 默认：3σ 滤波平均后每点位保存一个数据点
+  RAW: 'raw',         // 保存每个原始采样帧及其插值结果
+} as const
+
+export type FiveHoleDataMode = typeof FIVE_HOLE_DATA_MODE[keyof typeof FIVE_HOLE_DATA_MODE]
+
 // ==================== 全局配置 ====================
 
 export interface FiveHoleTraversalConfig {
@@ -171,6 +181,8 @@ export interface FiveHoleTraversalConfig {
   samplesPerPoint: number
   sampleIntervalMs: number
   motionTimeoutMs: number
+  // 数据保存模式：默认 average（3σ 滤波平均）；raw 保存每个原始采样帧及其插值结果
+  dataMode: FiveHoleDataMode
   // 共用轴位：true 时所有启用探针统一使用 sharedMotionX/Y（多探针装在同一位移机构场景），
   // 各探针独立 motionX/motionY 被忽略（配置保留，切回独立模式时仍可用）
   sharedMotion: boolean

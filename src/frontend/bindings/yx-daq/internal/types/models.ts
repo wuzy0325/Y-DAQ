@@ -1598,6 +1598,12 @@ export class FiveHoleTraversalConfig {
     "motionTimeoutMs": number;
 
     /**
+     * 数据保存模式：空/"average" 为默认（3σ 滤波平均后每点位一个数据点）；
+     * "raw" 时保存每个原始采样帧及其插值结果（每个点位多个数据点）
+     */
+    "dataMode"?: string;
+
+    /**
      * 共用轴位：true 时所有启用探针统一使用 SharedMotionX/Y（多探针装在同一位移机构场景），
      * 各探针独立 MotionX/MotionY 被忽略（配置保留，切回独立模式时仍可用）
      */
@@ -1659,21 +1665,21 @@ export class FiveHoleTraversalConfig {
      */
     static createFrom($$source: any = {}): FiveHoleTraversalConfig {
         const $$createField1_0 = $$createType29;
-        const $$createField7_0 = $$createType22;
         const $$createField8_0 = $$createType22;
-        const $$createField9_0 = $$createType31;
+        const $$createField9_0 = $$createType22;
+        const $$createField10_0 = $$createType31;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("layout" in $$parsedSource) {
             $$parsedSource["layout"] = $$createField1_0($$parsedSource["layout"]);
         }
         if ("sharedMotionX" in $$parsedSource) {
-            $$parsedSource["sharedMotionX"] = $$createField7_0($$parsedSource["sharedMotionX"]);
+            $$parsedSource["sharedMotionX"] = $$createField8_0($$parsedSource["sharedMotionX"]);
         }
         if ("sharedMotionY" in $$parsedSource) {
-            $$parsedSource["sharedMotionY"] = $$createField8_0($$parsedSource["sharedMotionY"]);
+            $$parsedSource["sharedMotionY"] = $$createField9_0($$parsedSource["sharedMotionY"]);
         }
         if ("probes" in $$parsedSource) {
-            $$parsedSource["probes"] = $$createField9_0($$parsedSource["probes"]);
+            $$parsedSource["probes"] = $$createField10_0($$parsedSource["probes"]);
         }
         return new FiveHoleTraversalConfig($$parsedSource as Partial<FiveHoleTraversalConfig>);
     }

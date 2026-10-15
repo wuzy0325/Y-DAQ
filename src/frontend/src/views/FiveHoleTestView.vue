@@ -368,6 +368,17 @@
                 <el-input-number v-model="store.config.motionTimeoutMs" :min="1000" :step="1000" size="small" style="width:100px" />
                 <span class="unit-label">ms</span>
               </div>
+              <div class="form-group">
+                <label class="group-label">数据模式</label>
+                <el-switch
+                  v-model="store.config.dataMode"
+                  :active-value="FIVE_HOLE_DATA_MODE.RAW"
+                  :inactive-value="FIVE_HOLE_DATA_MODE.AVERAGE"
+                  active-text="原始数据"
+                  inactive-text="平均"
+                  :disabled="store.isRunning"
+                />
+              </div>
             </div>
             <div class="form-row" style="margin-top: 8px">
               <div class="form-group" style="flex: 1">
@@ -612,7 +623,7 @@ import type {
   FiveHoleAtmSource,
   FiveHoleProbeConfig,
 } from '../stores/fiveHoleTest/types'
-import { ATM_SOURCE_MODE } from '../stores/fiveHoleTest/types'
+import { ATM_SOURCE_MODE, FIVE_HOLE_DATA_MODE } from '../stores/fiveHoleTest/types'
 import { useMotionStore } from '../stores/motion'
 import {
   TraversalPattern,
@@ -807,6 +818,7 @@ const phaseLabel = computed(() => {
     moving: '移动中',
     waiting: '稳定中',
     acquiring: '采集中',
+    completed: '完成',
     acquired: '已采集',
   }
   return map[store.progress?.phase || ''] || '采集中'

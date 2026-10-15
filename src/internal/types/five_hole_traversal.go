@@ -5,6 +5,14 @@ import "fmt"
 // MaxFiveHoleProbes 五孔测试最大启用探针数（后端校验上限，前端 MAX_PROBES 与此保持一致）
 const MaxFiveHoleProbes = 8
 
+// 五孔数据保存模式：每个点位多次采样后如何落盘
+const (
+	// FiveHoleDataModeAverage 默认：3σ 滤波平均后每点位保存一个数据点
+	FiveHoleDataModeAverage = "average"
+	// FiveHoleDataModeRaw 保存每个原始采样帧（不平均）及其插值结果
+	FiveHoleDataModeRaw = "raw"
+)
+
 // ==================== 五孔测试配置 ====================
 
 // FiveHoleTraversalConfig 五孔移位测试配置（全局配置，含 1-MaxFiveHoleProbes 根探针）
@@ -15,6 +23,9 @@ type FiveHoleTraversalConfig struct {
 	SamplesPerPoint  int                  `json:"samplesPerPoint"`  // 采样次数（所有探针共用）
 	SampleIntervalMs int                  `json:"sampleIntervalMs"` // 采样间隔（所有探针共用）
 	MotionTimeoutMs  int                  `json:"motionTimeoutMs"`  // 运动等待超时（所有探针共用）
+	// 数据保存模式：空/"average" 为默认（3σ 滤波平均后每点位一个数据点）；
+	// "raw" 时保存每个原始采样帧及其插值结果（每个点位多个数据点）
+	DataMode string `json:"dataMode,omitempty"`
 	// 共用轴位：true 时所有启用探针统一使用 SharedMotionX/Y（多探针装在同一位移机构场景），
 	// 各探针独立 MotionX/MotionY 被忽略（配置保留，切回独立模式时仍可用）
 	SharedMotion     bool                     `json:"sharedMotion"`
@@ -55,6 +66,11 @@ func (c FiveHoleTraversalConfig) ApplySharedMotion() FiveHoleTraversalConfig {
 // 共用轴位模式：先校验全局轴位非空（直线布点只走单轴，Y 方向不校验，与UI隐藏Y选择器一致），
 // 归一化到各探针副本后走通用校验（不修改原配置）
 func (c *FiveHoleTraversalConfig) Validate() error {
+	// 数据模式归一化：仅 "raw" 为原始数据模式，其余（空/未知/旧值）一律视为默认平均模式，
+	// 避免被篡改或历史遗留的值在运行时被静默误解。
+	if c.DataMode != FiveHoleDataModeRaw {
+		c.DataMode = FiveHoleDataModeAverage
+	}
 	if c.SharedMotion {
 		if c.SharedMotionX.ControllerID == "" || c.SharedMotionX.Axis == "" {
 			return fmt.Errorf("共用轴位的X方向未选择位移机构或轴号")

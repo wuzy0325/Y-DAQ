@@ -420,6 +420,53 @@ func TestService5H_NonFatalError_ContinuesTest(t *testing.T) {
 	}
 }
 
+// TestService5H_SkippedPoint_FinalProgressReflectsRealCount
+// 运动失败被 continue 跳过的点位不应计入完成数：终态 phase=completed 进度须为真实计数（<100%）
+func TestService5H_SkippedPoint_FinalProgressReflectsRealCount(t *testing.T) {
+	publisher := &MockEventPublisher{}
+	service := setupService5H(t, publisher)
+	// 2 个点位：第 1 个运动失败被跳过，第 2 个正常 → 期望 completed=1/2
+	cfg := makeServiceConfig5H(t)
+	cfg.Layout = types.TraversalLayout{
+		Pattern: types.TraversalPatternCustom,
+		CustomPoints: []types.TraversalPoint{
+			{ID: "p1", X: 0, Y: 0},
+			{ID: "p2", X: 10, Y: 0},
+		},
+	}
+
+	// 第一个点位的 α+β 移动失败（2 次调用）被跳过，第二个点位起正常
+	var callCnt int32
+	service.SetProbeAxisMover(func(controllerID string, axis types.AxisName, position float64) error {
+		if atomic.AddInt32(&callCnt, 1) <= 2 {
+			return fmt.Errorf("非致命运动错误")
+		}
+		return nil
+	})
+
+	if _, err := service.Start(cfg); err != nil {
+		t.Fatalf("Start failed: %v", err)
+	}
+	waitForCompleteEvent5H(t, publisher, 5*time.Second)
+
+	var last *types.FiveHoleTraversalProgressEvent
+	for _, ev := range publisher.GetProgressEvents() {
+		if ev.Phase == "completed" {
+			e := ev
+			last = &e
+		}
+	}
+	if last == nil {
+		t.Fatal("应收到 phase=completed 的 progress 事件")
+	}
+	if last.CompletedPoints != last.TotalPoints-1 {
+		t.Errorf("跳过 1 个点位后 CompletedPoints 应为 %d，实际 %d", last.TotalPoints-1, last.CompletedPoints)
+	}
+	if last.Progress >= 100 {
+		t.Errorf("存在跳过点位时 Progress 不应为 100%%，实际 %.2f", last.Progress)
+	}
+}
+
 // P2-11 TestService_GenerationIsolation_OldGoroutineDoesNotInterfere G4：Start → Stop → 立即 Start → 旧 goroutine 不再发 progress
 func TestService5H_GenerationIsolation_OldGoroutineDoesNotInterfere(t *testing.T) {
 	publisher := &MockEventPublisher{}
@@ -916,5 +963,119 @@ func TestService5H_ReturnToInitialPosition_AfterComplete(t *testing.T) {
 	}
 	if !hasLastY || lastYPos != initY {
 		t.Errorf("最后一次 β 轴 mover 调用应携带初始位置 Y=%.2f，实际 hasY=%v pos=%.2f", initY, hasLastY, lastYPos)
+	}
+}
+
+// TestService5H_RawDataMode_SavesAllSamplesThenAverage
+// 原始数据模式：每点位先保存全部采样帧（不平均，SampleCount=1），末尾再追加一行平均值（SampleCount=采样数）
+func TestService5H_RawDataMode_SavesAllSamplesThenAverage(t *testing.T) {
+	publisher := &MockEventPublisher{}
+	service := setupService5H(t, publisher)
+
+	// 每帧 P1-P5 数值随采样递增，便于验证各帧未被平均为同一值；timestamp 严格递增避免数据停滞
+	var seq, tsSeq int64
+	service.SetMultiDeviceBatchGetter(func(deviceID string, channels []int) (map[int]float64, int64, error) {
+		result := make(map[int]float64)
+		n := atomic.AddInt64(&seq, 1)
+		switch deviceID {
+		case "devP":
+			result[0] = 101.325
+		case "devT":
+			result[0] = 20.5
+		case "d1":
+			for _, c := range []int{0, 1, 2, 3, 4} {
+				result[c] = 100.0 + float64(c) + float64(n)
+			}
+		}
+		return result, atomic.AddInt64(&tsSeq, 1), nil
+	})
+
+	cfg := makeServiceConfig5H(t) // 单点位
+	cfg.DataMode = types.FiveHoleDataModeRaw
+	cfg.SamplesPerPoint = 3
+	cfg.Layout = singlePointLayout5H()
+
+	if _, err := service.Start(cfg); err != nil {
+		t.Fatalf("Start failed: %v", err)
+	}
+	waitForCompleteEvent5H(t, publisher, 5*time.Second)
+
+	events := publisher.GetCompleteEvents()
+	points := events[0].ProbeDataPoints["probe1"]
+	// 3 个原始采样帧 + 末尾 1 行平均数据
+	if len(points) != 4 {
+		t.Fatalf("原始数据模式应保存 3 个采样帧 + 1 行平均（共 4 条），实际 %d", len(points))
+	}
+	seen := make(map[float64]struct{})
+	for i := 0; i < 3; i++ {
+		dp := points[i]
+		if dp.SampleCount != 1 {
+			t.Errorf("第 %d 条 SampleCount 应为 1（未平均），实际 %d", i, dp.SampleCount)
+		}
+		if dp.PointID == "" {
+			t.Errorf("第 %d 条 PointID 不应为空", i)
+		}
+		seen[dp.RawData.P1] = struct{}{}
+	}
+	if len(seen) != 3 {
+		t.Errorf("原始数据模式各帧不应被平均为同一值，P1 去重后应 3 个，实际 %d", len(seen))
+	}
+
+	// 末尾一行应为平均数据：SampleCount=采样数，P1≈原始帧均值
+	avg := points[3]
+	if avg.SampleCount != 3 {
+		t.Errorf("末尾平均行 SampleCount 应为 3，实际 %d", avg.SampleCount)
+	}
+	wantAvg := (points[0].RawData.P1 + points[1].RawData.P1 + points[2].RawData.P1) / 3
+	if diff := avg.RawData.P1 - wantAvg; diff > 1e-6 || diff < -1e-6 {
+		t.Errorf("末尾平均行 P1 应为 %.6f，实际 %.6f", wantAvg, avg.RawData.P1)
+	}
+}
+
+// TestService5H_AverageDataMode_DefaultAveragesSamples
+// 默认（平均）模式：每点位只保存一个数据点，SampleCount=采样数
+func TestService5H_AverageDataMode_DefaultAveragesSamples(t *testing.T) {
+	publisher := &MockEventPublisher{}
+	service := setupService5H(t, publisher)
+
+	var tsSeq int64
+	service.SetMultiDeviceBatchGetter(func(deviceID string, channels []int) (map[int]float64, int64, error) {
+		result := make(map[int]float64)
+		switch deviceID {
+		case "devP":
+			result[0] = 101.325
+		case "devT":
+			result[0] = 20.5
+		case "d1":
+			for _, c := range []int{0, 1, 2, 3, 4} {
+				result[c] = 100.0 + float64(c)
+			}
+		}
+		return result, atomic.AddInt64(&tsSeq, 1), nil
+	})
+
+	cfg := makeServiceConfig5H(t) // 单点位；默认 DataMode 为空 → 平均
+	cfg.SamplesPerPoint = 3
+	cfg.Layout = singlePointLayout5H()
+
+	if _, err := service.Start(cfg); err != nil {
+		t.Fatalf("Start failed: %v", err)
+	}
+	waitForCompleteEvent5H(t, publisher, 5*time.Second)
+
+	points := publisher.GetCompleteEvents()[0].ProbeDataPoints["probe1"]
+	if len(points) != 1 {
+		t.Fatalf("平均模式每点位应只保存 1 个数据点，实际 %d", len(points))
+	}
+	if points[0].SampleCount != 3 {
+		t.Errorf("平均模式 SampleCount 应为 3，实际 %d", points[0].SampleCount)
+	}
+}
+
+// singlePointLayout5H 构造仅含 1 个自定义点位的布点（便于按采样数精确断言条数）
+func singlePointLayout5H() types.TraversalLayout {
+	return types.TraversalLayout{
+		Pattern:      types.TraversalPatternCustom,
+		CustomPoints: []types.TraversalPoint{{ID: "p1", X: 0, Y: 0}},
 	}
 }

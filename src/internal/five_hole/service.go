@@ -508,7 +508,12 @@ func (s *FiveHoleTraversalService) runTestLoop(taskID string, config types.FiveH
 			s.testManager.UpdateProbeStatus(config.Probes[idx].ProbeID, "moving", point.X, point.Y)
 		}
 
-		// 1. 移动所有启用探针到指定点位
+		// 1. 发射 progress（phase=moving）
+		// 必须在运动前发射：MoveAllProbesToPoint 会阻塞直到运动完成，
+		// 若在其后发射，运动期间 UI 会一直停留在上一阶段的 phase，不会显示"移动中"。
+		s.testManager.EmitProgress(taskID, totalPoints, completed, s.testManager.GetStatus().Progress, point.X, point.Y, "moving")
+
+		// 2. 移动所有启用探针到指定点位
 		if err := s.motionCoordinator.MoveAllProbesToPoint(point, config.Probes, config.Layout, config.MotionTimeoutMs); err != nil {
 			if !s.testManager.running.Load() {
 				return
@@ -522,9 +527,6 @@ func (s *FiveHoleTraversalService) runTestLoop(taskID string, config types.FiveH
 			return
 		}
 
-		// 2. 发射 progress（phase=moving）
-		s.testManager.EmitProgress(taskID, totalPoints, completed, s.testManager.GetStatus().Progress, point.X, point.Y, "moving")
-
 		// 3. 驻留 config.DwellTimeMs，期间每 100ms 发射 realtime（phase=waiting）
 		s.dwellWithRealtime(taskID, point, config)
 
@@ -533,7 +535,10 @@ func (s *FiveHoleTraversalService) runTestLoop(taskID string, config types.FiveH
 			return
 		}
 
-		// 4. 采样 config.SamplesPerPoint 次
+		// 4. 采样 config.SamplesPerPoint 次（phase=acquiring）
+		// 与三孔 data_processor.go 对齐：采样阶段发射 progress phase=acquiring，
+		// 否则 UI 徽标/布点图会一直停留在"稳定中"，不会切换到"采集中"。
+		s.testManager.EmitProgress(taskID, totalPoints, completed, s.testManager.GetStatus().Progress, point.X, point.Y, "acquiring")
 		probeSamples, cancelled := s.samplePoint(taskID, point, config, enabledIndices)
 		if cancelled {
 			return
@@ -545,20 +550,32 @@ func (s *FiveHoleTraversalService) runTestLoop(taskID string, config types.FiveH
 		}
 
 		// 7. 更新统一进度 +1
+		// 不在此处发"完成"阶段事件：中间点位的完成状态由下一点位的 phase=moving
+		// 事件自然带出（携带递增后的 completed），否则会闪现一次无意义的"完成"。
 		completed++
-		progress := float64(completed) / float64(totalPoints) * 100
 		s.testManager.UpdateProgress(completed, totalPoints, &point)
 
-		// 更新探针 phase=completed
+		// 更新探针 phase=completed（探针级状态，不驱动 UI 阶段标签）
 		for _, idx := range enabledIndices {
 			s.testManager.UpdateProbeStatus(config.Probes[idx].ProbeID, "completed", point.X, point.Y)
 		}
-		s.testManager.EmitProgress(taskID, totalPoints, completed, progress, point.X, point.Y, "completed")
 
 		// 8. 检查 Pause/Cancel
 		if s.testManager.ctx.Err() != nil {
 			return
 		}
+	}
+
+	// 全部点位处理完毕：整轮仅此一次 phase=completed，让前端进度条/布点图推进到最后一点。
+	// 使用真实 completed 计数（运动失败的点位会 continue 且不计入），
+	// 避免把被跳过的点位误报为 100% 完成。
+	if len(points) > 0 {
+		last := points[len(points)-1]
+		progress := 0.0
+		if totalPoints > 0 {
+			progress = float64(completed) / float64(totalPoints) * 100
+		}
+		s.testManager.EmitProgress(taskID, totalPoints, completed, progress, last.X, last.Y, "completed")
 	}
 }
 
@@ -658,7 +675,10 @@ func (s *FiveHoleTraversalService) samplePoint(taskID string, point types.Traver
 	return probeSamples, false
 }
 
-// aggregateProbeData 对各探针的采样数据执行 3σ 滤波平均 + 插值 + 数据点落盘。
+// aggregateProbeData 对各探针的采样数据执行落盘。
+// 默认（平均模式）：3σ 滤波平均后每点位保存一个数据点；
+// 原始数据模式（config.DataMode=raw）：先逐个采样帧保存原始数据及其插值结果（不平均），
+// 随后再追加一行 3σ 滤波平均值（SampleCount=采样数），便于与原始帧对比。
 // fatalError=true 表示发生致命错误，调用方应立即返回停止测试。
 func (s *FiveHoleTraversalService) aggregateProbeData(point types.TraversalPoint, config types.FiveHoleTraversalConfig, enabledIndices []int, probeSamples map[string][]types.FiveHoleRawData) (fatalError bool) {
 	for _, idx := range enabledIndices {
@@ -669,43 +689,78 @@ func (s *FiveHoleTraversalService) aggregateProbeData(point types.TraversalPoint
 			continue
 		}
 
-		avgData := types.FiveHoleRawData{
-			P1:   OutlierFilteredAvg(mapField5H(samples, func(r types.FiveHoleRawData) float64 { return r.P1 })),
-			P2:   OutlierFilteredAvg(mapField5H(samples, func(r types.FiveHoleRawData) float64 { return r.P2 })),
-			P3:   OutlierFilteredAvg(mapField5H(samples, func(r types.FiveHoleRawData) float64 { return r.P3 })),
-			P4:   OutlierFilteredAvg(mapField5H(samples, func(r types.FiveHoleRawData) float64 { return r.P4 })),
-			P5:   OutlierFilteredAvg(mapField5H(samples, func(r types.FiveHoleRawData) float64 { return r.P5 })),
-			PAtm: OutlierFilteredAvg(mapField5H(samples, func(r types.FiveHoleRawData) float64 { return r.PAtm })),
-			TAtm: OutlierFilteredAvg(mapField5H(samples, func(r types.FiveHoleRawData) float64 { return r.TAtm })),
-		}
-
-		// 对平均数据执行插值（占位，结果 invalid）
-		interp := s.calculateForProbe(probe.ProbeID, avgData)
-
-		dataPoint := types.FiveHoleTraversalDataPoint{
-			PointID:         point.ID,
-			ProbeID:         probe.ProbeID,
-			X:               point.X,
-			Y:               point.Y,
-			XControllerName: s.resolveControllerName(probe.MotionX.ControllerID),
-			XAxis:           probe.MotionX.Axis,
-			YControllerName: s.resolveControllerName(probe.MotionY.ControllerID),
-			YAxis:           probe.MotionY.Axis,
-			RawData:         avgData,
-			InterpResult:    interp,
-			SampleCount:     len(samples),
-			Timestamp:       time.Now().UnixMilli(),
-		}
-
-		// csvWriter.AppendPoint + eventHandler.OnDataPointAcquired
-		if err := s.eventHandler.OnDataPointAcquired(probe.ProbeID, dataPoint); err != nil {
-			slog.Error("处理数据点失败", "probe", probe.ProbeID, "point", point.ID, "err", err)
-			// 如果是致命错误，停止测试
-			if s.testManager.running.Load() {
-				s.testManager.EmitFatalError(fmt.Sprintf("处理数据点失败: %v", err))
+		// 原始数据模式：先逐个采样帧保存原始数据（不平均），
+		// 再走下方平均逻辑追加一行平均值，供用户对比。
+		if config.DataMode == types.FiveHoleDataModeRaw {
+			if s.saveRawSamples(point, probe, samples) {
+				return true
 			}
+		}
+
+		// 平均数据点（原始数据模式下为追加的"平均"行；平均模式下为唯一一行）
+		if s.appendDataPoint(point, probe.ProbeID, s.buildAvgDataPoint(point, probe, samples)) {
 			return true
 		}
+	}
+	return false
+}
+
+// buildAvgDataPoint 对采样样本做 3σ 滤波平均后构建数据点（SampleCount=采样数）
+func (s *FiveHoleTraversalService) buildAvgDataPoint(point types.TraversalPoint, probe types.FiveHoleProbeConfig, samples []types.FiveHoleRawData) types.FiveHoleTraversalDataPoint {
+	avgData := types.FiveHoleRawData{
+		P1:   OutlierFilteredAvg(mapField5H(samples, func(r types.FiveHoleRawData) float64 { return r.P1 })),
+		P2:   OutlierFilteredAvg(mapField5H(samples, func(r types.FiveHoleRawData) float64 { return r.P2 })),
+		P3:   OutlierFilteredAvg(mapField5H(samples, func(r types.FiveHoleRawData) float64 { return r.P3 })),
+		P4:   OutlierFilteredAvg(mapField5H(samples, func(r types.FiveHoleRawData) float64 { return r.P4 })),
+		P5:   OutlierFilteredAvg(mapField5H(samples, func(r types.FiveHoleRawData) float64 { return r.P5 })),
+		PAtm: OutlierFilteredAvg(mapField5H(samples, func(r types.FiveHoleRawData) float64 { return r.PAtm })),
+		TAtm: OutlierFilteredAvg(mapField5H(samples, func(r types.FiveHoleRawData) float64 { return r.TAtm })),
+	}
+
+	// 对平均数据执行插值（占位，结果 invalid）
+	interp := s.calculateForProbe(probe.ProbeID, avgData)
+	return s.buildDataPoint(point, probe, avgData, interp, len(samples))
+}
+
+// saveRawSamples 原始数据模式：逐个采样帧落盘原始数据 + 各自插值结果（不平均）
+// fatalError=true 表示发生致命错误，调用方应立即返回停止测试。
+func (s *FiveHoleTraversalService) saveRawSamples(point types.TraversalPoint, probe types.FiveHoleProbeConfig, samples []types.FiveHoleRawData) (fatalError bool) {
+	for _, sample := range samples {
+		interp := s.calculateForProbe(probe.ProbeID, sample)
+		dataPoint := s.buildDataPoint(point, probe, sample, interp, 1)
+		if s.appendDataPoint(point, probe.ProbeID, dataPoint) {
+			return true
+		}
+	}
+	return false
+}
+
+// buildDataPoint 组装单个移位测试数据点（点位/方向机构信息 + 原始数据 + 插值结果）
+func (s *FiveHoleTraversalService) buildDataPoint(point types.TraversalPoint, probe types.FiveHoleProbeConfig, rawData types.FiveHoleRawData, interp types.FiveHoleInterpolationResult, sampleCount int) types.FiveHoleTraversalDataPoint {
+	return types.FiveHoleTraversalDataPoint{
+		PointID:         point.ID,
+		ProbeID:         probe.ProbeID,
+		X:               point.X,
+		Y:               point.Y,
+		XControllerName: s.resolveControllerName(probe.MotionX.ControllerID),
+		XAxis:           probe.MotionX.Axis,
+		YControllerName: s.resolveControllerName(probe.MotionY.ControllerID),
+		YAxis:           probe.MotionY.Axis,
+		RawData:         rawData,
+		InterpResult:    interp,
+		SampleCount:     sampleCount,
+		Timestamp:       time.Now().UnixMilli(),
+	}
+}
+
+// appendDataPoint 写入单个数据点（CSV + 事件累积），致命错误时返回 true 并停止测试
+func (s *FiveHoleTraversalService) appendDataPoint(point types.TraversalPoint, probeID string, dataPoint types.FiveHoleTraversalDataPoint) (fatalError bool) {
+	if err := s.eventHandler.OnDataPointAcquired(probeID, dataPoint); err != nil {
+		slog.Error("处理数据点失败", "probe", probeID, "point", point.ID, "err", err)
+		if s.testManager.running.Load() {
+			s.testManager.EmitFatalError(fmt.Sprintf("处理数据点失败: %v", err))
+		}
+		return true
 	}
 	return false
 }
