@@ -20,6 +20,10 @@ func (m *DeviceManager) SetADAveraging(id string, enabled bool, count int) error
 	if !profile.Type.SupportsADAveraging() {
 		return fmt.Errorf("设备不支持AD平均配置: %s（仅 EA2508A/EA2516A）", id)
 	}
+	// 开启时必须为合法次数，尽早拒绝，避免把非法值下发硬件或持久化
+	if enabled && !types.IsAllowedADAveragingCount(count) {
+		return fmt.Errorf("AD平均次数非法: %d（开启时可选 %v）", count, types.ADAveragingAllowedCounts)
+	}
 	if connected {
 		if err := m.ensureConfigMutable(id, drv); err != nil {
 			return err
@@ -29,9 +33,11 @@ func (m *DeviceManager) SetADAveraging(id string, enabled bool, count int) error
 		}
 	}
 
+	// 归一化后的实际次数：硬件与持久化必须使用同一值，避免 profile/UI/设备不一致
+	effective := types.EffectiveADAveragingCount(enabled, count)
+
 	// 先下发硬件，成功后再持久化，避免硬件失败却留下不一致的配置
 	if connected {
-		effective := types.EffectiveADAveragingCount(enabled, count)
 		if cfg, ok := drv.(ADAveragingConfigurator); ok {
 			if err := cfg.SetADAveraging(effective); err != nil {
 				return err
@@ -47,7 +53,7 @@ func (m *DeviceManager) SetADAveraging(id string, enabled bool, count int) error
 		return fmt.Errorf("device profile not found: %s", id)
 	}
 	profile.ADAveragingEnabled = enabled
-	profile.ADAveragingCount = count
+	profile.ADAveragingCount = effective
 	m.profiles[id] = profile
 	m.Unlock()
 

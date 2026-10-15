@@ -239,16 +239,24 @@ const (
 // ADAveragingAllowedCounts AD 平均开启时允许选用的次数（升序）
 var ADAveragingAllowedCounts = []int{8, 16, 32, 64}
 
+// IsAllowedADAveragingCount 返回 count 是否为 AD 平均开启时的合法次数（8/16/32/64）。
+func IsAllowedADAveragingCount(count int) bool {
+	for _, c := range ADAveragingAllowedCounts {
+		if c == count {
+			return true
+		}
+	}
+	return false
+}
+
 // EffectiveADAveragingCount 返回下发给硬件的实际 AD 平均次数：
 // 关闭时固定 4；开启时取合法值（8/16/32/64），非法值回退到首个合法值 8。
 func EffectiveADAveragingCount(enabled bool, count int) int {
 	if !enabled {
 		return ADAveragingOffCount
 	}
-	for _, c := range ADAveragingAllowedCounts {
-		if c == count {
-			return c
-		}
+	if IsAllowedADAveragingCount(count) {
+		return count
 	}
 	return ADAveragingAllowedCounts[0]
 }

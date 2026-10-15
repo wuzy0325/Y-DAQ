@@ -57,6 +57,17 @@ func (q *PendingResponses) Push(entry *PendingEntry) {
 	q.entries = append(q.entries, entry)
 }
 
+// PushIfEmpty 原子地把 entry 压入队列，返回入队前队列是否为空。
+// 用于"仅当没有其它在途命令时才清空响应缓冲区"的判定：判定与入队在同一个
+// 临界区内完成，避免两个并发发送方都观察到空队列而重复清空响应缓冲区。
+func (q *PendingResponses) PushIfEmpty(entry *PendingEntry) (wasEmpty bool) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	wasEmpty = len(q.entries) == 0
+	q.entries = append(q.entries, entry)
+	return wasEmpty
+}
+
 // Pop removes and returns the front entry, or nil if empty
 func (q *PendingResponses) Pop() *PendingEntry {
 	q.mu.Lock()

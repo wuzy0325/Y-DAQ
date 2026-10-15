@@ -16,6 +16,14 @@ import (
 // 若与实机协议不符会以错误形式暴露（不会静默成功）。
 const adAvgCmdIndex = "05"
 
+// adAvgWriteCmd 构造 AD 平均写命令（w + 2 位十六进制索引 + 2 位十六进制值）。
+// 索引取 w/q 命令表的 05（两表一致，权威）；值域 1-255 恰好 2 位十六进制，
+// 与文档 3.6 示例 w100A 的 2 位值风格一致。q05 回读为 4 位零填充（如 "000A"），
+// 仅字段宽度不同，不影响语义（写入后仍以 q05 回读校验，不一致会报错暴露）。
+func adAvgWriteCmd(count int) string {
+	return fmt.Sprintf("w%s%02X", adAvgCmdIndex, count)
+}
+
 // applyADAveraging 连接后下发 AD 平均次数。
 // 先读取 q05 确认设备支持该命令，读取成功且当前值与目标不一致时才写入，
 // 避免对不支持 AD 平均命令的设备误写。失败仅告警，不阻断连接。
@@ -59,7 +67,7 @@ func (d *XYDAQDriver) SetADAveraging(count int) error {
 	if count < 1 || count > 0xFF {
 		return fmt.Errorf("AD平均次数超出范围: %d（合法 1-255）", count)
 	}
-	cmd := fmt.Sprintf("w%s%02X", adAvgCmdIndex, count)
+	cmd := adAvgWriteCmd(count)
 	resp, err := d.sendUnitCommand(cmd)
 	if err != nil {
 		return fmt.Errorf("设置AD平均次数失败: %w", err)
@@ -91,13 +99,30 @@ func parseADAveragingResponse(resp string) (int, error) {
 	if isNACK(raw) {
 		return 0, fmt.Errorf("设备拒绝读取AD平均次数: %s", raw)
 	}
-	val := strings.TrimSpace(strings.TrimPrefix(raw, "A")) // 部分固件带 A 前缀
-	if val == "" {
+	if raw == "" {
 		return 0, fmt.Errorf("AD平均次数响应为空: %q", resp)
 	}
-	n, err := strconv.ParseInt(val, 16, 32)
+
+	// 优先按完整响应解析十六进制：既覆盖零填充的 "000A"(=10)，也覆盖
+	// 首位为 A 的合法值（如裸十六进制 "A0"=160，不能被当作前缀误剥离）。
+	n, err := strconv.ParseInt(raw, 16, 32)
+	if err == nil && n <= 0xFF {
+		return int(n), nil
+	}
+
+	// 部分固件在响应前附加 "A" 前缀（如 "A000A"=10）。仅当整体解析失败、
+	// 或整体解析值超出 AD 平均有效范围（>255，说明首位 A 是前缀而非数值
+	// nibble）时，才剥离前缀重试。
+	if strings.HasPrefix(raw, "A") {
+		if stripped := strings.TrimSpace(raw[1:]); stripped != "" {
+			if n2, err2 := strconv.ParseInt(stripped, 16, 32); err2 == nil {
+				return int(n2), nil
+			}
+		}
+	}
+
 	if err != nil {
 		return 0, fmt.Errorf("AD平均次数响应非法: %q", resp)
 	}
-	return int(n), nil
+	return 0, fmt.Errorf("AD平均次数响应超出范围: %q", resp)
 }

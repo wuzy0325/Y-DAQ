@@ -340,12 +340,32 @@ func TestDeviceManager_SetADAveraging(t *testing.T) {
 		t.Errorf("driver adAvgCount = %d, want 16", mock.adAvgCount.Load())
 	}
 
-	// 关闭 → 下发固定最低值 4
+	// 关闭 → 下发固定最低值 4，且持久化的次数与硬件一致
 	if err := m.SetADAveraging("dev-1", false, 8); err != nil {
 		t.Fatalf("SetADAveraging(off) failed: %v", err)
 	}
 	if mock.adAvgCount.Load() != types.ADAveragingOffCount {
 		t.Errorf("driver adAvgCount = %d, want %d (off)", mock.adAvgCount.Load(), types.ADAveragingOffCount)
+	}
+	if got := m.GetProfileByID("dev-1"); got == nil || got.ADAveragingCount != types.ADAveragingOffCount {
+		t.Errorf("profile count not normalized: %+v", got)
+	}
+}
+
+// TestDeviceManager_SetADAveraging_InvalidCountRejected 开启时非法次数应在下发前拒绝
+func TestDeviceManager_SetADAveraging_InvalidCountRejected(t *testing.T) {
+	m := newTestManager()
+	m.AddProfile(newAtmCapableProfile("dev-1", types.DeviceTypeEA2516A))
+
+	mock := &mockDeviceDriver{}
+	mock.connected.Store(true)
+	injectMock(m, "dev-1", mock)
+
+	if err := m.SetADAveraging("dev-1", true, 7); err == nil {
+		t.Fatal("expected error for illegal count 7")
+	}
+	if mock.adAvgCount.Load() != 0 {
+		t.Errorf("driver must not be written on invalid count, got %d", mock.adAvgCount.Load())
 	}
 }
 

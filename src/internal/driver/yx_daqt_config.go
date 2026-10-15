@@ -92,13 +92,18 @@ func (d *YXDAQTDriver) sendCommandWithTimeout(cmd string, respType ResponseType,
 	// 设备停止采集/切换模式后仍可能有在途数据帧残留在应用层缓冲，若不清空会被
 	// 本条命令的定长读取误当作响应（ACK / @e3 回读错位），这是实机
 	// "设置热电偶类型失败" 的根因（与 wista 0.3.3 修复的残留帧污染同类）。
-	// 命令由调用方串行发送：前一条命令读取完成或超时后本条才发出，
-	// 因此清空不会丢弃本条之外仍在等待的有效响应。
-	d.mu.Lock()
-	d.respBuffer = d.respBuffer[:0]
-	d.mu.Unlock()
-
-	d.pending.Push(entry)
+	// 仅当没有其它在途命令时才清空：命令虽由调用方串行发送，但 Connect 会在
+	// 后台 goroutine 运行 syncHardwareConfig，UI 操作可能与之并发发送命令，
+	// 无条件清空会丢弃并发命令正在等待的响应（其定长/换行读取永远等不到数据）。
+	// PushIfEmpty 在同一个临界区内完成"判空 + 入队"，避免两个并发发送方都观察到
+	// 空队列而重复清空缓冲区（后者会吞掉前者刚入队命令的响应）。
+	// 注：respBuffer 由 d.mu 保护、pending 队列由自身 mu 保护，两把锁相互独立；
+	// 残留的跨锁时序窗口极小（清空发生在入队后、写连接前），实机可接受。
+	if d.pending.PushIfEmpty(entry) {
+		d.mu.Lock()
+		d.respBuffer = d.respBuffer[:0]
+		d.mu.Unlock()
+	}
 
 	if _, err := conn.Write([]byte(fullCmd)); err != nil {
 		// Remove the entry we just pushed (match by cmd to avoid FIFO disorder)
