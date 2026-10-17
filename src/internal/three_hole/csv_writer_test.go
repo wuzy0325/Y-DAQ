@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -116,7 +117,7 @@ func TestAppendPoint_Basic(t *testing.T) {
 		RawData:      types.ThreeHoleRawData{P1: 100.0, P2: 105.0, P3: 102.0},
 		InterpResult: types.ThreeHoleInterpolationResult{PtProbe: 1000.0, PsProbe: 500.0, AlphaProbe: 5.0},
 		SampleCount:  5,
-		Timestamp:    time.Now().UnixMilli(),
+		Timestamp:    time.Date(2024, 1, 2, 3, 4, 5, 678000000, time.Local).UnixMilli(),
 	}
 
 	err = writer.AppendPoint(dataPoint)
@@ -125,6 +126,36 @@ func TestAppendPoint_Basic(t *testing.T) {
 	}
 
 	writer.Close()
+
+	// 验证表头与数据行：时间戳列紧随点号，且为可读时间
+	content, err := os.ReadFile(filepath.Join(tempDir, "test.csv"))
+	if err != nil {
+		t.Fatalf("read csv failed: %v", err)
+	}
+	lines := strings.Split(strings.TrimRight(string(content), "\r\n"), "\n")
+	if len(lines) != 2 {
+		t.Fatalf("csv should contain header + 1 data row, got %d lines", len(lines))
+	}
+	headerFields := strings.Split(strings.TrimPrefix(lines[0], "\xEF\xBB\xBF"), ",")
+	if len(headerFields) < 2 {
+		t.Fatalf("header has too few columns: %v", headerFields)
+	}
+	if headerFields[0] != "点号" || headerFields[1] != "时间戳" {
+		t.Fatalf("header should start with 点号,时间戳, got %s,%s", headerFields[0], headerFields[1])
+	}
+	if headerFields[len(headerFields)-1] != "采样数" {
+		t.Fatalf("last header column should be 采样数, got %s", headerFields[len(headerFields)-1])
+	}
+	dataFields := strings.Split(lines[1], ",")
+	if len(dataFields) != len(headerFields) {
+		t.Fatalf("data field count %d != header field count %d", len(dataFields), len(headerFields))
+	}
+	if dataFields[0] != "test-001" {
+		t.Fatalf("first data column should be point id, got %s", dataFields[0])
+	}
+	if dataFields[1] != "2024-01-02 03:04:05.678" {
+		t.Fatalf("timestamp should be readable, got %s", dataFields[1])
+	}
 }
 
 // TestAppendPoint_EmptyData 测试空数据处理

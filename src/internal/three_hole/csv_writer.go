@@ -58,14 +58,14 @@ func (w *ThreeHoleCsvWriter) Initialize(savePath string, fileName string) error 
 	w.flushCnt = 0
 	w.mu.Unlock()
 
-	// 写入表头（writer 已加锁保护，此处通过局部变量写入）
+	// 写入表头（时间戳紧随点号；writer 已加锁保护，此处通过局部变量写入）
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	header := []string{
-		"点号", "X", "Y",
+		"点号", "时间戳", "X", "Y",
 		"P1", "P2", "P3", "P∞", "T∞",
 		"总压Pt", "静压Ps", "马赫数Ma", "攻角Alpha", "速度V",
-		"迭代次数", "采样数", "时间戳",
+		"迭代次数", "采样数",
 	}
 	if err := w.writer.Write(header); err != nil {
 		return fmt.Errorf("write header failed: %w", err)
@@ -85,6 +85,7 @@ func (w *ThreeHoleCsvWriter) AppendPoint(dp types.ThreeHoleTraversalDataPoint) e
 
 	record := []string{
 		dp.PointID,
+		formatTimestamp(dp.Timestamp),
 		fmt.Sprintf("%.4f", dp.X),
 		fmt.Sprintf("%.4f", dp.Y),
 		fmt.Sprintf("%.6f", dp.RawData.P1),
@@ -99,7 +100,6 @@ func (w *ThreeHoleCsvWriter) AppendPoint(dp types.ThreeHoleTraversalDataPoint) e
 		fmt.Sprintf("%.4f", dp.InterpResult.VelocityProbe),
 		fmt.Sprintf("%d", dp.InterpResult.IterationCount),
 		fmt.Sprintf("%d", dp.SampleCount),
-		fmt.Sprintf("%d", dp.Timestamp),
 	}
 
 	if err := w.writer.Write(record); err != nil {
@@ -125,4 +125,13 @@ func (w *ThreeHoleCsvWriter) Close() {
 		w.file.Close()
 		w.file = nil
 	}
+}
+
+// formatTimestamp 将 UnixMilli 时间戳格式化为可读时间（本地时区，毫秒精度）
+// 与 realtime_recorder 的表头时间格式保持一致；时间戳缺失（<=0）时输出空字符串
+func formatTimestamp(ms int64) string {
+	if ms <= 0 {
+		return ""
+	}
+	return time.UnixMilli(ms).Format("2006-01-02 15:04:05.000")
 }

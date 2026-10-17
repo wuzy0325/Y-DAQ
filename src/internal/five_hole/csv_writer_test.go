@@ -3,7 +3,9 @@ package five_hole
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
 	"yx-daq/internal/types"
 )
@@ -53,7 +55,7 @@ func TestFiveHoleCsvWriter_HeaderAndDataPoint(t *testing.T) {
 			Valid:           true,
 		},
 		SampleCount: 10,
-		Timestamp:   1700000000,
+		Timestamp:   time.Date(2024, 1, 2, 3, 4, 5, 678000000, time.Local).UnixMilli(),
 	}
 	if err := w.AppendPoint(dp); err != nil {
 		t.Fatalf("AppendPoint failed: %v", err)
@@ -114,6 +116,28 @@ func TestFiveHoleCsvWriter_HeaderAndDataPoint(t *testing.T) {
 	// 验证数据行
 	if !contains(str, "probe1") {
 		t.Fatal("data row missing probe1")
+	}
+	// 时间戳列为可读时间，且紧随点号列
+	lines := strings.Split(strings.TrimRight(str, "\r\n"), "\n")
+	headerFields := strings.Split(strings.TrimPrefix(lines[0], "\xEF\xBB\xBF"), ",")
+	if len(headerFields) < 2 {
+		t.Fatalf("header has too few columns: %v", headerFields)
+	}
+	if headerFields[0] != "点号" || headerFields[1] != "时间戳" {
+		t.Fatalf("header should start with 点号,时间戳, got %s,%s", headerFields[0], headerFields[1])
+	}
+	if headerFields[len(headerFields)-1] != "采样数" {
+		t.Fatalf("last header column should be 采样数, got %s", headerFields[len(headerFields)-1])
+	}
+	dataFields := strings.Split(lines[1], ",")
+	if len(dataFields) != len(headerFields) {
+		t.Fatalf("data field count %d != header field count %d", len(dataFields), len(headerFields))
+	}
+	if dataFields[0] != "pt-0" {
+		t.Fatalf("first data column should be point id, got %s", dataFields[0])
+	}
+	if dataFields[1] != "2024-01-02 03:04:05.678" {
+		t.Fatalf("timestamp should be readable, got %s", dataFields[1])
 	}
 	if !contains(str, "ctrl-α") {
 		t.Fatal("data row missing alpha controller id")

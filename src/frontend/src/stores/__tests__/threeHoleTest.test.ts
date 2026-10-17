@@ -612,8 +612,14 @@ describe('stores/threeHoleTest', () => {
       expect(prefix).toBe('three-hole-traversal-probe1')
       expect(headers).toHaveLength(16)
       expect(headers[0]).toBe('点号')
+      // 时间戳列紧随点号，且不再出现在行尾
+      expect(headers[1]).toBe('时间戳')
+      expect(headers[headers.length - 1]).toBe('采样数')
       expect(rows).toHaveLength(1)
       expect(rows[0][0]).toBe('p1')
+      // 时间戳为可读时间（本地时区，毫秒精度），其后为 X
+      expect(rows[0][1]).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$/)
+      expect(rows[0][2]).toBe('1.5000')
     })
 
     it('probeID=probe2 → filenamePrefix 含 probe2', () => {

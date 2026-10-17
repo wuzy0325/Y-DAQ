@@ -61,15 +61,15 @@ func (w *FiveHoleCsvWriter) Initialize(savePath string, baseName string, probeID
 		primaryDir, secondaryDir = "R", "θ"
 	}
 
-	// 写入表头（含 β 列及仓库富字段：CAS/SAT/动压/密度/Vx/Vy/Vz；X/Y 方向位移机构名 与轴号）
+	// 写入表头（时间戳紧随点号；含 β 列及仓库富字段：CAS/SAT/动压/密度/Vx/Vy/Vz；X/Y 方向位移机构名 与轴号）
 	header := []string{
-		"点号", "探针ID", primaryCol, secondaryCol,
+		"点号", "时间戳", "探针ID", primaryCol, secondaryCol,
 		primaryDir + "方向位移机构名", primaryDir + "方向轴号", secondaryDir + "方向位移机构名", secondaryDir + "方向轴号",
 		"P1", "P2", "P3", "P4", "P5", "P∞", "T∞",
 		"总压Pt", "静压Ps", "马赫数Ma", "攻角Alpha", "侧滑角Beta", "速度V",
 		"校正空速CAS", "静温SAT", "动压Qc", "密度ρ",
 		"速度Vx", "速度Vy", "速度Vz",
-		"采样数", "时间戳",
+		"采样数",
 	}
 	if err := w.writer.Write(header); err != nil {
 		return fmt.Errorf("write header failed: %w", err)
@@ -87,6 +87,7 @@ func (w *FiveHoleCsvWriter) AppendPoint(dp types.FiveHoleTraversalDataPoint) err
 
 	record := []string{
 		dp.PointID,
+		formatTimestamp(dp.Timestamp),
 		dp.ProbeID,
 		fmt.Sprintf("%.4f", dp.X),
 		fmt.Sprintf("%.4f", dp.Y),
@@ -115,7 +116,6 @@ func (w *FiveHoleCsvWriter) AppendPoint(dp types.FiveHoleTraversalDataPoint) err
 		fmt.Sprintf("%.4f", dp.InterpResult.VyProbe),
 		fmt.Sprintf("%.4f", dp.InterpResult.VzProbe),
 		fmt.Sprintf("%d", dp.SampleCount),
-		fmt.Sprintf("%d", dp.Timestamp),
 	}
 
 	if err := w.writer.Write(record); err != nil {
@@ -139,4 +139,13 @@ func (w *FiveHoleCsvWriter) Close() {
 		w.file.Close()
 		w.file = nil
 	}
+}
+
+// formatTimestamp 将 UnixMilli 时间戳格式化为可读时间（本地时区，毫秒精度）
+// 与 realtime_recorder 的表头时间格式保持一致；时间戳缺失（<=0）时输出空字符串
+func formatTimestamp(ms int64) string {
+	if ms <= 0 {
+		return ""
+	}
+	return time.UnixMilli(ms).Format("2006-01-02 15:04:05.000")
 }

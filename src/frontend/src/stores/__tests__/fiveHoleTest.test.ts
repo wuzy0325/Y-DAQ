@@ -735,7 +735,7 @@ describe('stores/fiveHoleTest', () => {
       })
       store.exportProbeCSV('probe2')
       expect(mockDownloadCSV).toHaveBeenCalledTimes(1)
-      const [prefix, headers] = mockDownloadCSV.mock.calls[0]
+      const [prefix, headers, rows] = mockDownloadCSV.mock.calls[0]
       expect(prefix).toBe('five-hole-probe2')
       // 关键列存在
       expect(headers).toContain('侧滑角Beta')
@@ -744,6 +744,17 @@ describe('stores/fiveHoleTest', () => {
       expect(headers).toContain('P5')
       expect(headers).toContain('P∞')
       expect(headers).toContain('T∞')
+      // 时间戳列紧随点号，且不再出现在行尾
+      expect(headers[0]).toBe('点号')
+      expect(headers[1]).toBe('时间戳')
+      expect(headers[headers.length - 1]).toBe('采样数')
+      expect(headers.indexOf('时间戳')).toBe(1)
+      // 时间戳为可读时间（本地时区，毫秒精度）
+      expect(rows[0][1]).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$/)
+      // 行内字段顺序与表头一致
+      expect(rows[0][0]).toBe('p1')
+      expect(rows[0][2]).toBe('probe2')
+      expect(rows[0][rows[0].length - 1]).toBe('10')
     })
   })
 
