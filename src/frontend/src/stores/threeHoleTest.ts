@@ -1,16 +1,17 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import { Events } from '@wailsio/runtime'
 import { ThreeHoleService, ConfigService } from '@bindings/yx-daq/internal/app'
+import { Events } from '@wailsio/runtime'
 import {
   ThreeHoleChannelRole,
   TraversalPattern,
   type ThreeHoleChannelRoleValue,
   type TraversalPatternValue,
 } from '../api/enums'
-import { useMotionStore } from './motion'
-import { ensureDevicesAcquiring } from './device'
 import { downloadCSV } from '../utils/csv'
+import { WRITE_PRECISION, threeHoleProbePrecision } from '../utils/writePrecision'
+import { ensureDevicesAcquiring, useDeviceStore } from './device'
+import { useMotionStore } from './motion'
 import type { LineLayout } from './threeHoleTest/types'
 
 // ==================== 类型定义 ====================
@@ -400,13 +401,17 @@ export const useThreeHoleTestStore = defineStore('threeHoleTest', () => {
       '点号', '时间戳', 'X', 'Y', 'P1', 'P2', 'P3', 'P∞', 'T∞',
       '总压Pt', '静压Ps', '马赫数Ma', '攻角Alpha', '速度V', '迭代次数', '采样数',
     ]
+    // 落盘小数位按各角色通道配置的采集精度解析（与界面显示一致）
+    const deviceStore = useDeviceStore()
+    const prec = threeHoleProbePrecision(deviceStore.profiles, config.value.deviceId, config.value.probeChannels)
     const rows = dataPoints.map(p => [
-      p.pointId, formatTimestamp(p.timestamp), p.x.toFixed(4), p.y.toFixed(4),
-      p.rawData.p1.toFixed(6), p.rawData.p2.toFixed(6), p.rawData.p3.toFixed(6),
-      p.rawData.pAtm.toFixed(6), p.rawData.tAtm.toFixed(6),
-      p.interpResult.ptProbe.toFixed(6), p.interpResult.psProbe.toFixed(6),
-      p.interpResult.machProbe.toFixed(6), p.interpResult.alphaProbe.toFixed(4),
-      p.interpResult.velocityProbe.toFixed(4),
+      p.pointId, formatTimestamp(p.timestamp),
+      p.x.toFixed(WRITE_PRECISION.position), p.y.toFixed(WRITE_PRECISION.position),
+      p.rawData.p1.toFixed(prec.p1), p.rawData.p2.toFixed(prec.p2), p.rawData.p3.toFixed(prec.p3),
+      p.rawData.pAtm.toFixed(prec.pAtm), p.rawData.tAtm.toFixed(prec.tAtm),
+      p.interpResult.ptProbe.toFixed(WRITE_PRECISION.pt), p.interpResult.psProbe.toFixed(WRITE_PRECISION.ps),
+      p.interpResult.machProbe.toFixed(WRITE_PRECISION.mach), p.interpResult.alphaProbe.toFixed(WRITE_PRECISION.alpha),
+      p.interpResult.velocityProbe.toFixed(WRITE_PRECISION.velocity),
       p.interpResult.iterationCount.toString(), p.sampleCount.toString(),
     ])
 

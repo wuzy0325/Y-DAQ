@@ -6,10 +6,10 @@ import {
   TraversalPattern,
   AxisName,
 } from '../api/enums'
-import { useMotionStore } from './motion'
-import { ensureDevicesAcquiring as ensureDevicesAcquiringByIds } from './device'
 import { downloadCSV } from '../utils/csv'
 import { createWailsEventListener } from '../utils/wailsEvents'
+import { WRITE_PRECISION, fiveHoleProbePrecision } from '../utils/writePrecision'
+import { ensureDevicesAcquiring as ensureDevicesAcquiringByIds, useDeviceStore } from './device'
 import {
   ATM_SOURCE_MODE,
   FIVE_HOLE_DATA_MODE,
@@ -26,7 +26,9 @@ import type {
   FiveHoleTraversalCompleteEvent,
   FiveHoleTraversalErrorEvent,
   FiveHoleTraversalDataPoint,
+  FiveHoleTraversalTiming,
 } from './fiveHoleTest/types'
+import { useMotionStore } from './motion'
 
 // ==================== 默认配置构造 ====================
 
@@ -154,9 +156,67 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
 
   const enabledProbes = computed(() => config.value.probes.filter(p => p.enabled))
   const allCalibLoaded = computed(() => enabledProbes.value.every(p => calibLoadedMap.value[p.probeId]))
-
   /** 探针数上限（暴露给 View 作 :disabled 判断，避免在多处硬编码字面量 3） */
   const maxProbes = MAX_PROBES
+
+  // ==================== 耗时预估 vs 实际 ====================
+
+  // 预估值：后端按"配置 + 轴最大速度 + 设备出帧周期"计算，测试未启动时用于显示预估总时长
+  const timingPreview = ref<FiveHoleTraversalTiming | null>(null)
+  // 最近一次进度事件到达时刻：两次事件之间本地递推实际已用时间（进度事件在驻留/采样阶段约 100ms 一次）
+  const progressReceivedAt = ref(0)
+  const tickNow = ref(Date.now())
+  let tickTimer: ReturnType<typeof setInterval> | undefined
+  let previewTimer: ReturnType<typeof setTimeout> | undefined
+
+  /** 预估/实际耗时：进度事件携带的后端实测快照优先，未运行时用配置预估 */
+  const timing = computed<FiveHoleTraversalTiming | null>(
+    () => progress.value?.timing ?? timingPreview.value ?? null,
+  )
+
+  /** 实际已用时间（ms）：后端快照 + 距上次进度事件的本地递推；暂停期间不递推 */
+  const liveElapsedMs = computed(() => {
+    const base = progress.value?.timing?.actualElapsedMs ?? timingPreview.value?.actualElapsedMs ?? 0
+    const anchor = progressReceivedAt.value
+    if (!isRunning.value || isPaused.value || anchor === 0) return base
+    return base + Math.max(0, tickNow.value - anchor)
+  })
+
+  // 运行中每 500ms 刷新一次本地时钟，让"实际已用"在长时间运动阶段也持续走动
+  watch(isRunning, (running) => {
+    if (running) {
+      if (!tickTimer) tickTimer = setInterval(() => { tickNow.value = Date.now() }, 500)
+    } else if (tickTimer) {
+      clearInterval(tickTimer)
+      tickTimer = undefined
+    }
+  }, { immediate: true })
+
+  // 暂停/恢复时重设递推锚点：避免把暂停时长算进"实际已用"（后端实测值本就扣除暂停）
+  watch([isRunning, isPaused], () => {
+    progressReceivedAt.value = Date.now()
+    tickNow.value = Date.now()
+  })
+
+  /** 重新计算预估耗时（不产生硬件动作；测试运行中不使用该值） */
+  async function refreshTimingPreview() {
+    if (isRunning.value) return
+    try {
+      const estimate = await FiveHoleService.EstimateFiveHoleTraversalTiming(config.value as any)
+      timingPreview.value = (estimate as FiveHoleTraversalTiming) ?? null
+    } catch (e) {
+      console.warn('预估五孔测试耗时失败:', e)
+    }
+  }
+
+  /** 配置变更后延迟重算预估（避免拖动数字框时高频调用后端） */
+  function scheduleTimingPreview() {
+    if (isRunning.value) return
+    if (previewTimer) clearTimeout(previewTimer)
+    previewTimer = setTimeout(() => { void refreshTimingPreview() }, 400)
+  }
+
+  watch(config, scheduleTimingPreview, { deep: true })
 
   // ==================== 探针增删（动态化） ====================
 
@@ -450,7 +510,12 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
   // ==================== 事件监听（五孔事件全局，不按 probeID 区分） ====================
 
   const eventListener = createWailsEventListener('five-hole', [
-    { channel: 'five-hole:progress', handler: (event: any) => { progress.value = event.data as FiveHoleTraversalProgressEvent } },
+    { channel: 'five-hole:progress', handler: (event: any) => {
+      progress.value = event.data as FiveHoleTraversalProgressEvent
+      // 记录到达时刻：本地按该锚点递推"实际已用"，得到平滑走动的计时
+      progressReceivedAt.value = Date.now()
+      tickNow.value = progressReceivedAt.value
+    } },
     { channel: 'five-hole:realtime', handler: (event: any) => { realtime.value = event.data as FiveHoleTraversalRealtimeEvent } },
     {
       channel: 'five-hole:complete',
@@ -507,19 +572,26 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
       '速度Vx', '速度Vy', '速度Vz',
       '采样数',
     ]
+    // 落盘小数位按该探针各通道配置的采集精度解析（与界面显示一致）
+    const deviceStore = useDeviceStore()
+    const probePrecision = fiveHoleProbePrecision(
+      deviceStore.profiles,
+      config.value.probes.find(p => p.probeId === probeId),
+    )
     const rows = probeData.map(p => [
-      p.pointId, formatTimestamp(p.timestamp), p.probeId, p.x.toFixed(4), p.y.toFixed(4),
+      p.pointId, formatTimestamp(p.timestamp), p.probeId,
+      p.x.toFixed(WRITE_PRECISION.position), p.y.toFixed(WRITE_PRECISION.position),
       p.xControllerName, p.xAxis, p.yControllerName, p.yAxis,
-      p.rawData.p1.toFixed(6), p.rawData.p2.toFixed(6), p.rawData.p3.toFixed(6),
-      p.rawData.p4.toFixed(6), p.rawData.p5.toFixed(6),
-      p.rawData.pAtm.toFixed(6), p.rawData.tAtm.toFixed(6),
-      p.interpResult.ptProbe.toFixed(6), p.interpResult.psProbe.toFixed(6),
-      p.interpResult.machProbe.toFixed(6), p.interpResult.alphaProbe.toFixed(4),
-      p.interpResult.betaProbe.toFixed(4), p.interpResult.velocityProbe.toFixed(4),
-      p.interpResult.casProbe.toFixed(4), p.interpResult.satProbe.toFixed(4),
-      p.interpResult.dynamicPressure.toFixed(6), p.interpResult.density.toFixed(6),
-      p.interpResult.vxProbe.toFixed(4), p.interpResult.vyProbe.toFixed(4),
-      p.interpResult.vzProbe.toFixed(4),
+      p.rawData.p1.toFixed(probePrecision.p1), p.rawData.p2.toFixed(probePrecision.p2), p.rawData.p3.toFixed(probePrecision.p3),
+      p.rawData.p4.toFixed(probePrecision.p4), p.rawData.p5.toFixed(probePrecision.p5),
+      p.rawData.pAtm.toFixed(probePrecision.pAtm), p.rawData.tAtm.toFixed(probePrecision.tAtm),
+      p.interpResult.ptProbe.toFixed(WRITE_PRECISION.pt), p.interpResult.psProbe.toFixed(WRITE_PRECISION.ps),
+      p.interpResult.machProbe.toFixed(WRITE_PRECISION.mach), p.interpResult.alphaProbe.toFixed(WRITE_PRECISION.alpha),
+      p.interpResult.betaProbe.toFixed(WRITE_PRECISION.beta), p.interpResult.velocityProbe.toFixed(WRITE_PRECISION.velocity),
+      p.interpResult.casProbe.toFixed(WRITE_PRECISION.cas), p.interpResult.satProbe.toFixed(WRITE_PRECISION.sat),
+      p.interpResult.dynamicPressure.toFixed(WRITE_PRECISION.dynamicPressure), p.interpResult.density.toFixed(WRITE_PRECISION.density),
+      p.interpResult.vxProbe.toFixed(WRITE_PRECISION.vx), p.interpResult.vyProbe.toFixed(WRITE_PRECISION.vy),
+      p.interpResult.vzProbe.toFixed(WRITE_PRECISION.vz),
       p.sampleCount.toString(),
     ])
 
@@ -590,6 +662,9 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
         console.error(`恢复探针 ${probe.probeId} 校准文件失败:`, e)
       }
     }
+
+    // 配置就绪后立即按当前配置给出预估总时长（不等用户改动配置）
+    void refreshTimingPreview()
   }
 
   function loadConfigFromLocal() {
@@ -698,6 +773,8 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
     calibLoadedMap, calibFilesMap, allCalibLoaded,
     config, statusText, enabledProbes, maxProbes,
     completeProbeDataPoints,
+    // 耗时预估 vs 实际
+    timing, timingPreview, liveElapsedMs, refreshTimingPreview,
     // 方法
     selectCalibFiles, ensureDevicesAcquiring,
     addProbe, removeProbe,

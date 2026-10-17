@@ -71,7 +71,7 @@ func main() {
 			OnSecondInstanceLaunch: func(data application.SecondInstanceData) {
 				slog.Info("检测到第二实例启动，已激活主窗口", "args", data.Args)
 				if win, ok := application.Get().Window.Get("main"); ok && win != nil {
-					win.Restore()
+					win.UnMinimise() // 仅还原最小化，保留最大化状态
 					win.Focus()
 				}
 			},
@@ -94,6 +94,7 @@ func main() {
 		Height:           900,
 		MinWidth:         1280,
 		MinHeight:        720,
+		StartState:       application.WindowStateMaximised, // 启动后直接最大化
 		BackgroundColour: application.NewRGB(10, 10, 26),
 		URL:              "/",
 	})

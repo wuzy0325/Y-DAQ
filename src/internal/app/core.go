@@ -98,6 +98,10 @@ func (c *Core) Startup(app *application.App) {
 	c.DeviceManager.SetOnTempCalibChange(func(deviceID string) {
 		c.App.Event.Emit("device:temp-calib-updated", deviceID)
 	})
+	// 后端主动改写配置（如连接后同步设备 AD 平均次数）后广播，前端重新拉取 profiles
+	c.DeviceManager.SetOnProfileChange(func(deviceID string) {
+		c.App.Event.Emit("device:profiles-updated", deviceID)
+	})
 	c.DeviceManager.Init()
 
 	c.MotionManager.SetConfigStore(c.ConfigManager.Motion)
@@ -212,9 +216,26 @@ func (c *Core) initThreeHole() {
 	}
 }
 
+// deviceChannelPrecision 返回设备通道配置的采集精度（小数位）。
+// 三孔/五孔测试的 CSV 保存与实时录制按此精度落盘，保证文件与界面显示的小数位一致。
+// 设备/通道不存在时返回 ok=false，由调用方回退默认精度。
+func (c *Core) deviceChannelPrecision(deviceID string, channel int) (int, bool) {
+	if deviceID == "" || channel < 0 {
+		return 0, false
+	}
+	p := c.DeviceManager.GetProfileByID(deviceID)
+	if p == nil || channel >= len(p.Channels) {
+		return 0, false
+	}
+	return p.Channels[channel].Precision, true
+}
+
 // initFiveHole 初始化五孔移位测试服务（单实例，管理 1-3 探针）
 func (c *Core) initFiveHole() {
 	svc := five_hole.NewFiveHoleTraversalService(&FiveHoleEventPublisher{app: c.App})
+
+	// 设备通道精度：CSV 保存/实时录制的小数位与界面显示一致
+	svc.SetChannelPrecisionGetter(c.deviceChannelPrecision)
 
 	// 多设备批量读取：按 DeviceID 从 AcquisitionHub 获取该设备最新帧，按通道索引取值
 	// 返回 (通道值map, 该设备当前帧序号, error)。帧序号（FrameSeq）单调递增，用于判断是否出新帧：
@@ -308,6 +329,38 @@ func (c *Core) initFiveHole() {
 		return ""
 	})
 
+	// 单轴最大速度获取：用于耗时预估（移动耗时 = 点位间距离 / 轴最大速度）
+	// 未配置速度（MaxSpeed<=0）的轴返回 ok=false，预估时该轴移动耗时按 0 计
+	svc.SetAxisSpeedGetter(func(controllerID string, axis types.AxisName) (float64, bool) {
+		if controllerID == "" || axis == "" {
+			return 0, false
+		}
+		for _, profile := range c.MotionManager.GetProfiles() {
+			if profile.ID != controllerID {
+				continue
+			}
+			for _, ax := range profile.Axes {
+				if ax.Name == axis {
+					return ax.MaxSpeed, ax.MaxSpeed > 0
+				}
+			}
+			return 0, false
+		}
+		return 0, false
+	})
+
+	// 采集设备出帧周期获取：用于耗时预估（采样耗时 = 采样次数 × 最慢设备出帧周期）
+	// 未配置周期（PeriodMs<=0）时返回 0，预估时回退默认 50ms
+	svc.SetDevicePeriodGetter(func(deviceID string) int {
+		if deviceID == "" {
+			return 0
+		}
+		if profile := c.DeviceManager.GetProfileByID(deviceID); profile != nil {
+			return profile.PeriodMs
+		}
+		return 0
+	})
+
 	c.FiveHoleService = svc
 }
 
@@ -358,6 +411,8 @@ func (c *Core) getChannelValues(deviceID string, channels []int) map[int]float64
 
 func (c *Core) createThreeHoleService(probeID string) *three_hole.ThreeHoleTraversalService {
 	svc := three_hole.NewThreeHoleTraversalService(&ThreeHoleEventPublisher{app: c.App, probeID: probeID})
+	// 设备通道精度：CSV 保存/实时录制的小数位与界面显示一致
+	svc.SetChannelPrecisionGetter(c.deviceChannelPrecision)
 	svc.SetBatchGetter(func(channels []types.ThreeHoleProbeChannelConfig) (map[int]float64, error) {
 		config := svc.GetConfig()
 		chNums := make([]int, 0, len(channels))

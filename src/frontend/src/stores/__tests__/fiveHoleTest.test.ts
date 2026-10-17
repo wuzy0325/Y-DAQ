@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 // ---- mock 边界 ----
 // fiveHoleTest store 依赖：
@@ -12,7 +12,7 @@ import { createPinia, setActivePinia } from 'pinia'
 type EventsOnFn = (channel: string, handler: (e: any) => void) => () => void
 type EventsOffFn = (channel: string) => void
 
-const { mockFiveHoleService, mockEventsOn, mockEventsOff, mockMotionStore, mockEnsureDevicesAcquiring, mockDownloadCSV } = vi.hoisted(() => ({
+const { mockFiveHoleService, mockEventsOn, mockEventsOff, mockMotionStore, mockEnsureDevicesAcquiring, mockDeviceStore, mockDownloadCSV } = vi.hoisted(() => ({
   mockFiveHoleService: {
     SelectFiveHoleCalibFiles: vi.fn(),
     LoadFiveHoleCalibFiles: vi.fn(),
@@ -28,6 +28,8 @@ const { mockFiveHoleService, mockEventsOn, mockEventsOff, mockMotionStore, mockE
     StopFiveHoleRealtimeRecording: vi.fn(),
     SaveFiveHoleConfig: vi.fn(),
     LoadFiveHoleConfig: vi.fn(),
+    // 耗时预估（配置变更后延迟调用；默认返回空预估）
+    EstimateFiveHoleTraversalTiming: vi.fn(),
   },
   mockEventsOn: vi.fn<EventsOnFn>(() => () => {}),
   mockEventsOff: vi.fn<EventsOffFn>(),
@@ -36,6 +38,10 @@ const { mockFiveHoleService, mockEventsOn, mockEventsOff, mockMotionStore, mockE
     statuses: [] as any[],
   },
   mockEnsureDevicesAcquiring: vi.fn<(ids: Iterable<string>) => Promise<string[]>>(() => Promise.resolve([])),
+  // device store mock：仅暴露 exportProbeCSV 解析通道精度用到的 profiles
+  mockDeviceStore: {
+    profiles: [] as any[],
+  },
   mockDownloadCSV: vi.fn<(prefix: string, headers: string[], rows: (string | number)[][]) => void>(),
 }))
 
@@ -53,15 +59,17 @@ vi.mock('../motion', () => ({
 
 vi.mock('../device', () => ({
   ensureDevicesAcquiring: mockEnsureDevicesAcquiring,
+  // 导出 CSV 按设备通道采集精度落盘（默认无 profile → 回退 3 位）
+  useDeviceStore: () => mockDeviceStore,
 }))
 
 vi.mock('../../utils/csv', () => ({
   downloadCSV: mockDownloadCSV,
 }))
 
+import { FiveHoleChannelRole, TraversalPattern, AxisName } from '../../api/enums'
 import { useFiveHoleTestStore, MAX_PROBES } from '../fiveHoleTest'
 import { FIVE_HOLE_DATA_MODE } from '../fiveHoleTest/types'
-import { FiveHoleChannelRole, TraversalPattern, AxisName } from '../../api/enums'
 
 describe('stores/fiveHoleTest', () => {
   beforeEach(() => {
@@ -73,6 +81,7 @@ describe('stores/fiveHoleTest', () => {
     mockMotionStore.statuses = []
     mockEnsureDevicesAcquiring.mockReset()
     mockEnsureDevicesAcquiring.mockResolvedValue([])
+    mockDeviceStore.profiles = []
     mockDownloadCSV.mockReset()
   })
 
@@ -756,6 +765,54 @@ describe('stores/fiveHoleTest', () => {
       expect(rows[0][2]).toBe('probe2')
       expect(rows[0][rows[0].length - 1]).toBe('10')
     })
+
+    it('原始采集列按各探针通道采集精度落盘，插值列按界面显示精度', () => {
+      const store = useFiveHoleTestStore()
+      // 设备通道精度：ch0=1 位（P1）、ch1=0 位（P2）、ch2=2 位、ch3=3 位、ch4=4 位
+      mockDeviceStore.profiles = [{
+        id: 'dev1',
+        channels: [{ precision: 1 }, { precision: 0 }, { precision: 2 }, { precision: 3 }, { precision: 4 }],
+      }]
+      store.config.probes[0].probeChannels.forEach((ch, i) => {
+        ch.deviceId = 'dev1'
+        ch.channel = i
+      })
+      store.setCompleteData({
+        probe1: [{
+          pointId: 'p1', probeId: 'probe1', x: 1.5, y: 2.5,
+          xControllerName: 'ctrl-1', xAxis: AxisName.X, yControllerName: 'ctrl-1', yAxis: AxisName.Y,
+          // P∞/T∞ 仍为默认（device 模式但未选设备）→ 回退 3 位
+          rawData: { p1: 100.123456, p2: 101.654321, p3: 99.111111, p4: 100.222222, p5: 100.333333, pAtm: 101.325, tAtm: 25.5 },
+          interpResult: {
+            ptProbe: 102.5, psProbe: 100, machProbe: 0.456789, alphaProbe: 5.25, betaProbe: 1.25,
+            velocityProbe: 150.25, casProbe: 148.2, satProbe: 293.15, dynamicPressure: 2500,
+            density: 1.225, vxProbe: 149.8, vyProbe: 5, vzProbe: 1, valid: true,
+          },
+          sampleCount: 10, timestamp: 12345,
+        }],
+      })
+      store.exportProbeCSV('probe1')
+      const [, , rows] = mockDownloadCSV.mock.calls[0]
+      // 列序：点号,时间戳,探针ID,X,Y,机构,轴,机构,轴,P1..P5,P∞,T∞,Pt,...
+      expect(rows[0][9]).toBe('100.1')
+      expect(rows[0][10]).toBe('102')
+      expect(rows[0][11]).toBe('99.11')
+      expect(rows[0][12]).toBe('100.222')
+      expect(rows[0][13]).toBe('100.3333')
+      // P∞/T∞ 未配置设备 → 回退 3 位
+      expect(rows[0][14]).toBe('101.325')
+      expect(rows[0][15]).toBe('25.500')
+      // 插值列与界面显示一致：Pt/Ps 3 位、Ma 4 位、α/β/V 2 位
+      expect(rows[0][16]).toBe('102.500')
+      expect(rows[0][18]).toBe('0.4568')
+      expect(rows[0][19]).toBe('5.25')
+      expect(rows[0][20]).toBe('1.25')
+      expect(rows[0][21]).toBe('150.25')
+      // 界面未显示的列保持历史精度：ρ 6 位、CAS 4 位、Vx 4 位
+      expect(rows[0][22]).toBe('148.2000')
+      expect(rows[0][25]).toBe('1.225000')
+      expect(rows[0][26]).toBe('149.8000')
+    })
   })
 
   // ==================== saveConfig ====================
@@ -1197,6 +1254,76 @@ describe('stores/fiveHoleTest', () => {
       const probe2 = store.config.probes.find(p => p.probeId === 'probe2')!
       expect(probe2.pAtmSource).toEqual({ mode: 'device', deviceId: '', channel: 16, manualValue: 0 })
       expect(probe2.tAtmSource).toEqual({ mode: 'device', deviceId: '', channel: 17, manualValue: 0 })
+    })
+  })
+
+  // ==================== 耗时预估 vs 实际 ====================
+  describe('耗时预估 vs 实际', () => {
+    // 预估值最小结构：移动/驻留/采样三段 + 总时长
+    const previewTiming = {
+      estimatedTotalMs: 60000,
+      estMoveTotalMs: 1000, estDwellTotalMs: 50000, estSampleTotalMs: 9000,
+      estMoveMsPerPoint: 100, estDwellMsPerPoint: 5000, estSampleMsPerPoint: 900,
+      sampleHz: 20,
+      actualElapsedMs: 0, actualMoveMs: 0, actualDwellMs: 0, actualSampleMs: 0, actualPoints: 0,
+    }
+
+    it('未运行时 timing 取后端预估值', async () => {
+      mockFiveHoleService.EstimateFiveHoleTraversalTiming.mockResolvedValue(previewTiming)
+      const store = useFiveHoleTestStore()
+      await store.refreshTimingPreview()
+      expect(mockFiveHoleService.EstimateFiveHoleTraversalTiming).toHaveBeenCalledWith(store.config)
+      expect(store.timing?.estimatedTotalMs).toBe(60000)
+    })
+
+    it('运行中 timing 优先用进度事件携带的实测快照（覆盖预估值）', async () => {
+      mockFiveHoleService.EstimateFiveHoleTraversalTiming.mockResolvedValue(previewTiming)
+      const store = useFiveHoleTestStore()
+      await store.refreshTimingPreview()
+      store.startListening()
+
+      const handler = mockEventsOn.mock.calls.find(c => c[0] === 'five-hole:progress')![1] as (e: any) => void
+      handler({
+        data: {
+          taskId: 't1', totalPoints: 10, completedPoints: 3, progress: 30,
+          currentX: 0, currentY: 0, phase: 'waiting',
+          probeStatuses: [],
+          timing: { ...previewTiming, actualElapsedMs: 12345, actualPoints: 3, actualDwellMs: 11000 },
+        },
+      })
+
+      expect(store.timing?.estimatedTotalMs).toBe(60000)
+      expect(store.timing?.actualElapsedMs).toBe(12345)
+      expect(store.timing?.actualPoints).toBe(3)
+    })
+
+    it('liveElapsedMs：未运行/暂停时等于后端实测值，不本地递推', () => {
+      const store = useFiveHoleTestStore()
+      store.startListening()
+      const handler = mockEventsOn.mock.calls.find(c => c[0] === 'five-hole:progress')![1] as (e: any) => void
+      handler({
+        data: {
+          taskId: 't1', totalPoints: 10, completedPoints: 1, progress: 10,
+          currentX: 0, currentY: 0, phase: 'waiting', probeStatuses: [],
+          timing: { ...previewTiming, actualElapsedMs: 2000, actualPoints: 1 },
+        },
+      })
+      // taskStatus 未置 running → 不递推
+      expect(store.liveElapsedMs).toBe(2000)
+    })
+
+    it('预估调用抛错 → 不抛出，timingPreview 保持空', async () => {
+      mockFiveHoleService.EstimateFiveHoleTraversalTiming.mockRejectedValue(new Error('boom'))
+      const store = useFiveHoleTestStore()
+      await expect(store.refreshTimingPreview()).resolves.toBeUndefined()
+      expect(store.timingPreview).toBeNull()
+    })
+
+    it('运行中不重新计算预估（避免覆盖实测值）', async () => {
+      const store = useFiveHoleTestStore()
+      store.taskStatus = { status: 'running' } as any
+      await store.refreshTimingPreview()
+      expect(mockFiveHoleService.EstimateFiveHoleTraversalTiming).not.toHaveBeenCalled()
     })
   })
 })

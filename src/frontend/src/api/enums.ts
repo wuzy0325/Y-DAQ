@@ -68,7 +68,7 @@ export function supportsADAveraging(type: string): boolean {
 export const AD_AVERAGING_OFF_COUNT = 4
 
 // AD 平均开启时可选次数（与后端 types.ADAveragingAllowedCounts 对齐）
-export const adAveragingCountOptions: number[] = [8, 16, 32, 64]
+export const adAveragingCountOptions: number[] = [8, 16, 32]
 
 // 设备类型对应的总通道数（压力 + 大气压 + 大气温度）
 export function getTotalChannelCount(type: DeviceTypeValue): number {

@@ -160,7 +160,7 @@ func TestEffectiveADAveragingCount(t *testing.T) {
 		{"开启取8", true, 8, 8},
 		{"开启取16", true, 16, 16},
 		{"开启取32", true, 32, 32},
-		{"开启取64", true, 64, 64},
+		{"开启64已移除回退8", true, 64, 8},
 		{"开启非法回退8", true, 7, 8},
 		{"开启零值回退8", true, 0, 8},
 	}
@@ -174,6 +174,30 @@ func TestEffectiveADAveragingCount(t *testing.T) {
 				t.Errorf("DeviceProfile.EffectiveADAveragingCount() = %d, want %d", got, tc.want)
 			}
 		})
+	}
+}
+
+// TestADAveragingFromDevice 设备实际值映射：4 → 关闭；其他 → 开启并保留实际值（不归一化）
+func TestADAveragingFromDevice(t *testing.T) {
+	cases := []struct {
+		actual      int
+		wantEnabled bool
+		wantCount   int
+	}{
+		{4, false, 4},
+		{8, true, 8},
+		{16, true, 16},
+		{32, true, 32},
+		{0, false, 4},
+		{-1, false, 4},
+		{10, true, 10}, // 非枚举值也按设备实际显示，避免掩盖真实状态
+	}
+	for _, tc := range cases {
+		enabled, count := ADAveragingFromDevice(tc.actual)
+		if enabled != tc.wantEnabled || count != tc.wantCount {
+			t.Errorf("ADAveragingFromDevice(%d) = (%v, %d), want (%v, %d)",
+				tc.actual, enabled, count, tc.wantEnabled, tc.wantCount)
+		}
 	}
 }
 

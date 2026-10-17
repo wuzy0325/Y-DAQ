@@ -14,6 +14,39 @@ describe('composables/useLayoutStepSync', () => {
     expect(rectYStep.value).toBe(5)
   })
 
+  it('沿用已保存分段的步长，不被默认值 5 覆盖', () => {
+    const layout = ref({
+      pattern: 'rectangle',
+      rectangle: {
+        xMin: -20, xMax: 20, yMin: -20, yMax: 20,
+        xSteps: [{ start: -20, end: 20, step: 2 }],
+        ySteps: [{ start: -20, end: 20, step: 1 }],
+      },
+      line: null,
+    })
+    const { rectXStep, rectYStep } = useLayoutStepSync(layout)
+    expect(rectXStep.value).toBe(2)
+    expect(rectYStep.value).toBe(1)
+    // 立即同步写回的分段仍使用已保存的步长
+    expect(layout.value.rectangle!.xSteps).toEqual([{ start: -20, end: 20, step: 2 }])
+    expect(layout.value.rectangle!.ySteps).toEqual([{ start: -20, end: 20, step: 1 }])
+  })
+
+  it('非法步长（0 / 负数 / 非数字）回退默认 5', () => {
+    const layout = ref({
+      pattern: 'rectangle',
+      rectangle: {
+        xMin: 0, xMax: 10, yMin: 0, yMax: 10,
+        xSteps: [{ start: 0, end: 10, step: 0 }],
+        ySteps: [{ start: 0, end: 10, step: -3 }],
+      },
+      line: null,
+    })
+    const { rectXStep, rectYStep } = useLayoutStepSync(layout)
+    expect(rectXStep.value).toBe(5)
+    expect(rectYStep.value).toBe(5)
+  })
+
   it('immediate=true：rectangle 存在时立即同步 xSteps/ySteps', () => {
     const layout = ref({
       pattern: 'rectangle',

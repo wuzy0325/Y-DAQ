@@ -2,13 +2,47 @@ package manager
 
 import (
 	"fmt"
+	"log/slog"
 
 	"yx-daq/internal/types"
 )
 
+// syncADAveragingFromDevice 连接后读取设备实际 AD 平均次数，并以设备为准同步配置：
+// 读到 4 → 开关记为关闭；读到其他值 → 开关记为开启且保留实际次数（界面显示实际值）。
+// 读取失败仅告警并保留原配置（部分固件不支持 q05，不能因此阻断连接）。
+// 同步成功后广播 profiles 变更，前端据此刷新 AD 列显示。
+func (m *DeviceManager) syncADAveragingFromDevice(id string, drv DeviceDriver) {
+	reader, ok := drv.(ADAveragingReader)
+	if !ok {
+		return
+	}
+	actual, err := reader.ReadADAveraging()
+	if err != nil {
+		slog.Warn("sync AD averaging from device failed, keep profile",
+			"device", id, "err", err)
+		return
+	}
+	enabled, count := types.ADAveragingFromDevice(actual)
+
+	m.Lock()
+	profile, exists := m.profiles[id]
+	if exists {
+		profile.ADAveragingEnabled = enabled
+		profile.ADAveragingCount = count
+		m.profiles[id] = profile
+	}
+	m.Unlock()
+	if !exists {
+		return
+	}
+	m.saveProfilesWithLog("device")
+	m.emitProfileChange(id)
+}
+
 // SetADAveraging 设置压力扫描阀 AD 平均（启用开关 + 平均次数）。
-// 关闭时下发固定最低值 4；开启时下发 8/16/32/64（非法值回退 8）。
-// 持久化到设备配置，已连接时立即下发 w05 命令（采集进行中拒绝修改）。
+// 关闭时下发固定最低值 4；开启时下发 8/16/32（非法值回退 8）。
+// 持久化到设备配置，已连接时立即下发 w10 命令（采集进行中拒绝修改）。
+// 连接时则反向：以设备实际值同步配置（见 syncADAveragingFromDevice）。
 func (m *DeviceManager) SetADAveraging(id string, enabled bool, count int) error {
 	m.RLock()
 	profile, exists := m.profiles[id]

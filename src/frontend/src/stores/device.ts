@@ -289,6 +289,8 @@ export const useDeviceStore = defineStore('device', () => {
     { channel: 'device:status-updated', handler: (event: any) => { statuses.value = event.data as DeviceStatus[] } },
     // 温度校准写入/清除后刷新 profiles（DeviceView 编辑对话框的温度校准字段随之更新）
     { channel: 'device:temp-calib-updated', handler: () => { fetchProfiles() } },
+    // 后端主动改写配置（如连接后同步设备 AD 平均次数）后刷新 profiles
+    { channel: 'device:profiles-updated', handler: () => { fetchProfiles() } },
   ])
 
   function startListening() {

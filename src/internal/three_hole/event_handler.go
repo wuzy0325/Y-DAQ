@@ -13,6 +13,8 @@ type EventHandler struct {
 	dataProcessor  *DataProcessor
 	csvWriter     *ThreeHoleCsvWriter
 	eventPublisher ThreeHoleEventPublisher
+	// channelPrecision 设备通道采集精度查询（用于落盘小数位与界面显示对齐）；未注入时回退默认精度
+	channelPrecision types.ChannelPrecisionGetter
 }
 
 // NewEventHandler 创建事件处理器
@@ -25,13 +27,20 @@ func NewEventHandler(testManager *TestManager, dataProcessor *DataProcessor, csv
 	}
 }
 
+// SetChannelPrecisionGetter 注入设备通道精度查询（落盘小数位与界面显示一致）
+// 可选依赖 Setter 注入，未注入时用默认精度
+func (eh *EventHandler) SetChannelPrecisionGetter(get types.ChannelPrecisionGetter) {
+	eh.channelPrecision = get
+}
+
 // OnTestStart 处理测试开始事件
 func (eh *EventHandler) OnTestStart(config types.ThreeHoleTraversalConfig) error {
 	// 确保之前的 CSV 已关闭（防御旧测试 goroutine 延迟清理）
 	eh.csvWriter.Close()
 
-	// 初始化CSV写入器
-	if err := eh.csvWriter.Initialize(config.SavePath, config.SaveFileName); err != nil {
+	// 初始化CSV写入器（落盘小数位按界面显示精度解析）
+	prec := ResolveProbePrecision(config, eh.channelPrecision)
+	if err := eh.csvWriter.Initialize(config.SavePath, config.SaveFileName, prec); err != nil {
 		slog.Error("csv init failed", "err", err)
 		eh.testManager.EmitFatalError(fmt.Sprintf("CSV初始化失败: %v", err))
 		return err

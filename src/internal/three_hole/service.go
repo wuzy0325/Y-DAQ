@@ -76,6 +76,14 @@ func (s *ThreeHoleTraversalService) SetMotionWaiter(waiter ThreeHoleMotionWaiter
 	s.dataProcessor.SetMotionWaiter(waiter)
 }
 
+// SetChannelPrecisionGetter 设置设备通道采集精度查询（可选依赖 Setter 注入）
+// 用于 CSV 保存/实时录制的小数位与界面显示保持一致；未注入时用默认精度
+// 注意：仅可在测试/录制启动前调用。
+func (s *ThreeHoleTraversalService) SetChannelPrecisionGetter(get types.ChannelPrecisionGetter) {
+	s.dataProcessor.SetChannelPrecisionGetter(get)
+	s.eventHandler.SetChannelPrecisionGetter(get)
+}
+
 // LoadCalibFiles 加载校准文件
 func (s *ThreeHoleTraversalService) LoadCalibFiles(filePaths []string) error {
 	return s.interpolator.LoadCalibFiles(filePaths)

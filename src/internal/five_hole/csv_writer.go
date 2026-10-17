@@ -16,6 +16,8 @@ type FiveHoleCsvWriter struct {
 	file     *os.File
 	writer   *csv.Writer
 	flushCnt int
+	// prec 该探针原始采集列的落盘小数位（与界面显示一致，见 ResolveProbePrecision）
+	prec ProbePrecision
 }
 
 const fiveHoleCsvFlushInterval = 50
@@ -28,7 +30,8 @@ func NewFiveHoleCsvWriter() *FiveHoleCsvWriter {
 // Initialize 初始化 CSV 文件（创建文件、写表头）
 // savePath: 保存目录；baseName: 基础文件名（不含扩展名）；probeID: 探针ID（用于文件名区分）
 // pattern: 布点模式；扇面模式下点位列为 R(mm)/θ(°)，方向列标注 R/θ，其余模式为 X/Y
-func (w *FiveHoleCsvWriter) Initialize(savePath string, baseName string, probeID string, pattern types.TraversalPattern) error {
+// prec: 该探针原始采集列的落盘小数位（界面显示精度）
+func (w *FiveHoleCsvWriter) Initialize(savePath string, baseName string, probeID string, pattern types.TraversalPattern, prec ProbePrecision) error {
 	if baseName == "" {
 		baseName = fmt.Sprintf("FiveHoleTraversal-%s", time.Now().Format("2006-01-02"))
 	}
@@ -52,6 +55,7 @@ func (w *FiveHoleCsvWriter) Initialize(savePath string, baseName string, probeID
 
 	w.file = file
 	w.writer = csv.NewWriter(file)
+	w.prec = prec
 
 	// 点位/方向列标签：扇面为 R/θ（轴坐标），其余为 X/Y
 	primaryCol, secondaryCol := "X", "Y"   // 点位值列（扇面带单位）
@@ -89,32 +93,32 @@ func (w *FiveHoleCsvWriter) AppendPoint(dp types.FiveHoleTraversalDataPoint) err
 		dp.PointID,
 		formatTimestamp(dp.Timestamp),
 		dp.ProbeID,
-		fmt.Sprintf("%.4f", dp.X),
-		fmt.Sprintf("%.4f", dp.Y),
+		formatPrec(dp.X, types.WritePrecPosition),
+		formatPrec(dp.Y, types.WritePrecPosition),
 		dp.XControllerName,
 		string(dp.XAxis),
 		dp.YControllerName,
 		string(dp.YAxis),
-		fmt.Sprintf("%.6f", dp.RawData.P1),
-		fmt.Sprintf("%.6f", dp.RawData.P2),
-		fmt.Sprintf("%.6f", dp.RawData.P3),
-		fmt.Sprintf("%.6f", dp.RawData.P4),
-		fmt.Sprintf("%.6f", dp.RawData.P5),
-		fmt.Sprintf("%.6f", dp.RawData.PAtm),
-		fmt.Sprintf("%.6f", dp.RawData.TAtm),
-		fmt.Sprintf("%.6f", dp.InterpResult.PtProbe),
-		fmt.Sprintf("%.6f", dp.InterpResult.PsProbe),
-		fmt.Sprintf("%.6f", dp.InterpResult.MachProbe),
-		fmt.Sprintf("%.4f", dp.InterpResult.AlphaProbe),
-		fmt.Sprintf("%.4f", dp.InterpResult.BetaProbe),
-		fmt.Sprintf("%.4f", dp.InterpResult.VelocityProbe),
-		fmt.Sprintf("%.4f", dp.InterpResult.CASProbe),
-		fmt.Sprintf("%.4f", dp.InterpResult.SATProbe),
-		fmt.Sprintf("%.6f", dp.InterpResult.DynamicPressure),
-		fmt.Sprintf("%.6f", dp.InterpResult.Density),
-		fmt.Sprintf("%.4f", dp.InterpResult.VxProbe),
-		fmt.Sprintf("%.4f", dp.InterpResult.VyProbe),
-		fmt.Sprintf("%.4f", dp.InterpResult.VzProbe),
+		formatPrec(dp.RawData.P1, w.prec.P1),
+		formatPrec(dp.RawData.P2, w.prec.P2),
+		formatPrec(dp.RawData.P3, w.prec.P3),
+		formatPrec(dp.RawData.P4, w.prec.P4),
+		formatPrec(dp.RawData.P5, w.prec.P5),
+		formatPrec(dp.RawData.PAtm, w.prec.PAtm),
+		formatPrec(dp.RawData.TAtm, w.prec.TAtm),
+		formatPrec(dp.InterpResult.PtProbe, types.WritePrecPt),
+		formatPrec(dp.InterpResult.PsProbe, types.WritePrecPs),
+		formatPrec(dp.InterpResult.MachProbe, types.WritePrecMach),
+		formatPrec(dp.InterpResult.AlphaProbe, types.WritePrecAlpha),
+		formatPrec(dp.InterpResult.BetaProbe, types.WritePrecBeta),
+		formatPrec(dp.InterpResult.VelocityProbe, types.WritePrecVelocity),
+		formatPrec(dp.InterpResult.CASProbe, types.WritePrecCAS),
+		formatPrec(dp.InterpResult.SATProbe, types.WritePrecSAT),
+		formatPrec(dp.InterpResult.DynamicPressure, types.WritePrecQc),
+		formatPrec(dp.InterpResult.Density, types.WritePrecDensity),
+		formatPrec(dp.InterpResult.VxProbe, types.WritePrecVxyz),
+		formatPrec(dp.InterpResult.VyProbe, types.WritePrecVxyz),
+		formatPrec(dp.InterpResult.VzProbe, types.WritePrecVxyz),
 		fmt.Sprintf("%d", dp.SampleCount),
 	}
 

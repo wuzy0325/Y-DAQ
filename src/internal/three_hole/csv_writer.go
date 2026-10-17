@@ -20,6 +20,8 @@ type ThreeHoleCsvWriter struct {
 	file     *os.File
 	writer   *csv.Writer
 	flushCnt int // 累计写入点数，达到阈值时 flush
+	// prec 原始采集列的落盘小数位（与界面显示一致，见 ResolveProbePrecision）
+	prec ProbePrecision
 }
 
 const csvFlushInterval = 50 // 每写 50 点 flush 一次
@@ -30,7 +32,8 @@ func NewThreeHoleCsvWriter() *ThreeHoleCsvWriter {
 }
 
 // Initialize 初始化 CSV 文件（创建文件、写表头）
-func (w *ThreeHoleCsvWriter) Initialize(savePath string, fileName string) error {
+// prec: 原始采集列的落盘小数位（界面显示精度）
+func (w *ThreeHoleCsvWriter) Initialize(savePath string, fileName string, prec ProbePrecision) error {
 	if fileName == "" {
 		fileName = fmt.Sprintf("ThreeHoleTraversal-%s.csv", time.Now().Format("2006-01-02"))
 	}
@@ -56,6 +59,7 @@ func (w *ThreeHoleCsvWriter) Initialize(savePath string, fileName string) error 
 	w.file = file
 	w.writer = csv.NewWriter(file)
 	w.flushCnt = 0
+	w.prec = prec
 	w.mu.Unlock()
 
 	// 写入表头（时间戳紧随点号；writer 已加锁保护，此处通过局部变量写入）
@@ -86,18 +90,18 @@ func (w *ThreeHoleCsvWriter) AppendPoint(dp types.ThreeHoleTraversalDataPoint) e
 	record := []string{
 		dp.PointID,
 		formatTimestamp(dp.Timestamp),
-		fmt.Sprintf("%.4f", dp.X),
-		fmt.Sprintf("%.4f", dp.Y),
-		fmt.Sprintf("%.6f", dp.RawData.P1),
-		fmt.Sprintf("%.6f", dp.RawData.P2),
-		fmt.Sprintf("%.6f", dp.RawData.P3),
-		fmt.Sprintf("%.6f", dp.RawData.PAtm),
-		fmt.Sprintf("%.6f", dp.RawData.TAtm),
-		fmt.Sprintf("%.6f", dp.InterpResult.PtProbe),
-		fmt.Sprintf("%.6f", dp.InterpResult.PsProbe),
-		fmt.Sprintf("%.6f", dp.InterpResult.MachProbe),
-		fmt.Sprintf("%.4f", dp.InterpResult.AlphaProbe),
-		fmt.Sprintf("%.4f", dp.InterpResult.VelocityProbe),
+		formatPrec(dp.X, types.WritePrecPosition),
+		formatPrec(dp.Y, types.WritePrecPosition),
+		formatPrec(dp.RawData.P1, w.prec.P1),
+		formatPrec(dp.RawData.P2, w.prec.P2),
+		formatPrec(dp.RawData.P3, w.prec.P3),
+		formatPrec(dp.RawData.PAtm, w.prec.PAtm),
+		formatPrec(dp.RawData.TAtm, w.prec.TAtm),
+		formatPrec(dp.InterpResult.PtProbe, types.WritePrecPt),
+		formatPrec(dp.InterpResult.PsProbe, types.WritePrecPs),
+		formatPrec(dp.InterpResult.MachProbe, types.WritePrecMach),
+		formatPrec(dp.InterpResult.AlphaProbe, types.WritePrecAlpha),
+		formatPrec(dp.InterpResult.VelocityProbe, types.WritePrecVelocity),
 		fmt.Sprintf("%d", dp.InterpResult.IterationCount),
 		fmt.Sprintf("%d", dp.SampleCount),
 	}

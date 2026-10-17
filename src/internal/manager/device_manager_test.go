@@ -20,7 +20,10 @@ type mockDeviceDriver struct {
 	unit       string
 	atmEnabled atomic.Bool
 	adAvgCount atomic.Int32
-	connectErr error
+	adAvgRead  atomic.Int32 // ReadADAveraging 返回的设备实际值
+	// adAvgReadErr 非空时模拟读取 AD 平均失败
+	adAvgReadErr error
+	connectErr   error
 }
 
 func (m *mockDeviceDriver) Connect() error {
@@ -67,6 +70,14 @@ func (m *mockDeviceDriver) SetAtmEnabled(enabled bool) {
 func (m *mockDeviceDriver) SetADAveraging(count int) error {
 	m.adAvgCount.Store(int32(count))
 	return nil
+}
+
+// ReadADAveraging 模拟连接后读取设备实际 AD 平均次数（adAvgReadErr 非空时模拟读取失败）
+func (m *mockDeviceDriver) ReadADAveraging() (int, error) {
+	if m.adAvgReadErr != nil {
+		return 0, m.adAvgReadErr
+	}
+	return int(m.adAvgRead.Load()), nil
 }
 
 var errNotConnected = errors.New("device not connected")
@@ -394,6 +405,81 @@ func TestDeviceManager_SetADAveraging_AcquiringRejected(t *testing.T) {
 }
 
 // ==================== Connection lifecycle ====================
+
+// withMockFactory 临时把某设备类型的驱动工厂替换为给定 mock，测试结束自动还原
+func withMockFactory(t *testing.T, deviceType types.DeviceType, drv DeviceDriver) {
+	t.Helper()
+	orig, has := driverFactories[deviceType]
+	driverFactories[deviceType] = func(types.DeviceProfile) DeviceDriver { return drv }
+	t.Cleanup(func() {
+		if has {
+			driverFactories[deviceType] = orig
+			return
+		}
+		delete(driverFactories, deviceType)
+	})
+}
+
+// TestDeviceManager_Connect_SyncsADAveragingFromDevice 连接后以设备实际值为准：
+// 读到 4 → 开关关闭；读到其他值 → 开关开启并显示实际值；读取失败保留原配置。
+func TestDeviceManager_Connect_SyncsADAveragingFromDevice(t *testing.T) {
+	cases := []struct {
+		name        string
+		deviceRead  int32
+		readErr     error
+		wantEnabled bool
+		wantCount   int
+		wantNotify  bool
+	}{
+		{"读到4视为关闭", 4, nil, false, types.ADAveragingOffCount, true},
+		{"读到8开启8", 8, nil, true, 8, true},
+		{"读到16开启16", 16, nil, true, 16, true},
+		{"读到32开启32", 32, nil, true, 32, true},
+		{"读取失败保留原配置", 0, errNotConnected, true, 8, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			m := newTestManager()
+			p := newAtmCapableProfile("dev-1", types.DeviceTypeEA2516A)
+			// 原配置故意与设备不一致（enabled=8），验证以设备为准
+			p.ADAveragingEnabled = true
+			p.ADAveragingCount = 8
+			m.AddProfile(p)
+
+			mock := &mockDeviceDriver{channels: p.Channels}
+			mock.adAvgRead.Store(tc.deviceRead)
+			mock.adAvgReadErr = tc.readErr
+			withMockFactory(t, types.DeviceTypeEA2516A, mock)
+
+			var notified []string
+			m.SetOnProfileChange(func(id string) { notified = append(notified, id) })
+
+			if err := m.Connect("dev-1"); err != nil {
+				t.Fatalf("Connect failed: %v", err)
+			}
+
+			got := m.GetProfileByID("dev-1")
+			if got == nil {
+				t.Fatal("profile missing after connect")
+			}
+			if got.ADAveragingEnabled != tc.wantEnabled || got.ADAveragingCount != tc.wantCount {
+				t.Errorf("profile AD = (%v, %d), want (%v, %d)",
+					got.ADAveragingEnabled, got.ADAveragingCount, tc.wantEnabled, tc.wantCount)
+			}
+			if tc.wantNotify {
+				if len(notified) != 1 || notified[0] != "dev-1" {
+					t.Errorf("profile change notify = %v, want [dev-1]", notified)
+				}
+			} else if len(notified) != 0 {
+				t.Errorf("read failure must not notify, got %v", notified)
+			}
+			// 连接时只读不写：设备侧次数不得被配置值覆盖
+			if mock.adAvgCount.Load() != 0 {
+				t.Errorf("driver must not be written on connect, got %d", mock.adAvgCount.Load())
+			}
+		})
+	}
+}
 
 func TestDeviceManager_Connect_ProfileNotFound(t *testing.T) {
 	m := newTestManager()

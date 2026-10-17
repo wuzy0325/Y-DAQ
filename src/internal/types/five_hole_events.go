@@ -41,6 +41,34 @@ type FiveHoleTraversalDataPoint struct {
 	Timestamp       int64                       `json:"timestamp"`
 }
 
+// FiveHoleTraversalTiming 五孔移位测试耗时统计（预估 vs 实际）
+//
+// 预估口径（理论值，启动前即可算出）：
+//   移动 = 点位间距离 / 轴配置最大速度（同相位多轴并行取最大；扇面 θ 相与 R 相串行相加）
+//   驻留 = 配置驻留时间
+//   采样 = 采样次数 × 最慢采集设备出帧周期（采样频率 = 1000/PeriodMs）
+//
+// 实际口径：移动/驻留/采样三段分别实测（暂停时长不计入），
+// 总耗时为测试开始至今扣除暂停时间。
+type FiveHoleTraversalTiming struct {
+	// ===== 预估（全点位合计） =====
+	EstimatedTotalMs int64 `json:"estimatedTotalMs"` // 预估总时长
+	EstMoveTotalMs   int64 `json:"estMoveTotalMs"`   // 预估移动耗时合计
+	EstDwellTotalMs  int64 `json:"estDwellTotalMs"`  // 预估驻留耗时合计
+	EstSampleTotalMs int64 `json:"estSampleTotalMs"` // 预估采样耗时合计
+	// ===== 预估（单点位，界面展示"每点：移动+驻留+采样"） =====
+	EstMoveMsPerPoint   int64   `json:"estMoveMsPerPoint"`
+	EstDwellMsPerPoint  int64   `json:"estDwellMsPerPoint"`
+	EstSampleMsPerPoint int64   `json:"estSampleMsPerPoint"`
+	SampleHz            float64 `json:"sampleHz"` // 参与预估的最慢设备采样频率（Hz）
+	// ===== 实际（累计） =====
+	ActualElapsedMs int64 `json:"actualElapsedMs"` // 实际已用总时长（不含暂停）
+	ActualMoveMs    int64 `json:"actualMoveMs"`    // 移动耗时累计
+	ActualDwellMs   int64 `json:"actualDwellMs"`   // 驻留耗时累计
+	ActualSampleMs  int64 `json:"actualSampleMs"`  // 采样耗时累计
+	ActualPoints    int   `json:"actualPoints"`    // 已完成点位数量（用于折算每点实际耗时）
+}
+
 // ==================== 五孔测试状态 ====================
 
 // FiveHoleProbeStatus 单根探针实时状态
@@ -64,6 +92,8 @@ type FiveHoleTraversalTaskStatus struct {
 	// 每探针独立 phase/坐标（统一进度 + 各探针 phase 指示）
 	ProbeStatuses   []FiveHoleProbeStatus  `json:"probeStatuses"`
 	LastError       string                 `json:"lastError,omitempty"`
+	// 耗时预估 vs 实际（测试未启动时为 nil）
+	Timing *FiveHoleTraversalTiming `json:"timing,omitempty"`
 }
 
 // ==================== 五孔事件类型 ====================
@@ -78,6 +108,8 @@ type FiveHoleTraversalProgressEvent struct {
 	CurrentY        float64               `json:"currentY"`
 	Phase           string                `json:"phase,omitempty"`
 	ProbeStatuses   []FiveHoleProbeStatus `json:"probeStatuses"`
+	// 耗时预估 vs 实际（测试未启动时为 nil）
+	Timing *FiveHoleTraversalTiming `json:"timing,omitempty"`
 }
 
 // FiveHoleTraversalRealtimeEvent 实时数据事件（含所有启用探针的实时数据）

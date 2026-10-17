@@ -110,8 +110,33 @@
           <div class="progress-bar-track">
             <div class="progress-bar-fill" :style="{ width: progressPercentage + '%' }" />
           </div>
-          <div class="progress-tip">
-            💡 <span class="tip-strong">交互提示:</span> 点击网格内任意圆点可手动设定测定状态并读取该坐标处参数。
+
+          <!-- 耗时预估 vs 实际：移动=距离/控制器速度，驻留=驻留时间，采样=采样次数/设备采样频率 -->
+          <div v-if="timingInfo" class="timing-rows">
+            <div class="progress-row">
+              <span class="progress-label">预估总时长:</span>
+              <span class="progress-value mono-num">{{ formatDuration(timingInfo.estimatedTotalMs) }}</span>
+            </div>
+            <div class="timing-sub">
+              每点 移动 {{ formatSpan(timingInfo.estMoveMsPerPoint) }} + 驻留 {{ formatSpan(timingInfo.estDwellMsPerPoint) }} + 采样 {{ formatSpan(timingInfo.estSampleMsPerPoint) }}
+              <span v-if="timingInfo.sampleHz > 0">
+                （设备采样频率 {{ formatSamplingRate(timingInfo.sampleHz) }}）
+              </span>
+            </div>
+            <div class="progress-row">
+              <span class="progress-label">实际已用:</span>
+              <span class="progress-value mono-num" :class="{ overrun: timingOverrun }">
+                {{ formatDuration(store.liveElapsedMs) }}
+              </span>
+            </div>
+            <div class="timing-sub">
+              移动 {{ formatSpan(timingInfo.actualMoveMs) }} / 驻留 {{ formatSpan(timingInfo.actualDwellMs) }}
+              / 采样 {{ formatSpan(timingInfo.actualSampleMs) }}（已测 {{ timingInfo.actualPoints }} 点）
+            </div>
+            <div class="progress-row">
+              <span class="progress-label">剩余预估:</span>
+              <span class="progress-value mono-num accent">{{ timingRemainingText }}</span>
+            </div>
           </div>
         </div>
       </GlassCard>
@@ -620,6 +645,10 @@ import type {
 } from '../stores/fiveHoleTest/types'
 import { ATM_SOURCE_MODE, FIVE_HOLE_DATA_MODE } from '../stores/fiveHoleTest/types'
 import { useMotionStore } from '../stores/motion'
+import { useAutoSaveConfig } from '../composables/useAutoSaveConfig'
+import { useLayoutStepSync } from '../composables/useLayoutStepSync'
+import { usePointPreviewCanvas } from '../composables/usePointPreviewCanvas'
+import { useTestRealtimeRecording } from '../composables/useTestRealtimeRecording'
 import {
   TraversalPattern,
   TraversalPatternLabels,
@@ -629,12 +658,10 @@ import {
   type FiveHoleChannelRoleValue,
   type AxisNameValue,
 } from '../api/enums'
+import { formatDuration, formatSamplingRate, formatSpan } from '../utils/formatDuration'
+import { atmSourcePrecision, fiveHoleRolePrecision } from '../utils/writePrecision'
 import GlassCard from '../components/GlassCard.vue'
 import ValueDisplay from '../components/ValueDisplay.vue'
-import { useAutoSaveConfig } from '../composables/useAutoSaveConfig'
-import { useLayoutStepSync } from '../composables/useLayoutStepSync'
-import { usePointPreviewCanvas } from '../composables/usePointPreviewCanvas'
-import { useTestRealtimeRecording } from '../composables/useTestRealtimeRecording'
 
 const store = useFiveHoleTestStore()
 const deviceStore = useDeviceStore()
@@ -690,18 +717,14 @@ function getProbeInterp(probeId: string): FiveHoleInterpolationResult | undefine
   return getProbeRealtime(probeId)?.interpResult
 }
 
-// 通道精度（按探针 + 角色）
+// 通道精度（按探针 + 角色）：与 CSV 导出共用同一解析规则（utils/writePrecision）
 function getChPrecision(probeId: string, role: FiveHoleChannelRoleValue): number {
   const probe = store.config.probes.find(p => p.probeId === probeId)
-  if (!probe) return 3
-  const ch = probe.probeChannels.find(c => c.role === role)
-  if (!ch) return 3
-  return getDeviceChannelPrecision(ch.deviceId, ch.channel)
+  return fiveHoleRolePrecision(deviceStore.profiles, probe, role)
 }
-// 探针级 P∞/T∞ 精度（device 模式按数据源设备通道取精度，manual 模式用默认精度）
+// 探针级 P∞/T∞ 精度（device 模式按数据源设备通道精度，manual 模式用默认精度）
 function getAtmPrecision(src: FiveHoleAtmSource | undefined): number {
-  if (!src || src.mode !== ATM_SOURCE_MODE.DEVICE || !src.deviceId) return 3
-  return getDeviceChannelPrecision(src.deviceId, src.channel)
+  return atmSourcePrecision(deviceStore.profiles, src)
 }
 // 探针级大气数据源配置项（P∞/T∞ 结构相同，模板 v-for 复用）
 function atmSourceConfigs(probe: FiveHoleProbeConfig) {
@@ -710,12 +733,6 @@ function atmSourceConfigs(probe: FiveHoleProbeConfig) {
     { key: 't', label: '气流温度 T∞', unit: '°C', step: 0.1, source: probe.tAtmSource },
   ]
 }
-function getDeviceChannelPrecision(deviceId: string, channel: number): number {
-  const profile = deviceStore.profiles.find(p => p.id === deviceId)
-  if (!profile) return 3
-  return profile.channels[channel]?.precision ?? 3
-}
-
 // CSV 导出可用性
 function hasProbeResults(probeId: string): boolean {
   return (store.completeProbeDataPoints?.[probeId]?.length ?? 0) > 0
@@ -875,7 +892,7 @@ const { pointCanvasRef, previewPoints, drawPointCanvas } = usePointPreviewCanvas
   progress: computed(() => store.progress),
   isRunning: computed(() => store.isRunning),
   canvasSize: 'parent',
-  padding: { left: 44, right: 16, top: 12, bottom: 36 },
+  padding: { left: 52, right: 16, top: 12, bottom: 36 },
   pointRadiusFactor: 120,
   supportCustomPattern: true,
 })
@@ -886,6 +903,43 @@ const progressPercentage = computed(() => {
   const total = previewPoints.value.length
   if (total === 0) return 0
   return ((completedPoints.value / total) * 100).toFixed(1)
+})
+
+// ==================== 耗时预估 vs 实际 ====================
+// 预估来源：未启动时后端按配置算（轴速/驻留/设备采样频率），运行中改用进度事件携带的实测快照
+const timingInfo = computed(() => store.timing)
+const timingTotalPoints = computed(() => previewPoints.value.length)
+
+// 每点实际耗时：优先用已测点的实测均值外推，无实测点时退回理论预估
+const timingAvgPerPointMs = computed(() => {
+  const t = timingInfo.value
+  if (!t) return 0
+  if (t.actualPoints > 0 && store.liveElapsedMs > 0) return store.liveElapsedMs / t.actualPoints
+  return t.estimatedTotalMs / Math.max(1, timingTotalPoints.value)
+})
+
+// 剩余预估 = 剩余点数 × 每点耗时（有实测数据后按实际节奏外推，而非固定理论值）
+const timingRemainingMs = computed(() => {
+  if (!timingInfo.value) return 0
+  const remaining = Math.max(0, timingTotalPoints.value - completedPoints.value)
+  if (remaining === 0) return 0
+  return remaining * timingAvgPerPointMs.value
+})
+
+// 实际明显落后于预估（超出 20%）时高亮，便于判断设备或运动是否异常
+const timingOverrun = computed(() => {
+  const t = timingInfo.value
+  if (!t || completedPoints.value <= 0) return false
+  const expected = (t.estimatedTotalMs / Math.max(1, timingTotalPoints.value)) * completedPoints.value
+  return expected > 0 && store.liveElapsedMs > expected * 1.2
+})
+
+// 剩余预估展示文案：全部点位完成后显示"已完成"，避免出现无意义的 0
+const timingRemainingText = computed(() => {
+  if (!timingInfo.value) return '--'
+  if (timingRemainingMs.value > 0) return formatDuration(timingRemainingMs.value)
+  if (timingTotalPoints.value > 0 && completedPoints.value >= timingTotalPoints.value) return '已完成'
+  return '--'
 })
 
 watch(
@@ -1198,6 +1252,26 @@ onUnmounted(() => {
   color: rgba(255,255,255,0.85);
 
   &.accent { color: #00ff88; }
+  // 实际耗时明显超出预估（>20%）时高亮告警
+  &.overrun { color: #ffaa00; }
+}
+
+// 耗时预估 vs 实际：与上方进度行用虚线分隔
+.timing-rows {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(255,255,255,0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.timing-sub {
+  font-size: 10px;
+  line-height: 1.45;
+  color: rgba(255,255,255,0.4);
+  font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+  font-variant-numeric: tabular-nums;
 }
 
 .mono-num {
@@ -1219,22 +1293,6 @@ onUnmounted(() => {
   border-radius: 3px;
   transition: width 0.3s ease;
   box-shadow: 0 0 8px rgba(0,255,136,0.5);
-}
-
-.progress-tip {
-  margin-top: 6px;
-  font-size: 10px;
-  color: rgba(255,255,255,0.45);
-  line-height: 1.5;
-  background: rgba(0,0,0,0.4);
-  padding: 6px 8px;
-  border-radius: 4px;
-  border: 1px solid rgba(255,255,255,0.04);
-
-  .tip-strong {
-    color: rgba(255,255,255,0.7);
-    font-weight: 500;
-  }
 }
 
 // ==================== 右侧：探针卡片堆叠 ====================

@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 // ---- mock 边界 ----
 // threeHoleTest store 依赖：
@@ -12,7 +12,7 @@ import { createPinia, setActivePinia } from 'pinia'
 type EventsOnFn = (channel: string, handler: (e: any) => void) => () => void
 type EventsOffFn = (channel: string) => void
 
-const { mockThreeHoleService, mockConfigService, mockEventsOn, mockEventsOff, mockMotionStore, mockEnsureDevicesAcquiring, mockDownloadCSV } = vi.hoisted(() => ({
+const { mockThreeHoleService, mockConfigService, mockEventsOn, mockEventsOff, mockMotionStore, mockEnsureDevicesAcquiring, mockDeviceStore, mockDownloadCSV } = vi.hoisted(() => ({
   mockThreeHoleService: {
     SelectThreeHoleCalibFiles: vi.fn(),
     LoadThreeHoleCalibFiles: vi.fn(),
@@ -38,6 +38,10 @@ const { mockThreeHoleService, mockConfigService, mockEventsOn, mockEventsOff, mo
     statuses: [] as any[],
   },
   mockEnsureDevicesAcquiring: vi.fn<(ids: Iterable<string>) => Promise<string[]>>(() => Promise.resolve([])),
+  // device store mock：仅暴露 exportCSV 解析通道精度用到的 profiles
+  mockDeviceStore: {
+    profiles: [] as any[],
+  },
   mockDownloadCSV: vi.fn<(prefix: string, headers: string[], rows: (string | number)[][]) => void>(),
 }))
 
@@ -56,14 +60,16 @@ vi.mock('../motion', () => ({
 
 vi.mock('../device', () => ({
   ensureDevicesAcquiring: mockEnsureDevicesAcquiring,
+  // 导出 CSV 按设备通道采集精度落盘（默认无 profile → 回退 3 位）
+  useDeviceStore: () => mockDeviceStore,
 }))
 
 vi.mock('../../utils/csv', () => ({
   downloadCSV: mockDownloadCSV,
 }))
 
-import { useThreeHoleTestStore } from '../threeHoleTest'
 import { ThreeHoleChannelRole, TraversalPattern } from '../../api/enums'
+import { useThreeHoleTestStore } from '../threeHoleTest'
 
 describe('stores/threeHoleTest', () => {
   beforeEach(() => {
@@ -76,6 +82,7 @@ describe('stores/threeHoleTest', () => {
     mockMotionStore.statuses = []
     mockEnsureDevicesAcquiring.mockReset()
     mockEnsureDevicesAcquiring.mockResolvedValue([])
+    mockDeviceStore.profiles = []
     mockDownloadCSV.mockReset()
   })
 
@@ -620,6 +627,48 @@ describe('stores/threeHoleTest', () => {
       // 时间戳为可读时间（本地时区，毫秒精度），其后为 X
       expect(rows[0][1]).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$/)
       expect(rows[0][2]).toBe('1.5000')
+    })
+
+    it('原始采集列按通道采集精度落盘，插值列按界面显示精度', () => {
+      const store = useThreeHoleTestStore()
+      // 设备通道精度：ch0=1 位（P1）、ch1=0 位（P2）、ch2=2 位（P3）、ch3=2 位（P∞）、ch4=1 位（T∞）
+      mockDeviceStore.profiles = [{
+        id: 'dev1',
+        channels: [{ precision: 1 }, { precision: 0 }, { precision: 2 }, { precision: 2 }, { precision: 1 }],
+      }]
+      store.config.deviceId = 'dev1'
+      store.config.probeChannels = [
+        { name: 'P1', role: ThreeHoleChannelRole.P1, channel: 0, enabled: true },
+        { name: 'P2', role: ThreeHoleChannelRole.P2, channel: 1, enabled: true },
+        { name: 'P3', role: ThreeHoleChannelRole.P3, channel: 2, enabled: true },
+        { name: 'P∞', role: ThreeHoleChannelRole.P_ATM, channel: 3, enabled: true },
+        { name: 'T∞', role: ThreeHoleChannelRole.T_ATM, channel: 4, enabled: true },
+      ]
+      store.taskStatus = {
+        status: 'completed',
+        dataPoints: [{
+          pointId: 'p1', x: 1.5, y: 2.5,
+          rawData: { p1: 100.123456, p2: 101.654321, p3: 102.555, pAtm: 101.325, tAtm: 25.55 },
+          interpResult: {
+            ptProbe: 102.5, psProbe: 100, machProbe: 0.456789, alphaProbe: 5.25, velocityProbe: 150.25,
+            iterationCount: 3, converged: true, valid: true,
+          },
+          sampleCount: 10, timestamp: 1234567890,
+        }],
+      } as any
+      store.exportCSV()
+      const [, , rows] = mockDownloadCSV.mock.calls[0]
+      // 列序：点号,时间戳,X,Y,P1,P2,P3,P∞,T∞,Pt,Ps,Ma,α,V,迭代次数,采样数
+      expect(rows[0][4]).toBe('100.1')
+      expect(rows[0][5]).toBe('102')
+      expect(rows[0][6]).toBe('102.56')
+      expect(rows[0][7]).toBe('101.33')
+      expect(rows[0][8]).toBe('25.6')
+      // 插值列与界面显示一致：Pt/Ps 3 位、Ma 4 位、α/V 2 位
+      expect(rows[0][9]).toBe('102.500')
+      expect(rows[0][11]).toBe('0.4568')
+      expect(rows[0][12]).toBe('5.25')
+      expect(rows[0][13]).toBe('150.25')
     })
 
     it('probeID=probe2 → filenamePrefix 含 probe2', () => {

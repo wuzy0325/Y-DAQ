@@ -38,6 +38,12 @@ type ADAveragingConfigurator interface {
 	SetADAveraging(count int) error
 }
 
+// ADAveragingReader AD 平均次数读取接口（仅 EA2508A/EA2516A 驱动实现）。
+// 连接后由 DeviceManager 读取设备实际值，同步到配置与界面（设备为准）。
+type ADAveragingReader interface {
+	ReadADAveraging() (int, error)
+}
+
 // ConfigSyncNotifier 配置同步通知能力接口（仅 EA2516T 驱动实现）
 type ConfigSyncNotifier interface {
 	OnConfigSynced(cb func(driver.DAQTHardwareConfig))

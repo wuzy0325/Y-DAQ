@@ -128,7 +128,7 @@
                 @change="(val: string | number | boolean) => handleSetAdAvgEnabled(row, !!val)"
               />
               <el-select
-                :model-value="adAvgCountOf(row)"
+                :model-value="adAvgDisplayCountOf(row)"
                 :disabled="!!configDisabledReason(row) || !adAvgEnabledOf(row)"
                 size="small"
                 class="ad-avg-select"
@@ -261,7 +261,6 @@
               <el-option v-for="n in adAveragingCountOptions" :key="n" :label="String(n)" :value="n" />
             </el-select>
           </div>
-          <span class="hint-text">关闭时固定 {{ AD_AVERAGING_OFF_COUNT }} 次</span>
         </div>
       </div>
 
@@ -347,7 +346,6 @@
             <el-select v-model="editForm.adAveragingCount" :disabled="!editForm.adAveragingEnabled" size="small" style="width: 90px">
               <el-option v-for="n in adAveragingCountOptions" :key="n" :label="String(n)" :value="n" />
             </el-select>
-            <span class="hint-text">关闭固定 {{ AD_AVERAGING_OFF_COUNT }}</span>
           </div>
         </div>
       </div>
@@ -672,8 +670,8 @@ async function handleSetAtmEnabled(row: { id: string }, enabled: boolean) {
 }
 
 // ==================== AD 平均 ====================
-// 压力扫描阀 AD 平均：关闭时固定最低 4 次，开启时可设 8/16/32/64。
-// 已连接设备立即下发 w05 命令；未连接仅持久化（连接后由驱动下发）。
+// 压力扫描阀 AD 平均：连接后以设备实际值为准（读到 4 视为关闭，其余值开启并显示实际值）；
+// 手动切换/选择立即下发 w10 命令（关闭下发固定 4），未连接仅持久化。
 const adAvgLoading = reactive<Record<string, boolean>>({})
 
 function adAvgProfileOf(row: { id: string }) {
@@ -684,7 +682,15 @@ function adAvgEnabledOf(row: { id: string }): boolean {
   return adAvgProfileOf(row)?.adAveragingEnabled === true
 }
 
-function adAvgCountOf(row: { id: string }): number {
+// 展示值：开启时显示设备实际次数（可能不在枚举列表内），关闭时留空由占位符显示 4
+function adAvgDisplayCountOf(row: { id: string }): number | undefined {
+  if (!adAvgEnabledOf(row)) return undefined
+  return adAvgProfileOf(row)?.adAveragingCount
+}
+
+// 打开开关时下发的次数：已是合法值则沿用，否则取首个合法值 8
+// （底层为 4 表示关闭，4 不在枚举列表内，故打开后显示 8）
+function adAvgNextCountOf(row: { id: string }): number {
   const c = adAvgProfileOf(row)?.adAveragingCount
   return c !== undefined && adAveragingCountOptions.includes(c) ? c : adAveragingCountOptions[0]
 }
@@ -708,7 +714,7 @@ async function applyAdAvg(row: { id: string }, enabled: boolean, count: number) 
 }
 
 function handleSetAdAvgEnabled(row: { id: string }, enabled: boolean) {
-  applyAdAvg(row, enabled, adAvgCountOf(row))
+  applyAdAvg(row, enabled, adAvgNextCountOf(row))
 }
 
 function handleSetAdAvgCount(row: { id: string }, count: number) {
@@ -829,6 +835,9 @@ async function addDevice() {
       }
     }
 
+    // AD平均仅对真实压力扫描阀有效（EA2508A/EA2516A）；关闭时次数记固定值 4（与硬件一致）
+    const adAvgEnabled = supportsADAveraging(newDevice.value.type as DeviceTypeValue) && newDevice.value.adAveragingEnabled
+
     const profile = new types.DeviceProfile({
       id,
       name: deviceName,
@@ -840,9 +849,8 @@ async function addDevice() {
       autoConnect: newDevice.value.autoConnect,
       // 大气压/温度使能仅对真实压力设备有效（EA2508A/EA2516A），其余保持默认启用
       atmEnabled: isAtmSupported(newDevice.value.type) ? newDevice.value.atmEnabled : true,
-      // AD平均仅对真实压力扫描阀有效（EA2508A/EA2516A）
-      adAveragingEnabled: supportsADAveraging(newDevice.value.type as DeviceTypeValue) ? newDevice.value.adAveragingEnabled : false,
-      adAveragingCount: newDevice.value.adAveragingCount,
+      adAveragingEnabled: adAvgEnabled,
+      adAveragingCount: adAvgEnabled ? newDevice.value.adAveragingCount : AD_AVERAGING_OFF_COUNT,
       channels,
     })
 
@@ -1131,6 +1139,9 @@ async function saveEdit() {
       zeroCalibratedAt: c.zeroCalibratedAt,
     }))
 
+    // AD平均仅对真实压力扫描阀有效（EA2508A/EA2516A）；关闭时次数记固定值 4（与硬件一致）
+    const adAvgEnabled = supportsADAveraging(editProfileType.value as DeviceTypeValue) && formSnapshot.adAveragingEnabled
+
     const updatedProfile = new types.DeviceProfile({
       id: profile.id,
       name: formSnapshot.name,
@@ -1142,9 +1153,8 @@ async function saveEdit() {
       autoConnect: formSnapshot.autoConnect,
       // 大气压/温度使能仅对真实压力设备有效，其余设备保持默认启用
       atmEnabled: isAtmSupported(editProfileType.value) ? formSnapshot.atmEnabled : true,
-      // AD平均仅对真实压力扫描阀有效（EA2508A/EA2516A）
-      adAveragingEnabled: supportsADAveraging(editProfileType.value as DeviceTypeValue) ? formSnapshot.adAveragingEnabled : false,
-      adAveragingCount: formSnapshot.adAveragingCount,
+      adAveragingEnabled: adAvgEnabled,
+      adAveragingCount: adAvgEnabled ? formSnapshot.adAveragingCount : AD_AVERAGING_OFF_COUNT,
       channels: updatedChannels,
     })
 

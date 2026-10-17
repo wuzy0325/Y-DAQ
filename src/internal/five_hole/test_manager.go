@@ -27,6 +27,8 @@ type TestManager struct {
 
 	config         types.FiveHoleTraversalConfig
 	eventPublisher FiveHoleEventPublisher
+	// timing 耗时预估 + 实测计时（进度事件/状态查询随包透出）
+	timing *timingTracker
 }
 
 // NewTestManager 创建测试管理器
@@ -35,6 +37,7 @@ func NewTestManager(publisher FiveHoleEventPublisher) *TestManager {
 	cancel() // 初始状态为已取消，Start 时重新创建
 	return &TestManager{
 		eventPublisher: publisher,
+		timing:         newTimingTracker(),
 		ctx:            ctx,
 		cancel:         cancel,
 		status: types.FiveHoleTraversalTaskStatus{
@@ -93,6 +96,9 @@ func (tm *TestManager) Start(config types.FiveHoleTraversalConfig) (string, erro
 	tm.running.Store(true)
 	tm.paused.Store(false)
 
+	// 重置耗时实测累计并开始计时（预估静态部分已由 Service 通过 SetTimingEstimate 写入）
+	tm.timing.reset()
+
 	myGen := tm.testGen.Add(1)
 	// 测试循环现在由 Service 层负责，这里只初始化状态
 	go tm.waitForTestComplete(doneCh, myGen)
@@ -110,6 +116,8 @@ func (tm *TestManager) Pause() {
 	tm.status.Status = types.TraversalStatusPaused
 	tm.mu.Unlock()
 	tm.paused.Store(true)
+	// 暂停时长不计入实际耗时
+	tm.timing.beginPause()
 }
 
 // Resume 恢复测试
@@ -122,6 +130,7 @@ func (tm *TestManager) Resume() {
 	tm.status.Status = types.TraversalStatusRunning
 	tm.mu.Unlock()
 	tm.paused.Store(false)
+	tm.timing.endPause()
 }
 
 // Stop 停止测试
@@ -139,6 +148,7 @@ func (tm *TestManager) Stop() {
 
 	tm.running.Store(false)
 	tm.paused.Store(false)
+	tm.timing.stop()
 
 	if cancel != nil {
 		cancel()
@@ -172,8 +182,61 @@ func (tm *TestManager) waitForTestComplete(doneCh chan struct{}, myGen int64) {
 // GetStatus 获取测试状态
 func (tm *TestManager) GetStatus() types.FiveHoleTraversalTaskStatus {
 	tm.mu.Lock()
-	defer tm.mu.Unlock()
-	return tm.status
+	status := tm.status
+	tm.mu.Unlock()
+	status.Timing = tm.timingSnapshotPtr()
+	return status
+}
+
+// ==================== 耗时预估 + 实测 ====================
+
+// SetTimingEstimate 写入本次测试的预估耗时（须在 Start 之前调用；Start 的 reset 保留该值）
+func (tm *TestManager) SetTimingEstimate(estimate types.FiveHoleTraversalTiming) {
+	tm.timing.setEstimate(estimate)
+}
+
+// TimingSnapshot 返回耗时快照（预估静态值 + 当前实测累计）
+func (tm *TestManager) TimingSnapshot() types.FiveHoleTraversalTiming {
+	return tm.timing.snapshot()
+}
+
+// timingSnapshotPtr 返回耗时快照指针（无预估且未开始时返回 nil，避免前端显示全 0 的假数据）
+func (tm *TestManager) timingSnapshotPtr() *types.FiveHoleTraversalTiming {
+	snapshot := tm.timing.snapshot()
+	if snapshot.EstimatedTotalMs == 0 && snapshot.ActualElapsedMs == 0 {
+		return nil
+	}
+	return &snapshot
+}
+
+// BeginPhase 开始记录一个阶段（移动/驻留/采样）的实测耗时，
+// 返回的函数在该阶段结束时调用，自动扣除阶段内的暂停时长；重复调用只生效一次。
+// 仅由 runTestLoop 单协程调用。
+func (tm *TestManager) BeginPhase(kind PhaseKind) func() {
+	start := time.Now()
+	pausedAt := tm.timing.pausedTotalNow()
+	done := false
+	return func() {
+		if done {
+			return
+		}
+		done = true
+		elapsed := time.Since(start) - (tm.timing.pausedTotalNow() - pausedAt)
+		if elapsed < 0 {
+			elapsed = 0
+		}
+		tm.timing.addPhaseDuration(kind, elapsed)
+	}
+}
+
+// AddTimingPoint 累计已完成点位数量（实际每点耗时折算用）
+func (tm *TestManager) AddTimingPoint() {
+	tm.timing.addPoint()
+}
+
+// StopTiming 冻结实际总耗时（测试循环退出 / 致命错误时调用）
+func (tm *TestManager) StopTiming() {
+	tm.timing.stop()
 }
 
 // GetConfig 获取当前测试配置
@@ -288,6 +351,7 @@ func (tm *TestManager) EmitProgress(taskID string, total, completed int, progres
 		CurrentY:        currentY,
 		Phase:           phase,
 		ProbeStatuses:   probeStatuses,
+		Timing:          tm.timingSnapshotPtr(),
 	})
 }
 
@@ -362,6 +426,8 @@ func (tm *TestManager) EmitFatalError(errMsg string) {
 	if shouldTransition {
 		tm.running.Store(false)
 		tm.paused.Store(false)
+		// 致命错误终止测试：冻结实际总耗时
+		tm.timing.stop()
 	}
 
 	if tm.eventPublisher != nil {

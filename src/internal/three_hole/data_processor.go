@@ -33,6 +33,8 @@ type DataProcessor struct {
 
 	// 实时数据录制
 	realtimeRecorder *RealtimeRecorder
+	// channelPrecision 设备通道采集精度查询（落盘小数位与界面显示对齐）；未注入时用默认精度
+	channelPrecision types.ChannelPrecisionGetter
 }
 
 // NewDataProcessor 创建数据处理器
@@ -84,9 +86,16 @@ func (dp *DataProcessor) StopRealtimeMonitor() {
 	}
 }
 
+// SetChannelPrecisionGetter 设置设备通道采集精度查询（可选依赖 Setter 注入）
+// 仅可在测试/录制启动前调用
+func (dp *DataProcessor) SetChannelPrecisionGetter(get types.ChannelPrecisionGetter) {
+	dp.channelPrecision = get
+}
+
 // StartRealtimeRecording 开始实时数据录制
+// 落盘小数位按当前配置（各角色通道采集精度）解析，与界面显示一致
 func (dp *DataProcessor) StartRealtimeRecording(savePath string) error {
-	return dp.realtimeRecorder.Start(savePath)
+	return dp.realtimeRecorder.Start(savePath, ResolveProbePrecision(dp.testManager.GetConfig(), dp.channelPrecision))
 }
 
 // StopRealtimeRecording 停止实时数据录制

@@ -36,6 +36,16 @@ type FiveHoleProbeAxisPositionGetter func(controllerID string, axis types.AxisNa
 // 返回 (AxisKind, true) 表示找到对应控制器和轴；返回 (_, false) 表示未找到
 type FiveHoleAxisKindGetter func(controllerID string, axis types.AxisName) (types.AxisKind, bool)
 
+// FiveHoleAxisSpeedGetter 单轴最大速度获取（每轴独立 ControllerID）
+// 用于耗时预估：移动耗时 = 距离 / 轴速度。线性轴单位 mm/s，旋转轴单位 °/s
+// 返回 (速度, true) 表示找到对应控制器和轴；返回 (_, false) 表示未找到或速度未配置
+type FiveHoleAxisSpeedGetter func(controllerID string, axis types.AxisName) (float64, bool)
+
+// FiveHoleDevicePeriodGetter 采集设备出帧周期获取（按 DeviceID 查询，单位 ms）
+// 用于耗时预估：采样耗时 = 采样次数 × 最慢设备出帧周期（采样率 = 1000/PeriodMs）
+// 返回 0 表示未配置/未知，调用方回退默认周期
+type FiveHoleDevicePeriodGetter func(deviceID string) int
+
 // FiveHoleControllerNameGetter 位移机构名获取（按 ControllerID 查询）
 // 用于数据点保存时把内部 ID 转为用户可读的机构名
 // 未找到时返回空字符串，调用方可回退到 ID

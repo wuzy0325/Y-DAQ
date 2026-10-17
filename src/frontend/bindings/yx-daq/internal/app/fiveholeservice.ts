@@ -15,11 +15,22 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 import * as types$0 from "../types/models.js";
 
 /**
+ * EstimateFiveHoleTraversalTiming 预估五孔移位测试耗时（预估总时长及各阶段分解）
+ * 用于界面在测试未启动时显示"预估总时长"：按当前配置的布点距离 + 轴最大速度（移动）、
+ * 驻留时间（驻留）、设备出帧周期 × 采样次数（采样）计算，不产生任何硬件动作。
+ */
+export function EstimateFiveHoleTraversalTiming(config: types$0.FiveHoleTraversalConfig): $CancellablePromise<types$0.FiveHoleTraversalTiming> {
+    return $Call.ByID(2144649216, config).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
  * GetFiveHoleCalibInfo 获取五孔校准文件信息
  */
 export function GetFiveHoleCalibInfo(probeID: string): $CancellablePromise<types$0.FiveHoleCalibFileInfo[]> {
     return $Call.ByID(721521761, probeID).then(($result: any) => {
-        return $$createType1($result);
+        return $$createType2($result);
     });
 }
 
@@ -28,7 +39,7 @@ export function GetFiveHoleCalibInfo(probeID: string): $CancellablePromise<types
  */
 export function GetFiveHoleTraversalStatus(): $CancellablePromise<types$0.FiveHoleTraversalTaskStatus> {
     return $Call.ByID(1949786406).then(($result: any) => {
-        return $$createType2($result);
+        return $$createType3($result);
     });
 }
 
@@ -58,7 +69,7 @@ export function LoadFiveHoleCalibFiles(probeID: string, filePaths: string[]): $C
  */
 export function LoadFiveHoleConfig(): $CancellablePromise<types$0.FiveHoleTraversalConfig> {
     return $Call.ByID(1299056688).then(($result: any) => {
-        return $$createType3($result);
+        return $$createType4($result);
     });
 }
 
@@ -102,7 +113,7 @@ export function SelectAndStartFiveHoleRealtimeRecording(): $CancellablePromise<s
  */
 export function SelectFiveHoleCalibFiles(): $CancellablePromise<string[]> {
     return $Call.ByID(128678352).then(($result: any) => {
-        return $$createType4($result);
+        return $$createType5($result);
     });
 }
 
@@ -142,8 +153,9 @@ export function StopFiveHoleTraversal(): $CancellablePromise<void> {
 }
 
 // Private type creation functions
-const $$createType0 = types$0.FiveHoleCalibFileInfo.createFrom;
-const $$createType1 = $Create.Array($$createType0);
-const $$createType2 = types$0.FiveHoleTraversalTaskStatus.createFrom;
-const $$createType3 = types$0.FiveHoleTraversalConfig.createFrom;
-const $$createType4 = $Create.Array($Create.Any);
+const $$createType0 = types$0.FiveHoleTraversalTiming.createFrom;
+const $$createType1 = types$0.FiveHoleCalibFileInfo.createFrom;
+const $$createType2 = $Create.Array($$createType1);
+const $$createType3 = types$0.FiveHoleTraversalTaskStatus.createFrom;
+const $$createType4 = types$0.FiveHoleTraversalConfig.createFrom;
+const $$createType5 = $Create.Array($Create.Any);

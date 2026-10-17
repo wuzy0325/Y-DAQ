@@ -22,6 +22,8 @@ type RealtimeRecorder struct {
 	recording atomic.Bool
 	file      *os.File
 	writer    *csv.Writer
+	// precisions 各探针原始采集列的落盘小数位（key=ProbeID）；缺失的探针用默认精度
+	precisions map[string]ProbePrecision
 }
 
 // NewRealtimeRecorder 创建实时数据录制器
@@ -30,7 +32,9 @@ func NewRealtimeRecorder() *RealtimeRecorder {
 }
 
 // Start 开始录制到指定文件路径（含完整文件名）
-func (r *RealtimeRecorder) Start(filePath string) error {
+// precisions: 各探针原始采集列的落盘小数位（key=ProbeID，由 ResolveProbesPrecision 解析）；
+// 传 nil 或探针缺失时该探针用默认精度（types.FallbackChannelPrecision）
+func (r *RealtimeRecorder) Start(filePath string, precisions map[string]ProbePrecision) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -55,6 +59,7 @@ func (r *RealtimeRecorder) Start(filePath string) error {
 
 	r.file = file
 	r.writer = csv.NewWriter(file)
+	r.precisions = precisions
 	r.recording.Store(true)
 
 	header := []string{
@@ -90,31 +95,35 @@ func (r *RealtimeRecorder) Record(evt types.FiveHoleTraversalRealtimeEvent) {
 
 	ts := time.Now().Format("2006-01-02 15:04:05.000")
 	for _, item := range evt.ProbeRealtime {
+		prec, ok := r.precisions[item.ProbeID]
+		if !ok {
+			prec = DefaultProbePrecision()
+		}
 		record := []string{
 			ts,
 			evt.PointID,
 			evt.Phase,
 			item.ProbeID,
-			fmt.Sprintf("%.6f", item.RawData.P1),
-			fmt.Sprintf("%.6f", item.RawData.P2),
-			fmt.Sprintf("%.6f", item.RawData.P3),
-			fmt.Sprintf("%.6f", item.RawData.P4),
-			fmt.Sprintf("%.6f", item.RawData.P5),
-			fmt.Sprintf("%.6f", item.RawData.PAtm),
-			fmt.Sprintf("%.2f", item.RawData.TAtm),
-			fmt.Sprintf("%.6f", item.InterpResult.PtProbe),
-			fmt.Sprintf("%.6f", item.InterpResult.PsProbe),
-			fmt.Sprintf("%.6f", item.InterpResult.MachProbe),
-			fmt.Sprintf("%.4f", item.InterpResult.AlphaProbe),
-			fmt.Sprintf("%.4f", item.InterpResult.BetaProbe),
-			fmt.Sprintf("%.4f", item.InterpResult.VelocityProbe),
-			fmt.Sprintf("%.4f", item.InterpResult.CASProbe),
-			fmt.Sprintf("%.4f", item.InterpResult.SATProbe),
-			fmt.Sprintf("%.6f", item.InterpResult.DynamicPressure),
-			fmt.Sprintf("%.6f", item.InterpResult.Density),
-			fmt.Sprintf("%.4f", item.InterpResult.VxProbe),
-			fmt.Sprintf("%.4f", item.InterpResult.VyProbe),
-			fmt.Sprintf("%.4f", item.InterpResult.VzProbe),
+			formatPrec(item.RawData.P1, prec.P1),
+			formatPrec(item.RawData.P2, prec.P2),
+			formatPrec(item.RawData.P3, prec.P3),
+			formatPrec(item.RawData.P4, prec.P4),
+			formatPrec(item.RawData.P5, prec.P5),
+			formatPrec(item.RawData.PAtm, prec.PAtm),
+			formatPrec(item.RawData.TAtm, prec.TAtm),
+			formatPrec(item.InterpResult.PtProbe, types.WritePrecPt),
+			formatPrec(item.InterpResult.PsProbe, types.WritePrecPs),
+			formatPrec(item.InterpResult.MachProbe, types.WritePrecMach),
+			formatPrec(item.InterpResult.AlphaProbe, types.WritePrecAlpha),
+			formatPrec(item.InterpResult.BetaProbe, types.WritePrecBeta),
+			formatPrec(item.InterpResult.VelocityProbe, types.WritePrecVelocity),
+			formatPrec(item.InterpResult.CASProbe, types.WritePrecCAS),
+			formatPrec(item.InterpResult.SATProbe, types.WritePrecSAT),
+			formatPrec(item.InterpResult.DynamicPressure, types.WritePrecQc),
+			formatPrec(item.InterpResult.Density, types.WritePrecDensity),
+			formatPrec(item.InterpResult.VxProbe, types.WritePrecVxyz),
+			formatPrec(item.InterpResult.VyProbe, types.WritePrecVxyz),
+			formatPrec(item.InterpResult.VzProbe, types.WritePrecVxyz),
 		}
 		if err := r.writer.Write(record); err != nil {
 				slog.Debug("realtime recorder write failed", "err", err)
@@ -132,6 +141,7 @@ func (r *RealtimeRecorder) Stop() {
 		return
 	}
 	r.recording.Store(false)
+	r.precisions = nil
 	if r.writer != nil {
 		r.writer.Flush()
 		r.writer = nil

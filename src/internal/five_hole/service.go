@@ -35,15 +35,23 @@ type FiveHoleTraversalService struct {
 	// probeAxisKindGetter 用于扇面模式启动前校验 MotionX=线性轴、MotionY=旋转轴
 	// 未设置（如单元测试）时跳过扇面轴类型校验
 	probeAxisKindGetter FiveHoleAxisKindGetter
+	// axisSpeedGetter 用于耗时预估（移动耗时 = 距离 / 轴最大速度）
+	// 未设置（如单元测试）时移动耗时按 0 计
+	axisSpeedGetter FiveHoleAxisSpeedGetter
+	// devicePeriodGetter 用于耗时预估（采样耗时 = 采样次数 × 最慢设备出帧周期）
+	// 未设置（如单元测试）时按默认 50ms 周期计
+	devicePeriodGetter FiveHoleDevicePeriodGetter
 	// controllerNameGetter 用于数据点保存时把 ControllerID 转为机构名
 	// 未设置（如单元测试）时回退到 ID
 	controllerNameGetter FiveHoleControllerNameGetter
 	// returnToInitialDone 返回初始位置完成回调（测试用），生产代码应保持 nil
-	returnToInitialDone     FiveHoleReturnToInitialDoneCallback
-	dataProcessor           *DataProcessor
-	eventHandler            *EventHandler
-	testManager             *TestManager
-	realtimeRecorder        *RealtimeRecorder
+	returnToInitialDone FiveHoleReturnToInitialDoneCallback
+	// channelPrecision 设备通道采集精度查询（落盘小数位与界面显示对齐）；未注入时用默认精度
+	channelPrecision types.ChannelPrecisionGetter
+	dataProcessor    *DataProcessor
+	eventHandler     *EventHandler
+	testManager      *TestManager
+	realtimeRecorder *RealtimeRecorder
 
 	// 实时监控相关
 	monitorRunning atomic.Bool
@@ -104,6 +112,16 @@ func (s *FiveHoleTraversalService) SetDataArrivalSignal(ch <-chan struct{}) {
 	s.dataProcessor.SetDataArrivalSignal(ch)
 }
 
+// SetChannelPrecisionGetter 设置设备通道采集精度查询（可选依赖 Setter 注入）
+// 用于 CSV 保存/实时录制的小数位与界面显示保持一致；未注入时用默认精度
+// 注意：仅可在服务初始化阶段（runTestLoop 启动前）调用。
+func (s *FiveHoleTraversalService) SetChannelPrecisionGetter(get types.ChannelPrecisionGetter) {
+	s.mu.Lock()
+	s.channelPrecision = get
+	s.mu.Unlock()
+	s.eventHandler.SetChannelPrecisionGetter(get)
+}
+
 // SetProbeAxisMover 设置探针单轴运动控制函数（创建 MotionCoordinator 并保存）
 // 注意：仅可在服务初始化阶段（runTestLoop 启动前）调用。
 // 运行期热替换未对 motionCoordinator 字段做同步保护，运行中调用会与 runTestLoop 产生 data race。
@@ -140,6 +158,24 @@ func (s *FiveHoleTraversalService) SetAxisKindGetter(getter FiveHoleAxisKindGett
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.probeAxisKindGetter = getter
+}
+
+// SetAxisSpeedGetter 设置单轴最大速度获取函数
+// 用于耗时预估：移动耗时 = 点位间距离 / 轴最大速度
+// 注意：仅可在服务初始化阶段（runTestLoop 启动前）调用。
+func (s *FiveHoleTraversalService) SetAxisSpeedGetter(getter FiveHoleAxisSpeedGetter) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.axisSpeedGetter = getter
+}
+
+// SetDevicePeriodGetter 设置采集设备出帧周期获取函数（单位 ms）
+// 用于耗时预估：采样耗时 = 采样次数 × 最慢设备出帧周期
+// 注意：仅可在服务初始化阶段（runTestLoop 启动前）调用。
+func (s *FiveHoleTraversalService) SetDevicePeriodGetter(getter FiveHoleDevicePeriodGetter) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.devicePeriodGetter = getter
 }
 
 // SetControllerNameGetter 设置位移机构名获取函数
@@ -312,8 +348,13 @@ func (s *FiveHoleTraversalService) runRealtimeMonitor() {
 }
 
 // StartRealtimeRecording 开始实时数据录制
+// 落盘小数位按当前实时监控配置（各探针通道采集精度）解析，与界面显示一致
 func (s *FiveHoleTraversalService) StartRealtimeRecording(savePath string) error {
-	return s.realtimeRecorder.Start(savePath)
+	s.mu.RLock()
+	config := s.monitorConfig
+	getter := s.channelPrecision
+	s.mu.RUnlock()
+	return s.realtimeRecorder.Start(savePath, ResolveProbesPrecision(config.Probes, getter))
 }
 
 // StopRealtimeRecording 停止实时数据录制
@@ -362,6 +403,10 @@ func (s *FiveHoleTraversalService) Start(config types.FiveHoleTraversalConfig) (
 	// 保存每根启用探针 α/β 轴的初始位置，用于测试结束后回到初始位置
 	// 获取失败时仅记录警告，不阻塞测试启动（用户可能未连接运动控制器）
 	initialPositions := s.captureInitialPositions(config)
+
+	// 预估耗时（移动 = 距离/轴速，驻留 = 配置值，采样 = 采样次数×最慢设备出帧周期）
+	// 须在 testManager.Start 之前写入：Start 重置实测累计但保留预估静态部分
+	s.testManager.SetTimingEstimate(s.estimateTimingForTest(config, initialPositions))
 
 	// 标记测试开始
 	s.testRunning.Store(true)
@@ -433,6 +478,39 @@ func (s *FiveHoleTraversalService) GetConfig() types.FiveHoleTraversalConfig {
 	return s.testManager.GetConfig()
 }
 
+// ==================== 耗时预估 ====================
+
+// EstimateTiming 预估给定配置的理论总耗时（供界面在未启动时显示"预估总时长"）
+// 首点移动距离因当前位置未知按 0 计（实际启动时 Start 会用保存的初始位置重算）
+// 配置非法（如布点生成失败）时返回零值，不返回错误——预估属辅助信息，不应阻塞界面
+func (s *FiveHoleTraversalService) EstimateTiming(config types.FiveHoleTraversalConfig) types.FiveHoleTraversalTiming {
+	config = config.ApplySharedMotion()
+	points, err := generatePoints(config)
+	if err != nil {
+		return types.FiveHoleTraversalTiming{}
+	}
+	return s.buildTimingEstimator().estimate(config, points, nil)
+}
+
+// estimateTimingForTest 测试启动时的预估：用保存的初始位置计算首点移动距离
+func (s *FiveHoleTraversalService) estimateTimingForTest(config types.FiveHoleTraversalConfig, initialPositions map[string]types.TraversalPoint) types.FiveHoleTraversalTiming {
+	points, err := generatePoints(config)
+	if err != nil {
+		return types.FiveHoleTraversalTiming{}
+	}
+	return s.buildTimingEstimator().estimate(config, points, initialPositions)
+}
+
+// buildTimingEstimator 组装预估器（拷贝 getter，避免估算期间长期持锁）
+func (s *FiveHoleTraversalService) buildTimingEstimator() *timingEstimator {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return &timingEstimator{
+		axisSpeed:    s.axisSpeedGetter,
+		devicePeriod: s.devicePeriodGetter,
+	}
+}
+
 // ==================== 测试主循环 ====================
 
 // runTestLoop 测试主循环
@@ -471,6 +549,8 @@ func (s *FiveHoleTraversalService) runTestLoop(taskID string, config types.FiveH
 		if s.testManager.testGen.Load() == myGen && s.testManager.GetStatus().Status == types.TraversalStatusRunning {
 			s.testManager.SetStatus(types.TraversalStatusCompleted)
 		}
+		// 冻结实际总耗时：完成事件之后不再累计（返回初始位置等收尾动作不计入测试耗时）
+		s.testManager.StopTiming()
 		// 先发射完成事件，让 UI 立即收到测试结束信号；
 		// 再尝试把所有探针移动回测试开始前的初始位置（可能耗时数秒），
 		// 失败时仅记录警告，不影响已发射的完成事件。
@@ -522,11 +602,15 @@ func (s *FiveHoleTraversalService) runTestLoop(taskID string, config types.FiveH
 		s.testManager.EmitProgress(taskID, totalPoints, completed, s.testManager.GetStatus().Progress, point.X, point.Y, "moving")
 
 		// 2. 移动所有启用探针到指定点位
-		if err := s.motionCoordinator.MoveAllProbesToPoint(point, config.Probes, config.Layout, config.MotionTimeoutMs); err != nil {
+		// 实测移动耗时（失败也计入：已发生的运动同样消耗时间）
+		endMovePhase := s.testManager.BeginPhase(PhaseMove)
+		moveErr := s.motionCoordinator.MoveAllProbesToPoint(point, config.Probes, config.Layout, config.MotionTimeoutMs)
+		endMovePhase()
+		if moveErr != nil {
 			if !s.testManager.running.Load() {
 				return
 			}
-			s.eventHandler.OnTestError(point.ID, err)
+			s.eventHandler.OnTestError(point.ID, moveErr)
 			continue
 		}
 
@@ -536,7 +620,9 @@ func (s *FiveHoleTraversalService) runTestLoop(taskID string, config types.FiveH
 		}
 
 		// 3. 驻留 config.DwellTimeMs，期间每 100ms 发射 realtime（phase=waiting）
+		endDwellPhase := s.testManager.BeginPhase(PhaseDwell)
 		s.dwellWithRealtime(taskID, point, config)
+		endDwellPhase()
 
 		// 检查取消
 		if s.testManager.ctx.Err() != nil {
@@ -547,7 +633,9 @@ func (s *FiveHoleTraversalService) runTestLoop(taskID string, config types.FiveH
 		// 与三孔 data_processor.go 对齐：采样阶段发射 progress phase=acquiring，
 		// 否则 UI 徽标/布点图会一直停留在"稳定中"，不会切换到"采集中"。
 		s.testManager.EmitProgress(taskID, totalPoints, completed, s.testManager.GetStatus().Progress, point.X, point.Y, "acquiring")
+		endSamplePhase := s.testManager.BeginPhase(PhaseSample)
 		probeSamples, cancelled := s.samplePoint(taskID, point, config, enabledIndices)
+		endSamplePhase()
 		if cancelled {
 			return
 		}
@@ -556,6 +644,8 @@ func (s *FiveHoleTraversalService) runTestLoop(taskID string, config types.FiveH
 		if s.aggregateProbeData(point, config, enabledIndices, probeSamples) {
 			return
 		}
+		// 该点位三段实测完成：累计已测点位数（界面据此折算"每点实际耗时"）
+		s.testManager.AddTimingPoint()
 
 		// 7. 更新统一进度 +1
 		// 不在此处发"完成"阶段事件：中间点位的完成状态由下一点位的 phase=moving

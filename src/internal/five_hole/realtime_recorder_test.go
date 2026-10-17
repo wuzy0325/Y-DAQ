@@ -76,7 +76,7 @@ func TestRealtimeRecorder_Start_CreatesFileWithBOMAndHeader(t *testing.T) {
 	path := filepath.Join(dir, "rt5h.csv")
 
 	r := NewRealtimeRecorder()
-	if err := r.Start(path); err != nil {
+	if err := r.Start(path, nil); err != nil {
 		t.Fatalf("Start failed: %v", err)
 	}
 	defer r.Stop()
@@ -123,7 +123,7 @@ func TestRealtimeRecorder_Start_NestedDirAutoCreated(t *testing.T) {
 	path := filepath.Join(dir, "nested", "deep", "rt5h.csv")
 
 	r := NewRealtimeRecorder()
-	if err := r.Start(path); err != nil {
+	if err := r.Start(path, nil); err != nil {
 		t.Fatalf("Start 嵌套目录失败: %v", err)
 	}
 	r.Stop()
@@ -139,12 +139,12 @@ func TestRealtimeRecorder_Start_AlreadyRecordingReturnsError(t *testing.T) {
 	path := filepath.Join(dir, "rt5h.csv")
 
 	r := NewRealtimeRecorder()
-	if err := r.Start(path); err != nil {
+	if err := r.Start(path, nil); err != nil {
 		t.Fatalf("首次 Start 失败: %v", err)
 	}
 	defer r.Stop()
 
-	err := r.Start(path)
+	err := r.Start(path, nil)
 	if err == nil {
 		t.Error("重复 Start 应返回错误")
 	}
@@ -160,7 +160,7 @@ func TestRealtimeRecorder_Start_InvalidPathReturnsError(t *testing.T) {
 	invalidPath := filepath.Join(blocker, "rt5h.csv")
 
 	r := NewRealtimeRecorder()
-	err := r.Start(invalidPath)
+	err := r.Start(invalidPath, nil)
 	if err == nil {
 		t.Error("无效路径 Start 应返回错误")
 		r.Stop()
@@ -173,7 +173,7 @@ func TestRealtimeRecorder_Record_WritesRowPerProbe(t *testing.T) {
 	path := filepath.Join(dir, "rt5h.csv")
 
 	r := NewRealtimeRecorder()
-	if err := r.Start(path); err != nil {
+	if err := r.Start(path, nil); err != nil {
 		t.Fatalf("Start failed: %v", err)
 	}
 
@@ -207,7 +207,7 @@ func TestRealtimeRecorder_Record_WritesCorrectFormat(t *testing.T) {
 	path := filepath.Join(dir, "rt5h.csv")
 
 	r := NewRealtimeRecorder()
-	if err := r.Start(path); err != nil {
+	if err := r.Start(path, nil); err != nil {
 		t.Fatalf("Start failed: %v", err)
 	}
 
@@ -221,25 +221,77 @@ func TestRealtimeRecorder_Record_WritesCorrectFormat(t *testing.T) {
 	}
 
 	row := records[1]
-	// P1: %.6f
-	if row[4] != "100.123456" {
-		t.Errorf("P1 应为 100.123456，实际 %s", row[4])
+	// P1: 默认精度 3 位（通道精度未注入时回退）
+	if row[4] != "100.123" {
+		t.Errorf("P1 应为 100.123（默认精度 3 位），实际 %s", row[4])
 	}
-	// TAtm: %.2f
-	if row[10] != "20.50" {
-		t.Errorf("TAtm 应为 20.50，实际 %s", row[10])
+	// TAtm: 默认精度 3 位
+	if row[10] != "20.500" {
+		t.Errorf("TAtm 应为 20.500（默认精度 3 位），实际 %s", row[10])
 	}
-	// α: %.4f
-	if row[14] != "5.2000" {
-		t.Errorf("α 应为 5.2000，实际 %s", row[14])
+	// α: 界面显示 2 位
+	if row[14] != "5.20" {
+		t.Errorf("α 应为 5.20（界面 2 位），实际 %s", row[14])
 	}
-	// β: %.4f
-	if row[15] != "1.3000" {
-		t.Errorf("β 应为 1.3000，实际 %s", row[15])
+	// β: 界面显示 2 位
+	if row[15] != "1.30" {
+		t.Errorf("β 应为 1.30（界面 2 位），实际 %s", row[15])
 	}
-	// ρ (Density): %.6f
+	// Pt: 界面显示 3 位
+	if row[11] != "102.500" {
+		t.Errorf("Pt 应为 102.500（界面 3 位），实际 %s", row[11])
+	}
+	// Ma: 界面显示 4 位
+	if row[13] != "0.4500" {
+		t.Errorf("Ma 应为 0.4500（界面 4 位），实际 %s", row[13])
+	}
+	// ρ (Density): 界面未显示，保持 6 位
 	if row[20] != "1.225000" {
 		t.Errorf("ρ 应为 1.225000，实际 %s", row[20])
+	}
+}
+
+// TestRealtimeRecorder_Record_UsesProbePrecision 各探针原始采集列按各自通道精度落盘
+func TestRealtimeRecorder_Record_UsesProbePrecision(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "rt5h.csv")
+
+	r := NewRealtimeRecorder()
+	precisions := map[string]ProbePrecision{
+		"probe1": {P1: 1, P2: 0, P3: 2, P4: 3, P5: 4, PAtm: 2, TAtm: 1},
+	}
+	if err := r.Start(path, precisions); err != nil {
+		t.Fatalf("Start failed: %v", err)
+	}
+
+	evt := makeSampleRealtimeEvent("p-001", "acquiring", "probe1")
+	r.Record(evt)
+	r.Stop()
+
+	records := readRealtimeCSV5H(t, path)
+	row := records[1]
+	// probe1 按注入精度：P1=1 位、P2=0 位 ...
+	if row[4] != "100.1" {
+		t.Errorf("P1 应为 100.1（1 位），实际 %s", row[4])
+	}
+	if row[5] != "102" {
+		t.Errorf("P2 应为 102（0 位），实际 %s", row[5])
+	}
+	if row[10] != "20.5" {
+		t.Errorf("TAtm 应为 20.5（1 位），实际 %s", row[10])
+	}
+
+	// 未在 map 中的探针回退默认精度
+	r2 := NewRealtimeRecorder()
+	path2 := filepath.Join(dir, "rt5h-2.csv")
+	if err := r2.Start(path2, precisions); err != nil {
+		t.Fatalf("Start failed: %v", err)
+	}
+	r2.Record(makeSampleRealtimeEvent("p-002", "acquiring", "probe9"))
+	r2.Stop()
+	row2 := readRealtimeCSV5H(t, path2)[1]
+	if row2[4] != "100.123" {
+		t.Errorf("未配置探针 P1 应为默认精度 100.123，实际 %s", row2[4])
 	}
 }
 
@@ -260,7 +312,7 @@ func TestRealtimeRecorder_Record_EmptyProbeRealtimeWritesNothing(t *testing.T) {
 	path := filepath.Join(dir, "rt5h.csv")
 
 	r := NewRealtimeRecorder()
-	if err := r.Start(path); err != nil {
+	if err := r.Start(path, nil); err != nil {
 		t.Fatalf("Start failed: %v", err)
 	}
 
@@ -285,7 +337,7 @@ func TestRealtimeRecorder_Record_MultipleEvents(t *testing.T) {
 	path := filepath.Join(dir, "rt5h.csv")
 
 	r := NewRealtimeRecorder()
-	if err := r.Start(path); err != nil {
+	if err := r.Start(path, nil); err != nil {
 		t.Fatalf("Start failed: %v", err)
 	}
 
@@ -308,7 +360,7 @@ func TestRealtimeRecorder_Stop_ClosesFileAndResetsState(t *testing.T) {
 	path := filepath.Join(dir, "rt5h.csv")
 
 	r := NewRealtimeRecorder()
-	if err := r.Start(path); err != nil {
+	if err := r.Start(path, nil); err != nil {
 		t.Fatalf("Start failed: %v", err)
 	}
 	r.Stop()
@@ -332,7 +384,7 @@ func TestRealtimeRecorder_Stop_Idempotent(t *testing.T) {
 	path := filepath.Join(dir, "rt5h.csv")
 
 	r := NewRealtimeRecorder()
-	if err := r.Start(path); err != nil {
+	if err := r.Start(path, nil); err != nil {
 		t.Fatalf("Start failed: %v", err)
 	}
 
@@ -359,14 +411,14 @@ func TestRealtimeRecorder_StartStopRecord_Cycle(t *testing.T) {
 	r := NewRealtimeRecorder()
 
 	// 第一轮
-	if err := r.Start(path1); err != nil {
+	if err := r.Start(path1, nil); err != nil {
 		t.Fatalf("第一次 Start 失败: %v", err)
 	}
 	r.Record(makeSampleRealtimeEvent("a", "waiting", "probe1"))
 	r.Stop()
 
 	// 第二轮
-	if err := r.Start(path2); err != nil {
+	if err := r.Start(path2, nil); err != nil {
 		t.Fatalf("第二次 Start 失败: %v", err)
 	}
 	r.Record(makeSampleRealtimeEvent("b", "waiting", "probe2"))
@@ -388,7 +440,7 @@ func TestRealtimeRecorder_ConcurrentRecord_NoPanic(t *testing.T) {
 	path := filepath.Join(dir, "rt5h.csv")
 
 	r := NewRealtimeRecorder()
-	if err := r.Start(path); err != nil {
+	if err := r.Start(path, nil); err != nil {
 		t.Fatalf("Start failed: %v", err)
 	}
 
@@ -415,7 +467,7 @@ func TestRealtimeRecorder_CSVHeader_Has24Columns(t *testing.T) {
 	path := filepath.Join(dir, "rt5h.csv")
 
 	r := NewRealtimeRecorder()
-	if err := r.Start(path); err != nil {
+	if err := r.Start(path, nil); err != nil {
 		t.Fatalf("Start failed: %v", err)
 	}
 	r.Stop()

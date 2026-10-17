@@ -62,6 +62,7 @@ yx-daq/internal/
 │   ├── csv_writer.go                    # 结果 CSV 导出（每探针一文件，加 β 列）
 │   ├── realtime_recorder.go             # 实时数据录制
 │   ├── motion_coordinator.go            # 【新增】多探针同步运动协调器（6 轴并行移动 + 等待最慢）
+│   ├── timing.go                        # 【新增】耗时预估（距离/轴速、驻留、采样频率）+ 实测计时（含暂停扣除）
 │   ├── *_test.go                        # 单元测试（照三孔测试套件）
 │   └── types_local.go                   # 包内私有类型（如函数类型 BatchGetter/MotionController）
 ├── types/
@@ -83,6 +84,8 @@ yx-daq/frontend/src/
 │       └── types.ts                     # store 类型
 ├── api/
 │   └── enums.ts                         # 【修改】新增 FiveHoleChannelRole、复用 TraversalPattern/StepSegment/AxisName
+├── utils/
+│   └── formatDuration.ts                # 【新增】时长/采样频率格式化（预估 vs 实际看板复用）
 └── wails-compat/
     └── app.ts / services.ts             # 【修改】新增 StartFiveHoleTraversal 等 Wails v3 绑定映射
 ```
@@ -234,6 +237,7 @@ type FiveHoleTraversalTaskStatus struct {
     // 每探针独立 phase/坐标（决策 #10：统一进度 + 各探针 phase 指示）
     ProbeStatuses   []FiveHoleProbeStatus     `json:"probeStatuses"`
     LastError       string                    `json:"lastError,omitempty"`
+    Timing          *FiveHoleTraversalTiming  `json:"timing,omitempty"` // 预估 vs 实际耗时
 }
 
 // FiveHoleProbeStatus 单根探针实时状态
@@ -246,6 +250,20 @@ type FiveHoleProbeStatus struct {
     InterpResult *FiveHoleInterpolationResult `json:"interpResult,omitempty"`
 }
 ```
+
+### 耗时预估 vs 实际（`timing.go`）
+
+任务状态与进度事件都携带 `Timing *FiveHoleTraversalTiming`，用于界面同时展示"预估"与"实际"：
+
+| 阶段 | 预估口径（理论值，启动前即可算出） | 实际口径（逐点位实测） |
+|------|--------------------------------|----------------------|
+| 移动 | 点位间距离 / 轴配置最大速度（`AxisConfig.MaxSpeed`）；同相位多轴并行取最大，扇面 θ/R 两相串行相加，多探针取最慢 | `MoveAllProbesToPoint` 前后计时 |
+| 驻留 | `DwellTimeMs` | `dwellWithRealtime` 前后计时 |
+| 采样 | `SamplesPerPoint × 最慢设备出帧周期`（出帧周期 = `DeviceProfile.PeriodMs`，未配置按 50ms；采样频率 = 1000/PeriodMs） | `samplePoint` 前后计时 |
+
+- 实际耗时一律扣除暂停时长（`TestManager.Pause/Resume` 记入 `timingTracker`）；总耗时在测试循环退出/停止/致命错误时冻结。
+- 未启动时前端调用 `EstimateFiveHoleTraversalTiming(config)` 获取纯预估（不产生硬件动作，首点距离按 0 计）；启动后 `Start` 用保存的初始位置重算并写入 `TestManager`。
+- 界面（左侧进度看板）显示：预估总时长（含每点 移动+驻留+采样 分解与设备采样频率）、实际已用（含三段累计与已测点数）、剩余预估（按已测点实测均值外推，无实测点时退回理论值）。
 
 ## 核心业务流程
 

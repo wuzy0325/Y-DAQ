@@ -196,6 +196,13 @@ func (s *FiveHoleService) GetFiveHoleTraversalStatus() types.FiveHoleTraversalTa
 	return s.Core.FiveHoleService.GetStatus()
 }
 
+// EstimateFiveHoleTraversalTiming 预估五孔移位测试耗时（预估总时长及各阶段分解）
+// 用于界面在测试未启动时显示"预估总时长"：按当前配置的布点距离 + 轴最大速度（移动）、
+// 驻留时间（驻留）、设备出帧周期 × 采样次数（采样）计算，不产生任何硬件动作。
+func (s *FiveHoleService) EstimateFiveHoleTraversalTiming(config types.FiveHoleTraversalConfig) types.FiveHoleTraversalTiming {
+	return s.Core.FiveHoleService.EstimateTiming(config)
+}
+
 // SelectFiveHoleCalibFiles 选择五孔校准文件（.cal / .prb）
 func (s *FiveHoleService) SelectFiveHoleCalibFiles() []string {
 	filePaths, err := s.Core.App.Dialog.OpenFile().

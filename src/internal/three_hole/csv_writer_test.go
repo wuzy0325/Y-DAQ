@@ -26,7 +26,7 @@ func TestInitialize_Creation(t *testing.T) {
 	writer := NewThreeHoleCsvWriter()
 
 	// 测试创建新文件
-	err := writer.Initialize(tempDir, "test.csv")
+	err := writer.Initialize(tempDir, "test.csv", DefaultProbePrecision())
 	if err != nil {
 		t.Fatalf("Initialize failed: %v", err)
 	}
@@ -47,7 +47,7 @@ func TestInitialize_DefaultName(t *testing.T) {
 	writer := NewThreeHoleCsvWriter()
 
 	// 测试空文件名（应该使用默认名）
-	err := writer.Initialize(tempDir, "")
+	err := writer.Initialize(tempDir, "", DefaultProbePrecision())
 	if err != nil {
 		t.Fatalf("Initialize failed: %v", err)
 	}
@@ -71,14 +71,14 @@ func TestInitialize_InvalidPath(t *testing.T) {
 	if err := os.WriteFile(fileAsDir, []byte("x"), 0644); err != nil {
 		t.Fatalf("setup failed: %v", err)
 	}
-	err := writer.Initialize(fileAsDir, "test.csv")
+	err := writer.Initialize(fileAsDir, "test.csv", DefaultProbePrecision())
 	if err == nil {
 		t.Error("Expected error when savePath points to an existing file")
 		writer.Close()
 	}
 
 	// 测试包含路径分隔符的文件名
-	err = writer.Initialize(".", "../test.csv")
+	err = writer.Initialize(".", "../test.csv", DefaultProbePrecision())
 	if err == nil {
 		t.Error("Expected error for path traversal")
 	}
@@ -91,7 +91,7 @@ func TestInitialize_DirectoryCreation(t *testing.T) {
 	writer := NewThreeHoleCsvWriter()
 
 	// 测试创建嵌套目录
-	err := writer.Initialize(subDir, "test.csv")
+	err := writer.Initialize(subDir, "test.csv", DefaultProbePrecision())
 	if err != nil {
 		t.Fatalf("Initialize failed: %v", err)
 	}
@@ -104,7 +104,7 @@ func TestAppendPoint_Basic(t *testing.T) {
 	tempDir := t.TempDir()
 	writer := NewThreeHoleCsvWriter()
 
-	err := writer.Initialize(tempDir, "test.csv")
+	err := writer.Initialize(tempDir, "test.csv", DefaultProbePrecision())
 	if err != nil {
 		t.Fatalf("Initialize failed: %v", err)
 	}
@@ -163,7 +163,7 @@ func TestAppendPoint_EmptyData(t *testing.T) {
 	tempDir := t.TempDir()
 	writer := NewThreeHoleCsvWriter()
 
-	err := writer.Initialize(tempDir, "test.csv")
+	err := writer.Initialize(tempDir, "test.csv", DefaultProbePrecision())
 	if err != nil {
 		t.Fatalf("Initialize failed: %v", err)
 	}
@@ -192,7 +192,7 @@ func TestAppendPoint_Flush(t *testing.T) {
 	tempDir := t.TempDir()
 	writer := NewThreeHoleCsvWriter()
 
-	err := writer.Initialize(tempDir, "test.csv")
+	err := writer.Initialize(tempDir, "test.csv", DefaultProbePrecision())
 	if err != nil {
 		t.Fatalf("Initialize failed: %v", err)
 	}
@@ -226,7 +226,7 @@ func TestClose_AlreadyClosed(t *testing.T) {
 	tempDir := t.TempDir()
 	writer := NewThreeHoleCsvWriter()
 
-	writer.Initialize(tempDir, "test.csv")
+	writer.Initialize(tempDir, "test.csv", DefaultProbePrecision())
 	writer.Close()
 
 	// 第二次关闭不应该panic
@@ -240,7 +240,7 @@ func TestInitialize_PermissionError(t *testing.T) {
 	writer := NewThreeHoleCsvWriter()
 
 	// 在某些系统上这可能会失败
-	err := writer.Initialize("/root", "should_fail.csv")
+	err := writer.Initialize("/root", "should_fail.csv", DefaultProbePrecision())
 	if err == nil {
 		// 如果成功，说明测试环境允许，我们仍然关闭文件
 		writer.Close()

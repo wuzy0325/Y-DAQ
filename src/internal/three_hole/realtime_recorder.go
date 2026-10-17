@@ -18,6 +18,8 @@ type RealtimeRecorder struct {
 	recording atomic.Bool
 	file      *os.File
 	writer    *csv.Writer
+	// prec 原始采集列的落盘小数位（与界面显示一致）
+	prec ProbePrecision
 }
 
 // NewRealtimeRecorder 创建实时数据录制器
@@ -26,7 +28,8 @@ func NewRealtimeRecorder() *RealtimeRecorder {
 }
 
 // Start 开始录制到指定文件路径（含完整文件名）
-func (r *RealtimeRecorder) Start(filePath string) error {
+// prec: 原始采集列的落盘小数位（由 ResolveProbePrecision 解析，见 write_precision.go）
+func (r *RealtimeRecorder) Start(filePath string, prec ProbePrecision) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -51,6 +54,7 @@ func (r *RealtimeRecorder) Start(filePath string) error {
 
 	r.file = file
 	r.writer = csv.NewWriter(file)
+	r.prec = prec
 	r.recording.Store(true)
 
 	header := []string{
@@ -85,16 +89,16 @@ func (r *RealtimeRecorder) Record(evt types.ThreeHoleTraversalRealtimeEvent) {
 	record := []string{
 		ts,
 		evt.PointID,
-		fmt.Sprintf("%.6f", evt.RawData.P1),
-		fmt.Sprintf("%.6f", evt.RawData.P2),
-		fmt.Sprintf("%.6f", evt.RawData.P3),
-		fmt.Sprintf("%.6f", evt.RawData.PAtm),
-		fmt.Sprintf("%.2f", evt.RawData.TAtm),
-		fmt.Sprintf("%.6f", evt.InterpResult.PtProbe),
-		fmt.Sprintf("%.6f", evt.InterpResult.PsProbe),
-		fmt.Sprintf("%.6f", evt.InterpResult.MachProbe),
-		fmt.Sprintf("%.4f", evt.InterpResult.AlphaProbe),
-		fmt.Sprintf("%.4f", evt.InterpResult.VelocityProbe),
+		formatPrec(evt.RawData.P1, r.prec.P1),
+		formatPrec(evt.RawData.P2, r.prec.P2),
+		formatPrec(evt.RawData.P3, r.prec.P3),
+		formatPrec(evt.RawData.PAtm, r.prec.PAtm),
+		formatPrec(evt.RawData.TAtm, r.prec.TAtm),
+		formatPrec(evt.InterpResult.PtProbe, types.WritePrecPt),
+		formatPrec(evt.InterpResult.PsProbe, types.WritePrecPs),
+		formatPrec(evt.InterpResult.MachProbe, types.WritePrecMach),
+		formatPrec(evt.InterpResult.AlphaProbe, types.WritePrecAlpha),
+		formatPrec(evt.InterpResult.VelocityProbe, types.WritePrecVelocity),
 		fmt.Sprintf("%d", evt.InterpResult.IterationCount),
 	}
 	r.writer.Write(record)
@@ -110,6 +114,7 @@ func (r *RealtimeRecorder) Stop() {
 		return
 	}
 	r.recording.Store(false)
+	r.prec = ProbePrecision{}
 	if r.writer != nil {
 		r.writer.Flush()
 		r.writer = nil

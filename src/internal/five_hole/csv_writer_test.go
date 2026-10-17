@@ -13,7 +13,7 @@ import (
 func TestFiveHoleCsvWriter_HeaderAndDataPoint(t *testing.T) {
 	tmpDir := t.TempDir()
 	w := NewFiveHoleCsvWriter()
-	if err := w.Initialize(tmpDir, "test", "probe1", types.TraversalPatternLine); err != nil {
+	if err := w.Initialize(tmpDir, "test", "probe1", types.TraversalPatternLine, DefaultProbePrecision()); err != nil {
 		t.Fatalf("Initialize failed: %v", err)
 	}
 	defer w.Close()
@@ -145,14 +145,122 @@ func TestFiveHoleCsvWriter_HeaderAndDataPoint(t *testing.T) {
 	if !contains(str, "ctrl-β") {
 		t.Fatal("data row missing beta controller id")
 	}
-	if !contains(str, "5.2000") {
-		t.Fatal("data row missing alpha value")
+	if !contains(str, "5.20") {
+		t.Fatal("data row missing alpha value (界面显示 2 位)")
 	}
-	if !contains(str, "1.3000") {
-		t.Fatal("data row missing beta value")
+	if !contains(str, "1.30") {
+		t.Fatal("data row missing beta value (界面显示 2 位)")
 	}
 	if !contains(str, "1.225000") {
-		t.Fatal("data row missing density value")
+		t.Fatal("data row missing density value (界面未显示，保持 6 位)")
+	}
+	if !contains(str, "100.123") {
+		t.Fatal("data row missing P1 value (默认精度 3 位)")
+	}
+}
+
+// TestFiveHoleCsvWriter_ProbePrecision 原始采集列按通道采集精度落盘（与界面显示一致）
+func TestFiveHoleCsvWriter_ProbePrecision(t *testing.T) {
+	tmpDir := t.TempDir()
+	w := NewFiveHoleCsvWriter()
+	prec := ProbePrecision{P1: 1, P2: 2, P3: 0, P4: 4, P5: 3, PAtm: 2, TAtm: 1}
+	if err := w.Initialize(tmpDir, "test", "probe1", types.TraversalPatternLine, prec); err != nil {
+		t.Fatalf("Initialize failed: %v", err)
+	}
+
+	dp := types.FiveHoleTraversalDataPoint{
+		PointID: "pt-0",
+		ProbeID: "probe1",
+		RawData: types.FiveHoleRawData{
+			P1: 100.123456, P2: 101.654321, P3: 99.987654, P4: 100.222222, P5: 100.333333,
+			PAtm: 101.346, TAtm: 20.55,
+		},
+		InterpResult: types.FiveHoleInterpolationResult{PtProbe: 102.5, MachProbe: 0.456789},
+		SampleCount:  1,
+		Timestamp:    time.Date(2024, 1, 2, 3, 4, 5, 678000000, time.Local).UnixMilli(),
+	}
+	if err := w.AppendPoint(dp); err != nil {
+		t.Fatalf("AppendPoint failed: %v", err)
+	}
+	w.Close()
+
+	content, err := os.ReadFile(filepath.Join(tmpDir, "test_probe1.csv"))
+	if err != nil {
+		t.Fatalf("read csv failed: %v", err)
+	}
+	lines := strings.Split(strings.TrimRight(string(content), "\r\n"), "\n")
+	fields := strings.Split(lines[1], ",")
+	// 列序：点号,时间戳,探针ID,X,Y,机构,轴,机构,轴,P1..P5,P∞,T∞,Pt,...
+	got := []string{fields[9], fields[10], fields[11], fields[12], fields[13], fields[14], fields[15]}
+	want := []string{"100.1", "101.65", "100", "100.2222", "100.333", "101.35", "20.6"}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Errorf("第 %d 个采集列应为 %s，实际 %s", i+1, want[i], got[i])
+		}
+	}
+	// Pt 界面 3 位、Ma 界面 4 位
+	if fields[16] != "102.500" {
+		t.Errorf("总压 Pt 应为 102.500（界面 3 位），实际 %s", fields[16])
+	}
+	if fields[18] != "0.4568" {
+		t.Errorf("马赫数 Ma 应为 0.4568（界面 4 位），实际 %s", fields[18])
+	}
+}
+
+// TestResolveProbePrecision 按探针通道配置/大气数据源解析落盘精度
+func TestResolveProbePrecision(t *testing.T) {
+	precisions := map[string]map[int]int{
+		"devA": {0: 1, 1: 2, 2: 0, 3: 4, 4: 5},
+		"devAtm": {0: 2, 1: 1},
+	}
+	get := func(deviceID string, channel int) (int, bool) {
+		if m, ok := precisions[deviceID]; ok {
+			if p, ok := m[channel]; ok {
+				return p, true
+			}
+		}
+		return 0, false
+	}
+	probe := types.FiveHoleProbeConfig{
+		ProbeID: "probe1",
+		ProbeChannels: []types.FiveHoleProbeChannelConfig{
+			{Role: types.Role5H_P1, DeviceID: "devA", Channel: 0},
+			{Role: types.Role5H_P2, DeviceID: "devA", Channel: 1},
+			{Role: types.Role5H_P3, DeviceID: "devA", Channel: 2},
+			{Role: types.Role5H_P4, DeviceID: "devA", Channel: 3},
+			{Role: types.Role5H_P5, DeviceID: "devA", Channel: 4},
+		},
+		PAtmSource: types.FiveHoleAtmSource{Mode: types.FiveHoleSourceDevice, DeviceID: "devAtm", Channel: 0},
+		TAtmSource: types.FiveHoleAtmSource{Mode: types.FiveHoleSourceManual, ManualValue: 20},
+	}
+	prec := ResolveProbePrecision(probe, get)
+	want := ProbePrecision{P1: 1, P2: 2, P3: 0, P4: 4, P5: 5, PAtm: 2, TAtm: types.FallbackChannelPrecision}
+	if prec != want {
+		t.Errorf("解析结果应为 %+v，实际 %+v", want, prec)
+	}
+
+	// 未注入 getter / 通道未配置 → 全部回退默认精度
+	def := DefaultProbePrecision()
+	if got := ResolveProbePrecision(probe, nil); got != def {
+		t.Errorf("未注入 getter 应回退默认精度 %+v，实际 %+v", def, got)
+	}
+	if got := ResolveProbePrecision(types.FiveHoleProbeConfig{}, get); got != def {
+		t.Errorf("无通道配置应回退默认精度 %+v，实际 %+v", def, got)
+	}
+}
+
+// TestResolveProbesPrecision_SkipsDisabled 仅解析启用探针
+func TestResolveProbesPrecision_SkipsDisabled(t *testing.T) {
+	probes := []types.FiveHoleProbeConfig{
+		{ProbeID: "probe1", Enabled: true},
+		{ProbeID: "probe2", Enabled: false},
+	}
+	got := ResolveProbesPrecision(probes, nil)
+	if len(got) != 1 {
+		t.Fatalf("应仅含启用探针，实际 %d 个", len(got))
+	}
+	if _, ok := got["probe1"]; !ok {
+		t.Error("应包含 probe1")
 	}
 }
 
@@ -161,13 +269,13 @@ func TestFiveHoleCsvWriter_IndependentFiles(t *testing.T) {
 
 	// 两个探针各一个 writer
 	w1 := NewFiveHoleCsvWriter()
-	if err := w1.Initialize(tmpDir, "test", "probe1", types.TraversalPatternLine); err != nil {
+	if err := w1.Initialize(tmpDir, "test", "probe1", types.TraversalPatternLine, DefaultProbePrecision()); err != nil {
 		t.Fatalf("Initialize probe1 failed: %v", err)
 	}
 	defer w1.Close()
 
 	w2 := NewFiveHoleCsvWriter()
-	if err := w2.Initialize(tmpDir, "test", "probe2", types.TraversalPatternLine); err != nil {
+	if err := w2.Initialize(tmpDir, "test", "probe2", types.TraversalPatternLine, DefaultProbePrecision()); err != nil {
 		t.Fatalf("Initialize probe2 failed: %v", err)
 	}
 	defer w2.Close()
@@ -184,7 +292,7 @@ func TestFiveHoleCsvWriter_IndependentFiles(t *testing.T) {
 func TestFiveHoleCsvWriter_FanHeader(t *testing.T) {
 	tmpDir := t.TempDir()
 	w := NewFiveHoleCsvWriter()
-	if err := w.Initialize(tmpDir, "test", "probe1", types.TraversalPatternFan); err != nil {
+	if err := w.Initialize(tmpDir, "test", "probe1", types.TraversalPatternFan, DefaultProbePrecision()); err != nil {
 		t.Fatalf("Initialize failed: %v", err)
 	}
 	defer w.Close()

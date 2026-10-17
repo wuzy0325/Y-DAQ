@@ -41,12 +41,35 @@ export interface FiveHoleProbeRealtimeItem {
   interpResult: FiveHoleInterpolationResult
 }
 
+// ==================== 耗时预估 vs 实际 ====================
+
+// 预估口径：移动 = 点位间距离 / 轴最大速度（同相位并行取最大，扇面 θ/R 两相相加）
+//           驻留 = 配置驻留时间
+//           采样 = 采样次数 × 最慢采集设备出帧周期（采样频率 = 1000/PeriodMs）
+// 实际口径：移动/驻留/采样三段分别实测（暂停时长不计入），总耗时为测试开始至今扣除暂停
+export interface FiveHoleTraversalTiming {
+  estimatedTotalMs: number  // 预估总时长
+  estMoveTotalMs: number    // 预估移动耗时合计
+  estDwellTotalMs: number   // 预估驻留耗时合计
+  estSampleTotalMs: number  // 预估采样耗时合计
+  estMoveMsPerPoint: number   // 预估单点移动耗时
+  estDwellMsPerPoint: number  // 预估单点驻留耗时
+  estSampleMsPerPoint: number // 预估单点采样耗时
+  sampleHz: number          // 参与预估的最慢设备采样频率（Hz）
+  actualElapsedMs: number   // 实际已用总时长（不含暂停）
+  actualMoveMs: number      // 实际移动耗时累计
+  actualDwellMs: number     // 实际驻留耗时累计
+  actualSampleMs: number    // 实际采样耗时累计
+  actualPoints: number      // 已完成点位数量
+}
+
 export interface FiveHoleTraversalTaskStatus {
   taskId: string; status: string
   totalPoints: number; completedPoints: number; progress: number
   currentPoint?: { id: string; x: number; y: number } | null
   probeStatuses: FiveHoleProbeStatus[]
   lastError?: string
+  timing?: FiveHoleTraversalTiming | null
 }
 
 // ==================== 事件类型 ====================
@@ -56,6 +79,7 @@ export interface FiveHoleTraversalProgressEvent {
   progress: number; currentX: number; currentY: number
   phase?: string
   probeStatuses: FiveHoleProbeStatus[]
+  timing?: FiveHoleTraversalTiming | null
 }
 
 export interface FiveHoleTraversalRealtimeEvent {

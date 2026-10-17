@@ -354,9 +354,14 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick, shallowRef } from 'vue'
 import { useRoute } from 'vue-router'
 import { Setting, FolderOpened } from '@element-plus/icons-vue'
+import { ConfigService, ThreeHoleService } from '@bindings/yx-daq/internal/app'
 import { useDeviceStore } from '../stores/device'
 import { useMotionStore } from '../stores/motion'
 import { useThreeHoleTestStore } from '../stores/threeHoleTest'
+import { useAutoSaveConfig } from '../composables/useAutoSaveConfig'
+import { useLayoutStepSync } from '../composables/useLayoutStepSync'
+import { usePointPreviewCanvas } from '../composables/usePointPreviewCanvas'
+import { useTestRealtimeRecording } from '../composables/useTestRealtimeRecording'
 import {
   TraversalPattern,
   TraversalPatternLabels,
@@ -365,15 +370,12 @@ import {
   AxisName,
   getTotalChannelCount,
   type TraversalPatternValue,
+  type ThreeHoleChannelRoleValue,
 } from '../api/enums'
+import { threeHoleRolePrecision } from '../utils/writePrecision'
 import ChartPanel from '../components/ChartPanel.vue'
 import GlassCard from '../components/GlassCard.vue'
 import ValueDisplay from '../components/ValueDisplay.vue'
-import { ConfigService, ThreeHoleService } from '@bindings/yx-daq/internal/app'
-import { usePointPreviewCanvas } from '../composables/usePointPreviewCanvas'
-import { useLayoutStepSync } from '../composables/useLayoutStepSync'
-import { useTestRealtimeRecording } from '../composables/useTestRealtimeRecording'
-import { useAutoSaveConfig } from '../composables/useAutoSaveConfig'
 
 const route = useRoute()
 const store = useThreeHoleTestStore()
@@ -396,13 +398,9 @@ function stopRefreshMotionOnWindowFocus() {
   window.removeEventListener('focus', refreshMotionOnFocus)
 }
 
+// 通道精度：与 CSV 导出共用同一解析规则（utils/writePrecision）
 function getChannelPrecision(role: string): number {
-  const chConfig = store.config.probeChannels.find(c => c.role === role)
-  if (!chConfig) return 3
-  const profile = deviceStore.profiles.find(p => p.id === store.config.deviceId)
-  if (!profile) return 3
-  const ch = profile.channels[chConfig.channel]
-  return ch?.precision ?? 3
+  return threeHoleRolePrecision(deviceStore.profiles, store.config.deviceId, store.config.probeChannels, role as ThreeHoleChannelRoleValue)
 }
 
 // ==================== 实时保存 ====================

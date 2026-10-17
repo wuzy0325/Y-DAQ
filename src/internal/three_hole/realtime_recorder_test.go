@@ -42,7 +42,7 @@ func TestRealtimeRecorder_Start_CreatesFileWithBOMAndHeader(t *testing.T) {
 	path := filepath.Join(dir, "rt.csv")
 
 	r := NewRealtimeRecorder()
-	if err := r.Start(path); err != nil {
+	if err := r.Start(path, DefaultProbePrecision()); err != nil {
 		t.Fatalf("Start failed: %v", err)
 	}
 	defer r.Stop()
@@ -89,7 +89,7 @@ func TestRealtimeRecorder_Start_NestedDirAutoCreated(t *testing.T) {
 	path := filepath.Join(dir, "nested", "deep", "rt.csv")
 
 	r := NewRealtimeRecorder()
-	if err := r.Start(path); err != nil {
+	if err := r.Start(path, DefaultProbePrecision()); err != nil {
 		t.Fatalf("Start 嵌套目录失败: %v", err)
 	}
 	r.Stop()
@@ -105,12 +105,12 @@ func TestRealtimeRecorder_Start_AlreadyRecordingReturnsError(t *testing.T) {
 	path := filepath.Join(dir, "rt.csv")
 
 	r := NewRealtimeRecorder()
-	if err := r.Start(path); err != nil {
+	if err := r.Start(path, DefaultProbePrecision()); err != nil {
 		t.Fatalf("首次 Start 失败: %v", err)
 	}
 	defer r.Stop()
 
-	err := r.Start(path)
+	err := r.Start(path, DefaultProbePrecision())
 	if err == nil {
 		t.Error("重复 Start 应返回错误")
 	}
@@ -127,7 +127,7 @@ func TestRealtimeRecorder_Start_InvalidPathReturnsError(t *testing.T) {
 	invalidPath := filepath.Join(blocker, "rt.csv")
 
 	r := NewRealtimeRecorder()
-	err := r.Start(invalidPath)
+	err := r.Start(invalidPath, DefaultProbePrecision())
 	if err == nil {
 		t.Error("无效路径 Start 应返回错误")
 		r.Stop()
@@ -140,7 +140,7 @@ func TestRealtimeRecorder_Record_WritesRow(t *testing.T) {
 	path := filepath.Join(dir, "rt.csv")
 
 	r := NewRealtimeRecorder()
-	if err := r.Start(path); err != nil {
+	if err := r.Start(path, DefaultProbePrecision()); err != nil {
 		t.Fatalf("Start failed: %v", err)
 	}
 
@@ -168,14 +168,49 @@ func TestRealtimeRecorder_Record_WritesRow(t *testing.T) {
 	if row[1] != "p-001" {
 		t.Errorf("PointID 应为 p-001，实际 %s", row[1])
 	}
-	if row[2] != "100.123456" {
-		t.Errorf("P1 应为 100.123456，实际 %s", row[2])
+	if row[2] != "100.123" {
+		t.Errorf("P1 应为 100.123（默认精度 3 位），实际 %s", row[2])
 	}
-	if row[6] != "25.50" {
-		t.Errorf("TAtm 应为 25.50（%.2f），实际 %s", 25.5, row[6])
+	if row[6] != "25.500" {
+		t.Errorf("TAtm 应为 25.500（默认精度 3 位），实际 %s", row[6])
+	}
+	if row[7] != "1000.000" {
+		t.Errorf("Pt 应为 1000.000（界面 3 位），实际 %s", row[7])
+	}
+	if row[10] != "5.25" {
+		t.Errorf("α 应为 5.25（界面 2 位），实际 %s", row[10])
+	}
+	if row[11] != "250.50" {
+		t.Errorf("V 应为 250.50（界面 2 位），实际 %s", row[11])
 	}
 	if row[12] != "3" {
 		t.Errorf("Iterations 应为 3，实际 %s", row[12])
+	}
+}
+
+// TestRealtimeRecorder_Record_UsesChannelPrecision 原始采集列按通道采集精度落盘
+func TestRealtimeRecorder_Record_UsesChannelPrecision(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "rt.csv")
+
+	r := NewRealtimeRecorder()
+	prec := ProbePrecision{P1: 1, P2: 0, P3: 2, PAtm: 2, TAtm: 1}
+	if err := r.Start(path, prec); err != nil {
+		t.Fatalf("Start failed: %v", err)
+	}
+
+	r.Record(types.ThreeHoleTraversalRealtimeEvent{
+		PointID: "p-001",
+		RawData: types.ThreeHoleRawData{P1: 100.123456, P2: 105.654321, P3: 102.555, PAtm: 101.325, TAtm: 25.55},
+	})
+	r.Stop()
+
+	row := readRealtimeCSV(t, path)[1]
+	want := []string{"100.1", "106", "102.56", "101.33", "25.6"}
+	for i, w := range want {
+		if row[2+i] != w {
+			t.Errorf("第 %d 个采集列应为 %s，实际 %s", i+1, w, row[2+i])
+		}
 	}
 }
 
@@ -199,7 +234,7 @@ func TestRealtimeRecorder_Record_MultipleRows(t *testing.T) {
 	path := filepath.Join(dir, "rt.csv")
 
 	r := NewRealtimeRecorder()
-	if err := r.Start(path); err != nil {
+	if err := r.Start(path, DefaultProbePrecision()); err != nil {
 		t.Fatalf("Start failed: %v", err)
 	}
 
@@ -227,7 +262,7 @@ func TestRealtimeRecorder_Stop_ClosesFileAndResetsState(t *testing.T) {
 	path := filepath.Join(dir, "rt.csv")
 
 	r := NewRealtimeRecorder()
-	if err := r.Start(path); err != nil {
+	if err := r.Start(path, DefaultProbePrecision()); err != nil {
 		t.Fatalf("Start failed: %v", err)
 	}
 	r.Stop()
@@ -252,7 +287,7 @@ func TestRealtimeRecorder_Stop_Idempotent(t *testing.T) {
 	path := filepath.Join(dir, "rt.csv")
 
 	r := NewRealtimeRecorder()
-	if err := r.Start(path); err != nil {
+	if err := r.Start(path, DefaultProbePrecision()); err != nil {
 		t.Fatalf("Start failed: %v", err)
 	}
 
@@ -279,14 +314,14 @@ func TestRealtimeRecorder_StartStopRecord_Cycle(t *testing.T) {
 	r := NewRealtimeRecorder()
 
 	// 第一轮
-	if err := r.Start(path1); err != nil {
+	if err := r.Start(path1, DefaultProbePrecision()); err != nil {
 		t.Fatalf("第一次 Start 失败: %v", err)
 	}
 	r.Record(types.ThreeHoleTraversalRealtimeEvent{PointID: "a"})
 	r.Stop()
 
 	// 第二轮（不同文件）
-	if err := r.Start(path2); err != nil {
+	if err := r.Start(path2, DefaultProbePrecision()); err != nil {
 		t.Fatalf("第二次 Start 失败: %v", err)
 	}
 	r.Record(types.ThreeHoleTraversalRealtimeEvent{PointID: "b"})
@@ -309,7 +344,7 @@ func TestRealtimeRecorder_ConcurrentRecord_NoPanic(t *testing.T) {
 	path := filepath.Join(dir, "rt.csv")
 
 	r := NewRealtimeRecorder()
-	if err := r.Start(path); err != nil {
+	if err := r.Start(path, DefaultProbePrecision()); err != nil {
 		t.Fatalf("Start failed: %v", err)
 	}
 
@@ -339,7 +374,7 @@ func TestRealtimeRecorder_CSVHeader_Has13Columns(t *testing.T) {
 	path := filepath.Join(dir, "rt.csv")
 
 	r := NewRealtimeRecorder()
-	if err := r.Start(path); err != nil {
+	if err := r.Start(path, DefaultProbePrecision()); err != nil {
 		t.Fatalf("Start failed: %v", err)
 	}
 	r.Stop()

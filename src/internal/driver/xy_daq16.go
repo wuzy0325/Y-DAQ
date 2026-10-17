@@ -21,7 +21,6 @@ type XYDAQDriver struct {
 	frameSize     int          // 数据帧大小（字节）
 	lastPeriodMs  atomic.Int32 // 最近一次采集周期（重连恢复采集时使用）
 	atmEnabled    atomic.Bool  // 大气压/大气温度采集使能（c 05 位图 0x0800）
-	adAvgCount    atomic.Int32 // 下发给硬件的 AD 平均次数（关闭时固定 4）
 }
 
 // maxXYFrameLen XY-DAQ 帧长度合法性上限。
@@ -31,8 +30,8 @@ const maxXYFrameLen = 512
 
 // NewXYDAQDriver 创建XY-DAQ驱动（DAQ8/DAQ16通用）。
 // atmEnabled 控制数据流是否包含大气压/大气温度（对应 c 05 位图 0x0800）。
-// adAvgCount 为下发给硬件的 AD 平均次数（关闭时固定 4，开启时为 8/16/32/64）。
-func NewXYDAQDriver(host string, port, streamID int, channels []types.ChannelConfig, deviceType types.DeviceType, atmEnabled bool, adAvgCount int) *XYDAQDriver {
+// AD 平均次数不在连接时下发：连接后由 DeviceManager 读取设备实际值同步到配置/UI。
+func NewXYDAQDriver(host string, port, streamID int, channels []types.ChannelConfig, deviceType types.DeviceType, atmEnabled bool) *XYDAQDriver {
 	pressureCount := deviceType.PressureChannelCount()
 	totalChannels := deviceType.TotalChannelCount()
 	d := &XYDAQDriver{
@@ -44,7 +43,6 @@ func NewXYDAQDriver(host string, port, streamID int, channels []types.ChannelCon
 		frameSize:     deviceType.StreamFrameSize(),
 	}
 	d.atmEnabled.Store(atmEnabled)
-	d.adAvgCount.Store(int32(adAvgCount))
 	return d
 }
 
@@ -83,9 +81,6 @@ func (d *XYDAQDriver) initAfterConnect() error {
 
 	// 读取设备EU单位并更新通道配置
 	d.readAndUpdateEUUnit()
-
-	// 下发 AD 平均次数（读取 q05 成功后才写入，避免误写不支持该命令的设备）
-	d.applyADAveraging()
 
 	// EA2508A：按持久化配置下发温度通道配置（@16 来源 + @17 热电偶类型）
 	if d.deviceType == types.DeviceTypeEA2508A {

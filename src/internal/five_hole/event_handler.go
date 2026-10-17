@@ -19,6 +19,8 @@ type EventHandler struct {
 	csvWriters      map[string]*FiveHoleCsvWriter
 	probeDataPoints map[string][]types.FiveHoleTraversalDataPoint
 	eventPublisher  FiveHoleEventPublisher
+	// channelPrecision 设备通道采集精度查询（用于落盘小数位与界面显示对齐）；未注入时回退默认精度
+	channelPrecision types.ChannelPrecisionGetter
 }
 
 // NewEventHandler 创建事件处理器
@@ -32,8 +34,16 @@ func NewEventHandler(testManager *TestManager, dataProcessor *DataProcessor, pub
 	}
 }
 
+// SetChannelPrecisionGetter 注入设备通道精度查询（落盘小数位与界面显示一致）
+// 可选依赖 Setter 注入，未注入时用默认精度
+func (eh *EventHandler) SetChannelPrecisionGetter(get types.ChannelPrecisionGetter) {
+	eh.mu.Lock()
+	defer eh.mu.Unlock()
+	eh.channelPrecision = get
+}
+
 // OnTestStart 处理测试开始事件
-// 为每个启用探针创建 csvWriter 并 Initialize(savePath, saveFileName, probeID)
+// 为每个启用探针创建 csvWriter 并 Initialize(savePath, saveFileName, probeID, pattern, 精度)
 func (eh *EventHandler) OnTestStart(config types.FiveHoleTraversalConfig) error {
 	eh.mu.Lock()
 	defer eh.mu.Unlock()
@@ -50,7 +60,8 @@ func (eh *EventHandler) OnTestStart(config types.FiveHoleTraversalConfig) error 
 			continue
 		}
 		w := NewFiveHoleCsvWriter()
-		if err := w.Initialize(config.SavePath, config.SaveFileName, p.ProbeID, config.Layout.Pattern); err != nil {
+		prec := ResolveProbePrecision(p, eh.channelPrecision)
+		if err := w.Initialize(config.SavePath, config.SaveFileName, p.ProbeID, config.Layout.Pattern, prec); err != nil {
 			// 清理已创建的 writer
 			for _, ww := range eh.csvWriters {
 				ww.Close()

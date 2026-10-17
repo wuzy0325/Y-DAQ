@@ -223,23 +223,23 @@ type DeviceProfile struct {
 	AtmEnabled  bool       `json:"atmEnabled"`  // 是否采集大气压/大气温度（c 05 位图 0x0800，仅 EA2508A/EA2516A；默认 true）
 	// ADAveragingEnabled AD 平均开关（仅 EA2508A/EA2516A；关闭时固定为最低值 4 次）
 	ADAveragingEnabled bool `json:"adAveragingEnabled,omitempty"`
-	// ADAveragingCount AD 平均次数（开启时有效，取值 8/16/32/64）
+	// ADAveragingCount AD 平均次数（开启时有效，取值 8/16/32）
 	ADAveragingCount int             `json:"adAveragingCount,omitempty"`
 	Channels         []ChannelConfig `json:"channels"`
 }
 
 // AD 平均次数约定：
 //   - 关闭（不平均）时固定为最低值 4 次
-//   - 开启时可选 8/16/32/64 次
+//   - 开启时可选 8/16/32 次
 const (
 	// ADAveragingOffCount AD 平均关闭时的固定次数（最低值）
 	ADAveragingOffCount = 4
 )
 
 // ADAveragingAllowedCounts AD 平均开启时允许选用的次数（升序）
-var ADAveragingAllowedCounts = []int{8, 16, 32, 64}
+var ADAveragingAllowedCounts = []int{8, 16, 32}
 
-// IsAllowedADAveragingCount 返回 count 是否为 AD 平均开启时的合法次数（8/16/32/64）。
+// IsAllowedADAveragingCount 返回 count 是否为 AD 平均开启时的合法次数（8/16/32）。
 func IsAllowedADAveragingCount(count int) bool {
 	for _, c := range ADAveragingAllowedCounts {
 		if c == count {
@@ -250,7 +250,7 @@ func IsAllowedADAveragingCount(count int) bool {
 }
 
 // EffectiveADAveragingCount 返回下发给硬件的实际 AD 平均次数：
-// 关闭时固定 4；开启时取合法值（8/16/32/64），非法值回退到首个合法值 8。
+// 关闭时固定 4；开启时取合法值（8/16/32），非法值回退到首个合法值 8。
 func EffectiveADAveragingCount(enabled bool, count int) int {
 	if !enabled {
 		return ADAveragingOffCount
@@ -264,6 +264,16 @@ func EffectiveADAveragingCount(enabled bool, count int) int {
 // EffectiveADAveragingCount 便捷方法，等价于 EffectiveADAveragingCount(p.ADAveragingEnabled, p.ADAveragingCount)
 func (p *DeviceProfile) EffectiveADAveragingCount() int {
 	return EffectiveADAveragingCount(p.ADAveragingEnabled, p.ADAveragingCount)
+}
+
+// ADAveragingFromDevice 把从硬件读到的实际 AD 平均次数映射为（开关, 次数）。
+// 连接后以设备为准：读到 4 视为关闭（关闭时硬件固定 4）；其余值视为开启并保留
+// 设备实际次数（界面显示实际值，不做合法值归一化，避免掩盖设备真实状态）。
+func ADAveragingFromDevice(actual int) (enabled bool, count int) {
+	if actual <= 0 || actual == ADAveragingOffCount {
+		return false, ADAveragingOffCount
+	}
+	return true, actual
 }
 
 // UnmarshalJSON 自定义反序列化：旧配置文件无 atmEnabled 字段时默认启用，

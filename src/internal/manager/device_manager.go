@@ -21,7 +21,7 @@ var driverFactories = map[types.DeviceType]DriverFactory{
 }
 
 func newXYDAQDriver(profile types.DeviceProfile) DeviceDriver {
-	drv := driver.NewXYDAQDriver(profile.Host, profile.Port, profile.StreamID, profile.Channels, profile.Type, profile.AtmEnabled, profile.EffectiveADAveragingCount())
+	drv := driver.NewXYDAQDriver(profile.Host, profile.Port, profile.StreamID, profile.Channels, profile.Type, profile.AtmEnabled)
 	drv.SetDeviceID(profile.ID)
 	return drv
 }
@@ -58,6 +58,7 @@ type DeviceManager struct {
 	runtimeStatus     map[string]types.ConnectionStatus
 	onStatusChange    func(statuses []types.DeviceStatus)
 	onTempCalibChange func(deviceID string)
+	onProfileChange   func(deviceID string)
 }
 
 // NewDeviceManager 创建设备管理器
@@ -90,6 +91,24 @@ func (m *DeviceManager) emitStatusChange() {
 	m.RUnlock()
 	if cb != nil {
 		cb(m.GetStatusAll())
+	}
+}
+
+// SetOnProfileChange 设置配置变更回调（由 Core 层桥接到 Wails 事件系统）。
+// 用于后端主动改写配置后（如连接时同步设备 AD 平均次数）通知前端刷新 profiles。
+func (m *DeviceManager) SetOnProfileChange(cb func(deviceID string)) {
+	m.Lock()
+	defer m.Unlock()
+	m.onProfileChange = cb
+}
+
+// emitProfileChange 发射配置变更事件
+func (m *DeviceManager) emitProfileChange(deviceID string) {
+	m.RLock()
+	cb := m.onProfileChange
+	m.RUnlock()
+	if cb != nil {
+		cb(deviceID)
 	}
 }
 
@@ -129,7 +148,7 @@ func (m *DeviceManager) UpdateProfile(profile types.DeviceProfile) error {
 		if cfg, ok := drv.(AtmChannelConfigurator); ok {
 			cfg.SetAtmEnabled(profile.AtmEnabled)
 		}
-		// AD 平均次数热更新（立即下发 w05 命令，best-effort）
+		// AD 平均次数热更新（立即下发 w10 命令，best-effort）
 		if cfg, ok := drv.(ADAveragingConfigurator); ok {
 			if err := cfg.SetADAveraging(profile.EffectiveADAveragingCount()); err != nil {
 				slog.Warn("update profile: apply AD averaging failed", "device", profile.ID, "err", err)
@@ -294,6 +313,8 @@ func (m *DeviceManager) Connect(id string) error {
 	m.Unlock()
 	m.saveProfilesWithLog("device")
 	m.emitStatusChange()
+	// 连接后以设备实际值为准同步 AD 平均（EA2508A/EA2516A）
+	m.syncADAveragingFromDevice(id, drv)
 	return nil
 }
 

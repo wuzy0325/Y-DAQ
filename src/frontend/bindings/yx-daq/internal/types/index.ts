@@ -35,6 +35,7 @@ export {
     FiveHoleRawData,
     FiveHoleTraversalConfig,
     FiveHoleTraversalTaskStatus,
+    FiveHoleTraversalTiming,
     LimitStatus,
     LineLayout,
     LogFileInfo,
@@ -66,4 +67,4 @@ export {
     TraversalTestStatus,
     ValveState,
     ZeroCalibrateResult
-} from "./models.js";
+} from "./models";

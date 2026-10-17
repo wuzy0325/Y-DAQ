@@ -609,7 +609,7 @@ export class DeviceProfile {
     "adAveragingEnabled"?: boolean;
 
     /**
-     * ADAveragingCount AD 平均次数（开启时有效，取值 8/16/32/64）
+     * ADAveragingCount AD 平均次数（开启时有效，取值 8/16/32）
      */
     "adAveragingCount"?: number;
     "channels": ChannelConfig[];
@@ -1568,11 +1568,9 @@ export class FiveHoleRawData {
 
 /**
  * FiveHoleTraversalConfig 五孔移位测试配置（全局配置，含 1-MaxFiveHoleProbes 根探针）
+ * 采样节奏由设备推帧驱动（无采样间隔配置）：采集设备每发来一帧新数据即采样一次
  */
 export class FiveHoleTraversalConfig {
-    /**
-     * 采样节奏由设备推帧驱动（无采样间隔配置）：采集设备每发来一帧新数据即采样一次
-     */
     "name": string;
 
     /**
@@ -1705,6 +1703,11 @@ export class FiveHoleTraversalTaskStatus {
     "probeStatuses": FiveHoleProbeStatus[];
     "lastError"?: string;
 
+    /**
+     * 耗时预估 vs 实际（测试未启动时为 nil）
+     */
+    "timing"?: FiveHoleTraversalTiming | null;
+
     /** Creates a new FiveHoleTraversalTaskStatus instance. */
     constructor($$source: Partial<FiveHoleTraversalTaskStatus> = {}) {
         if (!("taskId" in $$source)) {
@@ -1735,6 +1738,7 @@ export class FiveHoleTraversalTaskStatus {
     static createFrom($$source: any = {}): FiveHoleTraversalTaskStatus {
         const $$createField5_0 = $$createType33;
         const $$createField6_0 = $$createType35;
+        const $$createField8_0 = $$createType37;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("currentPoint" in $$parsedSource) {
             $$parsedSource["currentPoint"] = $$createField5_0($$parsedSource["currentPoint"]);
@@ -1742,7 +1746,135 @@ export class FiveHoleTraversalTaskStatus {
         if ("probeStatuses" in $$parsedSource) {
             $$parsedSource["probeStatuses"] = $$createField6_0($$parsedSource["probeStatuses"]);
         }
+        if ("timing" in $$parsedSource) {
+            $$parsedSource["timing"] = $$createField8_0($$parsedSource["timing"]);
+        }
         return new FiveHoleTraversalTaskStatus($$parsedSource as Partial<FiveHoleTraversalTaskStatus>);
+    }
+}
+
+/**
+ * FiveHoleTraversalTiming 五孔移位测试耗时统计（预估 vs 实际）
+ * 
+ * 预估口径（理论值，启动前即可算出）：
+ *   移动 = 点位间距离 / 轴配置最大速度（同相位多轴并行取最大；扇面 θ 相与 R 相串行相加）
+ *   驻留 = 配置驻留时间
+ *   采样 = 采样次数 × 最慢采集设备出帧周期（采样频率 = 1000/PeriodMs）
+ * 
+ * 实际口径：移动/驻留/采样三段分别实测（暂停时长不计入），
+ * 总耗时为测试开始至今扣除暂停时间。
+ */
+export class FiveHoleTraversalTiming {
+    /**
+     * ===== 预估（全点位合计） =====
+     * 预估总时长
+     */
+    "estimatedTotalMs": number;
+
+    /**
+     * 预估移动耗时合计
+     */
+    "estMoveTotalMs": number;
+
+    /**
+     * 预估驻留耗时合计
+     */
+    "estDwellTotalMs": number;
+
+    /**
+     * 预估采样耗时合计
+     */
+    "estSampleTotalMs": number;
+
+    /**
+     * ===== 预估（单点位，界面展示"每点：移动+驻留+采样"） =====
+     */
+    "estMoveMsPerPoint": number;
+    "estDwellMsPerPoint": number;
+    "estSampleMsPerPoint": number;
+
+    /**
+     * 参与预估的最慢设备采样频率（Hz）
+     */
+    "sampleHz": number;
+
+    /**
+     * ===== 实际（累计） =====
+     * 实际已用总时长（不含暂停）
+     */
+    "actualElapsedMs": number;
+
+    /**
+     * 移动耗时累计
+     */
+    "actualMoveMs": number;
+
+    /**
+     * 驻留耗时累计
+     */
+    "actualDwellMs": number;
+
+    /**
+     * 采样耗时累计
+     */
+    "actualSampleMs": number;
+
+    /**
+     * 已完成点位数量（用于折算每点实际耗时）
+     */
+    "actualPoints": number;
+
+    /** Creates a new FiveHoleTraversalTiming instance. */
+    constructor($$source: Partial<FiveHoleTraversalTiming> = {}) {
+        if (!("estimatedTotalMs" in $$source)) {
+            this["estimatedTotalMs"] = 0;
+        }
+        if (!("estMoveTotalMs" in $$source)) {
+            this["estMoveTotalMs"] = 0;
+        }
+        if (!("estDwellTotalMs" in $$source)) {
+            this["estDwellTotalMs"] = 0;
+        }
+        if (!("estSampleTotalMs" in $$source)) {
+            this["estSampleTotalMs"] = 0;
+        }
+        if (!("estMoveMsPerPoint" in $$source)) {
+            this["estMoveMsPerPoint"] = 0;
+        }
+        if (!("estDwellMsPerPoint" in $$source)) {
+            this["estDwellMsPerPoint"] = 0;
+        }
+        if (!("estSampleMsPerPoint" in $$source)) {
+            this["estSampleMsPerPoint"] = 0;
+        }
+        if (!("sampleHz" in $$source)) {
+            this["sampleHz"] = 0;
+        }
+        if (!("actualElapsedMs" in $$source)) {
+            this["actualElapsedMs"] = 0;
+        }
+        if (!("actualMoveMs" in $$source)) {
+            this["actualMoveMs"] = 0;
+        }
+        if (!("actualDwellMs" in $$source)) {
+            this["actualDwellMs"] = 0;
+        }
+        if (!("actualSampleMs" in $$source)) {
+            this["actualSampleMs"] = 0;
+        }
+        if (!("actualPoints" in $$source)) {
+            this["actualPoints"] = 0;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new FiveHoleTraversalTiming instance from a string or object.
+     */
+    static createFrom($$source: any = {}): FiveHoleTraversalTiming {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new FiveHoleTraversalTiming($$parsedSource as Partial<FiveHoleTraversalTiming>);
     }
 }
 
@@ -2003,7 +2135,7 @@ export class MotionControllerProfile {
      * Creates a new MotionControllerProfile instance from a string or object.
      */
     static createFrom($$source: any = {}): MotionControllerProfile {
-        const $$createField6_0 = $$createType37;
+        const $$createField6_0 = $$createType39;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("axes" in $$parsedSource) {
             $$parsedSource["axes"] = $$createField6_0($$parsedSource["axes"]);
@@ -2051,7 +2183,7 @@ export class MotionControllerStatus {
      * Creates a new MotionControllerStatus instance from a string or object.
      */
     static createFrom($$source: any = {}): MotionControllerStatus {
-        const $$createField4_0 = $$createType39;
+        const $$createField4_0 = $$createType41;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("axes" in $$parsedSource) {
             $$parsedSource["axes"] = $$createField4_0($$parsedSource["axes"]);
@@ -2767,10 +2899,10 @@ export class ThreeHoleTraversalConfig {
      */
     static createFrom($$source: any = {}): ThreeHoleTraversalConfig {
         const $$createField3_0 = $$createType29;
-        const $$createField4_0 = $$createType41;
-        const $$createField5_0 = $$createType42;
-        const $$createField6_0 = $$createType42;
-        const $$createField7_0 = $$createType44;
+        const $$createField4_0 = $$createType43;
+        const $$createField5_0 = $$createType44;
+        const $$createField6_0 = $$createType44;
+        const $$createField7_0 = $$createType46;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("layout" in $$parsedSource) {
             $$parsedSource["layout"] = $$createField3_0($$parsedSource["layout"]);
@@ -2834,8 +2966,8 @@ export class ThreeHoleTraversalDataPoint {
      * Creates a new ThreeHoleTraversalDataPoint instance from a string or object.
      */
     static createFrom($$source: any = {}): ThreeHoleTraversalDataPoint {
-        const $$createField3_0 = $$createType45;
-        const $$createField4_0 = $$createType46;
+        const $$createField3_0 = $$createType47;
+        const $$createField4_0 = $$createType48;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("rawData" in $$parsedSource) {
             $$parsedSource["rawData"] = $$createField3_0($$parsedSource["rawData"]);
@@ -2889,7 +3021,7 @@ export class ThreeHoleTraversalTaskStatus {
      */
     static createFrom($$source: any = {}): ThreeHoleTraversalTaskStatus {
         const $$createField5_0 = $$createType33;
-        const $$createField6_0 = $$createType48;
+        const $$createField6_0 = $$createType50;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("currentPoint" in $$parsedSource) {
             $$parsedSource["currentPoint"] = $$createField5_0($$parsedSource["currentPoint"]);
@@ -2924,10 +3056,10 @@ export class TraversalLayout {
      * Creates a new TraversalLayout instance from a string or object.
      */
     static createFrom($$source: any = {}): TraversalLayout {
-        const $$createField1_0 = $$createType50;
-        const $$createField2_0 = $$createType52;
-        const $$createField3_0 = $$createType54;
-        const $$createField4_0 = $$createType55;
+        const $$createField1_0 = $$createType52;
+        const $$createField2_0 = $$createType54;
+        const $$createField3_0 = $$createType56;
+        const $$createField4_0 = $$createType57;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("line" in $$parsedSource) {
             $$parsedSource["line"] = $$createField1_0($$parsedSource["line"]);
@@ -3131,23 +3263,25 @@ const $$createType32 = TraversalPoint.createFrom;
 const $$createType33 = $Create.Nullable($$createType32);
 const $$createType34 = FiveHoleProbeStatus.createFrom;
 const $$createType35 = $Create.Array($$createType34);
-const $$createType36 = AxisConfig.createFrom;
-const $$createType37 = $Create.Array($$createType36);
-const $$createType38 = AxisStatus.createFrom;
+const $$createType36 = FiveHoleTraversalTiming.createFrom;
+const $$createType37 = $Create.Nullable($$createType36);
+const $$createType38 = AxisConfig.createFrom;
 const $$createType39 = $Create.Array($$createType38);
-const $$createType40 = ThreeHoleProbeChannelConfig.createFrom;
+const $$createType40 = AxisStatus.createFrom;
 const $$createType41 = $Create.Array($$createType40);
-const $$createType42 = MotionAxisMapping.createFrom;
-const $$createType43 = ThreeHoleCalibFileInfo.createFrom;
-const $$createType44 = $Create.Array($$createType43);
-const $$createType45 = ThreeHoleRawData.createFrom;
-const $$createType46 = ThreeHoleInterpolationResult.createFrom;
-const $$createType47 = ThreeHoleTraversalDataPoint.createFrom;
-const $$createType48 = $Create.Array($$createType47);
-const $$createType49 = LineLayout.createFrom;
-const $$createType50 = $Create.Nullable($$createType49);
-const $$createType51 = RectangleLayout.createFrom;
+const $$createType42 = ThreeHoleProbeChannelConfig.createFrom;
+const $$createType43 = $Create.Array($$createType42);
+const $$createType44 = MotionAxisMapping.createFrom;
+const $$createType45 = ThreeHoleCalibFileInfo.createFrom;
+const $$createType46 = $Create.Array($$createType45);
+const $$createType47 = ThreeHoleRawData.createFrom;
+const $$createType48 = ThreeHoleInterpolationResult.createFrom;
+const $$createType49 = ThreeHoleTraversalDataPoint.createFrom;
+const $$createType50 = $Create.Array($$createType49);
+const $$createType51 = LineLayout.createFrom;
 const $$createType52 = $Create.Nullable($$createType51);
-const $$createType53 = FanLayout.createFrom;
+const $$createType53 = RectangleLayout.createFrom;
 const $$createType54 = $Create.Nullable($$createType53);
-const $$createType55 = $Create.Array($$createType32);
+const $$createType55 = FanLayout.createFrom;
+const $$createType56 = $Create.Nullable($$createType55);
+const $$createType57 = $Create.Array($$createType32);

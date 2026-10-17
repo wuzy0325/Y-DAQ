@@ -1,4 +1,4 @@
-import { ref, computed, watch, nextTick, type Ref, type ComputedRef } from 'vue'
+import { ref, computed, type Ref, type ComputedRef } from 'vue'
 
 interface StepSegment {
   start: number
@@ -102,6 +102,25 @@ export function expandSteps(steps: StepSegment[]): number[] {
 }
 
 /**
+ * 坐标轴取值域：把点位的实际范围换算成画布绘制用的轴范围。
+ *
+ * 单值轴（min === max，例如 Y 范围只设一个位置 30~30）不能直接用实际范围，
+ * 否则 (y - yMin) / 1 恒为 0，所有点被压到画布底边、刻度也只剩一个，
+ * 看上去像"卡住不刷新"。这里以该值为中心撑开一个可见区间（大坐标按 5%、至少 ±1），
+ * 让单值轴的点线落在绘图区中部，并给出上下相邻的刻度。
+ */
+export function resolveAxisDomain(min: number, max: number): {
+  min: number
+  max: number
+  range: number
+  targetTicks: number
+} {
+  if (max > min) return { min, max, range: max - min, targetTicks: 6 }
+  const pad = Math.max(Math.abs(min) * 0.05, 1)
+  return { min: min - pad, max: min + pad, range: pad * 2, targetTicks: 3 }
+}
+
+/**
  * 沿单轴方向展开点位坐标（与后端 expandLineAxisValues 逻辑一致）
  * - 支持 start>end 反向（步长恒为正，方向自动跟随 start→end）
  * - 步长不整除时强制包含 end（最后一点用 end 替代，避免浮点漂移）
@@ -143,14 +162,31 @@ export function expandLineAxisValues(start: number, end: number, step: number): 
 export function usePointPreviewCanvas(options: UsePointPreviewCanvasOptions): {
   pointCanvasRef: Ref<HTMLCanvasElement | undefined>
   previewPoints: ComputedRef<PreviewPoint[]>
+  emptyHint: ComputedRef<string>
   drawPointCanvas: () => void
 } {
   const canvasSize = options.canvasSize ?? 'parent'
-  const padding = options.padding ?? { left: 44, right: 16, top: 12, bottom: 36 }
+  // 左内边距留出 5 字符刻度标签空间（如 "30.0"/"1000"），避免与纵轴标题 "Y (mm)" 重叠
+  const padding = options.padding ?? { left: 52, right: 16, top: 12, bottom: 36 }
   const pointRadiusFactor = options.pointRadiusFactor ?? 120
   const supportCustomPattern = options.supportCustomPattern ?? false
 
   const pointCanvasRef = ref<HTMLCanvasElement>()
+
+  /** 布点为 0 时画布上的提示文案：指出具体的无效配置项，避免只说"请先配置" */
+  const emptyHint = computed<string>(() => {
+    const layout = options.layout.value
+    if (layout.pattern === 'rectangle' && layout.rectangle) {
+      const r = layout.rectangle
+      if (r.xMin > r.xMax) return '⚠ X 范围最小值大于最大值，无法布点'
+      if (r.yMin > r.yMax) return '⚠ Y 范围最小值大于最大值，无法布点'
+      return '请先配置布点参数'
+    }
+    if (layout.pattern === 'line' && layout.line && !(layout.line.step > 0)) {
+      return '⚠ 直线布点步长需大于 0'
+    }
+    return '请先配置布点参数'
+  })
 
   const previewPoints = computed<PreviewPoint[]>(() => {
     const layout = options.layout.value
@@ -158,6 +194,9 @@ export function usePointPreviewCanvas(options: UsePointPreviewCanvasOptions): {
 
     if (layout.pattern === 'rectangle' && layout.rectangle) {
       const r = layout.rectangle
+      // 范围反向（min > max）是无效配置：后端 generateRectanglePoints 直接生成 0 点，
+      // 预览若退回 [min, max] 会凭空造出两个点位，与实际运行结果不一致
+      if (r.xMin > r.xMax || r.yMin > r.yMax) return []
       const xValues = expandSteps(r.xSteps)
       const yValues = expandSteps(r.ySteps)
       if (xValues.length === 0) { xValues.push(r.xMin, r.xMax) }
@@ -243,18 +282,21 @@ export function usePointPreviewCanvas(options: UsePointPreviewCanvasOptions): {
       ctx.fillStyle = 'rgba(255,255,255,0.3)'
       ctx.font = '14px sans-serif'
       ctx.textAlign = 'center'
-      ctx.fillText('请先配置布点参数', w / 2, h / 2)
+      ctx.fillText(emptyHint.value, w / 2, h / 2)
       return
     }
 
     const xs = points.map(p => p.x)
     const ys = points.map(p => p.y)
-    const xMin = Math.min(...xs)
-    const xMax = Math.max(...xs)
-    const yMin = Math.min(...ys)
-    const yMax = Math.max(...ys)
-    const xRange = xMax - xMin || 1
-    const yRange = yMax - yMin || 1
+    // 单值轴（min === max）按该值居中撑开，避免所有点压在画布边缘
+    const xDomain = resolveAxisDomain(Math.min(...xs), Math.max(...xs))
+    const yDomain = resolveAxisDomain(Math.min(...ys), Math.max(...ys))
+    const xMin = xDomain.min
+    const xMax = xDomain.max
+    const yMin = yDomain.min
+    const yMax = yDomain.max
+    const xRange = xDomain.range
+    const yRange = yDomain.range
 
     const padLeft = padding.left
     const padRight = padding.right
@@ -283,8 +325,8 @@ export function usePointPreviewCanvas(options: UsePointPreviewCanvasOptions): {
       return value.toFixed(decimals)
     }
 
-    const xTickStep = niceStep(xRange, 6)
-    const yTickStep = niceStep(yRange, 6)
+    const xTickStep = niceStep(xRange, xDomain.targetTicks)
+    const yTickStep = niceStep(yRange, yDomain.targetTicks)
 
     // 网格
     ctx.strokeStyle = 'rgba(255,255,255,0.06)'
@@ -394,5 +436,5 @@ export function usePointPreviewCanvas(options: UsePointPreviewCanvasOptions): {
     }
   }
 
-  return { pointCanvasRef, previewPoints, drawPointCanvas }
+  return { pointCanvasRef, previewPoints, emptyHint, drawPointCanvas }
 }
