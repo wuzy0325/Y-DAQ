@@ -9,50 +9,50 @@ import (
 	"strings"
 )
 
-// MultiCalInterpolator 多CAL文件插值器
-// 支持加载多个不同马赫数的CAL文件，根据实时Ma值自动选择或插值
-type MultiCalInterpolator struct {
-	calFiles          []calFileWithInterpolator
+// MultiPrbInterpolator 多PRB文件插值器
+// 支持加载多个不同马赫数的PRB文件，根据实时Ma值自动选择或插值
+type MultiPrbInterpolator struct {
+	prbFiles          []prbFileWithInterpolator
 	sortedMachNumbers []float64
 	loaded            bool
-	mode              MultiCalInterpolationMode
+	mode              MultiPrbInterpolationMode
 }
 
-type calFileWithInterpolator struct {
-	FileInfo     CalFileInfo
-	Interpolator *CalInterpolator
+type prbFileWithInterpolator struct {
+	FileInfo     PrbFileInfo
+	Interpolator *PrbInterpolator
 	MachNumber   float64
 }
 
-type CalFileData struct {
+type PrbFileData struct {
 	FilePath string
 	Lines    []string
 }
 
-// MultiCalLoadResult 多CAL文件加载结果
-type MultiCalLoadResult struct {
-	Files       []CalFileInfo // 已加载文件信息
+// MultiPrbLoadResult 多PRB文件加载结果
+type MultiPrbLoadResult struct {
+	Files       []PrbFileInfo // 已加载文件信息
 	MachNumbers []float64     // 马赫数列表
 	Warnings    []string      // 警告信息
 }
 
-// NewMultiCalInterpolator 创建多CAL插值器
-func NewMultiCalInterpolator() *MultiCalInterpolator {
-	return &MultiCalInterpolator{
+// NewMultiPrbInterpolator 创建多PRB插值器
+func NewMultiPrbInterpolator() *MultiPrbInterpolator {
+	return &MultiPrbInterpolator{
 		mode: ModeLinear,
 	}
 }
 
-// LoadCalFiles is kept for source compatibility. File I/O belongs in adapters.
-func (m *MultiCalInterpolator) LoadCalFiles(filePaths []string, machNumbers []float64) (*MultiCalLoadResult, error) {
-	return nil, fmt.Errorf("load CAL files through an adapter and call LoadCalData")
+// LoadPrbFiles is kept for source compatibility. File I/O belongs in adapters.
+func (m *MultiPrbInterpolator) LoadPrbFiles(filePaths []string, machNumbers []float64) (*MultiPrbLoadResult, error) {
+	return nil, fmt.Errorf("load PRB files through an adapter and call LoadPrbData")
 }
 
-// LoadCalData loads multiple CAL datasets from already-read text lines.
-func (m *MultiCalInterpolator) LoadCalData(fileData []CalFileData, machNumbers []float64) (*MultiCalLoadResult, error) {
+// LoadPrbData loads multiple PRB datasets from already-read text lines.
+func (m *MultiPrbInterpolator) LoadPrbData(fileData []PrbFileData, machNumbers []float64) (*MultiPrbLoadResult, error) {
 	m.clearState()
 
-	var files []CalFileInfo
+	var files []PrbFileInfo
 	var loadedMachNumbers []float64
 	var warnings []string
 
@@ -60,9 +60,9 @@ func (m *MultiCalInterpolator) LoadCalData(fileData []CalFileData, machNumbers [
 		filePath := data.FilePath
 		fileName := filepath.Base(filePath)
 
-		interpolator := NewCalInterpolator()
-		if err := interpolator.LoadCalLines(data.Lines, filePath); err != nil {
-			warnings = append(warnings, fmt.Sprintf("加载CAL文件失败: %s - %v", fileName, err))
+		interpolator := NewPrbInterpolator()
+		if err := interpolator.LoadPrbLines(data.Lines, filePath); err != nil {
+			warnings = append(warnings, fmt.Sprintf("加载PRB文件失败: %s - %v", fileName, err))
 			continue
 		}
 
@@ -85,7 +85,7 @@ func (m *MultiCalInterpolator) LoadCalData(fileData []CalFileData, machNumbers [
 			continue
 		}
 
-		fileInfo := CalFileInfo{
+		fileInfo := PrbFileInfo{
 			FilePath:   filePath,
 			FileName:   fileName,
 			LoadedAt:   0, // 可用 time.Now().UnixMilli()
@@ -94,7 +94,7 @@ func (m *MultiCalInterpolator) LoadCalData(fileData []CalFileData, machNumbers [
 		fileInfo.ValidRange.MachMin = machNumber
 		fileInfo.ValidRange.MachMax = machNumber
 
-		m.calFiles = append(m.calFiles, calFileWithInterpolator{
+		m.prbFiles = append(m.prbFiles, prbFileWithInterpolator{
 			FileInfo:     fileInfo,
 			Interpolator: interpolator,
 			MachNumber:   machNumber,
@@ -105,57 +105,60 @@ func (m *MultiCalInterpolator) LoadCalData(fileData []CalFileData, machNumbers [
 	}
 
 	// 按马赫数排序
-	sort.Slice(m.calFiles, func(i, j int) bool {
-		return m.calFiles[i].MachNumber < m.calFiles[j].MachNumber
+	sort.Slice(m.prbFiles, func(i, j int) bool {
+		return m.prbFiles[i].MachNumber < m.prbFiles[j].MachNumber
 	})
-	m.sortedMachNumbers = make([]float64, len(m.calFiles))
-	for i, f := range m.calFiles {
+	m.sortedMachNumbers = make([]float64, len(m.prbFiles))
+	for i, f := range m.prbFiles {
 		m.sortedMachNumbers[i] = f.MachNumber
 	}
 
-	if len(m.calFiles) == 0 {
-		return nil, fmt.Errorf("没有成功加载任何CAL文件")
+	if len(m.prbFiles) == 0 {
+		return nil, fmt.Errorf("没有成功加载任何PRB文件")
 	}
 
-	if len(m.calFiles) == 1 {
-		warnings = append(warnings, "只加载了一个CAL文件，多马赫数插值功能将退化为单文件模式")
+	if len(m.prbFiles) == 1 {
+		warnings = append(warnings, "只加载了一个PRB文件，多马赫数插值功能将退化为单文件模式")
 	}
 
 	m.loaded = true
 
-	return &MultiCalLoadResult{
+	return &MultiPrbLoadResult{
 		Files:       files,
 		MachNumbers: loadedMachNumbers,
 		Warnings:    warnings,
 	}, nil
 }
 
-// LoadCalFile 兼容单文件加载接口
-func (m *MultiCalInterpolator) LoadCalFile(filePath string) error {
-	_, err := m.LoadCalFiles([]string{filePath}, nil)
+// LoadPrbFile 兼容单文件加载接口
+func (m *MultiPrbInterpolator) LoadPrbFile(filePath string) error {
+	_, err := m.LoadPrbFiles([]string{filePath}, nil)
 	return err
 }
 
 // IsLoaded 检查是否已加载
-func (m *MultiCalInterpolator) IsLoaded() bool {
+func (m *MultiPrbInterpolator) IsLoaded() bool {
 	return m.loaded
 }
 
-// GetValidRange 获取有效范围（所有CAL文件范围的并集）
-func (m *MultiCalInterpolator) GetValidRange() CalValidRange {
-	if len(m.calFiles) == 0 {
-		return CalValidRange{
-			AlphaMin: -30, AlphaMax: 30,
-			BetaMin: -30, BetaMax: 30,
+// GetValidRange 获取有效范围（所有PRB文件范围的并集）
+func (m *MultiPrbInterpolator) GetValidRange() PrbValidRange {
+	// 未加载时的占位值：与 PrbInterpolator.clearState 一致取历史标准
+	// 网格范围（gridMinAngle/gridMaxAngle 常量）。仅用于展示；未加载时
+	// Calculate 直接报错，该占位不会进入任何计算路径。
+	if len(m.prbFiles) == 0 {
+		return PrbValidRange{
+			AlphaMin: gridMinAngle, AlphaMax: gridMaxAngle,
+			BetaMin: gridMinAngle, BetaMax: gridMaxAngle,
 		}
 	}
 
-	vr := m.calFiles[0].FileInfo.ValidRange
+	vr := m.prbFiles[0].FileInfo.ValidRange
 	alphaMin, alphaMax := vr.AlphaMin, vr.AlphaMax
 	betaMin, betaMax := vr.BetaMin, vr.BetaMax
 	machMin, machMax := vr.MachMin, vr.MachMax
 
-	for _, f := range m.calFiles[1:] {
+	for _, f := range m.prbFiles[1:] {
 		r := f.FileInfo.ValidRange
 		alphaMin = math.Min(alphaMin, r.AlphaMin)
 		alphaMax = math.Max(alphaMax, r.AlphaMax)
@@ -165,7 +168,7 @@ func (m *MultiCalInterpolator) GetValidRange() CalValidRange {
 		machMax = math.Max(machMax, r.MachMax)
 	}
 
-	return CalValidRange{
+	return PrbValidRange{
 		AlphaMin: alphaMin, AlphaMax: alphaMax,
 		BetaMin: betaMin, BetaMax: betaMax,
 		MachMin: machMin, MachMax: machMax,
@@ -173,19 +176,19 @@ func (m *MultiCalInterpolator) GetValidRange() CalValidRange {
 }
 
 // Calculate 执行插值计算
-func (m *MultiCalInterpolator) Calculate(input InterpolationInput) (InterpolationResult, error) {
-	if !m.loaded || len(m.calFiles) == 0 {
-		return InterpolationResult{}, fmt.Errorf("CAL文件未加载")
+func (m *MultiPrbInterpolator) Calculate(input InterpolationInput) (InterpolationResult, error) {
+	if !m.loaded || len(m.prbFiles) == 0 {
+		return InterpolationResult{}, fmt.Errorf("PRB文件未加载")
 	}
 
 	// 单文件模式
-	if len(m.calFiles) == 1 {
-		return m.calFiles[0].Interpolator.Calculate(input)
+	if len(m.prbFiles) == 1 {
+		return m.prbFiles[0].Interpolator.Calculate(input)
 	}
 
-	// 第一步：用中间马赫数的CAL计算初始Ma值
-	middleIndex := len(m.calFiles) / 2
-	initialResult, err := m.calFiles[middleIndex].Interpolator.Calculate(input)
+	// 第一步：用中间马赫数的PRB计算初始Ma值
+	middleIndex := len(m.prbFiles) / 2
+	initialResult, err := m.prbFiles[middleIndex].Interpolator.Calculate(input)
 	if err != nil {
 		return InterpolationResult{}, err
 	}
@@ -204,18 +207,18 @@ func (m *MultiCalInterpolator) Calculate(input InterpolationInput) (Interpolatio
 }
 
 // calculateWithNearest 最近邻插值
-func (m *MultiCalInterpolator) calculateWithNearest(targetMa float64, input InterpolationInput) (InterpolationResult, error) {
+func (m *MultiPrbInterpolator) calculateWithNearest(targetMa float64, input InterpolationInput) (InterpolationResult, error) {
 	nearestIdx := m.findNearestMachIndex(targetMa)
-	result, err := m.calFiles[nearestIdx].Interpolator.Calculate(input)
+	result, err := m.prbFiles[nearestIdx].Interpolator.Calculate(input)
 	if err != nil {
 		return InterpolationResult{}, err
 	}
 
-	selectedMa := m.calFiles[nearestIdx].MachNumber
+	selectedMa := m.prbFiles[nearestIdx].MachNumber
 	maDiff := math.Abs(targetMa - selectedMa)
 
 	if maDiff > 0.01 {
-		warning := fmt.Sprintf("目标 Ma=%.3f 使用 Ma=%.3f 的CAL文件插值 (偏差=%.3f)", targetMa, selectedMa, maDiff)
+		warning := fmt.Sprintf("目标 Ma=%.3f 使用 Ma=%.3f 的PRB文件插值 (偏差=%.3f)", targetMa, selectedMa, maDiff)
 		if result.Warning != "" {
 			result.Warning = result.Warning + "; " + warning
 		} else {
@@ -227,7 +230,7 @@ func (m *MultiCalInterpolator) calculateWithNearest(targetMa float64, input Inte
 }
 
 // calculateWithLinear 线性插值
-func (m *MultiCalInterpolator) calculateWithLinear(targetMa float64, input InterpolationInput) (InterpolationResult, error) {
+func (m *MultiPrbInterpolator) calculateWithLinear(targetMa float64, input InterpolationInput) (InterpolationResult, error) {
 	lower, upper := m.findMachInterval(targetMa)
 
 	// 范围外，使用最近邻
@@ -235,11 +238,11 @@ func (m *MultiCalInterpolator) calculateWithLinear(targetMa float64, input Inter
 		return m.calculateWithNearest(targetMa, input)
 	}
 
-	lowerResult, err := m.calFiles[lower].Interpolator.Calculate(input)
+	lowerResult, err := m.prbFiles[lower].Interpolator.Calculate(input)
 	if err != nil {
 		return InterpolationResult{}, err
 	}
-	upperResult, err := m.calFiles[upper].Interpolator.Calculate(input)
+	upperResult, err := m.prbFiles[upper].Interpolator.Calculate(input)
 	if err != nil {
 		return InterpolationResult{}, err
 	}
@@ -250,8 +253,8 @@ func (m *MultiCalInterpolator) calculateWithLinear(targetMa float64, input Inter
 	}
 
 	// 线性插值权重
-	lowerMa := m.calFiles[lower].MachNumber
-	upperMa := m.calFiles[upper].MachNumber
+	lowerMa := m.prbFiles[lower].MachNumber
+	upperMa := m.prbFiles[upper].MachNumber
 	weight := (targetMa - lowerMa) / (upperMa - lowerMa)
 
 	result := InterpolationResult{
@@ -279,12 +282,12 @@ func (m *MultiCalInterpolator) calculateWithLinear(targetMa float64, input Inter
 }
 
 // SetInterpolationMode 设置插值模式
-func (m *MultiCalInterpolator) SetInterpolationMode(mode MultiCalInterpolationMode) {
+func (m *MultiPrbInterpolator) SetInterpolationMode(mode MultiPrbInterpolationMode) {
 	m.mode = mode
 }
 
 // GetMachRange 获取马赫数范围
-func (m *MultiCalInterpolator) GetMachRange() (min, max float64) {
+func (m *MultiPrbInterpolator) GetMachRange() (min, max float64) {
 	if len(m.sortedMachNumbers) == 0 {
 		return 0, 0
 	}
@@ -292,7 +295,7 @@ func (m *MultiCalInterpolator) GetMachRange() (min, max float64) {
 }
 
 // GetMachNumbers 获取已加载的马赫数列表
-func (m *MultiCalInterpolator) GetMachNumbers() []float64 {
+func (m *MultiPrbInterpolator) GetMachNumbers() []float64 {
 	result := make([]float64, len(m.sortedMachNumbers))
 	copy(result, m.sortedMachNumbers)
 	return result
@@ -300,13 +303,13 @@ func (m *MultiCalInterpolator) GetMachNumbers() []float64 {
 
 // ==================== 内部辅助函数 ====================
 
-func (m *MultiCalInterpolator) clearState() {
-	m.calFiles = nil
+func (m *MultiPrbInterpolator) clearState() {
+	m.prbFiles = nil
 	m.sortedMachNumbers = nil
 	m.loaded = false
 }
 
-func (m *MultiCalInterpolator) findNearestMachIndex(targetMa float64) int {
+func (m *MultiPrbInterpolator) findNearestMachIndex(targetMa float64) int {
 	nearestIdx := 0
 	minDiff := math.Abs(targetMa - m.sortedMachNumbers[0])
 
@@ -320,7 +323,7 @@ func (m *MultiCalInterpolator) findNearestMachIndex(targetMa float64) int {
 	return nearestIdx
 }
 
-func (m *MultiCalInterpolator) findMachInterval(targetMa float64) (lower, upper int) {
+func (m *MultiPrbInterpolator) findMachInterval(targetMa float64) (lower, upper int) {
 	n := len(m.sortedMachNumbers)
 
 	if targetMa <= m.sortedMachNumbers[0] {
@@ -388,13 +391,13 @@ func mergeWarnings(warnings ...string) string {
 	return strings.Join(parts, "; ")
 }
 
-// parseMachFromFileName 从文件名解析马赫数（包级函数，供CalInterpolator和MultiCalInterpolator共用）
+// parseMachFromFileName 从文件名解析马赫数（包级函数，供PrbInterpolator和MultiPrbInterpolator共用）
 func parseMachFromFileName(filePath string) float64 {
 	// 提取文件名
 	parts := strings.Split(filePath, string(filepath.Separator))
 	fileName := parts[len(parts)-1]
 
-	// 匹配格式: "0.5Ma.cal", "Ma0.5.cal" 等
+	// 匹配格式: "0.5Ma.prb", "Ma0.5.prb" 等
 	patterns := []*regexp.Regexp{
 		regexp.MustCompile(`(?i)([0-9]+(?:\.[0-9]+)?)Ma`),
 		regexp.MustCompile(`(?i)Ma([0-9]+(?:\.[0-9]+)?)`),

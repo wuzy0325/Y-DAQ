@@ -12,21 +12,25 @@ import (
 
 // ==================== 五孔插值适配器 ====================
 //
-// 本文件是薄适配层：负责把 .cal 文件读成文本行，喂给 vendored 算法包
-// `interpolation.MultiCalInterpolator`，并将其结果类型映射回
+// 本文件是薄适配层：负责把 .prb 文件读成文本行，喂给 vendored 算法包
+// `interpolation.MultiPrbInterpolator`，并将其结果类型映射回
 // `types.FiveHoleInterpolationResult`。
 //
-// .cal 文件格式：
+// 算法包与 AI-Workspace 共享库 `shared/algorithms/go/fivehole/interpolation`
+// 保持整包对齐（PRB 网格由数据推导、支持任意矩形网格；输出值插值使用
+// 全精度网格键）。
+//
+// .prb 文件格式：
 //
 //	第一行：网格尺寸 "13 13"
-//	后续 169 行：ka kb cpt cps alpha beta
+//	后续 N 行：ka kb cpt cps alpha beta
 //
-// 多文件加载时，每个文件对应一个校准马赫数（从文件名解析，如 "Ma0.5.cal"），
+// 多文件加载时，每个文件对应一个校准马赫数（从文件名解析，如 "Ma0.5.prb"），
 // 算法包内部采用中间 Ma 文件算初始 Ma → 相邻 Ma 文件线性插值的策略。
 
 // FiveHoleInterpolator 五孔探针插值器（适配器）
 type FiveHoleInterpolator struct {
-	multiCal  *interpolation.MultiCalInterpolator
+	multiPrb  *interpolation.MultiPrbInterpolator
 	calibInfo []types.FiveHoleCalibFileInfo
 	loaded    bool
 }
@@ -36,27 +40,27 @@ func NewFiveHoleInterpolator() *FiveHoleInterpolator {
 	return &FiveHoleInterpolator{}
 }
 
-// LoadCalibFiles 加载多个 .cal 校准文件
-// 马赫数由文件名解析（如 "Ma0.5.cal" → 0.5），算法包内部按马赫数排序与插值。
+// LoadCalibFiles 加载多个 .prb 校准文件
+// 马赫数由文件名解析（如 "Ma0.5.prb" → 0.5），算法包内部按马赫数排序与插值。
 func (i *FiveHoleInterpolator) LoadCalibFiles(filePaths []string) error {
 	if len(filePaths) == 0 {
 		return fmt.Errorf("未指定校准文件")
 	}
 
-	fileData := make([]interpolation.CalFileData, 0, len(filePaths))
+	fileData := make([]interpolation.PrbFileData, 0, len(filePaths))
 	for _, fp := range filePaths {
-		lines, err := readCalFileLines(fp)
+		lines, err := readPrbLines(fp)
 		if err != nil {
 			return fmt.Errorf("读取校准文件 %s 失败: %w", fp, err)
 		}
-		fileData = append(fileData, interpolation.CalFileData{
+		fileData = append(fileData, interpolation.PrbFileData{
 			FilePath: fp,
 			Lines:    lines,
 		})
 	}
 
-	multi := interpolation.NewMultiCalInterpolator()
-	result, err := multi.LoadCalData(fileData, nil)
+	multi := interpolation.NewMultiPrbInterpolator()
+	result, err := multi.LoadPrbData(fileData, nil)
 	if err != nil {
 		return fmt.Errorf("加载校准数据失败: %w", err)
 	}
@@ -83,7 +87,7 @@ func (i *FiveHoleInterpolator) LoadCalibFiles(filePaths []string) error {
 		})
 	}
 
-	i.multiCal = multi
+	i.multiPrb = multi
 	i.calibInfo = infos
 	i.loaded = true
 	return nil
@@ -108,7 +112,7 @@ func (i *FiveHoleInterpolator) GetCalibInfo() []types.FiveHoleCalibFileInfo {
 // 输入：FiveHoleRawData（P1-P5 + PAtm + TAtm）
 // 输出：types.FiveHoleInterpolationResult（对齐 vendored InterpolationResult）
 func (i *FiveHoleInterpolator) Calculate(rawData types.FiveHoleRawData) types.FiveHoleInterpolationResult {
-	if !i.loaded || i.multiCal == nil {
+	if !i.loaded || i.multiPrb == nil {
 		return types.FiveHoleInterpolationResult{
 			Valid:    false,
 			ErrorMsg: "校准文件未载入",
@@ -125,7 +129,7 @@ func (i *FiveHoleInterpolator) Calculate(rawData types.FiveHoleRawData) types.Fi
 		TAtm: rawData.TAtm,
 	}
 
-	result, err := i.multiCal.Calculate(input)
+	result, err := i.multiPrb.Calculate(input)
 	if err != nil {
 		return types.FiveHoleInterpolationResult{
 			Valid:    false,
@@ -160,9 +164,9 @@ func mapInterpolationResult(r interpolation.InterpolationResult) types.FiveHoleI
 	}
 }
 
-// readCalFileLines 读取 .cal 文件全部非空文本行（不去注释、不去表头）
+// readPrbLines 读取 .prb 文件全部非空文本行（不去注释、不去表头）
 // 算法包内部会处理空行与表头解析，适配器只负责读文本。
-func readCalFileLines(filePath string) ([]string, error) {
+func readPrbLines(filePath string) ([]string, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("打开文件失败: %w", err)

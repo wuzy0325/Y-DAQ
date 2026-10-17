@@ -1,0 +1,25 @@
+{
+  "name": "prb_corner_alphaneg40_beganeg40",
+  "region": "out-of-range",
+  "desc": "PRB 网格外: α=-40,β=-40, Ka=Kb=-0.4 超出校准凸包, 返回无效零值且不外推",
+  "input": {
+    "P1": 120,
+    "P2": 200,
+    "P3": 80,
+    "P4": 80,
+    "P5": 120,
+    "Patm": 101325,
+    "Tatm": 20
+  },
+  "expected": {
+    "alpha": 0,
+    "beta": 0,
+    "machNumber": 0,
+    "isValid": false
+  },
+  "tolerance": {
+    "alpha": 0.5,
+    "beta": 0.5,
+    "machNumber": 0.05
+  }
+}
