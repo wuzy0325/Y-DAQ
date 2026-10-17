@@ -179,7 +179,6 @@ export interface FiveHoleTraversalConfig {
   layout: TraversalLayout
   dwellTimeMs: number
   samplesPerPoint: number
-  sampleIntervalMs: number
   motionTimeoutMs: number
   // 数据保存模式：默认 average（3σ 滤波平均）；raw 保存每个原始采样帧及其插值结果
   dataMode: FiveHoleDataMode

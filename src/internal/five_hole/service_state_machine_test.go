@@ -138,6 +138,25 @@ func waitForCompleteEvent5H(t *testing.T, publisher *MockEventPublisher, timeout
 	t.Fatalf("等待 complete 事件超时（%v）", timeout)
 }
 
+// waitForErrorEventContains5H 轮询等待出现包含指定文本的 error 事件
+// 必须轮询：服务端存在"先切状态、后发事件"的顺序（如数据停滞自动暂停：先 Pause 置 Paused，
+// 再 OnTestError 内同步 slog.Error 后 EmitPointError），状态轮询与事件发布之间存在竞态窗口，
+// 直接读事件会偶发"共 0 个 error 事件"（历史 flaky，非实现缺陷）
+func waitForErrorEventContains5H(t *testing.T, publisher *MockEventPublisher, substr string, timeout time.Duration) {
+	t.Helper()
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		for _, e := range publisher.GetErrorEvents() {
+			if strings.Contains(e.Error, substr) {
+				return
+			}
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatalf("等待含 %q 的 error 事件超时（%v），共 %d 个 error 事件",
+		substr, timeout, len(publisher.GetErrorEvents()))
+}
+
 // ==================== P2-1 ~ P2-12 五孔 Service 层状态机测试 ====================
 
 // P2-1 TestService_Start_ReturnsError_WhenConfigInvalid 配置未通过 Validate，Start 返回错误
@@ -696,7 +715,6 @@ func TestService5H_AutoPause_OnDataStagnant_ThenResume(t *testing.T) {
 
 	cfg := makeServiceConfig5H(t)
 	cfg.SamplesPerPoint = 3 // 需要多次采样，触发 WaitForFreshData
-	cfg.SampleIntervalMs = 10
 
 	if _, err := service.Start(cfg); err != nil {
 		t.Fatalf("Start failed: %v", err)
@@ -706,18 +724,8 @@ func TestService5H_AutoPause_OnDataStagnant_ThenResume(t *testing.T) {
 	// 等待自动暂停（WaitForFreshData 2s 超时 + 一些缓冲）
 	waitForStatusEventually5H(t, service, types.TraversalStatusPaused, 4*time.Second)
 
-	// 验证 error 事件含"数据停滞"
-	errs := publisher.GetErrorEvents()
-	foundStagnant := false
-	for _, e := range errs {
-		if strings.Contains(e.Error, "数据停滞") {
-			foundStagnant = true
-			break
-		}
-	}
-	if !foundStagnant {
-		t.Errorf("应发布含'数据停滞'的 error 事件，共 %d 个 error 事件", len(errs))
-	}
+	// 验证 error 事件含"数据停滞"（轮询等待：服务端先 Pause 置状态、后发事件）
+	waitForErrorEventContains5H(t, publisher, "数据停滞", 2*time.Second)
 
 	// Resume 后测试应继续（切换为正常 batchGetter）
 	service.SetMultiDeviceBatchGetter(makeMockMultiDeviceBatchGetter5H())

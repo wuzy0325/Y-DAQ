@@ -99,7 +99,6 @@ function defaultConfig(): FiveHoleTraversalConfig {
     },
     dwellTimeMs: 2000,
     samplesPerPoint: 10,
-    sampleIntervalMs: 50,
     motionTimeoutMs: 30000,
     dataMode: FIVE_HOLE_DATA_MODE.AVERAGE,
     sharedMotion: false,
@@ -109,6 +108,16 @@ function defaultConfig(): FiveHoleTraversalConfig {
     savePath: '',
     saveFileName: `FiveHoleTraversal-${new Date().toISOString().slice(0, 10)}`,
   }
+}
+
+/** UnixMilli 时间戳 → 可读时间（本地时区，毫秒精度）
+ *  与后端 csv_writer 的 时间戳 列格式保持一致；时间戳缺失（<=0）时返回空字符串 */
+function formatTimestamp(ms: number): string {
+  if (!ms || ms <= 0) return ''
+  const d = new Date(ms)
+  const pad = (n: number, width = 2) => n.toString().padStart(width, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} `
+    + `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${pad(d.getMilliseconds(), 3)}`
 }
 
 // ==================== Store ====================
@@ -490,16 +499,16 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
     const [primaryCol, secondaryCol] = isFan ? ['R(mm)', 'θ(°)'] : ['X', 'Y']
     const [primaryDir, secondaryDir] = isFan ? ['R', 'θ'] : ['X', 'Y']
     const headers = [
-      '点号', '探针ID', primaryCol, secondaryCol,
+      '点号', '时间戳', '探针ID', primaryCol, secondaryCol,
       `${primaryDir}方向位移机构名`, `${primaryDir}方向轴号`, `${secondaryDir}方向位移机构名`, `${secondaryDir}方向轴号`,
       'P1', 'P2', 'P3', 'P4', 'P5', 'P∞', 'T∞',
       '总压Pt', '静压Ps', '马赫数Ma', '攻角Alpha', '侧滑角Beta', '速度V',
       '校正空速CAS', '静温SAT', '动压Qc', '密度ρ',
       '速度Vx', '速度Vy', '速度Vz',
-      '采样数', '时间戳',
+      '采样数',
     ]
     const rows = probeData.map(p => [
-      p.pointId, p.probeId, p.x.toFixed(4), p.y.toFixed(4),
+      p.pointId, formatTimestamp(p.timestamp), p.probeId, p.x.toFixed(4), p.y.toFixed(4),
       p.xControllerName, p.xAxis, p.yControllerName, p.yAxis,
       p.rawData.p1.toFixed(6), p.rawData.p2.toFixed(6), p.rawData.p3.toFixed(6),
       p.rawData.p4.toFixed(6), p.rawData.p5.toFixed(6),
@@ -511,7 +520,7 @@ export const useFiveHoleTestStore = defineStore('fiveHoleTest', () => {
       p.interpResult.dynamicPressure.toFixed(6), p.interpResult.density.toFixed(6),
       p.interpResult.vxProbe.toFixed(4), p.interpResult.vyProbe.toFixed(4),
       p.interpResult.vzProbe.toFixed(4),
-      p.sampleCount.toString(), p.timestamp.toString(),
+      p.sampleCount.toString(),
     ])
 
     downloadCSV(`five-hole-${probeId}`, headers, rows)

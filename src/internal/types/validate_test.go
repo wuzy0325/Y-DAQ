@@ -222,11 +222,10 @@ func TestThreeHoleValidate_Channels(t *testing.T) {
 // validFiveHoleConfig 构造一个通过 Validate 的五孔配置
 func validFiveHoleConfig() FiveHoleTraversalConfig {
 	return FiveHoleTraversalConfig{
-		Name:             "test",
-		DwellTimeMs:      100,
-		SamplesPerPoint:  1,
-		SampleIntervalMs: 10,
-		MotionTimeoutMs:  1000,
+		Name:            "test",
+		DwellTimeMs:     100,
+		SamplesPerPoint: 1,
+		MotionTimeoutMs: 1000,
 		Probes: []FiveHoleProbeConfig{
 			{
 				ProbeID: "probe1",
@@ -276,7 +275,6 @@ func TestFiveHoleValidate_BasicFields(t *testing.T) {
 		{"empty name", func(c *FiveHoleTraversalConfig) { c.Name = "" }, "测试名称"},
 		{"samples < 1", func(c *FiveHoleTraversalConfig) { c.SamplesPerPoint = 0 }, "采样数"},
 		{"dwell < 100", func(c *FiveHoleTraversalConfig) { c.DwellTimeMs = 99 }, "驻留时间"},
-		{"interval < 10", func(c *FiveHoleTraversalConfig) { c.SampleIntervalMs = 9 }, "采样间隔"},
 		{"motion timeout < 1000", func(c *FiveHoleTraversalConfig) { c.MotionTimeoutMs = 999 }, "运动超时"},
 		{"empty pAtm source deviceID", func(c *FiveHoleTraversalConfig) {
 			c.Probes[0].PAtmSource = FiveHoleAtmSource{Mode: FiveHoleSourceDevice}

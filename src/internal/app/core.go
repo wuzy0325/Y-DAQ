@@ -37,6 +37,8 @@ type Core struct {
 	DaqScanner        *scanner.DAQScanner
 	publishCtx        context.Context
 	publishCancel     context.CancelFunc
+	// fiveHoleArrivalCancel 五孔"设备新帧到达"通知的退订函数（Shutdown 时调用）
+	fiveHoleArrivalCancel func()
 
 	threeHoleMotionMu  sync.Mutex
 	fiveHoleMotionMu   sync.Mutex
@@ -144,6 +146,11 @@ func (c *Core) Shutdown() {
 		c.FiveHoleService.Stop()
 		c.FiveHoleService.StopRealtimeMonitor()
 	}
+	// 退订"设备新帧到达"通知（移除 Hub 中的订阅通道；停止后不再需要唤醒采样循环）
+	if c.fiveHoleArrivalCancel != nil {
+		c.fiveHoleArrivalCancel()
+		c.fiveHoleArrivalCancel = nil
+	}
 	if c.DataStorage != nil {
 		c.DataStorage.StopRecording()
 	}
@@ -209,30 +216,38 @@ func (c *Core) initThreeHole() {
 func (c *Core) initFiveHole() {
 	svc := five_hole.NewFiveHoleTraversalService(&FiveHoleEventPublisher{app: c.App})
 
-	// 多设备批量读取：按 DeviceID 从 AcquisitionHub 获取快照，按通道索引取值
-	// 返回 (通道值map, 设备最新数据时间戳, error)，timestamp 用于采样时判断数据新鲜度
+	// 多设备批量读取：按 DeviceID 从 AcquisitionHub 获取该设备最新帧，按通道索引取值
+	// 返回 (通道值map, 该设备当前帧序号, error)。帧序号（FrameSeq）单调递增，用于判断是否出新帧：
+	// 不用墙钟 Timestamp 是因为 Windows 上它约 1ms 一档，同一毫秒内到达的多帧无法区分。
+	// channels 为空时（新鲜度探测）直接返回帧序号，跳过 map 分配——该方法按设备出帧速率被高频调用。
 	svc.SetMultiDeviceBatchGetter(func(deviceID string, channels []int) (map[int]float64, int64, error) {
-		result := make(map[int]float64)
 		if deviceID == "" {
-			return result, 0, nil
+			return nil, 0, nil
 		}
-		snapshots := c.AcquisitionHub.GetSnapshot()
-		for _, snap := range snapshots {
-			if snap.DeviceID != deviceID {
-				continue
-			}
-			for _, wantCh := range channels {
-				for i, idx := range snap.ChannelIndices {
-					if idx == wantCh && i < len(snap.Channels) {
-						result[wantCh] = snap.Channels[i]
-						break
-					}
+		snap, ok := c.AcquisitionHub.GetLatestData(deviceID)
+		if !ok {
+			return nil, 0, nil
+		}
+		if len(channels) == 0 {
+			return nil, int64(snap.FrameSeq), nil
+		}
+		result := make(map[int]float64, len(channels))
+		for _, wantCh := range channels {
+			for i, idx := range snap.ChannelIndices {
+				if idx == wantCh && i < len(snap.Channels) {
+					result[wantCh] = snap.Channels[i]
+					break
 				}
 			}
-			return result, snap.Timestamp, nil
 		}
-		return result, 0, nil
+		return result, int64(snap.FrameSeq), nil
 	})
+
+	// 设备新帧到达通知：五孔采样循环等待"新帧"由 Hub 的信号驱动（而非轮询），
+	// 采集设备每入库一帧即立刻采样一次，采样率等于设备出帧速率
+	arrivalCh, cancelArrival := c.AcquisitionHub.Subscribe()
+	c.fiveHoleArrivalCancel = cancelArrival
+	svc.SetDataArrivalSignal(arrivalCh)
 
 	// 每轴独立运动控制（每轴独立 ControllerID）
 	svc.SetProbeAxisMover(func(controllerID string, axis types.AxisName, position float64) error {

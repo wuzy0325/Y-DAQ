@@ -16,13 +16,13 @@ const (
 // ==================== 五孔测试配置 ====================
 
 // FiveHoleTraversalConfig 五孔移位测试配置（全局配置，含 1-MaxFiveHoleProbes 根探针）
+// 采样节奏由设备推帧驱动（无采样间隔配置）：采集设备每发来一帧新数据即采样一次
 type FiveHoleTraversalConfig struct {
-	Name             string               `json:"name"`
-	Layout           TraversalLayout      `json:"layout"`           // 布点（复用三孔 TraversalLayout）
-	DwellTimeMs      int                  `json:"dwellTimeMs"`      // 驻留时间（所有探针共用）
-	SamplesPerPoint  int                  `json:"samplesPerPoint"`  // 采样次数（所有探针共用）
-	SampleIntervalMs int                  `json:"sampleIntervalMs"` // 采样间隔（所有探针共用）
-	MotionTimeoutMs  int                  `json:"motionTimeoutMs"`  // 运动等待超时（所有探针共用）
+	Name            string          `json:"name"`
+	Layout          TraversalLayout `json:"layout"`          // 布点（复用三孔 TraversalLayout）
+	DwellTimeMs     int             `json:"dwellTimeMs"`     // 驻留时间（所有探针共用）
+	SamplesPerPoint int             `json:"samplesPerPoint"` // 采样次数（所有探针共用）
+	MotionTimeoutMs int             `json:"motionTimeoutMs"` // 运动等待超时（所有探针共用）
 	// 数据保存模式：空/"average" 为默认（3σ 滤波平均后每点位一个数据点）；
 	// "raw" 时保存每个原始采样帧及其插值结果（每个点位多个数据点）
 	DataMode string `json:"dataMode,omitempty"`
@@ -97,9 +97,6 @@ func (c FiveHoleTraversalConfig) validate() error {
 	}
 	if c.DwellTimeMs < 100 {
 		return fmt.Errorf("驻留时间必须≥100ms")
-	}
-	if c.SampleIntervalMs < 10 {
-		return fmt.Errorf("采样间隔必须≥10ms")
 	}
 	if c.MotionTimeoutMs < 1000 {
 		return fmt.Errorf("运动超时时间必须≥1000ms")

@@ -159,7 +159,6 @@ type FiveHoleTraversalConfig struct {
     Layout           TraversalLayout        `json:"layout"`           // 布点（复用三孔 TraversalLayout）
     DwellTimeMs      int                    `json:"dwellTimeMs"`      // 驻留时间（三根共用）
     SamplesPerPoint  int                    `json:"samplesPerPoint"`  // 采样次数（三根共用）
-    SampleIntervalMs int                    `json:"sampleIntervalMs"` // 采样间隔（三根共用）
     MotionTimeoutMs  int                    `json:"motionTimeoutMs"`  // 运动等待超时（三根共用）
     // PAtm/TAtm 全局共享数据源（决策 #6）
     PAtmDeviceID     string                 `json:"pAtmDeviceId"`
@@ -261,7 +260,11 @@ Start(config) →
      a. 【并行】移动所有启用探针到 (X, Y)（各自坐标系，6 轴并行 MoveToPoint）
      b. 【等待】等所有探针运动完成（motionWaiter，超时 = MotionTimeoutMs）
      c. 【驻留】DwellTimeMs，期间每 100ms 推送实时数据（phase=waiting）
-     d. 【采样】SamplesPerPoint 次，每次间隔 SampleIntervalMs：
+     d. 【采样】SamplesPerPoint 次，无采样间隔（事件驱动，来一帧采一帧）：
+        - 等待"所有参与设备（探针通道设备 + PAtm/TAtm 设备源）都出新帧"：
+          由 AcquisitionHub 的新帧通知唤醒（Subscribe + SetDataArrivalSignal），
+          新帧判据是该设备的单调帧序号 FrameSeq（不用墙钟 Timestamp：Windows 墙钟约 1ms
+          一档，同一毫秒内到达的多帧无法区分），因此采样节奏等于设备出帧节奏
         - 并行读取所有探针的 P1-P5 + 全局 PAtm/TAtm
         - 每探针独立 3σ 滤波 + 插值
         - 推送实时数据（phase=acquiring）
@@ -374,7 +377,7 @@ func (i *FiveHoleInterpolator) Calculate(rawData types.FiveHoleRawData) (types.F
 
 **Tab 1：全局配置**
 - 布点配置（模式选择 + 矩形/直线/自定义表单 + 快捷步长，照三孔）
-- 驻留/采样参数（DwellTimeMs/SamplesPerPoint/SampleIntervalMs/MotionTimeoutMs，三根共用）
+- 驻留/采样参数（DwellTimeMs/SamplesPerPoint/MotionTimeoutMs，三根共用）
 - PAtm 数据源（设备 `el-select` + 通道 `el-input-number`）
 - TAtm 数据源（设备 `el-select` + 通道 `el-input-number`）
 - 保存路径 + 文件名

@@ -97,6 +97,13 @@ func (s *FiveHoleTraversalService) SetMultiDeviceBatchGetter(getter FiveHoleMult
 	s.dataProcessor.SetBatchGetter(getter)
 }
 
+// SetDataArrivalSignal 设置"设备新帧到达"通知通道（委托 dataProcessor）
+// 采样等待新帧由该信号驱动：设备每入库一帧数据即触发一次采样，
+// 采样率等于采集设备出帧速率（不再受固定轮询间隔限制）
+func (s *FiveHoleTraversalService) SetDataArrivalSignal(ch <-chan struct{}) {
+	s.dataProcessor.SetDataArrivalSignal(ch)
+}
+
 // SetProbeAxisMover 设置探针单轴运动控制函数（创建 MotionCoordinator 并保存）
 // 注意：仅可在服务初始化阶段（runTestLoop 启动前）调用。
 // 运行期热替换未对 motionCoordinator 字段做同步保护，运行中调用会与 runTestLoop 产生 data race。
@@ -433,7 +440,8 @@ func (s *FiveHoleTraversalService) GetConfig() types.FiveHoleTraversalConfig {
 //  1. MotionCoordinator.MoveAllProbesToPoint 移动所有探针
 //  2. 发射 progress（phase=moving）
 //  3. 驻留 config.DwellTimeMs，期间每 100ms 发射 realtime（phase=waiting）
-//  4. 采样 config.SamplesPerPoint 次，每次间隔 config.SampleIntervalMs
+//  4. 采样 config.SamplesPerPoint 次，无采样间隔：由设备推帧驱动，
+//     采集设备每发来一帧新数据即采样一次（首次立即取当前帧）
 //  5. 每探针 OutlierFilteredAvg 各压力通道 → FiveHoleRawData → Calculate → DataPoint
 //  6. 每探针 csvWriter.AppendPoint + eventHandler.OnDataPointAcquired
 //  7. 更新统一进度 +1，发射 progress（phase=completed）
@@ -583,7 +591,7 @@ func (s *FiveHoleTraversalService) runTestLoop(taskID string, config types.FiveH
 // cancelled=true 表示测试被取消或暂停期间被取消，调用方应立即返回。
 func (s *FiveHoleTraversalService) samplePoint(taskID string, point types.TraversalPoint, config types.FiveHoleTraversalConfig, enabledIndices []int) (probeSamples map[string][]types.FiveHoleRawData, cancelled bool) {
 	probeSamples = make(map[string][]types.FiveHoleRawData)
-	var lastTimestamps map[string]int64 // 首次采样不等待新帧
+	var lastFrameSeq map[string]int64 // 首次采样不等待新帧
 
 	for i := 0; i < config.SamplesPerPoint; i++ {
 		if err := s.testManager.CheckCancelled(); err != nil {
@@ -595,10 +603,10 @@ func (s *FiveHoleTraversalService) samplePoint(taskID string, point types.Traver
 			return probeSamples, true
 		}
 
-		// 首次采样立即取当前帧；后续采样等待所有设备产生新帧（2 秒超时）
-		if i > 0 && lastTimestamps != nil {
+		// 首次采样立即取当前帧；后续采样等待所有设备产生新帧（帧序号前进，2 秒超时）
+		if i > 0 && lastFrameSeq != nil {
 			deviceIDs := CollectDeviceIDs(config)
-			newTs, err := s.dataProcessor.WaitForFreshData(deviceIDs, lastTimestamps, 2*time.Second)
+			newSeq, err := s.dataProcessor.WaitForFreshData(deviceIDs, lastFrameSeq, 2*time.Second)
 			if err != nil {
 				if errors.Is(err, ErrDataStagnant) {
 					// 设备数据停滞：自动暂停，等待用户恢复后重新采样当前点位
@@ -611,21 +619,18 @@ func (s *FiveHoleTraversalService) samplePoint(taskID string, point types.Traver
 					}
 					// 恢复后重新从第一次采样开始当前点位
 					probeSamples = make(map[string][]types.FiveHoleRawData)
-					lastTimestamps = nil
+					lastFrameSeq = nil
 					i = -1 // for 循环 i++ 后变为 0
 					continue
 				}
 				s.eventHandler.OnTestError(point.ID, err)
 				break
 			}
-			lastTimestamps = newTs
+			lastFrameSeq = newSeq
 		}
 
 		// 读取所有探针原始数据（PAtm/TAtm 按各探针数据源配置解析）
-		rawDatas, currentTs, err := s.dataProcessor.ReadAllProbesRawData(
-			config.Probes,
-			lastTimestamps,
-		)
+		rawDatas, currentSeq, err := s.dataProcessor.ReadAllProbesRawData(config.Probes)
 		if err != nil {
 			// PAtm/TAtm 等读取失败：丢弃本点位已收集的部分样本，避免混入不同 PAtm 上下文导致 3σ 失真
 			// 下轮 WaitForFreshData 会因 PAtm 设备无新帧触发 ErrDataStagnant → 自动暂停 + OnTestError
@@ -633,7 +638,7 @@ func (s *FiveHoleTraversalService) samplePoint(taskID string, point types.Traver
 			s.eventHandler.OnTestError(point.ID, err)
 			break
 		}
-		lastTimestamps = currentTs
+		lastFrameSeq = currentSeq
 
 		// 每探针收集样本 + 构建 realtime items
 		realtimeItems := make([]types.FiveHoleProbeRealtimeItem, 0, len(enabledIndices))
@@ -664,13 +669,8 @@ func (s *FiveHoleTraversalService) samplePoint(taskID string, point types.Traver
 			Phase:         "acquiring",
 			ProbeRealtime: realtimeItems,
 		})
-
-		// 采样间隔（仅作节流上限，实际节奏由 WaitForFreshData 决定）
-		intervalMs := config.SampleIntervalMs
-		if intervalMs <= 0 {
-			intervalMs = 50
-		}
-		time.Sleep(time.Duration(intervalMs) * time.Millisecond)
+		// 不额外 sleep：采样节奏完全由设备推帧决定——
+		// 下一轮循环的 WaitForFreshData 会阻塞到设备发来新帧，来一帧采一帧。
 	}
 	return probeSamples, false
 }
@@ -837,10 +837,7 @@ func (s *FiveHoleTraversalService) waitForResumeWithRealtime(taskID string, poin
 // 数据缺失的探针静默跳过，不阻塞其他探针
 // PAtm/TAtm 读取失败时降级为 0 继续推送（实现"谁配置谁更新"），仅限频 WARN 提示
 func (s *FiveHoleTraversalService) emitRealtimeForAllProbes(taskID, pointID, phase string, config types.FiveHoleTraversalConfig) {
-	rawDatas, _, err := s.dataProcessor.ReadAllProbesRawData(
-		config.Probes,
-		nil,
-	)
+	rawDatas, _, err := s.dataProcessor.ReadAllProbesRawData(config.Probes)
 	if err != nil {
 		// PAtm/TAtm 读取失败：results 中各探针 P1-P5 仍完整，降级为 0 继续推送（"谁配置谁更新"）
 		// 仅限频 WARN 提示用户大气压基准不可信，但不阻塞已配置探针的实时观察

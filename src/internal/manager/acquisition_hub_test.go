@@ -252,3 +252,148 @@ func TestAcquisitionHub_Concurrent_SetOnSnapshot_DuringPublish(t *testing.T) {
 	wg.Wait()
 	cancel()
 }
+
+// ==================== 新帧到达订阅（五孔事件驱动采样） ====================
+
+// TestAcquisitionHub_Subscribe_NotifiesOnData 每帧数据入库后订阅者应收到信号
+func TestAcquisitionHub_Subscribe_NotifiesOnData(t *testing.T) {
+	h := NewAcquisitionHub()
+	ch, cancel := h.Subscribe()
+	defer cancel()
+
+	h.OnData(types.DataPayload{DeviceID: "d1"})
+
+	select {
+	case <-ch:
+	case <-time.After(time.Second):
+		t.Fatal("OnData 后订阅者应收到新帧通知")
+	}
+}
+
+// TestAcquisitionHub_Subscribe_MultipleSubscribers 多订阅者各自收到通知（互不抢占）
+func TestAcquisitionHub_Subscribe_MultipleSubscribers(t *testing.T) {
+	h := NewAcquisitionHub()
+	ch1, cancel1 := h.Subscribe()
+	defer cancel1()
+	ch2, cancel2 := h.Subscribe()
+	defer cancel2()
+
+	h.OnData(types.DataPayload{DeviceID: "d1"})
+
+	for i, ch := range []<-chan struct{}{ch1, ch2} {
+		select {
+		case <-ch:
+		case <-time.After(time.Second):
+			t.Fatalf("订阅者 %d 未收到通知", i+1)
+		}
+	}
+}
+
+// TestAcquisitionHub_Subscribe_CancelStopsNotification 取消后不再收到通知，且可重复调用
+func TestAcquisitionHub_Subscribe_CancelStopsNotification(t *testing.T) {
+	h := NewAcquisitionHub()
+	ch, cancel := h.Subscribe()
+	cancel()
+	cancel() // 幂等
+
+	h.OnData(types.DataPayload{DeviceID: "d1"})
+
+	select {
+	case <-ch:
+		t.Fatal("取消订阅后不应再收到通知")
+	case <-time.After(50 * time.Millisecond):
+	}
+}
+
+// TestAcquisitionHub_Subscribe_CoalescesAndNeverBlocks 通道容量 1：高频帧只保留一个待处理信号，
+// 且慢消费者不得阻塞采集链路（OnData 由 receiveLoop 调用）
+func TestAcquisitionHub_Subscribe_CoalescesAndNeverBlocks(t *testing.T) {
+	h := NewAcquisitionHub()
+	ch, cancel := h.Subscribe()
+	defer cancel()
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for i := 0; i < 2000; i++ {
+			h.OnData(types.DataPayload{DeviceID: "d1", Timestamp: int64(i)})
+		}
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("OnData 不应被慢消费者阻塞")
+	}
+
+	// 2000 帧只留下 1 个合并信号
+	<-ch
+	select {
+	case <-ch:
+		t.Fatal("多个新帧信号应被合并为 1 个")
+	default:
+	}
+}
+
+// TestAcquisitionHub_Subscribe_CancelDoesNotCloseChannel 取消订阅只移除订阅、不关闭通道：
+// 消费端（五孔 WaitForFreshData）依赖"通道永不关闭"这一约定，关闭会让其 select 持续可读而空转
+func TestAcquisitionHub_Subscribe_CancelDoesNotCloseChannel(t *testing.T) {
+	h := NewAcquisitionHub()
+	ch, cancel := h.Subscribe()
+	cancel()
+
+	h.OnData(types.DataPayload{DeviceID: "d1"})
+
+	select {
+	case _, ok := <-ch:
+		if !ok {
+			t.Fatal("cancel 不得关闭通道")
+		}
+		t.Fatal("取消订阅后不应再收到信号")
+	default:
+	}
+}
+
+// ==================== 帧序号（新帧判据） ====================
+
+// TestAcquisitionHub_OnData_FrameSeqDistinguishesSameMillisecond 同一毫秒内到达的多帧
+// 必须得到不同帧序号：Windows 墙钟（time.Now().UnixMilli）约 1ms 一档，驱动在单次 TCP 读里
+// 会连续投递多帧，仅比较 Timestamp 会把同毫秒的后续帧判成"没有新帧"（采样率被时钟粒度封顶）
+func TestAcquisitionHub_OnData_FrameSeqDistinguishesSameMillisecond(t *testing.T) {
+	h := NewAcquisitionHub()
+	const sameMs = int64(1700000000000) // 两帧刻意用同一墙钟毫秒
+
+	h.OnData(types.DataPayload{DeviceID: "d1", Timestamp: sameMs})
+	first, _ := h.GetLatestData("d1")
+	h.OnData(types.DataPayload{DeviceID: "d1", Timestamp: sameMs})
+	second, _ := h.GetLatestData("d1")
+
+	if first.Timestamp != second.Timestamp {
+		t.Fatalf("用例前提被破坏：两帧 Timestamp 应相同，实得 %d / %d", first.Timestamp, second.Timestamp)
+	}
+	if first.FrameSeq != 1 || second.FrameSeq != 2 {
+		t.Fatalf("同毫秒两帧应得到递增帧序号 1/2，实得 %d/%d", first.FrameSeq, second.FrameSeq)
+	}
+}
+
+// TestAcquisitionHub_FrameSeq_PerDeviceAndMonotonicAcrossClear 帧序号按设备独立计数，
+// 且 ClearDevice（停止采集）不清零——否则采样端保存的基线会高于重启后的序号，长时间误判"无新帧"
+func TestAcquisitionHub_FrameSeq_PerDeviceAndMonotonicAcrossClear(t *testing.T) {
+	h := NewAcquisitionHub()
+	h.OnData(types.DataPayload{DeviceID: "d1"})
+	h.OnData(types.DataPayload{DeviceID: "d2"})
+	h.OnData(types.DataPayload{DeviceID: "d1"})
+
+	if d2, _ := h.GetLatestData("d2"); d2.FrameSeq != 1 {
+		t.Errorf("帧序号应按设备独立计数：d2 应为 1，实得 %d", d2.FrameSeq)
+	}
+	if d1, _ := h.GetLatestData("d1"); d1.FrameSeq != 2 {
+		t.Errorf("d1 帧序号应为 2，实得 %d", d1.FrameSeq)
+	}
+
+	h.ClearDevice("d1")
+	h.OnData(types.DataPayload{DeviceID: "d1"})
+	if d1, _ := h.GetLatestData("d1"); d1.FrameSeq != 3 {
+		t.Errorf("ClearDevice 不得清零帧序号：d1 应为 3，实得 %d", d1.FrameSeq)
+	}
+}

@@ -12,11 +12,15 @@ import (
 	"yx-daq/internal/types"
 )
 
+// dataArrivalPollInterval 未注入"新帧到达"通知时的兜底轮询间隔（避免忙等）
+const dataArrivalPollInterval = 20 * time.Millisecond
+
 // DataProcessor 五孔数据处理器
 // 负责多探针并行采集（每通道独立 DeviceID）+ 3σ 滤波 + 插值调度
 type DataProcessor struct {
 	batchGetter  FiveHoleMultiDeviceBatchGetter
-	noDataWarned atomic.Bool // 参照三孔：数据缺失时仅首次打 WARN，恢复后重置
+	dataArrival  <-chan struct{} // 设备新帧到达通知（nil = 未注入，WaitForFreshData 退化为轮询）
+	noDataWarned atomic.Bool     // 参照三孔：数据缺失时仅首次打 WARN，恢复后重置
 }
 
 // NewDataProcessor 创建数据处理器
@@ -29,14 +33,21 @@ func (dp *DataProcessor) SetBatchGetter(getter FiveHoleMultiDeviceBatchGetter) {
 	dp.batchGetter = getter
 }
 
+// SetDataArrivalSignal 注入"设备新帧到达"通知通道（由采集链路在每帧数据入库后投递信号）。
+// 注入后 WaitForFreshData 变为事件驱动：收到信号立即复查最新时间戳，采样节奏等于
+// 采集设备出帧速率（不再受轮询间隔限制）；传 nil 时退化为固定间隔轮询。
+// 注意：仅可在测试启动前调用（与 SetBatchGetter 相同约束）；通道由订阅方管理。
+func (dp *DataProcessor) SetDataArrivalSignal(ch <-chan struct{}) {
+	dp.dataArrival = ch
+}
+
 // ReadAllProbesRawData 读取所有启用探针的原始数据
 //   - 各探针 P1-P5 按设备分组并行读取
 //   - 各探针 PAtm/TAtm 按其数据源配置解析：device=设备读取（按探针独立）/ manual=手动固定值
-//   - lastTimestamps: 上次采样各设备的 timestamp，用于判断新帧（首次传 nil）
-//   - 返回本次采样的 timestamps 供下次调用传入
+//   - 不做新帧过滤：新帧等待由调用方在采样前用 WaitForFreshData 完成
+//   - 返回本次读取到的各设备帧序号，供下次 WaitForFreshData 作为基线
 func (dp *DataProcessor) ReadAllProbesRawData(
 	probes []types.FiveHoleProbeConfig,
-	lastTimestamps map[string]int64,
 ) ([]*types.FiveHoleRawData, map[string]int64, error) {
 	if dp.batchGetter == nil {
 		return nil, nil, fmt.Errorf("batch getter not set")
@@ -92,7 +103,7 @@ func (dp *DataProcessor) ReadAllProbesRawData(
 
 // resolveAtmSource 解析单探针的大气压/气流温度数据源
 //   - manual：直接返回手动值
-//   - device：读取指定设备通道，成功时记录 timestamp 到 probeTimestamps（供新帧去重）
+//   - device：读取指定设备通道，成功时把该设备帧序号记入 probeTimestamps（供新帧去重）
 //     未配置设备（DeviceID 为空）返回 0 不报错（实时监控阶段容忍未配置）
 func (dp *DataProcessor) resolveAtmSource(probeID, name string, src types.FiveHoleAtmSource, probeTimestamps map[string]int64) (float64, error) {
 	if src.Mode == types.FiveHoleSourceManual {
@@ -102,61 +113,97 @@ func (dp *DataProcessor) resolveAtmSource(probeID, name string, src types.FiveHo
 	if src.DeviceID == "" {
 		return 0, nil
 	}
-	val, ts, err := dp.readSingleChannel(src.DeviceID, src.Channel)
+	val, seq, err := dp.readSingleChannel(src.DeviceID, src.Channel)
 	if err != nil {
 		return 0, fmt.Errorf("探针%s的%s读取失败: %w", probeID, name, err)
 	}
 	if probeTimestamps != nil {
-		if existing, ok := probeTimestamps[src.DeviceID]; !ok || ts > existing {
-			probeTimestamps[src.DeviceID] = ts
+		if existing, ok := probeTimestamps[src.DeviceID]; !ok || seq > existing {
+			probeTimestamps[src.DeviceID] = seq
 		}
 	}
 	return val, nil
 }
 
-// WaitForFreshData 等待任一指定设备产生新帧（timestamp 严格大于 lastTimestamps[did]）
-// 超时返回 ErrDataStagnant，由调用方决定暂停或重试
+// WaitForFreshData 等待所有指定设备产生新帧（帧序号严格大于 lastFrameSeq[did]）
+// 由"设备新帧到达"通知驱动（事件驱动，无固定采样间隔）：任一设备入库新帧即立刻复查，
+// 因此采样节奏等于设备出帧节奏（同一毫秒内的多帧也能区分——判据是帧序号而非墙钟时间）；
+// 未注入通知（SetDataArrivalSignal(nil)）时按 dataArrivalPollInterval 轮询兜底。
+// 超时返回 ErrDataStagnant，由调用方决定暂停或重试；超时以调用时刻起算（不因中途
+// 收到其它设备的新帧信号而顺延），保证"某设备长时间无新帧"能被及时识别。
 func (dp *DataProcessor) WaitForFreshData(
 	deviceIDs []string,
-	lastTimestamps map[string]int64,
+	lastFrameSeq map[string]int64,
 	timeout time.Duration,
 ) (map[string]int64, error) {
 	if dp.batchGetter == nil {
 		return nil, fmt.Errorf("batch getter not set")
 	}
 
-	deadline := time.Now().Add(timeout)
-	pollInterval := 20 * time.Millisecond
+	// 兜底轮询 ticker 按需创建：事件驱动路径（生产路径）不创建 ticker，
+	// 只保留下面必须有的超时 timer——本函数按设备出帧速率被高频调用。
+	var ticker *time.Ticker
+	defer func() {
+		if ticker != nil {
+			ticker.Stop()
+		}
+	}()
+	var pollC <-chan time.Time
+	if dp.dataArrival == nil {
+		ticker = time.NewTicker(dataArrivalPollInterval)
+		pollC = ticker.C
+	}
 
-	for time.Now().Before(deadline) {
-		// 用空通道列表只取 timestamp（避免不必要的数据拷贝）
-		allFresh := true
-		currentTs := make(map[string]int64)
-		for _, did := range deviceIDs {
-			if did == "" {
-				continue
-			}
-			_, ts, err := dp.batchGetter(did, nil)
-			if err != nil {
-				return nil, err
-			}
-			currentTs[did] = ts
-			last, existed := lastTimestamps[did]
-			if !existed || ts <= last {
-				allFresh = false
-			}
+	deadline := time.NewTimer(timeout)
+	defer deadline.Stop()
+
+	for {
+		currentSeq, allFresh, err := dp.readFreshness(deviceIDs, lastFrameSeq)
+		if err != nil {
+			return nil, err
 		}
 		if allFresh {
-			return currentTs, nil
+			return currentSeq, nil
 		}
-		time.Sleep(pollInterval)
+
+		// 两个 case 通道互斥：未注入通知时 dp.dataArrival 为 nil（永久阻塞），
+		// 注入通知时 pollC 为 nil，因此这里不会空转也不需要额外的分支判断。
+		// 通知通道由 AcquisitionHub 持有且永不关闭（见 Subscribe 文档），
+		// 因此这里无需处理"通道已关闭"的情况。
+		select {
+		case <-dp.dataArrival:
+		case <-pollC:
+		case <-deadline.C:
+			return nil, ErrDataStagnant
+		}
 	}
-	return nil, ErrDataStagnant
 }
 
-// readSingleChannel 读取单通道，返回 (数值, 设备timestamp, error)
+// readFreshness 读取各设备当前帧序号，并判断是否全部产生了新帧（严格大于 lastFrameSeq）
+// allFresh=false 时 currentSeq 仍有效（调用方用于下一轮基线），错误直接返回给 WaitForFreshData
+func (dp *DataProcessor) readFreshness(deviceIDs []string, lastFrameSeq map[string]int64) (map[string]int64, bool, error) {
+	allFresh := true
+	currentSeq := make(map[string]int64)
+	for _, did := range deviceIDs {
+		if did == "" {
+			continue
+		}
+		// 空通道列表：只取帧序号，不读取通道数值（避免热路径上的 map 分配与拷贝）
+		_, seq, err := dp.batchGetter(did, nil)
+		if err != nil {
+			return nil, false, err
+		}
+		currentSeq[did] = seq
+		if last, existed := lastFrameSeq[did]; !existed || seq <= last {
+			allFresh = false
+		}
+	}
+	return currentSeq, allFresh, nil
+}
+
+// readSingleChannel 读取单通道，返回 (数值, 该设备当前帧序号, error)
 func (dp *DataProcessor) readSingleChannel(deviceID string, channel int) (float64, int64, error) {
-	values, ts, err := dp.batchGetter(deviceID, []int{channel})
+	values, seq, err := dp.batchGetter(deviceID, []int{channel})
 	if err != nil {
 		return 0, 0, err
 	}
@@ -164,7 +211,7 @@ func (dp *DataProcessor) readSingleChannel(deviceID string, channel int) (float6
 	if !ok {
 		return 0, 0, fmt.Errorf("通道 %d 无数据", channel)
 	}
-	return val, ts, nil
+	return val, seq, nil
 }
 
 // readProbeRawData 读取单根探针的 P1-P5（不含 PAtm/TAtm）

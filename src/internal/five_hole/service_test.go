@@ -98,12 +98,11 @@ func makeValidFiveHoleConfig(t *testing.T, enabledProbes ...types.FiveHoleProbeC
 		probes = []types.FiveHoleProbeConfig{}
 	}
 	return types.FiveHoleTraversalConfig{
-		Name:             "Test",
-		DwellTimeMs:      100,
-		SamplesPerPoint:  1,
-		SampleIntervalMs: 10,
-		MotionTimeoutMs:  1000,
-		Probes:           probes,
+		Name:            "Test",
+		DwellTimeMs:     100,
+		SamplesPerPoint: 1,
+		MotionTimeoutMs: 1000,
+		Probes:          probes,
 		Layout: types.TraversalLayout{
 			Pattern: types.TraversalPatternRectangle,
 			Rectangle: &types.RectangleLayout{
@@ -246,12 +245,11 @@ func makeFanConfig(t *testing.T, probes ...types.FiveHoleProbeConfig) types.Five
 		ps = []types.FiveHoleProbeConfig{}
 	}
 	return types.FiveHoleTraversalConfig{
-		Name:             "Test",
-		DwellTimeMs:      100,
-		SamplesPerPoint:  1,
-		SampleIntervalMs: 10,
-		MotionTimeoutMs:  1000,
-		Probes:           ps,
+		Name:            "Test",
+		DwellTimeMs:     100,
+		SamplesPerPoint: 1,
+		MotionTimeoutMs: 1000,
+		Probes:          ps,
 		Layout: types.TraversalLayout{
 			Pattern: types.TraversalPatternFan,
 			Fan: &types.FanLayout{

@@ -359,11 +359,6 @@
                 <el-input-number v-model="store.config.samplesPerPoint" :min="1" :max="100" size="small" style="width:100px" />
               </div>
               <div class="form-group">
-                <label class="group-label">采样间隔</label>
-                <el-input-number v-model="store.config.sampleIntervalMs" :min="10" :step="10" size="small" style="width:100px" />
-                <span class="unit-label">ms</span>
-              </div>
-              <div class="form-group">
                 <label class="group-label">运动超时</label>
                 <el-input-number v-model="store.config.motionTimeoutMs" :min="1000" :step="1000" size="small" style="width:100px" />
                 <span class="unit-label">ms</span>

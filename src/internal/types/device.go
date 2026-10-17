@@ -301,6 +301,11 @@ type DataPayload struct {
 	ChannelIndices    []int     `json:"channelIndices"`
 	ChannelUnits      []string  `json:"channelUnits"`
 	ChannelPrecisions []int     `json:"channelPrecisions"` // 与 Channels 位置对齐的小数位（录制落盘格式用）
+	// FrameSeq 本设备已入库帧的单调序号（由 AcquisitionHub 在 OnData 时分配，从 1 开始）。
+	// 仅用于判断"是否出现新帧"：与 Timestamp 不同，它没有时钟粒度限制（Windows 墙钟约 1ms
+	// 一档，同一毫秒内到达的多帧 Timestamp 相同）也不会被系统对时回拨影响。
+	// 不参与显示、IPC 事件与落盘（json:"-"）。
+	FrameSeq uint64 `json:"-"`
 }
 
 // DiscoveredDevice UDP扫描发现的设备

@@ -707,7 +707,7 @@ func TestDataProcessor_ReadAllProbesRawData(t *testing.T) {
 		},
 	}
 
-	results, _, err := dp.ReadAllProbesRawData(probes, nil)
+	results, _, err := dp.ReadAllProbesRawData(probes)
 	if err != nil {
 		t.Fatalf("ReadAllProbesRawData failed: %v", err)
 	}

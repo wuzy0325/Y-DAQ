@@ -1570,6 +1570,9 @@ export class FiveHoleRawData {
  * FiveHoleTraversalConfig 五孔移位测试配置（全局配置，含 1-MaxFiveHoleProbes 根探针）
  */
 export class FiveHoleTraversalConfig {
+    /**
+     * 采样节奏由设备推帧驱动（无采样间隔配置）：采集设备每发来一帧新数据即采样一次
+     */
     "name": string;
 
     /**
@@ -1586,11 +1589,6 @@ export class FiveHoleTraversalConfig {
      * 采样次数（所有探针共用）
      */
     "samplesPerPoint": number;
-
-    /**
-     * 采样间隔（所有探针共用）
-     */
-    "sampleIntervalMs": number;
 
     /**
      * 运动等待超时（所有探针共用）
@@ -1632,9 +1630,6 @@ export class FiveHoleTraversalConfig {
         if (!("samplesPerPoint" in $$source)) {
             this["samplesPerPoint"] = 0;
         }
-        if (!("sampleIntervalMs" in $$source)) {
-            this["sampleIntervalMs"] = 0;
-        }
         if (!("motionTimeoutMs" in $$source)) {
             this["motionTimeoutMs"] = 0;
         }
@@ -1665,21 +1660,21 @@ export class FiveHoleTraversalConfig {
      */
     static createFrom($$source: any = {}): FiveHoleTraversalConfig {
         const $$createField1_0 = $$createType29;
+        const $$createField7_0 = $$createType22;
         const $$createField8_0 = $$createType22;
-        const $$createField9_0 = $$createType22;
-        const $$createField10_0 = $$createType31;
+        const $$createField9_0 = $$createType31;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("layout" in $$parsedSource) {
             $$parsedSource["layout"] = $$createField1_0($$parsedSource["layout"]);
         }
         if ("sharedMotionX" in $$parsedSource) {
-            $$parsedSource["sharedMotionX"] = $$createField8_0($$parsedSource["sharedMotionX"]);
+            $$parsedSource["sharedMotionX"] = $$createField7_0($$parsedSource["sharedMotionX"]);
         }
         if ("sharedMotionY" in $$parsedSource) {
-            $$parsedSource["sharedMotionY"] = $$createField9_0($$parsedSource["sharedMotionY"]);
+            $$parsedSource["sharedMotionY"] = $$createField8_0($$parsedSource["sharedMotionY"]);
         }
         if ("probes" in $$parsedSource) {
-            $$parsedSource["probes"] = $$createField10_0($$parsedSource["probes"]);
+            $$parsedSource["probes"] = $$createField9_0($$parsedSource["probes"]);
         }
         return new FiveHoleTraversalConfig($$parsedSource as Partial<FiveHoleTraversalConfig>);
     }

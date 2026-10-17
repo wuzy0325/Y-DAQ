@@ -10,8 +10,10 @@ import (
 
 // FiveHoleMultiDeviceBatchGetter 多设备批量通道数据获取
 // 与三孔 ThreeHoleBatchGetter 区别：按 DeviceID 分组读取，支持每通道独立设备
-// 返回值：map[通道号]数值, 该设备最新数据的 UnixMilli 时间戳, error
-// timestamp 用于采样时判断数据新鲜度，避免读到重复帧
+// 返回值：map[通道号]数值, 该设备当前帧序号（单调递增）, error
+// 帧序号用于采样时判断是否读到新帧（避免重复采同一帧）；用序号而非墙钟时间戳，
+// 是因为 Windows 墙钟约 1ms 一档，同一毫秒内到达的多帧时间戳相同、无法区分。
+// channels 为空表示只需帧序号（新鲜度探测），实现方可跳过数值读取。
 type FiveHoleMultiDeviceBatchGetter func(deviceID string, channels []int) (map[int]float64, int64, error)
 
 // ErrDataStagnant 设备数据停滞错误
